@@ -1,0 +1,34 @@
+{
+  "name": "@dojo-ng/components",
+  "private": true,
+  "version": "0.1.0",
+  "license": "BSD-3-Clause",
+  "description": "Dojo NG web components",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "customElements": "custom-elements.json",
+  "scripts": {
+    "build": "tsc -b .",
+    "clean": "tsc -b --clean .",
+    "cem": "python3 gencem.py",
+    "types": "python3 gentypes.py",
+    "manifest": "python3 gencem.py && python3 gentypes.py",
+    "docs": "python3 gendocs.py && python3 genreadmes.py",
+    "serve": "python3 -m http.server 8080",
+    "start": "npm run build && npm run serve",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "npm run build && changeset publish",
+    "test": "node --conditions=browser --test tests/registration.test.js tests/form-controls.test.js tests/radio-group.test.js tests/list.test.js tests/popup.test.js tests/scroll-lock.test.js tests/focus-trap.test.js tests/form-participation.test.js tests/data-grid.test.js tests/i18n.test.js tests/store.test.js tests/pubsub.test.js"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "@types/react": "^19.2.17",
+    "happy-dom": "^15.11.0",
+    "solid-js": "^1.9.13",
+    "typescript": "6.0.3",
+    "vue": "^3.5.39"
+  }
+}

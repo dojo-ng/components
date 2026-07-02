@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — rich-text plugins demo</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"lexical": "https://esm.sh/lexical@0.21.0",
+					"@lexical/rich-text": "https://esm.sh/@lexical/rich-text@0.21.0",
+					"@lexical/history": "https://esm.sh/@lexical/history@0.21.0",
+					"@lexical/html": "https://esm.sh/@lexical/html@0.21.0",
+					"@lexical/utils": "https://esm.sh/@lexical/utils@0.21.0",
+					"@lexical/list": "https://esm.sh/@lexical/list@0.21.0",
+					"@lexical/selection": "https://esm.sh/@lexical/selection@0.21.0",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/button": "../packages/button/dist/index.js",
+					"@dojo-ng/rich-text": "../packages/rich-text/dist/index.js",
+					"@dojo-ng/rich-text-headings": "../packages/rich-text-headings/dist/index.js",
+					"@dojo-ng/rich-text-lists": "../packages/rich-text-lists/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			h1 { font-size: 1.25rem; } h2 { font-size: 1rem; margin-top: 2rem; }
+			.hint { color: var(--dj-color-text-muted); max-width: 48rem; }
+			.grid { display: grid; gap: .5rem; max-width: 48rem; }
+			pre { background: var(--dj-color-neutral-100); padding: .75rem; border-radius: .375rem; max-width: 48rem; white-space: pre-wrap; word-break: break-word; font-size: .8rem; }
+			label[slot] {}
+			.dj-rt-blocktype { font: inherit; padding: .15rem .35rem; border: 1px solid var(--dj-color-border); border-radius: var(--dj-input-border-radius-medium, .25rem); background: var(--dj-color-background); color: var(--dj-color-text); }
+			.dj-rt-editable h1 { font-size: 1.6em; margin: .3em 0; }
+			.dj-rt-editable h2 { font-size: 1.35em; margin: .3em 0; }
+			.dj-rt-editable h3 { font-size: 1.15em; margin: .3em 0; }
+			.dj-rt-editable blockquote { margin: .4em 0; padding-left: .8em; border-left: 3px solid var(--dj-color-border); color: var(--dj-color-text-muted); }
+			.dj-rt-editable ul { list-style: disc; padding-left: 1.5em; }
+			.dj-rt-editable ol { list-style: decimal; padding-left: 1.5em; }
+		</style>
+	</head>
+	<body>
+		<h1>Rich-text plugin API — demo</h1>
+		<p class="hint">
+			Both editors below are the same <code>&lt;dj-rich-text&gt;</code> component. The toolbar,
+			the node types, and the output format all come from plugins. The first editor uses the
+			default set; the second composes headings and lists with the defaults, plus a custom
+			strikethrough plugin authored right here in the page to show third-party authoring.
+		</p>
+
+		<h2>Default plugins (bold / italic / underline + undo / redo)</h2>
+		<div class="grid">
+			<dj-rich-text id="basic" label="Notes"></dj-rich-text>
+			<pre id="basic-out">(type above)</pre>
+		</div>
+
+		<h2>Headings + formatting + lists + a custom strikethrough plugin</h2>
+		<div class="grid">
+			<dj-rich-text id="full" label="Document"></dj-rich-text>
+			<pre id="full-out">(type above)</pre>
+		</div>
+
+		<script type="module">
+			import "@dojo-ng/rich-text";
+			import { defineRichTextPlugin, defaultPlugins, formattingPlugin, historyPlugin } from "@dojo-ng/rich-text";
+			import { headingsPlugin } from "@dojo-ng/rich-text-headings";
+			import { listsPlugin } from "@dojo-ng/rich-text-lists";
+			import { FORMAT_TEXT_COMMAND } from "lexical";
+
+			// A custom plugin written against the public API: one command button that toggles
+			// strikethrough and reflects its active state. No node classes, no setup needed.
+			const strikethroughPlugin = defineRichTextPlugin({
+				name: "strikethrough",
+				toolbar: [{
+					id: "strikethrough", group: "extra", label: "Strikethrough",
+					icon: "S̶",
+					isActive: (ctx) => ctx.activeFormats().has("strikethrough"),
+					run: (ctx) => ctx.command(FORMAT_TEXT_COMMAND, "strikethrough"),
+				}],
+			});
+
+			const wire = (id, plugins, sampleHtml) => {
+				const editor = document.getElementById(id);
+				const out = document.getElementById(id + "-out");
+				if (plugins) editor.plugins = plugins;
+				editor.setHtml(sampleHtml);
+				const show = () => { out.textContent = editor.value || "(empty)"; };
+				editor.addEventListener("dj-change", show);
+				requestAnimationFrame(show);
+			};
+
+			// Left editor: leave `plugins` empty to get the default set.
+			wire("basic", null, "<p>Edit me — make me <strong>bold</strong>.</p>");
+
+			// Right editor: headings, then formatting, then lists, then history, then the custom plugin.
+			// Order in the array is the toolbar order; separators fall between differing groups.
+			wire(
+				"full",
+				[headingsPlugin, formattingPlugin, listsPlugin, historyPlugin, strikethroughPlugin],
+				"<h2>Release notes</h2><p>A <strong>plugin-driven</strong> editor.</p><ul><li>Headings</li><li>Lists</li></ul>",
+			);
+		</script>
+	</body>
+</html>

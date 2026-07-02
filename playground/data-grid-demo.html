@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — data-grid demo (TanStack)</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"@tanstack/table-core": "https://esm.sh/@tanstack/table-core@8",
+					"@tanstack/virtual-core": "https://esm.sh/@tanstack/virtual-core@3",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/data-grid": "../packages/data-grid/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			h1 { font-size: 1.2rem; } .hint, ol { color: var(--dj-color-text-muted); max-width: 46rem; }
+			pre { background: var(--dj-color-neutral-100); padding: .5rem .75rem; border-radius: .375rem; max-width: 46rem; }
+		</style>
+	</head>
+	<body>
+		<h1>Data grid — 1,000 rows, virtualized (TanStack Table + Virtual)</h1>
+		<p class="hint">Only the visible rows are in the DOM. Click a header to sort; click rows (or Space/Enter) to select; use ↑/↓/Home/End to navigate.</p>
+		<dj-data-grid id="grid" selection-mode="multiple" height="24rem" style="max-width: 46rem; display:block"></dj-data-grid>
+		<pre id="out">selected: 0 rows</pre>
+		<ol>
+			<li>Scroll — the row count in the DOM stays small (open dev tools to confirm).</li>
+			<li>Sort by clicking Name / Age / City headers (toggles asc → desc → none).</li>
+			<li>Focus the grid (Tab to it), then ↑/↓ to move the active row, Space to select.</li>
+		</ol>
+		<script type="module">
+			import "@dojo-ng/data-grid";
+			const first = ["Ada","Bo","Cy","Dee","Eli","Fay","Gus","Hana","Ivy","Jo","Kai","Lena","Mo","Nia","Omar","Pia"];
+			const cities = ["Austin","Boston","Cairo","Denver","Edinburgh","Fes","Graz","Hanoi","Iquitos","Jakarta"];
+			const rows = Array.from({ length: 1000 }, (_, i) => ({
+				id: i + 1,
+				name: `${first[i % first.length]} ${String.fromCharCode(65 + (i % 26))}.`,
+				age: 18 + ((i * 7) % 60),
+				city: cities[i % cities.length],
+			}));
+			const grid = document.getElementById("grid");
+			grid.columns = [
+				{ id: "id", header: "#", sortable: true, width: "4rem" },
+				{ id: "name", header: "Name", sortable: true },
+				{ id: "age", header: "Age", sortable: true, width: "6rem" },
+				{ id: "city", header: "City", sortable: true },
+			];
+			grid.data = rows;
+			const out = document.getElementById("out");
+			grid.addEventListener("dj-selection-change", (e) => { out.textContent = `selected: ${e.detail.rows.length} rows`; });
+			grid.addEventListener("dj-sort", (e) => console.log("sort", e.detail.sorting));
+		</script>
+	</body>
+</html>

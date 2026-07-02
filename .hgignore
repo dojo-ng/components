@@ -1,0 +1,32 @@
+syntax: glob
+
+# Dependencies and build output (mirrors .gitignore).
+# hg glob patterns are unrooted, so these match at any depth in the monorepo.
+node_modules
+dist
+*.tsbuildinfo
+
+# macOS system files (Finder/Spotlight cruft that gets injected into the tree)
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+.fseventsd
+.DocumentRevisions-V100
+.TemporaryItems
+
+# caches (Python loves to create these)
+__pycache__
+
+# Editor / IDE local files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Logs and debug output
+npm-debug.log*
+*.log

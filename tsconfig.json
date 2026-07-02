@@ -1,0 +1,221 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/dojo-element"
+    },
+    {
+      "path": "packages/theme"
+    },
+    {
+      "path": "packages/button"
+    },
+    {
+      "path": "packages/action-button"
+    },
+    {
+      "path": "packages/icon"
+    },
+    {
+      "path": "packages/label"
+    },
+    {
+      "path": "packages/helper-text"
+    },
+    {
+      "path": "packages/loading-indicator"
+    },
+    {
+      "path": "packages/popup"
+    },
+    {
+      "path": "packages/text-input"
+    },
+    {
+      "path": "packages/checkbox"
+    },
+    {
+      "path": "packages/radio"
+    },
+    {
+      "path": "packages/switch"
+    },
+    {
+      "path": "packages/store"
+    },
+    {
+      "path": "packages/context"
+    },
+    {
+      "path": "packages/pubsub"
+    },
+    {
+      "path": "packages/radio-group"
+    },
+    {
+      "path": "packages/text-area"
+    },
+    {
+      "path": "packages/native-select"
+    },
+    {
+      "path": "packages/tooltip"
+    },
+    {
+      "path": "packages/dialog"
+    },
+    {
+      "path": "packages/slide-pane"
+    },
+    {
+      "path": "packages/title-pane"
+    },
+    {
+      "path": "packages/tab-container"
+    },
+    {
+      "path": "packages/slider"
+    },
+    {
+      "path": "packages/range-slider"
+    },
+    {
+      "path": "packages/calendar"
+    },
+    {
+      "path": "packages/avatar"
+    },
+    {
+      "path": "packages/card"
+    },
+    {
+      "path": "packages/chip"
+    },
+    {
+      "path": "packages/result"
+    },
+    {
+      "path": "packages/floating-action-button"
+    },
+    {
+      "path": "packages/trigger-popup"
+    },
+    {
+      "path": "packages/context-popup"
+    },
+    {
+      "path": "packages/header-card"
+    },
+    {
+      "path": "packages/wizard"
+    },
+    {
+      "path": "packages/list"
+    },
+    {
+      "path": "packages/email-input"
+    },
+    {
+      "path": "packages/number-input"
+    },
+    {
+      "path": "packages/constrained-input"
+    },
+    {
+      "path": "packages/password-input"
+    },
+    {
+      "path": "packages/select"
+    },
+    {
+      "path": "packages/typeahead"
+    },
+    {
+      "path": "packages/chip-typeahead"
+    },
+    {
+      "path": "packages/text"
+    },
+    {
+      "path": "packages/stack"
+    },
+    {
+      "path": "packages/two-column-layout"
+    },
+    {
+      "path": "packages/three-column-layout"
+    },
+    {
+      "path": "packages/header"
+    },
+    {
+      "path": "packages/progress"
+    },
+    {
+      "path": "packages/breadcrumb-group"
+    },
+    {
+      "path": "packages/snackbar"
+    },
+    {
+      "path": "packages/global-event"
+    },
+    {
+      "path": "packages/accordion"
+    },
+    {
+      "path": "packages/checkbox-group"
+    },
+    {
+      "path": "packages/rate"
+    },
+    {
+      "path": "packages/form"
+    },
+    {
+      "path": "packages/date-input"
+    },
+    {
+      "path": "packages/time-picker"
+    },
+    {
+      "path": "packages/popup-confirmation"
+    },
+    {
+      "path": "packages/context-menu"
+    },
+    {
+      "path": "packages/pagination"
+    },
+    {
+      "path": "packages/speed-dial"
+    },
+    {
+      "path": "packages/tree"
+    },
+    {
+      "path": "packages/grid"
+    },
+    {
+      "path": "packages/rich-text"
+    },
+    {
+      "path": "packages/rich-text-headings"
+    },
+    {
+      "path": "packages/rich-text-lists"
+    },
+    {
+      "path": "packages/data-grid"
+    },
+    {
+      "path": "packages/i18n"
+    },
+    {
+      "path": "packages/toolbar"
+    },
+    {
+      "path": "packages/chart"
+    }
+  ]
+}

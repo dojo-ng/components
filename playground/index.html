@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — component playground</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"@lit/context": "https://esm.sh/@lit/context@1",
+					"zustand/vanilla": "https://esm.sh/zustand@5/vanilla",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/i18n": "../packages/i18n/dist/index.js",
+					"@dojo-ng/toolbar": "../packages/toolbar/dist/index.js",
+					"@dojo-ng/chart": "../packages/chart/dist/index.js",
+					"d3-scale": "https://esm.sh/d3-scale@4",
+					"d3-shape": "https://esm.sh/d3-shape@3",
+					"d3-array": "https://esm.sh/d3-array@3",
+					"@dojo-ng/theme": "../packages/theme/dist/index.js",
+					"@dojo-ng/store": "../packages/store/dist/index.js",
+					"@dojo-ng/context": "../packages/context/dist/index.js",
+					"@dojo-ng/button": "../packages/button/dist/index.js",
+					"@dojo-ng/action-button": "../packages/action-button/dist/index.js",
+					"@dojo-ng/icon": "../packages/icon/dist/index.js",
+					"@dojo-ng/label": "../packages/label/dist/index.js",
+					"@dojo-ng/helper-text": "../packages/helper-text/dist/index.js",
+					"@dojo-ng/loading-indicator": "../packages/loading-indicator/dist/index.js",
+					"@dojo-ng/popup": "../packages/popup/dist/index.js",
+					"@dojo-ng/text-input": "../packages/text-input/dist/index.js",
+					"@dojo-ng/checkbox": "../packages/checkbox/dist/index.js",
+					"@dojo-ng/radio": "../packages/radio/dist/index.js",
+					"@dojo-ng/radio-group": "../packages/radio-group/dist/index.js",
+					"@dojo-ng/switch": "../packages/switch/dist/index.js",
+					"@dojo-ng/text-area": "../packages/text-area/dist/index.js",
+					"@dojo-ng/native-select": "../packages/native-select/dist/index.js",
+					"@dojo-ng/tooltip": "../packages/tooltip/dist/index.js",
+					"@dojo-ng/dialog": "../packages/dialog/dist/index.js",
+					"@dojo-ng/slide-pane": "../packages/slide-pane/dist/index.js",
+					"@dojo-ng/title-pane": "../packages/title-pane/dist/index.js",
+					"@dojo-ng/tab-container": "../packages/tab-container/dist/index.js",
+					"@dojo-ng/slider": "../packages/slider/dist/index.js",
+					"@dojo-ng/range-slider": "../packages/range-slider/dist/index.js",
+					"@dojo-ng/calendar": "../packages/calendar/dist/index.js",
+					"@dojo-ng/avatar": "../packages/avatar/dist/index.js",
+					"@dojo-ng/card": "../packages/card/dist/index.js",
+					"@dojo-ng/chip": "../packages/chip/dist/index.js",
+					"@dojo-ng/result": "../packages/result/dist/index.js",
+					"@dojo-ng/floating-action-button": "../packages/floating-action-button/dist/index.js",
+					"@dojo-ng/trigger-popup": "../packages/trigger-popup/dist/index.js",
+					"@dojo-ng/context-popup": "../packages/context-popup/dist/index.js",
+					"@dojo-ng/header-card": "../packages/header-card/dist/index.js",
+					"@dojo-ng/wizard": "../packages/wizard/dist/index.js",
+					"@dojo-ng/list": "../packages/list/dist/index.js",
+					"@dojo-ng/email-input": "../packages/email-input/dist/index.js",
+					"@dojo-ng/number-input": "../packages/number-input/dist/index.js",
+					"@dojo-ng/constrained-input": "../packages/constrained-input/dist/index.js",
+					"@dojo-ng/password-input": "../packages/password-input/dist/index.js",
+					"@dojo-ng/select": "../packages/select/dist/index.js",
+					"@dojo-ng/typeahead": "../packages/typeahead/dist/index.js",
+					"@dojo-ng/chip-typeahead": "../packages/chip-typeahead/dist/index.js",
+					"@dojo-ng/text": "../packages/text/dist/index.js",
+					"@dojo-ng/stack": "../packages/stack/dist/index.js",
+					"@dojo-ng/two-column-layout": "../packages/two-column-layout/dist/index.js",
+					"@dojo-ng/three-column-layout": "../packages/three-column-layout/dist/index.js",
+					"@dojo-ng/header": "../packages/header/dist/index.js",
+					"@dojo-ng/progress": "../packages/progress/dist/index.js",
+					"@dojo-ng/breadcrumb-group": "../packages/breadcrumb-group/dist/index.js",
+					"@dojo-ng/snackbar": "../packages/snackbar/dist/index.js",
+					"@dojo-ng/global-event": "../packages/global-event/dist/index.js",
+					"@dojo-ng/accordion": "../packages/accordion/dist/index.js",
+					"@dojo-ng/checkbox-group": "../packages/checkbox-group/dist/index.js",
+					"@dojo-ng/rate": "../packages/rate/dist/index.js",
+					"@dojo-ng/form": "../packages/form/dist/index.js",
+					"@dojo-ng/date-input": "../packages/date-input/dist/index.js",
+					"@dojo-ng/time-picker": "../packages/time-picker/dist/index.js",
+					"@dojo-ng/popup-confirmation": "../packages/popup-confirmation/dist/index.js",
+					"@dojo-ng/context-menu": "../packages/context-menu/dist/index.js",
+					"@dojo-ng/pagination": "../packages/pagination/dist/index.js",
+					"@dojo-ng/speed-dial": "../packages/speed-dial/dist/index.js",
+					"@dojo-ng/tree": "../packages/tree/dist/index.js",
+					"@dojo-ng/grid": "../packages/grid/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: var(--dj-font-family); background: var(--dj-color-background); color: var(--dj-color-text); margin: 0; padding: 2rem; transition: background 150ms, color 150ms; }
+			h2 { font-size: 0.8rem; color: var(--dj-color-text-muted); margin: 1.75rem 0 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+			.row { display: flex; gap: 0.75rem; align-items: center; margin: 0.5rem 0; flex-wrap: wrap; }
+			.col { display: flex; flex-direction: column; gap: 0.75rem; align-items: flex-start; max-width: 22rem; }
+			.toolbar { display: flex; gap: 0.75rem; align-items: center; padding-bottom: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--dj-color-border); }
+			.card { padding: 1rem; border: 1px solid var(--dj-color-border); border-radius: 0.5rem; background: var(--dj-color-background); color: var(--dj-color-text); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); }
+			.island { padding: 1rem; border-radius: 0.5rem; background: var(--dj-color-background); color: var(--dj-color-text); border: 1px solid var(--dj-color-border); }
+			pre { background: var(--dj-color-neutral-100); padding: 0.75rem; border-radius: 0.375rem; }
+		</style>
+	</head>
+	<body>
+		<div class="toolbar">
+			<strong>Dojo NG</strong>
+			<dj-button id="theme-toggle" kind="outlined">Cycle theme</dj-button>
+			<span id="theme-state" style="color: var(--dj-color-text-muted)">theme: light</span>
+			<label for="locale-select" style="margin-left: 0.5rem">Locale</label>
+			<select id="locale-select">
+				<option value="en-US">en-US (English)</option>
+				<option value="de-DE">de-DE (Deutsch)</option>
+				<option value="fr-FR">fr-FR (Français)</option>
+				<option value="ja-JP">ja-JP (日本語)</option>
+				<option value="ar-EG">ar-EG (العربية, RTL)</option>
+			</select>
+		</div>
+
+		<h2>Button</h2>
+		<div class="row">
+			<dj-button kind="contained">Contained</dj-button>
+			<dj-button kind="outlined">Outlined</dj-button>
+			<dj-button kind="text">Text</dj-button>
+			<dj-button kind="contained" disabled>Disabled</dj-button>
+			<dj-action-button kind="outlined">Action</dj-action-button>
+		</div>
+
+		<h2>Form controls + native form participation</h2>
+		<form id="signup" class="col">
+			<dj-text-input name="email" type="email" label="Email" required helper-text="We'll never share it."></dj-text-input>
+			<dj-checkbox name="newsletter" value="yes">Subscribe to the newsletter</dj-checkbox>
+			<dj-radio-group name="plan" label="Plan" value="free">
+				<dj-radio value="free">Free</dj-radio>
+				<dj-radio value="pro">Pro</dj-radio>
+				<dj-radio value="enterprise">Enterprise</dj-radio>
+			</dj-radio-group>
+			<dj-email-input name="email2" label="Email (variant)" placeholder="you@example.com"></dj-email-input>
+			<dj-password-input name="password" label="Password"></dj-password-input>
+			<dj-number-input name="age" label="Age" min="0" max="120"></dj-number-input>
+			<dj-constrained-input id="username" name="username" label="Username (min 3 chars)"></dj-constrained-input>
+			<dj-native-select name="country" label="Country" placeholder="Choose…" required></dj-native-select>
+			<dj-text-area name="comments" label="Comments" rows="3" placeholder="Anything else?"></dj-text-area>
+			<dj-switch name="beta" value="on">Enable beta features</dj-switch>
+			<div class="row">
+				<dj-button type="submit" kind="contained">Submit</dj-button>
+				<dj-button type="reset" kind="text">Reset</dj-button>
+			</div>
+		</form>
+		<h2>Submitted form data</h2>
+		<pre id="result">(submit the form to see its FormData)</pre>
+
+		<h2>Shared state (external store + context)</h2>
+		<demo-store-provider>
+			<div class="row">
+				<demo-counter></demo-counter>
+				<demo-counter></demo-counter>
+				<span style="color: var(--dj-color-text-muted)">two views, one store — click either</span>
+			</div>
+		</demo-store-provider>
+
+		<h2>Icon</h2>
+		<div class="row">
+			<dj-icon size="large" alt-text="Search"><svg viewBox="0 0 24 24"><path d="M21 21l-4.3-4.3M11 19a8 8 0 110-16 8 8 0 010 16z" fill="none" stroke="currentColor" stroke-width="2"/></svg></dj-icon>
+			<dj-button kind="contained"><dj-icon slot="icon"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="2" fill="none"/></svg></dj-icon>With icon</dj-button>
+		</div>
+
+		<h2>Loading indicator + a working action</h2>
+		<div class="row">
+			<dj-button id="load-btn" kind="contained">Simulate load</dj-button>
+			<div id="load-slot" class="row"></div>
+		</div>
+
+		<h2>Popup</h2>
+		<div class="row"><dj-button id="popup-trigger" kind="contained">Toggle popup</dj-button></div>
+		<dj-popup id="popup" position="below" underlay-visible><div class="card">A popup anchored to the button. Press Escape or click outside to close.</div></dj-popup>
+
+		<h2>Display: avatar, card, header card, chip, result</h2>
+		<div class="row">
+			<dj-avatar>BS</dj-avatar>
+			<dj-avatar type="rounded" secondary>NG</dj-avatar>
+			<dj-chip>Default</dj-chip>
+			<dj-chip checked>Checked</dj-chip>
+			<dj-chip closeable>Removable</dj-chip>
+		</div>
+		<div class="row" style="align-items: stretch">
+			<dj-card title="Card title" subtitle="Subtitle" style="width: 16rem">
+				<p>Card body content.</p>
+				<dj-button slot="actions" kind="text">Action</dj-button>
+			</dj-card>
+			<dj-header-card title="Header card" subtitle="with avatar" style="width: 16rem">
+				<dj-avatar slot="avatar" size="small">HC</dj-avatar>
+				<p>Body content.</p>
+			</dj-header-card>
+			<dj-result status="success" title="Success" subtitle="Saved." style="width: 14rem"></dj-result>
+		</div>
+
+		<h2>Select / typeahead family</h2>
+		<div class="col">
+			<dj-select id="select" label="Fruit" placeholder="Pick one…"></dj-select>
+			<dj-typeahead id="typeahead" label="Search fruit"></dj-typeahead>
+			<dj-chip-typeahead id="chip-typeahead" label="Pick several"></dj-chip-typeahead>
+		</div>
+
+		<h2>List</h2>
+		<dj-list id="list" style="max-width: 16rem; --dj-list-max-height: 12rem"></dj-list>
+		<p id="list-value" style="color: var(--dj-color-text-muted)">selected: (none)</p>
+
+		<h2>Wizard</h2>
+		<dj-wizard id="wizard" style="max-width: 40rem"></dj-wizard>
+
+		<h2>Trigger popup &amp; context popup</h2>
+		<div class="row">
+			<dj-trigger-popup>
+				<dj-button kind="outlined">Open menu</dj-button>
+				<div slot="content" class="card">Popup content anchored to the trigger.</div>
+			</dj-trigger-popup>
+			<dj-context-popup>
+				<dj-button kind="text">Right-click me</dj-button>
+				<div slot="content" class="card">Context menu at the cursor.</div>
+			</dj-context-popup>
+			<dj-floating-action-button aria-label="Add"><span slot="icon">+</span></dj-floating-action-button>
+		</div>
+
+		<h2>Sliders</h2>
+		<div class="col">
+			<dj-slider label="Volume" min="0" max="11" value="7"></dj-slider>
+			<dj-range-slider label="Price range" min="0" max="100" value-min="20" value-max="80" show-output></dj-range-slider>
+		</div>
+
+		<h2>Title pane</h2>
+		<dj-title-pane name="Show details" style="max-width: 28rem">
+			<p>Collapsible content. Click the title to toggle.</p>
+		</dj-title-pane>
+
+		<h2>Tabs</h2>
+		<dj-tab-container id="tabs" style="max-width: 32rem">
+			<div>First panel content.</div>
+			<div>Second panel content.</div>
+			<div>Third panel content.</div>
+		</dj-tab-container>
+
+		<h2>Calendar</h2>
+		<dj-calendar id="cal" value="2026-06-15"></dj-calendar>
+		<p id="cal-value" style="color: var(--dj-color-text-muted)">selected: 2026-06-15</p>
+
+		<h2>Date &amp; time</h2>
+		<div class="col">
+			<dj-date-input label="Date" value="2026-06-15"></dj-date-input>
+			<dj-time-picker label="Time" step="1800"></dj-time-picker>
+			<dj-checkbox-group id="topics" label="Topics"></dj-checkbox-group>
+			<dj-rate value="3"></dj-rate>
+		</div>
+
+		<h2>Progress &amp; pagination</h2>
+		<div class="col">
+			<dj-progress value="40" show-output style="width: 18rem"></dj-progress>
+			<dj-pagination id="pager" total="12" page="3"></dj-pagination>
+		</div>
+
+		<h2>Breadcrumb, accordion, tree, grid</h2>
+		<dj-breadcrumb-group id="crumbs"></dj-breadcrumb-group>
+		<dj-accordion exclusive style="max-width: 28rem; margin: 0.75rem 0;">
+			<dj-title-pane name="Section one" open><p>First.</p></dj-title-pane>
+			<dj-title-pane name="Section two"><p>Second.</p></dj-title-pane>
+		</dj-accordion>
+		<div class="row" style="align-items: stretch; gap: 1.5rem;">
+			<dj-tree id="tree" style="min-width: 12rem"></dj-tree>
+			<dj-grid id="grid" style="flex: 1 1 18rem"></dj-grid>
+		</div>
+
+		<h2>Context menu, confirm popup, speed dial, snackbar</h2>
+		<div class="row">
+			<dj-context-menu id="ctxmenu"><dj-button kind="outlined">Right-click for menu</dj-button></dj-context-menu>
+			<dj-popup-confirmation confirm-label="Delete">
+				<dj-button kind="text">Delete…</dj-button>
+				<span slot="content">Are you sure?</span>
+			</dj-popup-confirmation>
+			<dj-button id="toast-btn" kind="contained">Show snackbar</dj-button>
+			<dj-speed-dial>
+				<dj-button slot="actions" kind="contained">A</dj-button>
+				<dj-button slot="actions" kind="contained">B</dj-button>
+			</dj-speed-dial>
+		</div>
+		<dj-snackbar id="toast" type="success">Saved successfully.</dj-snackbar>
+
+		<h2>Overlays: dialog, slide pane, tooltip</h2>
+		<div class="row">
+			<dj-button id="open-dialog" kind="contained">Open dialog</dj-button>
+			<dj-button id="open-pane" kind="outlined">Open slide pane</dj-button>
+			<dj-tooltip orientation="top">
+				<dj-button kind="text">Hover for tooltip</dj-button>
+				<span slot="content">A tooltip on hover or focus.</span>
+			</dj-tooltip>
+		</div>
+		<dj-dialog id="dialog">
+			<span slot="title">Confirm</span>
+			<p>This is a modal dialog. Escape, the close button, or a button below dismisses it.</p>
+			<div slot="actions">
+				<dj-button id="dialog-cancel" kind="text">Cancel</dj-button>
+				<dj-button id="dialog-ok" kind="contained">OK</dj-button>
+			</div>
+		</dj-dialog>
+		<dj-slide-pane id="pane" align="right" width="360">
+			<span slot="title">Details</span>
+			<p>A panel that slides in from the right. Escape, the close button, or the underlay closes it.</p>
+		</dj-slide-pane>
+
+		<h2>Toolbar</h2>
+		<dj-toolbar id="demo-toolbar" label="Records">
+			<dj-button slot="leading" kind="text">Back</dj-button>
+			Records
+			<dj-button slot="actions" kind="outlined">Filter</dj-button>
+			<dj-button slot="actions">New</dj-button>
+		</dj-toolbar>
+		<span id="toolbar-state" style="color: var(--dj-color-text-muted)">overflow action: (none)</span>
+
+		<h2>Charts</h2>
+		<div class="row" style="align-items: flex-start; flex-wrap: wrap; gap: var(--dj-spacing-large); --dj-chart-height: 240px">
+			<div style="width: 360px"><dj-chart id="chart-line" type="line" markers category-key="month" label="Monthly revenue" show-grid x-label="Month" y-label="USD (k)"></dj-chart></div>
+			<div style="width: 360px"><dj-chart id="chart-bar" type="bar" category-key="month" label="Revenue vs target" show-grid></dj-chart></div>
+			<div style="width: 360px"><dj-chart id="chart-stack" type="bar" stacked category-key="month" label="Revenue by region" show-grid></dj-chart></div>
+			<div style="width: 360px"><dj-chart id="chart-scatter" type="bubble" x-key="spend" size-key="deals" label="Spend vs revenue" show-grid x-label="Spend" y-label="Revenue"></dj-chart></div>
+			<div style="width: 360px"><dj-chart id="chart-pie" type="donut" category-key="region" label="Revenue share"></dj-chart></div>
+			<div style="width: 360px"><dj-chart id="chart-combo" type="bar" category-key="month" label="Revenue and growth" show-grid y-label="USD (k)" y-label-right="Growth %"></dj-chart></div>
+			<div style="width: 480px; --dj-chart-height: 280px"><dj-chart id="chart-interactive" type="line" markers legend-toggle brush category-key="month" label="Interactive: toggle the legend, drag the brush" show-grid y-label="USD (k)"></dj-chart></div>
+		</div>
+		<span id="chart-state" style="color: var(--dj-color-text-muted)">hover a category…</span>
+
+		<h2>Scoped theme island (always dark)</h2>
+		<dj-theme theme="dark"><div class="island"><div class="row"><dj-button kind="contained">Inside dark island</dj-button><dj-loading-indicator type="circular-small"></dj-loading-indicator></div></div></dj-theme>
+
+		<script type="module">
+			import { LitElement, html } from "lit";
+			import "@dojo-ng/theme";
+			import "@dojo-ng/button";
+			import "@dojo-ng/action-button";
+			import "@dojo-ng/icon";
+			import "@dojo-ng/label";
+			import "@dojo-ng/helper-text";
+			import "@dojo-ng/loading-indicator";
+			import "@dojo-ng/popup";
+			import "@dojo-ng/text-input";
+			import "@dojo-ng/checkbox";
+			import "@dojo-ng/radio";
+			import "@dojo-ng/radio-group";
+			import "@dojo-ng/switch";
+			import "@dojo-ng/text-area";
+			import "@dojo-ng/native-select";
+			import "@dojo-ng/tooltip";
+			import "@dojo-ng/dialog";
+			import "@dojo-ng/slide-pane";
+			import "@dojo-ng/title-pane";
+			import "@dojo-ng/tab-container";
+			import "@dojo-ng/slider";
+			import "@dojo-ng/range-slider";
+			import "@dojo-ng/calendar";
+			import "@dojo-ng/avatar";
+			import "@dojo-ng/card";
+			import "@dojo-ng/chip";
+			import "@dojo-ng/result";
+			import "@dojo-ng/floating-action-button";
+			import "@dojo-ng/trigger-popup";
+			import "@dojo-ng/context-popup";
+			import "@dojo-ng/header-card";
+			import "@dojo-ng/wizard";
+			import "@dojo-ng/list";
+			import "@dojo-ng/email-input";
+			import "@dojo-ng/number-input";
+			import "@dojo-ng/constrained-input";
+			import "@dojo-ng/password-input";
+			import "@dojo-ng/select";
+			import "@dojo-ng/typeahead";
+			import "@dojo-ng/chip-typeahead";
+			import "@dojo-ng/text"; import "@dojo-ng/stack"; import "@dojo-ng/two-column-layout"; import "@dojo-ng/three-column-layout";
+			import "@dojo-ng/header"; import "@dojo-ng/progress"; import "@dojo-ng/breadcrumb-group"; import "@dojo-ng/snackbar";
+			import "@dojo-ng/global-event"; import "@dojo-ng/accordion"; import "@dojo-ng/checkbox-group"; import "@dojo-ng/rate";
+			import "@dojo-ng/form"; import "@dojo-ng/date-input"; import "@dojo-ng/time-picker"; import "@dojo-ng/popup-confirmation";
+			import "@dojo-ng/context-menu"; import "@dojo-ng/pagination"; import "@dojo-ng/speed-dial"; import "@dojo-ng/tree"; import "@dojo-ng/grid"; import "@dojo-ng/toolbar"; import "@dojo-ng/chart";
+			import { createStore } from "@dojo-ng/store";
+			import { storeContext, ContextProvider, ContextConsumer } from "@dojo-ng/context";
+			import { messages } from "@dojo-ng/i18n";
+
+			// Sample translations for the built-in component strings (the shared "dj" namespace).
+			// Register more locales the same way, or supply a MessageLoader. Only de is shown here.
+			messages.register("dj", "de", {
+				close: "Schließen",
+				openCalendar: "Kalender öffnen",
+				showPassword: "Passwort anzeigen",
+				hidePassword: "Passwort verbergen",
+				selectPlaceholder: "Auswählen…",
+				rangeLabel: "Bereich",
+				confirm: "OK",
+				cancel: "Abbrechen",
+				prevMonth: "Voriger Monat",
+				nextMonth: "Nächster Monat",
+			});
+
+			// Theme toggle
+			const root = document.documentElement;
+			const toggle = document.getElementById("theme-toggle");
+			const stateEl = document.getElementById("theme-state");
+			const themes = ["light", "dark", "high-contrast"];
+			toggle.addEventListener("click", () => {
+				const cur = root.getAttribute("data-dj-theme") || "light";
+				const next = themes[(themes.indexOf(cur) + 1) % themes.length];
+				root.setAttribute("data-dj-theme", next);
+				toggle.textContent = "Cycle theme";
+				stateEl.textContent = `theme: ${next}`;
+			});
+
+			// Locale selector: sets the document lang (and dir for RTL locales). Components read
+			// the nearest ancestor lang, so setting it on <html> updates them all via the i18n
+			// MutationObserver. This is the page-wide signal; setDefaultLocale is only a fallback.
+			const localeSelect = document.getElementById("locale-select");
+			const rtlLocales = new Set(["ar", "he", "fa", "ur"]);
+			localeSelect.value = root.getAttribute("lang") || "en-US";
+			localeSelect.addEventListener("change", () => {
+				const locale = localeSelect.value;
+				root.setAttribute("lang", locale);
+				root.setAttribute("dir", rtlLocales.has(locale.split("-")[0]) ? "rtl" : "ltr");
+			});
+
+			// toolbar overflow actions + event
+			const demoToolbar = document.getElementById("demo-toolbar");
+			demoToolbar.overflow = [
+				{ value: "export", label: "Export" },
+				{ value: "duplicate", label: "Duplicate" },
+				{ value: "delete", label: "Delete" },
+			];
+			demoToolbar.addEventListener("dj-action", (e) => {
+				document.getElementById("toolbar-state").textContent = `overflow action: ${e.detail.value}`;
+			});
+
+			// charts
+			const chartData = [
+				{ month: "Jan", revenue: 42, target: 40, west: 18, east: 14, central: 10 },
+				{ month: "Feb", revenue: 50, target: 45, west: 22, east: 16, central: 12 },
+				{ month: "Mar", revenue: 47, target: 48, west: 20, east: 15, central: 12 },
+				{ month: "Apr", revenue: 61, target: 52, west: 27, east: 19, central: 15 },
+				{ month: "May", revenue: 58, target: 55, west: 25, east: 18, central: 15 },
+				{ month: "Jun", revenue: 70, target: 60, west: 31, east: 22, central: 17 },
+			];
+			const lineChart = document.getElementById("chart-line");
+			lineChart.series = [{ key: "revenue", label: "Revenue" }, { key: "target", label: "Target" }];
+			lineChart.numberFormat = { style: "currency", currency: "USD", maximumFractionDigits: 0 };
+			lineChart.data = chartData;
+			const barChart = document.getElementById("chart-bar");
+			barChart.series = [{ key: "revenue", label: "Revenue" }, { key: "target", label: "Target" }];
+			barChart.data = chartData;
+			const stackChart = document.getElementById("chart-stack");
+			stackChart.series = [{ key: "west", label: "West" }, { key: "east", label: "East" }, { key: "central", label: "Central" }];
+			stackChart.data = chartData;
+			for (const c of [lineChart, barChart, stackChart]) {
+				c.addEventListener("dj-hover", (e) => {
+					document.getElementById("chart-state").textContent = e.detail.category ? `hover: ${e.detail.category}` : "hover a category…";
+				});
+			}
+			const scatterChart = document.getElementById("chart-scatter");
+			scatterChart.series = [{ key: "revenue", label: "Revenue" }];
+			scatterChart.data = [
+				{ spend: 10, revenue: 42, deals: 8 }, { spend: 15, revenue: 50, deals: 14 },
+				{ spend: 22, revenue: 47, deals: 20 }, { spend: 28, revenue: 61, deals: 12 },
+				{ spend: 33, revenue: 70, deals: 26 }, { spend: 40, revenue: 92, deals: 33 },
+			];
+			const pieChart = document.getElementById("chart-pie");
+			pieChart.series = [{ key: "value" }];
+			pieChart.data = [
+				{ region: "West", value: 148 }, { region: "East", value: 104 },
+				{ region: "Central", value: 81 }, { region: "South", value: 63 },
+			];
+			const comboChart = document.getElementById("chart-combo");
+			comboChart.series = [
+				{ key: "revenue", label: "Revenue" },
+				{ key: "growth", label: "Growth %", type: "line", axis: "right" },
+			];
+			comboChart.data = chartData.map((d, i) => ({ ...d, growth: [4, 12, 8, 15, 9, 18][i] }));
+			const interactiveChart = document.getElementById("chart-interactive");
+			interactiveChart.series = [
+				{ key: "revenue", label: "Revenue" },
+				{ key: "target", label: "Target" },
+			];
+			interactiveChart.data = [
+				{ month: "Jan", revenue: 42, target: 40 }, { month: "Feb", revenue: 50, target: 45 },
+				{ month: "Mar", revenue: 47, target: 48 }, { month: "Apr", revenue: 61, target: 52 },
+				{ month: "May", revenue: 58, target: 55 }, { month: "Jun", revenue: 70, target: 60 },
+				{ month: "Jul", revenue: 66, target: 62 }, { month: "Aug", revenue: 74, target: 68 },
+			];
+
+			// constrained-input validator (function property)
+			document.getElementById("username").validator = (v) => v.length < 3 ? "Must be at least 3 characters." : undefined;
+
+			// native-select options are a property (array)
+			document.querySelector('dj-native-select[name="country"]').options = [
+				{ value: "us", label: "United States" },
+				{ value: "ca", label: "Canada" },
+				{ value: "uk", label: "United Kingdom" },
+			];
+
+			// Form participation
+			const form = document.getElementById("signup");
+			const result = document.getElementById("result");
+			form.addEventListener("submit", (e) => { e.preventDefault(); result.textContent = JSON.stringify(Object.fromEntries(new FormData(form).entries()), null, 2); });
+			form.addEventListener("reset", () => { result.textContent = "(form reset)"; });
+
+			// Shared-state demo: one external store, provided via context, consumed by two views.
+			const counterStore = createStore((set) => ({ count: 0, inc: () => set((s) => ({ count: s.count + 1 })) }));
+			class StoreProvider extends LitElement {
+				constructor() { super(); new ContextProvider(this, { context: storeContext, initialValue: counterStore }); }
+				render() { return html`<slot></slot>`; }
+			}
+			customElements.define("demo-store-provider", StoreProvider);
+			class CounterView extends LitElement {
+				#unsub;
+				constructor() {
+					super();
+					new ContextConsumer(this, { context: storeContext, subscribe: true, callback: (store) => {
+						if (store && store !== this.store) { this.store = store; this.#unsub?.(); this.#unsub = store.subscribe(() => this.requestUpdate()); this.requestUpdate(); }
+					}});
+				}
+				render() {
+					const count = this.store ? this.store.getState().count : "…";
+					return html`<button style="font:inherit;padding:.4rem .8rem" @click=${() => this.store.getState().inc()}>count: ${count}</button>`;
+				}
+			}
+			customElements.define("demo-counter", CounterView);
+
+			// Loading action
+			const loadBtn = document.getElementById("load-btn");
+			const loadSlot = document.getElementById("load-slot");
+			loadBtn.addEventListener("click", () => {
+				loadBtn.disabled = true; loadSlot.innerHTML = "";
+				const s = document.createElement("dj-loading-indicator"); s.type = "circular-small"; loadSlot.appendChild(s);
+				setTimeout(() => { loadSlot.innerHTML = "<span>Done ✓</span>"; loadBtn.disabled = false; }, 1500);
+			});
+
+			// Popup
+			const popup = document.getElementById("popup");
+			const trigger = document.getElementById("popup-trigger");
+			popup.anchor = trigger;
+			trigger.addEventListener("click", () => { popup.open = !popup.open; });
+
+			// Overlays
+			const dialog = document.getElementById("dialog");
+			document.getElementById("open-dialog").addEventListener("click", () => { dialog.open = true; });
+			document.getElementById("dialog-cancel").addEventListener("click", () => { dialog.open = false; });
+			document.getElementById("dialog-ok").addEventListener("click", () => { dialog.open = false; });
+			const pane = document.getElementById("pane");
+			document.getElementById("open-pane").addEventListener("click", () => { pane.open = true; });
+
+			// Tabs need their tab descriptors set (array property)
+			document.getElementById("tabs").tabs = [{ name: "One" }, { name: "Two" }, { name: "Three" }];
+
+			// Calendar selection readout
+			const cal = document.getElementById("cal");
+			const calValue = document.getElementById("cal-value");
+			cal.addEventListener("change", () => { calValue.textContent = `selected: ${cal.value}`; });
+
+			// Remaining components — array properties + handlers
+			document.getElementById("topics").options = [
+				{ value: "news", label: "News" }, { value: "sports", label: "Sports" }, { value: "tech", label: "Tech" },
+			];
+			document.getElementById("pager").addEventListener("dj-page", (e) => console.log("page", e.detail.page));
+			document.getElementById("crumbs").items = [
+				{ label: "Home", href: "#" }, { label: "Library", href: "#" }, { label: "Components", current: true },
+			];
+			document.getElementById("tree").nodes = [
+				{ id: "src", label: "src", children: [{ id: "comp", label: "components", children: [{ id: "btn", label: "button" }] }, { id: "idx", label: "index.ts" }] },
+				{ id: "pkg", label: "package.json" },
+			];
+			const grid = document.getElementById("grid");
+			grid.columns = [{ id: "name", title: "Name", sortable: true }, { id: "role", title: "Role", sortable: true }, { id: "age", title: "Age", sortable: true }];
+			grid.rows = [{ name: "Ada", role: "Engineer", age: 36 }, { name: "Bo", role: "Designer", age: 29 }, { name: "Cy", role: "PM", age: 42 }];
+			document.getElementById("ctxmenu").options = [
+				{ value: "copy", label: "Copy" }, { value: "rename", label: "Rename" }, { value: "delete", label: "Delete" },
+			];
+			const toast = document.getElementById("toast");
+			document.getElementById("toast-btn").addEventListener("click", () => { toast.open = true; setTimeout(() => (toast.open = false), 2000); });
+
+			// Select / typeahead family share an options list
+			const fruit = [
+				{ value: "apple", label: "Apple" },
+				{ value: "banana", label: "Banana" },
+				{ value: "cherry", label: "Cherry" },
+				{ value: "date", label: "Date" },
+				{ value: "elderberry", label: "Elderberry" },
+			];
+			document.getElementById("select").options = fruit;
+			document.getElementById("typeahead").options = fruit;
+			document.getElementById("chip-typeahead").options = fruit;
+
+			// List options + readout
+			const list = document.getElementById("list");
+			list.options = [
+				{ value: "apple", label: "Apple" },
+				{ value: "banana", label: "Banana" },
+				{ value: "cherry", label: "Cherry" },
+				{ value: "_d", label: "", divider: true },
+				{ value: "date", label: "Date", disabled: true },
+				{ value: "elderberry", label: "Elderberry" },
+			];
+			const listValue = document.getElementById("list-value");
+			list.addEventListener("change", () => { listValue.textContent = `selected: ${list.value}`; });
+
+			// Wizard steps
+			document.getElementById("wizard").steps = [
+				{ title: "Account", subTitle: "Step 1" },
+				{ title: "Profile", subTitle: "Step 2" },
+				{ title: "Confirm", subTitle: "Step 3" },
+			];
+			document.getElementById("wizard").activeStep = 1;
+		</script>
+	</body>
+</html>

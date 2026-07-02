@@ -1,0 +1,264 @@
+/*
+ * Dojo NG theme tokens.
+ *
+ * Load this stylesheet once at the page level. Tokens are CSS custom properties, so
+ * they pierce shadow boundaries and reach every component. Switch themes by setting
+ * `data-dj-theme="light" | "dark"` on <html>, on any container, or on a <dj-theme>
+ * element. With no attribute set, the theme follows the OS via prefers-color-scheme.
+ *
+ * Layers: primitives (raw scales) -> semantic (roles) -> component tokens (consumed by
+ * components). Re-theme by overriding primitives or semantics; reach for component
+ * tokens only for targeted tweaks.
+ */
+
+/* ---------- Light (default) ---------- */
+:root,
+[data-dj-theme="light"] {
+	color-scheme: light;
+
+	/* Primitives: neutral scale (0 = page background, 900 = strongest text) */
+	--dj-color-neutral-0: #ffffff;
+	--dj-color-neutral-50: #f9fafb;
+	--dj-color-neutral-100: #f3f4f6;
+	--dj-color-neutral-200: #e5e7eb;
+	--dj-color-neutral-300: #d1d5db;
+	--dj-color-neutral-400: #9ca3af;
+	--dj-color-neutral-500: #6b7280;
+	--dj-color-neutral-600: #4b5563;
+	--dj-color-neutral-700: #374151;
+	--dj-color-neutral-800: #1f2937;
+	--dj-color-neutral-900: #111827;
+
+	/* Primitives: primary (blue) */
+	--dj-color-primary-50: #eff6ff;
+	--dj-color-primary-100: #dbeafe;
+	--dj-color-primary-200: #bfdbfe;
+	--dj-color-primary-300: #93c5fd;
+	--dj-color-primary-400: #60a5fa;
+	--dj-color-primary-500: #3b82f6;
+	--dj-color-primary-600: #2563eb;
+	--dj-color-primary-700: #1d4ed8;
+	--dj-color-primary-800: #1e40af;
+	--dj-color-primary-900: #1e3a8a;
+
+	/* Primitives: status */
+	--dj-color-success-100: #dcfce7;
+	--dj-color-success-500: #22c55e;
+	--dj-color-success-600: #16a34a;
+	--dj-color-success-700: #15803d;
+	--dj-color-warning-100: #fef9c3;
+	--dj-color-warning-500: #eab308;
+	--dj-color-warning-600: #ca8a04;
+	--dj-color-warning-700: #a16207;
+	--dj-color-danger-100: #fee2e2;
+	--dj-color-danger-500: #ef4444;
+	--dj-color-danger-600: #dc2626;
+	--dj-color-danger-700: #b91c1c;
+
+	/* Semantic roles */
+	--dj-color-text: var(--dj-color-neutral-800);
+	--dj-color-text-muted: var(--dj-color-neutral-500);
+	--dj-color-background: var(--dj-color-neutral-0);
+	--dj-color-border: var(--dj-color-neutral-300);
+	--dj-icon-color: currentColor;
+	--dj-overlay-background-color: rgb(17 24 39 / 0.45);
+	--dj-focus-ring-color: var(--dj-color-primary-500);
+
+	/* Spacing scale */
+	--dj-spacing-2x-small: 0.25rem;
+	--dj-spacing-x-small: 0.5rem;
+	--dj-spacing-small: 0.75rem;
+	--dj-spacing-medium: 1rem;
+	--dj-spacing-large: 1.5rem;
+	--dj-spacing-x-large: 2rem;
+
+	/* Typography */
+	--dj-font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	--dj-font-size-small: 0.875rem;
+	--dj-font-size-medium: 1rem;
+	--dj-font-size-large: 1.5rem;
+	--dj-font-weight-normal: 400;
+	--dj-font-weight-semibold: 600;
+	--dj-font-weight-bold: 700;
+
+	/* Borders, radii, focus */
+	--dj-input-border-width: 1px;
+	--dj-input-border-radius-small: 0.1875rem;
+	--dj-input-border-radius-medium: 0.25rem;
+	--dj-input-border-radius-large: 0.375rem;
+	--dj-focus-ring: 2px solid var(--dj-focus-ring-color);
+	--dj-focus-ring-offset: 2px;
+
+	/* Categorical chart ramp (consumed by dj-chart). Eight distinguishable hues. */
+	--dj-chart-1: #2563eb;
+	--dj-chart-2: #16a34a;
+	--dj-chart-3: #d97706;
+	--dj-chart-4: #dc2626;
+	--dj-chart-5: #7c3aed;
+	--dj-chart-6: #0891b2;
+	--dj-chart-7: #db2777;
+	--dj-chart-8: #65a30d;
+
+	/* Sizing */
+	--dj-input-height-small: 1.75rem;
+	--dj-input-height-medium: 2.5rem;
+	--dj-input-height-large: 3.25rem;
+
+	/* Motion */
+	--dj-transition-x-fast: 100ms;
+	--dj-transition-fast: 150ms;
+
+	/* Stacking */
+	--dj-popup-underlay-z-index: 900;
+	--dj-popup-z-index: 901;
+
+	/* Component tokens (consumed by components; override for targeted tweaks) */
+	--dj-input-font-family: var(--dj-font-family);
+	--dj-input-label-font-size: 0.95rem;
+	--dj-input-help-text-font-size: 0.8rem;
+	--dj-button-font-size-small: var(--dj-font-size-small);
+	--dj-button-font-size-medium: var(--dj-font-size-medium);
+	--dj-button-font-size-large: 1.125rem;
+	--dj-loading-linear-height: 4px;
+}
+
+/* ---------- Dark ---------- */
+[data-dj-theme="dark"] {
+	color-scheme: dark;
+
+	/* Brighter chart ramp for dark backgrounds */
+	--dj-chart-1: #60a5fa;
+	--dj-chart-2: #4ade80;
+	--dj-chart-3: #fbbf24;
+	--dj-chart-4: #f87171;
+	--dj-chart-5: #a78bfa;
+	--dj-chart-6: #22d3ee;
+	--dj-chart-7: #f472b6;
+	--dj-chart-8: #a3e635;
+
+	/* Neutral scale flips: 0 becomes near-black background, 900 near-white text */
+	--dj-color-neutral-0: #0b0f17;
+	--dj-color-neutral-50: #111827;
+	--dj-color-neutral-100: #1f2937;
+	--dj-color-neutral-200: #374151;
+	--dj-color-neutral-300: #4b5563;
+	--dj-color-neutral-400: #6b7280;
+	--dj-color-neutral-500: #9ca3af;
+	--dj-color-neutral-600: #d1d5db;
+	--dj-color-neutral-700: #e5e7eb;
+	--dj-color-neutral-800: #f3f4f6;
+	--dj-color-neutral-900: #f9fafb;
+
+	/* Primary lifts a step for contrast on dark surfaces */
+	--dj-color-primary-100: #1e3a8a;
+	--dj-color-primary-500: #60a5fa;
+	--dj-color-primary-600: #3b82f6;
+	--dj-color-primary-700: #93c5fd;
+
+	--dj-color-success-600: #22c55e;
+	--dj-color-warning-600: #eab308;
+	--dj-color-danger-600: #f87171;
+
+	--dj-color-text: var(--dj-color-neutral-800);
+	--dj-color-text-muted: var(--dj-color-neutral-500);
+	--dj-color-background: var(--dj-color-neutral-0);
+	--dj-color-border: var(--dj-color-neutral-300);
+	--dj-overlay-background-color: rgb(0 0 0 / 0.6);
+}
+
+/* Follow the OS when no explicit theme is chosen. */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-dj-theme]) {
+		color-scheme: dark;
+		--dj-color-neutral-0: #0b0f17;
+		--dj-color-neutral-50: #111827;
+		--dj-color-neutral-100: #1f2937;
+		--dj-color-neutral-200: #374151;
+		--dj-color-neutral-300: #4b5563;
+		--dj-color-neutral-400: #6b7280;
+		--dj-color-neutral-500: #9ca3af;
+		--dj-color-neutral-600: #d1d5db;
+		--dj-color-neutral-700: #e5e7eb;
+		--dj-color-neutral-800: #f3f4f6;
+		--dj-color-neutral-900: #f9fafb;
+		--dj-color-primary-100: #1e3a8a;
+		--dj-color-primary-500: #60a5fa;
+		--dj-color-primary-600: #3b82f6;
+		--dj-color-primary-700: #93c5fd;
+		--dj-color-danger-600: #f87171;
+		--dj-chart-1: #60a5fa;
+		--dj-chart-2: #4ade80;
+		--dj-chart-3: #fbbf24;
+		--dj-chart-4: #f87171;
+		--dj-chart-5: #a78bfa;
+		--dj-chart-6: #22d3ee;
+		--dj-chart-7: #f472b6;
+		--dj-chart-8: #a3e635;
+		--dj-overlay-background-color: rgb(0 0 0 / 0.6);
+	}
+}
+
+/* ---------- High contrast ---------- */
+/* Maximum-contrast variant: black on white, heavy borders, thick focus ring, saturated
+   status/link colors. Opt in with data-dj-theme="high-contrast". */
+[data-dj-theme="high-contrast"] {
+	color-scheme: light;
+
+	/* Saturated, maximally-distinct chart ramp on white. Pair with the data table for
+	   non-color users; OS forced-colors is handled in the component styles. */
+	--dj-chart-1: #0000cc;
+	--dj-chart-2: #006600;
+	--dj-chart-3: #aa3300;
+	--dj-chart-4: #cc0000;
+	--dj-chart-5: #6600cc;
+	--dj-chart-6: #006688;
+	--dj-chart-7: #aa0066;
+	--dj-chart-8: #555500;
+
+	--dj-color-neutral-0: #ffffff;
+	--dj-color-neutral-50: #ffffff;
+	--dj-color-neutral-100: #f0f0f0;
+	--dj-color-neutral-200: #d0d0d0;
+	--dj-color-neutral-300: #000000;
+	--dj-color-neutral-400: #000000;
+	--dj-color-neutral-500: #1a1a1a;
+	--dj-color-neutral-600: #000000;
+	--dj-color-neutral-700: #000000;
+	--dj-color-neutral-800: #000000;
+	--dj-color-neutral-900: #000000;
+
+	--dj-color-primary-100: #cce0ff;
+	--dj-color-primary-500: #0000cc;
+	--dj-color-primary-600: #0000ee;
+	--dj-color-primary-700: #000099;
+
+	--dj-color-success-600: #006600;
+	--dj-color-warning-600: #7a4f00;
+	--dj-color-danger-600: #cc0000;
+
+	--dj-color-text: #000000;
+	--dj-color-text-muted: #1a1a1a;
+	--dj-color-background: #ffffff;
+	--dj-color-border: #000000;
+	--dj-icon-color: currentColor;
+	--dj-overlay-background-color: rgb(0 0 0 / 0.7);
+
+	--dj-input-border-width: 2px;
+	--dj-focus-ring-color: #000000;
+	--dj-focus-ring: 3px solid #000000;
+	--dj-focus-ring-offset: 2px;
+}
+
+/* ---------- Forced colors (Windows High Contrast Mode) ---------- */
+/* In forced-colors the OS supplies the palette and ignores most author colors. We map the
+   focus-ring token to the system highlight so every outline-based ring stays visible; the
+   scrim becomes opaque so dialogs/popups read as layered. Per-component shadow styles add
+   the rest (outline rings where we used box-shadow, borders for elevation, system colors for
+   checked/selected state) since a page-level sheet can't reach inside shadow roots. */
+@media (forced-colors: active) {
+	:root {
+		--dj-focus-ring-color: Highlight;
+		--dj-focus-ring: 2px solid Highlight;
+		--dj-overlay-background-color: Canvas;
+	}
+}

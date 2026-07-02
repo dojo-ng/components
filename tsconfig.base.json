@@ -1,0 +1,68 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "ES2021",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "declaration": true,
+    "composite": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@dojo-ng/rich-text": [
+        "./packages/rich-text/dist/index.d.ts"
+      ],
+      "@dojo-ng/rich-text-headings": [
+        "./packages/rich-text-headings/dist/index.d.ts"
+      ],
+      "@dojo-ng/rich-text-lists": [
+        "./packages/rich-text-lists/dist/index.d.ts"
+      ],
+      "@dojo-ng/dojo-element": [
+        "./packages/dojo-element/dist/index.d.ts"
+      ],
+      "@dojo-ng/dojo-element/*": [
+        "./packages/dojo-element/dist/*"
+      ],
+      "@dojo-ng/i18n": [
+        "./packages/i18n/dist/index.d.ts"
+      ],
+      "@dojo-ng/toolbar": [
+        "./packages/toolbar/dist/index.d.ts"
+      ],
+      "@dojo-ng/chart": [
+        "./packages/chart/dist/index.d.ts"
+      ],
+      "@dojo-ng/button": [
+        "./packages/button/dist/index.d.ts"
+      ],
+      "@dojo-ng/store": [
+        "./packages/store/dist/index.d.ts"
+      ],
+      "@dojo-ng/radio": [
+        "./packages/radio/dist/index.d.ts"
+      ],
+      "@dojo-ng/popup": [
+        "./packages/popup/dist/index.d.ts"
+      ],
+      "@dojo-ng/text-input": [
+        "./packages/text-input/dist/index.d.ts"
+      ],
+      "@dojo-ng/constrained-input": [
+        "./packages/constrained-input/dist/index.d.ts"
+      ],
+      "@dojo-ng/list": [
+        "./packages/list/dist/index.d.ts"
+      ],
+      "@dojo-ng/typeahead": [
+        "./packages/typeahead/dist/index.d.ts"
+      ]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "// note": "Real-install verification for the generated framework typings. Run from components/ after `npm i -D typescript @types/react vue solid-js` (see README.md). @dojo-ng/* resolve via the workspace.",
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "target": "es2022",
+    "lib": ["ES2022", "DOM"],
+    "types": []
+  },
+  "files": [
+    "../react.d.ts",
+    "../solid.d.ts",
+    "../vue.d.ts",
+    "../dojo.d.ts",
+    "dojo-renderer-stub.d.ts",
+    "react.test.ts",
+    "solid.test.ts",
+    "vue.test.ts",
+    "dojo.test.ts"
+  ]
+}

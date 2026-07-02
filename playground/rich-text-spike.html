@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — rich-text spike (Lexical, light DOM)</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"lexical": "https://esm.sh/lexical@0.21.0",
+					"@lexical/rich-text": "https://esm.sh/@lexical/rich-text@0.21.0",
+					"@lexical/history": "https://esm.sh/@lexical/history@0.21.0",
+					"@lexical/html": "https://esm.sh/@lexical/html@0.21.0",
+					"@lexical/utils": "https://esm.sh/@lexical/utils@0.21.0",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/button": "../packages/button/dist/index.js",
+					"@dojo-ng/rich-text": "../packages/rich-text/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			h1 { font-size: 1.2rem; } .hint { color: var(--dj-color-text-muted); max-width: 44rem; }
+			pre { background: var(--dj-color-neutral-100); padding: .75rem; border-radius: .375rem; max-width: 44rem; white-space: pre-wrap; word-break: break-word; }
+			ol { max-width: 44rem; color: var(--dj-color-text-muted); }
+		</style>
+	</head>
+	<body>
+		<h1>Rich-text spike — Lexical in light DOM</h1>
+		<p class="hint">This validates the editor end-to-end. The editable region is in light DOM (Lexical's shadow-DOM selection isn't reliable yet). Try the checklist below; the live HTML value updates under the editor.</p>
+		<dj-rich-text id="editor" label="Notes"></dj-rich-text>
+		<h2 style="font-size:.9rem;color:var(--dj-color-text-muted);text-transform:uppercase;letter-spacing:.05em">Live HTML value (form value)</h2>
+		<pre id="out">(type above)</pre>
+		<ol>
+			<li>Type some text — characters should appear (the core shadow-DOM bug we're avoiding).</li>
+			<li>Select text, click <b>B</b>/<i>I</i>/<u>U</u> — formatting toggles and the toolbar buttons show the active state.</li>
+			<li>Undo (↶) / Redo (↷).</li>
+			<li>Paste rich content from another page — it should come in as structured HTML.</li>
+			<li>Watch the HTML value update live below.</li>
+		</ol>
+		<script type="module">
+			import "@dojo-ng/rich-text";
+			const editor = document.getElementById("editor");
+			const out = document.getElementById("out");
+			editor.setHtml("<p>Edit me — make me <strong>bold</strong>.</p>");
+			const show = () => { out.textContent = editor.value || "(empty)"; };
+			editor.addEventListener("dj-change", show);
+			requestAnimationFrame(show);
+		</script>
+	</body>
+</html>

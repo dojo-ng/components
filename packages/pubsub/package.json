@@ -1,0 +1,12 @@
+{
+  "name": "@dojo-ng/pubsub",
+  "version": "0.1.0", "license": "BSD-3-Clause",
+  "description": "Dojo NG publish/subscribe facade backed by an external store",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
+  "dependencies": { "@dojo-ng/store": "^0.1.0", "zustand": "^5.0.0" },
+  "devDependencies": { "typescript": "^5.8.3" }
+}

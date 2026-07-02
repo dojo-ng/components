@@ -69,6 +69,8 @@ import type { DjTimePicker } from "@dojo-ng/time-picker";
 import type { DjTitlePane } from "@dojo-ng/title-pane";
 import type { DjToolbar } from "@dojo-ng/toolbar";
 import type { DjTooltip } from "@dojo-ng/tooltip";
+import type { DjTransition } from "@dojo-ng/transition";
+import type { DjTransitionGroup } from "@dojo-ng/transition-group";
 import type { DjTree } from "@dojo-ng/tree";
 import type { DjTriggerPopup } from "@dojo-ng/trigger-popup";
 import type { DjTwoColumnLayout } from "@dojo-ng/two-column-layout";
@@ -494,6 +496,15 @@ declare module "@dojo-ng/framework" {
       "dj-tooltip": DjVNodeBase & {
         "open"?: DjTooltip["open"];
         "orientation"?: DjTooltip["orientation"];
+      };
+      "dj-transition": DjVNodeBase & {
+        "show"?: DjTransition["show"];
+        "appear"?: DjTransition["appear"];
+        "state"?: DjTransition["state"];
+      };
+      "dj-transition-group": DjVNodeBase & {
+        "show"?: DjTransitionGroup["show"];
+        "stagger"?: DjTransitionGroup["stagger"];
       };
       "dj-tree": DjVNodeBase & {
         "nodes"?: DjTree["nodes"];

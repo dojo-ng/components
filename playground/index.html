@@ -82,7 +82,9 @@
 					"@dojo-ng/pagination": "../packages/pagination/dist/index.js",
 					"@dojo-ng/speed-dial": "../packages/speed-dial/dist/index.js",
 					"@dojo-ng/tree": "../packages/tree/dist/index.js",
-					"@dojo-ng/grid": "../packages/grid/dist/index.js"
+					"@dojo-ng/grid": "../packages/grid/dist/index.js",
+					"@dojo-ng/transition": "../packages/transition/dist/index.js",
+					"@dojo-ng/transition-group": "../packages/transition-group/dist/index.js"
 				}
 			}
 		</script>
@@ -325,6 +327,41 @@
 		<h2>Scoped theme island (always dark)</h2>
 		<dj-theme theme="dark"><div class="island"><div class="row"><dj-button kind="contained">Inside dark island</dj-button><dj-loading-indicator type="circular-small"></dj-loading-indicator></div></div></dj-theme>
 
+		<h2>Animation: transition &amp; transition-group</h2>
+		<style>
+			/* Page CSS drives the effects; the components only reflect a state attribute. */
+			dj-transition[state="entering"] { animation: pg-fade-in 220ms both; }
+			dj-transition[state="leaving"]  { animation: pg-fade-out 220ms both; }
+			@keyframes pg-fade-in  { from { opacity: 0; transform: translateY(6px); } }
+			@keyframes pg-fade-out { to   { opacity: 0; transform: translateY(6px); } }
+			#anim-group { display: flex; flex-direction: column; gap: var(--dj-spacing-x-small); }
+			#anim-group li { list-style: none; padding: var(--dj-spacing-x-small) var(--dj-spacing-small); background: var(--dj-color-neutral-100, #f3f4f6); border-radius: var(--dj-input-border-radius-small, 3px); }
+			/* Reserve fixed space so toggling the effects never grows or shrinks the page. */
+			.anim-stage { margin-top: var(--dj-spacing-small); border: 1px dashed var(--dj-color-border, #d1d5db); border-radius: var(--dj-input-border-radius-small, 3px); padding: var(--dj-spacing-small); }
+			#anim-panel-stage { min-height: 6rem; }
+			#anim-group-stage { min-height: 8.5rem; }
+		</style>
+		<div class="row" style="align-items: flex-start; gap: var(--dj-spacing-large); flex-wrap: wrap">
+			<div>
+				<dj-button id="anim-toggle" kind="outlined">Toggle panel</dj-button>
+				<div id="anim-panel-stage" class="anim-stage">
+					<dj-transition id="anim-panel" show>
+						<dj-card style="display: block; max-width: 22rem">A panel that fades on toggle, and stays mounted through its leave.</dj-card>
+					</dj-transition>
+				</div>
+			</div>
+			<div>
+				<dj-button id="anim-reveal" kind="outlined">Reveal list (stagger 80ms)</dj-button>
+				<div id="anim-group-stage" class="anim-stage">
+					<dj-transition-group id="anim-group" stagger="80">
+						<dj-transition><li>First</li></dj-transition>
+						<dj-transition><li>Second</li></dj-transition>
+						<dj-transition><li>Third</li></dj-transition>
+					</dj-transition-group>
+				</div>
+			</div>
+		</div>
+
 		<script type="module">
 			import { LitElement, html } from "lit";
 			import "@dojo-ng/theme";
@@ -372,6 +409,7 @@
 			import "@dojo-ng/global-event"; import "@dojo-ng/accordion"; import "@dojo-ng/checkbox-group"; import "@dojo-ng/rate";
 			import "@dojo-ng/form"; import "@dojo-ng/date-input"; import "@dojo-ng/time-picker"; import "@dojo-ng/popup-confirmation";
 			import "@dojo-ng/context-menu"; import "@dojo-ng/pagination"; import "@dojo-ng/speed-dial"; import "@dojo-ng/tree"; import "@dojo-ng/grid"; import "@dojo-ng/toolbar"; import "@dojo-ng/chart";
+				import "@dojo-ng/transition"; import "@dojo-ng/transition-group";
 			import { createStore } from "@dojo-ng/store";
 			import { storeContext, ContextProvider, ContextConsumer } from "@dojo-ng/context";
 			import { messages } from "@dojo-ng/i18n";
@@ -604,6 +642,12 @@
 				{ title: "Confirm", subTitle: "Step 3" },
 			];
 			document.getElementById("wizard").activeStep = 1;
+
+			// Animation: transition panel toggle + staggered group reveal
+			const animPanel = document.getElementById("anim-panel");
+			document.getElementById("anim-toggle").addEventListener("click", () => { animPanel.show = !animPanel.show; });
+			const animGroup = document.getElementById("anim-group");
+			document.getElementById("anim-reveal").addEventListener("click", () => { animGroup.show = !animGroup.show; });
 		</script>
 	</body>
 </html>

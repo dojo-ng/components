@@ -65,6 +65,8 @@ import type { DjTimePicker } from "@dojo-ng/time-picker";
 import type { DjTitlePane } from "@dojo-ng/title-pane";
 import type { DjToolbar } from "@dojo-ng/toolbar";
 import type { DjTooltip } from "@dojo-ng/tooltip";
+import type { DjTransition } from "@dojo-ng/transition";
+import type { DjTransitionGroup } from "@dojo-ng/transition-group";
 import type { DjTree } from "@dojo-ng/tree";
 import type { DjTriggerPopup } from "@dojo-ng/trigger-popup";
 import type { DjTwoColumnLayout } from "@dojo-ng/two-column-layout";
@@ -133,6 +135,8 @@ declare module "@vue/runtime-core" {
     "dj-title-pane": DefineComponent<{ name?: DjTitlePane["name"]; open?: DjTitlePane["open"]; closeable?: DjTitlePane["closeable"]; headingLevel?: DjTitlePane["headingLevel"] }, {}, {}, {}, {}, {}, { "dj-toggle": (e: CustomEvent) => void }>;
     "dj-toolbar": DefineComponent<{ label?: DjToolbar["label"]; sticky?: DjToolbar["sticky"]; overflow?: DjToolbar["overflow"]; overflowPosition?: DjToolbar["overflowPosition"] }, {}, {}, {}, {}, {}, { "dj-action": (e: CustomEvent) => void }>;
     "dj-tooltip": DefineComponent<{ open?: DjTooltip["open"]; orientation?: DjTooltip["orientation"] }, {}, {}, {}, {}, {}, {}>;
+    "dj-transition": DefineComponent<{ show?: DjTransition["show"]; appear?: DjTransition["appear"]; state?: DjTransition["state"] }, {}, {}, {}, {}, {}, { "dj-after-enter": (e: CustomEvent) => void, "dj-after-leave": (e: CustomEvent) => void }>;
+    "dj-transition-group": DefineComponent<{ show?: DjTransitionGroup["show"]; stagger?: DjTransitionGroup["stagger"] }, {}, {}, {}, {}, {}, {}>;
     "dj-tree": DefineComponent<{ nodes?: DjTree["nodes"]; value?: DjTree["value"] }, {}, {}, {}, {}, {}, { "dj-select": (e: CustomEvent) => void }>;
     "dj-trigger-popup": DefineComponent<{ open?: DjTriggerPopup["open"]; position?: DjTriggerPopup["position"]; matchWidth?: DjTriggerPopup["matchWidth"]; underlayVisible?: DjTriggerPopup["underlayVisible"] }, {}, {}, {}, {}, {}, { "dj-open": (e: CustomEvent) => void }>;
     "dj-two-column-layout": DefineComponent<{ bias?: DjTwoColumnLayout["bias"] }, {}, {}, {}, {}, {}, {}>;

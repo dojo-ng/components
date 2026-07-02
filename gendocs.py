@@ -19,6 +19,7 @@ GROUPS = [
  ("Charts", ["chart"]),
  ("Editing", ["rich-text"]),
  ("Feedback", ["progress","loading-indicator","global-event"]),
+ ("Animation", ["transition","transition-group"]),
 ]
 
 o = ["# Dojo NG component reference\n",

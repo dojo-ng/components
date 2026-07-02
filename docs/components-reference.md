@@ -289,7 +289,7 @@ Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>
 
 **Events:** `change` (detail: selected values)
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 
 ### `<dj-checkbox>` · `@dojo-ng/checkbox`
@@ -312,7 +312,7 @@ A form-associated checkbox composing `<dj-label>`. Submits `value` (default "on"
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 
 ### `<dj-checkbox-group>` · `@dojo-ng/checkbox-group`
@@ -330,7 +330,7 @@ Multi-select group from `options`; submits each checked value under `name`.
 
 **Events:** `change`
 
-**Methods:** `checkValidity()`
+**Methods:** `checkValidity()`, `restoreFormState(state: File | string | FormData | null)`
 
 
 ### `<dj-radio>` · `@dojo-ng/radio`
@@ -353,7 +353,7 @@ A form-associated radio composing `<dj-label>`. Radios sharing a `name` within t
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 
 ### `<dj-radio-group>` · `@dojo-ng/radio-group`
@@ -398,7 +398,7 @@ A form-associated on/off toggle (role="switch") composing `<dj-label>`. Modeled 
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 
 ### `<dj-slider>` · `@dojo-ng/slider`
@@ -423,7 +423,7 @@ A form-associated single-value range input with a themed track/fill/thumb and op
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 
 ### `<dj-range-slider>` · `@dojo-ng/range-slider`
@@ -447,7 +447,7 @@ A form-associated dual-thumb range. Two overlaid native ranges keep `valueMin <=
 
 **Events:** `change` (detail `{min,max}`)
 
-**Methods:** `checkValidity(): boolean`
+**Methods:** `checkValidity(): boolean`, `restoreFormState(state: File | string | FormData | null)`
 
 
 ### `<dj-rate>` · `@dojo-ng/rate`
@@ -464,7 +464,7 @@ Star rating (0..max). Form-associated. (Half-step `allowHalf` accepted; full-sta
 
 **Events:** `change`
 
-**Methods:** `checkValidity()`
+**Methods:** `checkValidity()`, `restoreFormState(state: File | string | FormData | null)`
 
 
 ### `<dj-date-input>` · `@dojo-ng/date-input`
@@ -1024,7 +1024,7 @@ Compact label/tag. Label in the default slot, optional icon in the `icon` slot. 
 
 ### `<dj-icon>` · `@dojo-ng/icon`
 
-A presentational icon. Supply a glyph either by `type` (mapped to an icon-font class `icon--<type>`) or by slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive tech; without it the icon is aria-hidden.
+A presentational icon. Supply a glyph either by `type` (a name registered via `registerIcon`, resolved from the SVG icon registry) or by slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive tech; without it the icon is aria-hidden.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1113,7 +1113,7 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 
 ### `<dj-rich-text>` · `@dojo-ng/rich-text`
 
-A form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM. The toolbar is built from `dj-button`. Value is HTML. Event: `dj-change`. Spike/v1 scope: bold/italic/underline, undo/redo, HTML in/out, form value. Headings, lists, links, paste sanitization, etc. follow in v2.
+Inline text formats inspected for toolbar active state. */ const TEXT_FORMATS: TextFormatType[] = [ "bold", "italic", "underline", "strikethrough", "code", "subscript", "superscript", "highlight", ]; /** Built-in HTML serializer. `serialize` runs inside an editor read; `deserialize` inside an update. */ const HTML_FORMAT: RichTextFormat = { serialize: (editor) =&gt; $generateHtmlFromNodes(editor, null), deserialize: (editor, data) =&gt; { const root = $getRoot(); root.clear(); const dom = new DOMParser().parseFromString(data || "&lt;p&gt;&lt;/p&gt;", "text/html"); for (const node of $generateNodesFromDOM(editor, dom)) root.append(node); }, }; /** `<dj-rich-text>` — a form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM. The editor is a PLUGIN HOST: bold/italic/underline and undo/redo ship as the default plugin set (`default-plugins.ts`) and flow through the same {@link RichTextPlugin} API third-party plugins use. Foundational behavior (`registerRichText`, value sync, root-element setup) stays as core. Toolbar controls, node registration, and output formats all come from plugins. Constraint: Lexical needs node classes at creation, so a `plugins` change after creation rebuilds the editor (serialize → recreate → deserialize). Value is HTML by default; the `format` property selects an alternate serializer contributed by a plugin. Event: `dj-change`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1122,10 +1122,12 @@ A form-associated WYSIWYG editor built on the Lexical core. The editable region 
 | `label` | label | `string` | — |
 | `placeholder` | placeholder | `string` | `""` |
 | `disabled` | disabled ↻ | `boolean` | `false` |
+| `plugins` | — | `RichTextPlugin[]` | `[]` |
+| `format` | format ↻ | `string` | `"html"` |
 
 **Events:** `dj-change`
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `setHtml(htmlString: string)` (Replace the document with the given HTML.)
+**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `setHtml(htmlString: string)` (Replace the document with the given HTML (regardless of the active `format`).)
 
 
 ## Feedback
@@ -1169,6 +1171,36 @@ Non-visual; attaches listeners to window/document for its lifetime. Set `windowL
 |---|---|---|---|
 | `windowListeners` | — | `Listeners` | `{}` |
 | `documentListeners` | — | `Listeners` | `{}` |
+
+
+## Animation
+
+
+### `<dj-transition>` · `@dojo-ng/transition`
+
+Runs an enter/leave effect when `show` toggles. It defines no effects itself: it reflects a `state` attribute (`entering` | `entered` | `leaving` | `left`) on the host, and the consumer's page CSS attaches the animation to `dj-transition[state="entering"]` / `dj-transition[state="leaving"]`. Enter effects must be `@keyframes` animations (enter-by-transition is not supported in v1); leave effects may be an animation or transitioned properties. The wrapper stays mounted through the leave effect, then hides via `display: none` at `state="left"`. Rapid toggling cancels the in-flight phase cleanly and fires no event for it.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `show` | show ↻ | `boolean` | `false` |
+| `appear` | appear ↻ | `boolean` | `false` |
+| `state` | state ↻ | `"entering" \| "entered" \| "leaving" \| "left"` | — |
+
+**Slots:** default
+
+**Events:** `dj-after-enter`, `dj-after-leave`
+
+
+### `<dj-transition-group>` · `@dojo-ng/transition-group`
+
+Coordinates slotted `dj-transition` children, staggering their `show` toggles. When the group's `show` changes it drives each child's `show` in DOM order, child `i` after `i * stagger` ms, for both enter and leave. When every child has completed its phase it emits one group `dj-after-enter` (or `dj-after-leave`). v1 is stagger only: no FLIP/list-move animation and no `appear` forwarding (set `appear` on the children directly). Non-`dj-transition` slotted elements are ignored.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `show` | show ↻ | `boolean` | `false` |
+| `stagger` | stagger | `number` | `0` |
+
+**Slots:** default
 
 
 ## Utilities and infrastructure

@@ -8400,6 +8400,187 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/transition/src/dj-transition.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjTransition",
+          "customElement": true,
+          "tagName": "dj-transition",
+          "description": "runs an enter/leave effect when `show` toggles. It defines no effects itself: it reflects a `state` attribute (`entering` | `entered` | `leaving` | `left`) on the host, and the consumer's page CSS attaches the animation to `dj-transition[state=\"entering\"]` / `dj-transition[state=\"leaving\"]`. Enter effects must be `@keyframes` animations (enter-by-transition is not supported in v1); leave effects may be an animation or transitioned properties. The wrapper stays mounted through the leave effect, then hides via `display: none` at `state=\"left\"`. Rapid toggling cancels the in-flight phase cleanly and fires no event for it.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "show",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Target visibility. Toggling runs the enter or leave effect.",
+              "attribute": "show",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "appear",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Run the enter effect on initial mount when `show` starts true.",
+              "attribute": "appear",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "state",
+              "type": {
+                "text": "\"entering\" | \"entered\" | \"leaving\" | \"left\""
+              },
+              "description": "Managed by the component; consumers treat it as read-only.",
+              "attribute": "state",
+              "reflects": true
+            }
+          ],
+          "attributes": [
+            {
+              "name": "show",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "show",
+              "description": "Target visibility. Toggling runs the enter or leave effect."
+            },
+            {
+              "name": "appear",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "appear",
+              "description": "Run the enter effect on initial mount when `show` starts true."
+            },
+            {
+              "name": "state",
+              "type": {
+                "text": "\"entering\" | \"entered\" | \"leaving\" | \"left\""
+              },
+              "fieldName": "state",
+              "description": "Managed by the component; consumers treat it as read-only."
+            }
+          ],
+          "slots": [
+            {
+              "name": "",
+              "description": ""
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-after-enter",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            },
+            {
+              "name": "dj-after-leave",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-transition",
+          "declaration": {
+            "name": "DjTransition",
+            "module": "packages/transition/src/dj-transition.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "packages/transition-group/src/dj-transition-group.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjTransitionGroup",
+          "customElement": true,
+          "tagName": "dj-transition-group",
+          "description": "coordinates slotted `dj-transition` children, staggering their `show` toggles. When the group's `show` changes it drives each child's `show` in DOM order, child `i` after `i * stagger` ms, for both enter and leave. When every child has completed its phase it emits one group `dj-after-enter` (or `dj-after-leave`). v1 is stagger only: no FLIP/list-move animation and no `appear` forwarding (set `appear` on the children directly). Non-`dj-transition` slotted elements are ignored.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "show",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Target visibility, propagated to the children with a stagger.",
+              "attribute": "show",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "stagger",
+              "type": {
+                "text": "number"
+              },
+              "default": "0",
+              "description": "Milliseconds between successive children. 0 = all in the same tick.",
+              "attribute": "stagger"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "show",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "show",
+              "description": "Target visibility, propagated to the children with a stagger."
+            },
+            {
+              "name": "stagger",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "stagger",
+              "description": "Milliseconds between successive children. 0 = all in the same tick."
+            }
+          ],
+          "slots": [
+            {
+              "name": "",
+              "description": ""
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-transition-group",
+          "declaration": {
+            "name": "DjTransitionGroup",
+            "module": "packages/transition-group/src/dj-transition-group.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/tree/src/tree.ts",
       "declarations": [
         {

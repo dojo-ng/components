@@ -62,6 +62,12 @@
       ],
       "@dojo-ng/typeahead": [
         "./packages/typeahead/dist/index.d.ts"
+      ],
+      "@dojo-ng/transition": [
+        "./packages/transition/dist/index.d.ts"
+      ],
+      "@dojo-ng/transition-group": [
+        "./packages/transition-group/dist/index.d.ts"
       ]
     }
   }

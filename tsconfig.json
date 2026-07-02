@@ -216,6 +216,12 @@
     },
     {
       "path": "packages/chart"
+    },
+    {
+      "path": "packages/transition"
+    },
+    {
+      "path": "packages/transition-group"
     }
   ]
 }

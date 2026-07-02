@@ -209,6 +209,9 @@
       "path": "packages/data-grid"
     },
     {
+      "path": "packages/data-grid-formats"
+    },
+    {
       "path": "packages/i18n"
     },
     {

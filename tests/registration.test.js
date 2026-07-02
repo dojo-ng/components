@@ -92,6 +92,7 @@ const SUPPORT_PACKAGES = [
 	"pubsub",
 	"rich-text-headings",
 	"rich-text-lists",
+	"data-grid-formats",
 ];
 
 for (const pkg of SUPPORT_PACKAGES) {

@@ -2,9 +2,13 @@ import { css } from "lit";
 export default css`
 	:host { display: block; }
 	:host([hidden]) { display: none; }
+	.wrap { display: flex; flex-direction: column; }
+	.chrome { display: flex; align-items: center; gap: var(--dj-spacing-small, .75rem); padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); }
 	.grid { border: 1px solid var(--dj-color-border, #d1d5db); border-radius: var(--dj-input-border-radius-medium, .25rem); overflow: hidden; font-size: var(--dj-font-size-medium, 1rem); background: var(--dj-color-background, #fff); color: var(--dj-color-text, #1f2937); }
 	.row { display: grid; align-items: center; }
 	.head { position: sticky; top: 0; z-index: 1; background: var(--dj-color-neutral-50, #f9fafb); border-bottom: 1px solid var(--dj-color-border, #d1d5db); }
+	.subhead { background: var(--dj-color-neutral-50, #f9fafb); border-bottom: 1px solid var(--dj-color-border, #d1d5db); }
+	.subcell { padding: var(--dj-spacing-3x-small, .25rem) var(--dj-spacing-small, .75rem); }
 	.hcell { display: flex; align-items: center; gap: .25rem; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); font-weight: var(--dj-font-weight-semibold, 600); color: var(--dj-color-text-muted, #6b7280); user-select: none; }
 	.hcell.sortable { cursor: pointer; } .hcell.sortable:hover { color: var(--dj-color-text, #1f2937); }
 	.sortind { display: inline-flex; opacity: .7; width: 1em; }

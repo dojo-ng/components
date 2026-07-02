@@ -33,6 +33,9 @@
       "@dojo-ng/i18n": [
         "./packages/i18n/dist/index.d.ts"
       ],
+      "@dojo-ng/data-grid-formats": [
+        "./packages/data-grid-formats/dist/index.d.ts"
+      ],
       "@dojo-ng/toolbar": [
         "./packages/toolbar/dist/index.d.ts"
       ],

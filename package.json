@@ -19,9 +19,10 @@
     "serve": "python3 -m http.server 8080",
     "start": "npm run build && npm run serve",
     "changeset": "changeset",
-    "version-packages": "changeset version",
+    "version-packages": "changeset version && python3 genversions.py",
     "release": "npm run build && changeset publish",
-    "test": "node --conditions=browser --test tests/registration.test.js tests/form-controls.test.js tests/radio-group.test.js tests/list.test.js tests/popup.test.js tests/scroll-lock.test.js tests/focus-trap.test.js tests/form-participation.test.js tests/data-grid.test.js tests/i18n.test.js tests/store.test.js tests/pubsub.test.js"
+    "test:generators": "python3 -m unittest discover -s tests/generators -p \"test_*.py\"",
+    "test": "node --conditions=browser --test tests/registration.test.js tests/form-controls.test.js tests/radio-group.test.js tests/list.test.js tests/popup.test.js tests/scroll-lock.test.js tests/focus-trap.test.js tests/form-participation.test.js tests/data-grid.test.js tests/icon.test.js tests/i18n.test.js tests/store.test.js tests/pubsub.test.js"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

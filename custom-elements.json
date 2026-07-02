@@ -1379,6 +1379,18 @@
                   }
                 }
               ]
+            },
+            {
+              "kind": "method",
+              "name": "restoreFormState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "type": {
+                    "text": "File | string | FormData | null"
+                  }
+                }
+              ]
             }
           ],
           "attributes": [
@@ -1540,6 +1552,18 @@
             {
               "kind": "method",
               "name": "checkValidity"
+            },
+            {
+              "kind": "method",
+              "name": "restoreFormState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "type": {
+                    "text": "File | string | FormData | null"
+                  }
+                }
+              ]
             }
           ],
           "attributes": [
@@ -1836,6 +1860,18 @@
                   "name": "o",
                   "type": {
                     "text": "FocusOptions"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "restoreFormState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "type": {
+                    "text": "File | string | FormData | null"
                   }
                 }
               ]
@@ -3156,7 +3192,7 @@
           "name": "DjIcon",
           "customElement": true,
           "tagName": "dj-icon",
-          "description": "a presentational icon. Supply a glyph either by `type` (mapped to an icon-font class `icon--<type>`) or by slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive tech; without it the icon is aria-hidden.",
+          "description": "a presentational icon. Supply a glyph either by `type` (a name registered via `registerIcon`, resolved from the SVG icon registry) or by slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive tech; without it the icon is aria-hidden.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -3168,7 +3204,7 @@
                 "text": "string"
               },
               "default": "\"\"",
-              "description": "Icon type/name; applied as the class `icon--<type>` for icon-font themes.",
+              "description": "Registered icon name; resolved to an inline SVG from the icon registry.",
               "attribute": "type"
             },
             {
@@ -3198,7 +3234,7 @@
                 "text": "string"
               },
               "fieldName": "type",
-              "description": "Icon type/name; applied as the class `icon--<type>` for icon-font themes."
+              "description": "Registered icon name; resolved to an inline SVG from the icon registry."
             },
             {
               "name": "size",
@@ -4644,6 +4680,18 @@
                   }
                 }
               ]
+            },
+            {
+              "kind": "method",
+              "name": "restoreFormState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "type": {
+                    "text": "File | string | FormData | null"
+                  }
+                }
+              ]
             }
           ],
           "attributes": [
@@ -5034,6 +5082,18 @@
                   "text": "boolean"
                 }
               }
+            },
+            {
+              "kind": "method",
+              "name": "restoreFormState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "type": {
+                    "text": "File | string | FormData | null"
+                  }
+                }
+              ]
             }
           ],
           "attributes": [
@@ -5210,6 +5270,18 @@
             {
               "kind": "method",
               "name": "checkValidity"
+            },
+            {
+              "kind": "method",
+              "name": "restoreFormState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "type": {
+                    "text": "File | string | FormData | null"
+                  }
+                }
+              ]
             }
           ],
           "attributes": [
@@ -5382,7 +5454,7 @@
           "name": "DjRichText",
           "customElement": true,
           "tagName": "dj-rich-text",
-          "description": "a form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM. The toolbar is built from `dj-button`. Value is HTML. Event: `dj-change`. Spike/v1 scope: bold/italic/underline, undo/redo, HTML in/out, form value. Headings, lists, links, paste sanitization, etc. follow in v2.",
+          "description": "Inline text formats inspected for toolbar active state. */ const TEXT_FORMATS: TextFormatType[] = [ \"bold\", \"italic\", \"underline\", \"strikethrough\", \"code\", \"subscript\", \"superscript\", \"highlight\", ]; /** Built-in HTML serializer. `serialize` runs inside an editor read; `deserialize` inside an update. */ const HTML_FORMAT: RichTextFormat = { serialize: (editor) => $generateHtmlFromNodes(editor, null), deserialize: (editor, data) => { const root = $getRoot(); root.clear(); const dom = new DOMParser().parseFromString(data || \"<p></p>\", \"text/html\"); for (const node of $generateNodesFromDOM(editor, dom)) root.append(node); }, }; /** `<dj-rich-text>` \u2014 a form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM. The editor is a PLUGIN HOST: bold/italic/underline and undo/redo ship as the default plugin set (`default-plugins.ts`) and flow through the same {@link RichTextPlugin} API third-party plugins use. Foundational behavior (`registerRichText`, value sync, root-element setup) stays as core. Toolbar controls, node registration, and output formats all come from plugins. Constraint: Lexical needs node classes at creation, so a `plugins` change after creation rebuilds the editor (serialize \u2192 recreate \u2192 deserialize). Value is HTML by default; the `format` property selects an alternate serializer contributed by a plugin. Event: `dj-change`.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -5433,6 +5505,26 @@
               "reflects": true
             },
             {
+              "kind": "field",
+              "name": "plugins",
+              "type": {
+                "text": "RichTextPlugin[]"
+              },
+              "default": "[]",
+              "description": "Plugin set. Set in JavaScript (rich data). The default set is used when this is empty."
+            },
+            {
+              "kind": "field",
+              "name": "format",
+              "type": {
+                "text": "string"
+              },
+              "default": "\"html\"",
+              "description": "Output format; selects which serializer the value getter/setter uses. `\"html\"` is built in.",
+              "attribute": "format",
+              "reflects": true
+            },
+            {
               "kind": "method",
               "name": "checkValidity",
               "return": {
@@ -5456,7 +5548,7 @@
             {
               "kind": "method",
               "name": "setHtml",
-              "description": "Replace the document with the given HTML.",
+              "description": "Replace the document with the given HTML (regardless of the active `format`).",
               "parameters": [
                 {
                   "name": "htmlString",
@@ -5502,6 +5594,14 @@
                 "text": "boolean"
               },
               "fieldName": "disabled"
+            },
+            {
+              "name": "format",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "format",
+              "description": "Output format; selects which serializer the value getter/setter uses. `\"html\"` is built in."
             }
           ],
           "events": [
@@ -6078,6 +6178,18 @@
                   }
                 }
               ]
+            },
+            {
+              "kind": "method",
+              "name": "restoreFormState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "type": {
+                    "text": "File | string | FormData | null"
+                  }
+                }
+              ]
             }
           ],
           "attributes": [
@@ -6601,6 +6713,18 @@
                   "name": "options",
                   "type": {
                     "text": "FocusOptions"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "restoreFormState",
+              "parameters": [
+                {
+                  "name": "state",
+                  "type": {
+                    "text": "File | string | FormData | null"
                   }
                 }
               ]

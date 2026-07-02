@@ -47,7 +47,7 @@ Selections render as removable chips; submits each value under `name`.
 
 **Events:** `change` (detail: selected values)
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

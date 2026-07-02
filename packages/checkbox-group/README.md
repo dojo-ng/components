@@ -41,7 +41,7 @@ Submits each checked value under `name`.
 
 **Events:** `change`
 
-**Methods:** `checkValidity()`
+**Methods:** `checkValidity()`, `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

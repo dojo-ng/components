@@ -351,6 +351,8 @@ declare module "solid-js" {
         "label"?: DjRichText["label"];
         "placeholder"?: DjRichText["placeholder"];
         "disabled"?: DjRichText["disabled"];
+        "plugins"?: DjRichText["plugins"];
+        "format"?: DjRichText["format"];
       };
       "dj-select": JSX.HTMLAttributes<DjSelect> & {
         "options"?: DjSelect["options"];

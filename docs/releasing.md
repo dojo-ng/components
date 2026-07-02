@@ -12,7 +12,11 @@ that changed plus the packages that depend on them. Packages publish to public n
 2. To cut a release, a maintainer runs `npm run version-packages`. Changesets consumes the pending
    changeset files, bumps each affected package's version, rewrites the internal dependency ranges
    (`@dojo-ng/*` deps are bumped by a patch when a dependency releases), and writes each package's
-   `CHANGELOG.md`.
+   `CHANGELOG.md`. The script then runs `python3 genversions.py`, which rewrites each element's
+   `static version` literal to match its new package.json `version` (that literal is what
+   `DojoElement.define()` reports in a tag-registration conflict, so it must track the release
+   version). `genversions.py` is idempotent — it only rewrites where the value differs — so it is
+   safe to run any time; commit its diff together with the Changesets bump.
 3. Review and commit that diff with Mercurial.
 4. `npm run release` builds the workspace and runs `changeset publish`, which publishes the newly
    bumped packages to npm. It needs an `NPM_TOKEN` with publish rights to the `dojo-ng` org,

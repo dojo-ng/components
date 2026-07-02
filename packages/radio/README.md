@@ -43,7 +43,7 @@ Radios sharing a `name` are mutually exclusive. Prefer `dj-radio-group` for a ma
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

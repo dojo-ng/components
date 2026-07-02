@@ -1,13 +1,11 @@
 # @dojo-ng/rich-text-headings
 
-Headings plugin for [`@dojo-ng/rich-text`](../rich-text). Adds a block-type select to the toolbar that converts the current block to a paragraph, Heading 1–3, or quote, and registers the heading and quote node classes the editor needs to render them.
+Headings/quote plugin for @dojo-ng/rich-text
 
-```js
-import { defaultPlugins } from "@dojo-ng/rich-text";
-import { headingsPlugin } from "@dojo-ng/rich-text-headings";
+Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
 
-const editor = document.querySelector("dj-rich-text");
-editor.plugins = [headingsPlugin, ...defaultPlugins];
+## Install
+
+```bash
+npm install @dojo-ng/rich-text-headings
 ```
-
-The plugin set replaces the default set, so spread `defaultPlugins` to keep bold/italic/underline and undo/redo alongside headings.

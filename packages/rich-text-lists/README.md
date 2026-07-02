@@ -1,13 +1,11 @@
 # @dojo-ng/rich-text-lists
 
-List plugin for [`@dojo-ng/rich-text`](../rich-text). Adds bulleted and numbered list buttons to the toolbar, registers the list node classes, and installs Lexical's list behavior. Each button toggles the selection in and out of its list type.
+Bulleted/numbered list plugin for @dojo-ng/rich-text
 
-```js
-import { defaultPlugins } from "@dojo-ng/rich-text";
-import { listsPlugin } from "@dojo-ng/rich-text-lists";
+Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
 
-const editor = document.querySelector("dj-rich-text");
-editor.plugins = [listsPlugin, ...defaultPlugins];
+## Install
+
+```bash
+npm install @dojo-ng/rich-text-lists
 ```
-
-The plugin set replaces the default set, so spread `defaultPlugins` to keep bold/italic/underline and undo/redo alongside lists.

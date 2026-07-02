@@ -42,7 +42,7 @@ Slot the label; listen for `change`.
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

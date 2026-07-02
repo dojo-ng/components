@@ -1,10 +1,10 @@
 # @dojo-ng/rich-text
 
-`<dj-rich-text>` — A form-associated WYSIWYG editor built on the Lexical core.
+`<dj-rich-text>` — Inline text formats inspected for toolbar active state.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM. The toolbar is built from `dj-button`. Value is HTML. Event: `dj-change`. Spike/v1 scope: bold/italic/underline, undo/redo, HTML in/out, form value. Headings, lists, links, paste sanitization, etc. follow in v2.
+Inline text formats inspected for toolbar active state. */ const TEXT_FORMATS: TextFormatType[] = [ "bold", "italic", "underline", "strikethrough", "code", "subscript", "superscript", "highlight", ]; /** Built-in HTML serializer. `serialize` runs inside an editor read; `deserialize` inside an update. */ const HTML_FORMAT: RichTextFormat = { serialize: (editor) =&gt; $generateHtmlFromNodes(editor, null), deserialize: (editor, data) =&gt; { const root = $getRoot(); root.clear(); const dom = new DOMParser().parseFromString(data || "&lt;p&gt;&lt;/p&gt;", "text/html"); for (const node of $generateNodesFromDOM(editor, dom)) root.append(node); }, }; /** `<dj-rich-text>` — a form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM. The editor is a PLUGIN HOST: bold/italic/underline and undo/redo ship as the default plugin set (`default-plugins.ts`) and flow through the same {@link RichTextPlugin} API third-party plugins use. Foundational behavior (`registerRichText`, value sync, root-element setup) stays as core. Toolbar controls, node registration, and output formats all come from plugins. Constraint: Lexical needs node classes at creation, so a `plugins` change after creation rebuilds the editor (serialize → recreate → deserialize). Value is HTML by default; the `format` property selects an alternate serializer contributed by a plugin. Event: `dj-change`.
 
 ## Install
 
@@ -37,10 +37,12 @@ Lexical-based; set and read `value` (HTML).
 | `label` | label | `string` | — |
 | `placeholder` | placeholder | `string` | `""` |
 | `disabled` | disabled ↻ | `boolean` | `false` |
+| `plugins` | — | `RichTextPlugin[]` | `[]` |
+| `format` | format ↻ | `string` | `"html"` |
 
 **Events:** `dj-change`
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `setHtml(htmlString: string)` (Replace the document with the given HTML.)
+**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `setHtml(htmlString: string)` (Replace the document with the given HTML (regardless of the active `format`).)
 
 ## Theming
 

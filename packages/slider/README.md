@@ -44,7 +44,7 @@ Import the package to register the custom element, then use the tag.
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

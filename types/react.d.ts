@@ -355,6 +355,8 @@ declare module "react" {
         "label"?: DjRichText["label"];
         "placeholder"?: DjRichText["placeholder"];
         "disabled"?: DjRichText["disabled"];
+        "plugins"?: DjRichText["plugins"];
+        "format"?: DjRichText["format"];
       };
       "dj-select": DjProps<DjSelect> & {
         "options"?: DjSelect["options"];

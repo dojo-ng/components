@@ -43,7 +43,7 @@ Reads back as `{ min, max }`; submits `<name>_min` and `<name>_max`.
 
 **Events:** `change` (detail `{min,max}`)
 
-**Methods:** `checkValidity(): boolean`
+**Methods:** `checkValidity(): boolean`, `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

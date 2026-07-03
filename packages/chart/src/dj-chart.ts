@@ -496,6 +496,13 @@ export class DjChart extends DojoElement {
 		const slices = pieArcs(this.data, this.categoryKey, valueKey, R, innerR);
 		// Center label: only for donut (a pie has no hole); sized from the hole radius, token-colored.
 		const showCenter = this.type === "donut" && !!this.centerLabel;
+		const labelSize = centerLabelSize(innerR);
+		const subSize = centerSubLabelSize(innerR);
+		const hasSub = !!this.centerSubLabel;
+		// Render the value and sub-label as two INDEPENDENT, middle-anchored <text> elements — not
+		// one <text> with a <tspan>. A shared text element puts the value run and the sub-label run
+		// in one bidi paragraph under one text-anchor, which in RTL (e.g. ar-EG) reorders the runs
+		// and clips the label. Separate, bidi-isolated runs each center on x=0 in any direction.
 		return html`
 			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot">
 				<g transform="translate(${W / 2},${H / 2})" part="series">
@@ -504,9 +511,9 @@ export class DjChart extends DojoElement {
 							@pointerenter=${() => this.onHover(sl.category)} @pointerleave=${() => this.onHover(null)}></path>`,
 					)}
 					${showCenter
-						? svg`<text class="center-label" part="center-label" text-anchor="middle" dominant-baseline="central" font-size="${centerLabelSize(innerR)}">${this.centerLabel}${this.centerSubLabel
-								? svg`<tspan class="center-sub-label" part="center-sub-label" x="0" dy="1.4em" font-size="${centerSubLabelSize(innerR)}">${this.centerSubLabel}</tspan>`
-								: nothing}</text>`
+						? svg`<text class="center-label" part="center-label" x="0" y="${hasSub ? -subSize * 0.7 : 0}" text-anchor="middle" dominant-baseline="central" font-size="${labelSize}">${this.centerLabel}</text>${hasSub
+								? svg`<text class="center-sub-label" part="center-sub-label" x="0" y="${labelSize * 0.55}" text-anchor="middle" dominant-baseline="central" font-size="${subSize}">${this.centerSubLabel}</text>`
+								: nothing}`
 						: nothing}
 				</g>
 			</svg>

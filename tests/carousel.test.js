@@ -129,6 +129,29 @@ test("dots render one per item and clicking a dot navigates", async () => {
 	assert.deepEqual(events, [2]);
 });
 
+test("per-view > 1: dots and end-detection use reachable pages, not item count", async () => {
+	// 5 items shown 3 at a time → 3 reachable leading positions (5 - 3 + 1), so 3 dots.
+	const el = await build({ dots: true, perView: 3 }, 5);
+	assert.equal(dotsOf(el).length, 3, "one dot per reachable page");
+	const events = [];
+	el.addEventListener("dj-slide-change", (e) => events.push(e.detail.index));
+	el.goTo(4); // beyond the last page → clamps to the last leading index (2)
+	await settled(el);
+	assert.equal(el.index, 2, "goTo clamps to total - per-view");
+	assert.deepEqual(events, [2]);
+	assert.equal(navBtn(el, "next").disabled, true, "next disabled at the last page");
+});
+
+test("raising per-view pulls a stale index back into range", async () => {
+	const el = await build({ perView: 1 }, 5);
+	el.goTo(4);
+	await settled(el);
+	assert.equal(el.index, 4);
+	el.perView = 3; // max index now 2
+	await settled(el);
+	assert.equal(el.index, 2, "current clamped down silently on per-view change");
+});
+
 test("ArrowRight on the viewport advances (LTR)", async () => {
 	const el = await build({}, 3);
 	const events = [];

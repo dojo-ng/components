@@ -22,7 +22,8 @@ const EN: Record<string, string> = {
  * scroll container with CSS scroll-snap, so touch and trackpad swiping is real scrolling: there
  * is no pointer/drag code and no WCAG 2.5.7 (dragging) concern — the prev/next buttons are the
  * non-drag path. `per-view` sizes items to show N at once (gap-adjusted); `dots` adds one dot per
- * item; `nav` (default on) shows prev/next buttons that disable at the ends (no looping in v1).
+ * navigable page (with `per-view` > 1 the trailing items can't lead, so pages = items − per-view +
+ * 1); `nav` (default on) shows prev/next buttons that disable at the ends (no looping in v1).
  *
  * The settled index is detected from element rects (not `scrollLeft`, which is RTL-inconsistent),
  * debounced after scrolling. `next`/`previous`/`goTo` smooth-scroll the target into view and,
@@ -52,7 +53,7 @@ export class DjCarousel extends DojoElement {
 	@property({ attribute: "per-view", type: Number }) perView = 1;
 	/** Show prev/next buttons (disabled at the ends). */
 	@property({ type: Boolean }) nav = true;
-	/** Show one navigation dot per item. */
+	/** Show one navigation dot per page (a page is a leading position; see `per-view`). */
 	@property({ type: Boolean }) dots = false;
 	/** Accessible name for the carousel region (recommended). */
 	@property() label?: string;
@@ -123,6 +124,15 @@ export class DjCarousel extends DojoElement {
 		});
 	}
 
+	protected override willUpdate(changed: Map<PropertyKey, unknown>) {
+		// A larger per-view (or fewer items) shrinks the reachable range; pull a stale current
+		// index back in silently (no event — this is a reflow, not a user navigation).
+		if (changed.has("perView") || changed.has("itemCount")) {
+			const max = this.#maxIndex();
+			if (this.current > max) this.current = max;
+		}
+	}
+
 	protected override firstUpdated() {
 		// Capture items present at first render: an initial slot assignment of pre-existing
 		// children does not always fire `slotchange`. Idempotent with the slotchange handler.
@@ -143,11 +153,23 @@ export class DjCarousel extends DojoElement {
 		return reduce ? "auto" : "smooth";
 	}
 
-	/** Update the settled index and emit once; a repeat of the same index is a no-op (no re-emit). */
+	/** Items shown at once (integer, at least 1). */
+	#perView(): number {
+		return Math.max(1, Math.floor(this.perView));
+	}
+	/** The last reachable LEADING index. With `per-view` > 1 the final items can't lead the
+	 * viewport (no room to scroll), so navigable positions ("pages") = total − per-view + 1. */
+	#maxIndex(): number {
+		return Math.max(0, this.#items.length - this.#perView());
+	}
+
+	/** Update the settled index and emit once; a repeat of the same index is a no-op (no re-emit).
+	 * Clamped to the reachable range so the last page never over-reports. */
 	private setIndex(i: number) {
-		if (i === this.current) return;
-		this.current = i;
-		this.emit("dj-slide-change", { detail: { index: i } });
+		const clamped = Math.max(0, Math.min(i, this.#maxIndex()));
+		if (clamped === this.current) return;
+		this.current = clamped;
+		this.emit("dj-slide-change", { detail: { index: clamped } });
 	}
 
 	next() {
@@ -159,7 +181,7 @@ export class DjCarousel extends DojoElement {
 	goTo(index: number) {
 		const total = this.#items.length;
 		if (total === 0) return;
-		const target = Math.max(0, Math.min(index, total - 1));
+		const target = Math.max(0, Math.min(index, this.#maxIndex()));
 		const el = this.#items[target];
 		if (el && typeof el.scrollIntoView === "function") {
 			el.scrollIntoView({ behavior: this.#scrollBehavior(), inline: "start", block: "nearest" });
@@ -206,8 +228,12 @@ export class DjCarousel extends DojoElement {
 
 	override render() {
 		const total = this.itemCount;
+		// Dots and end-detection use navigable PAGES (leading positions), not raw item count:
+		// with per-view > 1 the last items can't lead, so pages = total − per-view + 1.
+		const pages = total > 0 ? Math.max(0, total - this.#perView()) + 1 : 0;
+		const maxIndex = Math.max(0, pages - 1);
 		const atStart = this.current <= 0;
-		const atEnd = this.current >= total - 1;
+		const atEnd = this.current >= maxIndex;
 		return html`
 			<div class="region" role="region" aria-roledescription=${this.#msg("carousel")} aria-label=${this.label ?? nothing}>
 				<div class="track">
@@ -221,13 +247,13 @@ export class DjCarousel extends DojoElement {
 						? html`<button type="button" part="next" class="nav nav--next" aria-label=${this.#msg("nextSlide")} ?disabled=${atEnd || total === 0} @click=${() => this.next()}>›</button>`
 						: nothing}
 				</div>
-				${this.dots && total > 0
+				${this.dots && pages > 0
 					? html`<div class="dots" part="dots">
-							${Array.from({ length: total }, (_, i) => html`<button
+							${Array.from({ length: pages }, (_, i) => html`<button
 										type="button"
 										part="dot"
 										class="dot ${i === this.current ? "dot--active" : ""}"
-										aria-label=${this.#msg("slideOf", { n: i + 1, total })}
+										aria-label=${this.#msg("slideOf", { n: i + 1, total: pages })}
 										aria-current=${i === this.current ? "true" : nothing}
 										@click=${() => this.goTo(i)}
 									></button>`)}

@@ -912,6 +912,32 @@ A hierarchical tree from `nodes`. Click a parent's chevron to expand; click a no
 ## Data display
 
 
+### `<dj-board>` · `@dojo-ng/board`
+
+A lane definition: the `group-by` value it collects, an optional header label (defaults to the value), and an optional advisory WIP limit. */ export interface BoardLane { value: string; label?: string; limit?: number; } /** The move menu's context: which card it is open for, and where that card sits. */ interface MenuContext { card: Card; key: unknown; laneValue: string; index: number; laneLen: number; } /** `<dj-board>` — a Kanban board over plain records. Lanes are the values of one field (`group-by`); cards are the records of `data`, ordered within a lane by their order of appearance. The board is CONTROLLED: it never mutates `data` — every move (menu, keyboard) emits `dj-card-move` and the app applies it (the exported `applyCardMove` helper makes that one line); focus then follows the moved card and the move is announced to assistive tech once the app's data update lands. Card content comes from `renderCard`, rendered inside the component-owned accessible shell (so custom cards cannot regress accessibility), or defaults to a `dj-card` showing the `card-title` field. Keyboard: one tab stop (roving); arrows move between cards and lanes, Home/End within a lane, Enter activates, Space or M opens the move menu, and Ctrl/Cmd+arrows move the card itself. WIP limits are advisory (`n/limit` count and an over-limit style hook, never blocking).
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `data` | — | `Card[]` | `[]` |
+| `lanes` | — | `BoardLane[]` | `[]` |
+| `groupBy` | group-by | `string` | `"status"` |
+| `cardKey` | card-key | `string` | `"id"` |
+| `cardTitle` | card-title | `string` | `"title"` |
+| `label` | label | `string` | — |
+| `renderCard` | — | `(card: Card) => TemplateResult` | — |
+
+**Slots:** `none` (cards come from `data`)
+
+**Parts:** `board`, `lane`, `lane-over`, `lane-header`, `lane-title`, `lane-count`, `lane-body`, `card`, `move-button`, `lane${over`, `?`
+
+**Events:** `dj-card-move` (detail `{ card, key, from, to, fromIndex, toIndex }`; the board never
+applies it itself), `dj-card-click` (detail `{ card, key }`)
+
+**Methods:** `effectiveLanes(): BoardLane[]` (The lanes to display: the `lanes` property, or distinct `group-by` values in data order.)
+
+**CSS properties:** `--dj-board-lane-width` (default `18rem`; Fixed width of each lane.), `--dj-board-gap` (default `1rem`; Gap between lanes.)
+
+
 ### `<dj-list>` · `@dojo-ng/list`
 
 A single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. Virtualization and drag-reorder are deferred. Parts: `list`, `item`. @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.

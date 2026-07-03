@@ -6,6 +6,7 @@ import type { JSX } from "solid-js";
 import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
 import type { DjAvatar } from "@dojo-ng/avatar";
+import type { DjBoard } from "@dojo-ng/board";
 import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
 import type { DjButton } from "@dojo-ng/button";
 import type { DjCalendar } from "@dojo-ng/calendar";
@@ -85,6 +86,15 @@ declare module "solid-js" {
         "alt"?: DjAvatar["alt"];
         "secondary"?: DjAvatar["secondary"];
         "outline"?: DjAvatar["outline"];
+      };
+      "dj-board": JSX.HTMLAttributes<DjBoard> & {
+        "data"?: DjBoard["data"];
+        "lanes"?: DjBoard["lanes"];
+        "group-by"?: DjBoard["groupBy"];
+        "card-key"?: DjBoard["cardKey"];
+        "card-title"?: DjBoard["cardTitle"];
+        "label"?: DjBoard["label"];
+        "renderCard"?: DjBoard["renderCard"];
       };
       "dj-breadcrumb-group": JSX.HTMLAttributes<DjBreadcrumbGroup> & {
         "items"?: DjBreadcrumbGroup["items"];
@@ -534,6 +544,8 @@ declare module "solid-js" {
       };
     }
     interface CustomEvents {
+      "dj-card-move": CustomEvent;
+      "dj-card-click": CustomEvent;
       "change": CustomEvent;
       "dj-legend-toggle": CustomEvent;
       "dj-hover": CustomEvent;
@@ -556,6 +568,8 @@ declare module "solid-js" {
       "dj-step": CustomEvent;
     }
     interface CustomCaptureEvents {
+      "dj-card-move": CustomEvent;
+      "dj-card-click": CustomEvent;
       "change": CustomEvent;
       "dj-legend-toggle": CustomEvent;
       "dj-hover": CustomEvent;

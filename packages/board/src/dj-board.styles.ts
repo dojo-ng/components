@@ -55,6 +55,16 @@ export default css`
 	}
 	.move-btn:hover { color: var(--dj-color-text, #1f2937); background: var(--dj-color-neutral-100, #f3f4f6); }
 	.move-btn:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: var(--dj-focus-ring-offset, 1px); }
+	.card { border-radius: var(--dj-input-border-radius-medium, .25rem); }
+	.card:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: var(--dj-focus-ring-offset, 1px); }
+	.announce {
+		position: absolute;
+		width: 1px; height: 1px;
+		margin: -1px; padding: 0; border: 0;
+		clip-path: inset(50%);
+		overflow: hidden;
+		white-space: nowrap;
+	}
 	@media (forced-colors: active) {
 		.lane, .card { border: 1px solid CanvasText; }
 		.move-btn:focus-visible { outline: 2px solid Highlight; }

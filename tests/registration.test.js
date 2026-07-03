@@ -10,6 +10,7 @@ const ELEMENT_PACKAGES = [
 	"accordion",
 	"action-button",
 	"avatar",
+	"board",
 	"breadcrumb-group",
 	"button",
 	"calendar",

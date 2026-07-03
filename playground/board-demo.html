@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — Kanban board demo</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/i18n": "../packages/i18n/dist/index.js",
+					"@dojo-ng/icon": "../packages/icon/dist/index.js",
+					"@dojo-ng/loading-indicator": "../packages/loading-indicator/dist/index.js",
+					"@dojo-ng/card": "../packages/card/dist/index.js",
+					"@dojo-ng/popup": "../packages/popup/dist/index.js",
+					"@dojo-ng/list": "../packages/list/dist/index.js",
+					"@dojo-ng/board": "../packages/board/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			h1 { font-size: 1.2rem; }
+			.hint { color: var(--dj-color-text-muted); max-width: 56rem; }
+			.bar { display: flex; gap: 1.5rem; align-items: center; margin: .75rem 0 1.25rem; flex-wrap: wrap; }
+			dj-board { max-width: 60rem; }
+			pre { background: var(--dj-color-neutral-100); padding: .5rem .75rem; border-radius: .375rem; max-width: 56rem; }
+			.assignee { color: var(--dj-color-text-muted); font-size: .875rem; }
+		</style>
+	</head>
+	<body>
+		<h1>Kanban board — controlled moves, keyboard, announcements</h1>
+		<p class="hint">
+			Tab reaches one card; ↑/↓ move within a lane, ←/→ jump lanes (empty lanes skipped), Home/End
+			within the lane. Space or M opens the move menu; Ctrl/Cmd+arrows move the card itself. Enter
+			"opens" a card (logged below). The In-progress lane has a WIP limit of 3 — over-limit turns
+			the count red but never blocks. With "Reject all moves" checked, the app ignores
+			<code>dj-card-move</code>: nothing moves, focus stays put, and no announcement fires.
+		</p>
+		<div class="bar">
+			<label>Locale
+				<select id="locale">
+					<option value="en-US" selected>en-US</option>
+					<option value="de-DE">de-DE</option>
+					<option value="fr-FR">fr-FR</option>
+				</select>
+			</label>
+			<label><input type="checkbox" id="reject" /> Reject all moves</label>
+			<span class="hint">German menu strings need a "dj" bundle — one is registered below for de.</span>
+		</div>
+
+		<dj-board id="b" label="Sprint board" group-by="status" card-key="id" card-title="title"></dj-board>
+		<pre id="out">last event: —</pre>
+
+		<script type="module">
+			import { html } from "lit";
+			import { applyCardMove } from "@dojo-ng/board";
+			import { messages } from "@dojo-ng/i18n";
+
+			// Sample German strings so the locale switcher localizes the board's own UI too.
+			messages.register("dj", "de", {
+				boardMoveCard: "Karte verschieben",
+				boardMoveUp: "Nach oben",
+				boardMoveDown: "Nach unten",
+				boardMoveTo: "Verschieben nach {lane}",
+				boardMoved: "Verschoben nach {lane}, Position {pos} von {n}",
+				boardCards: "{label}, {n} Karten",
+			});
+
+			document.getElementById("locale").addEventListener("change", (e) => {
+				document.documentElement.lang = e.target.value;
+			});
+
+			const b = document.getElementById("b");
+			const out = document.getElementById("out");
+			b.lanes = [
+				{ value: "todo", label: "To do" },
+				{ value: "doing", label: "In progress", limit: 3 },
+				{ value: "review", label: "Review" },
+				{ value: "done", label: "Done" },
+			];
+			b.data = [
+				{ id: "T-1", status: "todo", title: "Write the K5 docs", assignee: "Bill" },
+				{ id: "T-2", status: "todo", title: "Playground demo", assignee: "Claude" },
+				{ id: "T-3", status: "todo", title: "Heptapod CI job" },
+				{ id: "T-4", status: "doing", title: "Board keyboard model", assignee: "Claude" },
+				{ id: "T-5", status: "doing", title: "Focus-follow + announcer", assignee: "Claude" },
+				{ id: "T-6", status: "doing", title: "dnd spike notes", assignee: "Jeff" },
+				{ id: "T-7", status: "doing", title: "Over the WIP limit!", assignee: "Bill" },
+				{ id: "T-8", status: "done", title: "K1 scaffold" },
+				{ id: "T-9", status: "done", title: "K2/K3 build" },
+			];
+			b.renderCard = (card) => html`<dj-card kind="outlined">
+				<strong>${card.title}</strong>
+				<div class="assignee">${card.assignee ?? "Unassigned"}</div>
+			</dj-card>`;
+			b.addEventListener("dj-card-move", (e) => {
+				if (document.getElementById("reject").checked) {
+					out.textContent = `last event: dj-card-move REJECTED (${e.detail.key}: ${e.detail.from} → ${e.detail.to})`;
+					return;
+				}
+				b.data = applyCardMove(b.data, e.detail, b.groupBy);
+				out.textContent = `last event: dj-card-move ${e.detail.key}: ${e.detail.from}[${e.detail.fromIndex}] → ${e.detail.to}[${e.detail.toIndex}]`;
+			});
+			b.addEventListener("dj-card-click", (e) => {
+				out.textContent = `last event: dj-card-click ${e.detail.key} ("${e.detail.card.title}")`;
+			});
+		</script>
+	</body>
+</html>

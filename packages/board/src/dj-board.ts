@@ -43,12 +43,15 @@ interface MenuContext {
 /**
  * `<dj-board>` — a Kanban board over plain records. Lanes are the values of one field
  * (`group-by`); cards are the records of `data`, ordered within a lane by their order of
- * appearance. The board is CONTROLLED: it never mutates `data` — every move emits
- * `dj-card-move` and the app applies it (the exported `applyCardMove` helper makes that one
- * line). Card content comes from `renderCard`, rendered inside the component-owned accessible
- * shell (so custom cards cannot regress accessibility), or defaults to a `dj-card` showing the
- * `card-title` field. Each card carries a move menu (Move up/down, Move to lane); WIP limits
- * are advisory (`n/limit` count plus an over-limit style hook, never blocking).
+ * appearance. The board is CONTROLLED: it never mutates `data` — every move (menu, keyboard)
+ * emits `dj-card-move` and the app applies it (the exported `applyCardMove` helper makes that
+ * one line); focus then follows the moved card and the move is announced to assistive tech
+ * once the app's data update lands. Card content comes from `renderCard`, rendered inside the
+ * component-owned accessible shell (so custom cards cannot regress accessibility), or defaults
+ * to a `dj-card` showing the `card-title` field. Keyboard: one tab stop (roving); arrows move
+ * between cards and lanes, Home/End within a lane, Enter activates, Space or M opens the move
+ * menu, and Ctrl/Cmd+arrows move the card itself. WIP limits are advisory (`n/limit` count and
+ * an over-limit style hook, never blocking).
  *
  * Slots: none (cards come from `data`). Parts: `board`, `lane`, `lane-over`, `lane-header`,
  * `lane-title`, `lane-count`, `lane-body`, `card`, `move-button`.
@@ -61,6 +64,7 @@ interface MenuContext {
 export class DjBoard extends DojoElement {
 	static override styles = [styles, reducedMotion];
 	static override version = "0.1.0";
+	static override focusable = true;
 
 	/** The cards (plain records). Lane order = order of appearance. Set in JavaScript. */
 	@property({ attribute: false }) data: Card[] = [];
@@ -79,10 +83,14 @@ export class DjBoard extends DojoElement {
 	@property({ attribute: false }) renderCard?: (card: Card) => TemplateResult;
 
 	@state() private menu: MenuContext | null = null;
+	/** The card (by key, as a string) holding the roving tab stop. */
+	@state() private activeKey: string | null = null;
 
 	#i18n = new LocaleController(this);
 	#menuAnchor?: HTMLElement;
 	#warned = new Set<string>();
+	/** A move we emitted and are waiting for the app to apply (controlled focus-follow). */
+	#pending: { key: string; to: string } | null = null;
 
 	#msg(key: string, params?: Record<string, string | number>): string {
 		return messages.resolve("dj", this.#i18n.locale, key, params) ?? EN[key] ?? key;
@@ -116,9 +124,64 @@ export class DjBoard extends DojoElement {
 		}
 	}
 
+	// ------------------------------------------------------------------ focus
+
+	#shellFor(key: string): HTMLElement | null {
+		const esc = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(key) : key;
+		return this.renderRoot?.querySelector<HTMLElement>(`[data-key="${esc}"]`) ?? null;
+	}
+
+	#focusCard(key: string) {
+		this.activeKey = key;
+		this.#shellFor(key)?.focus();
+	}
+
+	/** Where a card (by string key) sits: its lane list, lane index, and position. */
+	#locate(key: string): { lanes: BoardLane[]; li: number; idx: number; cards: Card[] } | null {
+		const lanes = this.effectiveLanes();
+		for (let li = 0; li < lanes.length; li++) {
+			const cards = this.#laneCards(lanes[li].value);
+			const idx = cards.findIndex((c) => String(c[this.cardKey]) === key);
+			if (idx !== -1) return { lanes, li, idx, cards };
+		}
+		return null;
+	}
+
+	#announce(msg: string) {
+		const region = this.renderRoot?.querySelector(".announce");
+		if (region) region.textContent = msg;
+	}
+
+	// ------------------------------------------------------------------ moves
+
+	#emitMove(card: Card, from: string, to: string, fromIndex: number, toIndex: number) {
+		const key = String(card[this.cardKey]);
+		this.#pending = { key, to };
+		this.emit("dj-card-move", { detail: { card, key: card[this.cardKey], from, to, fromIndex, toIndex } });
+	}
+
+	/** Controlled focus-follow: when the app applies the pending move (the card now sits in the
+	 *  target lane), focus follows it and the move is announced. A data change that does NOT
+	 *  apply the move clears the pending state silently — no announcement for a rejected move. */
+	protected override updated(changed: Map<PropertyKey, unknown>) {
+		if (!changed.has("data") || !this.#pending) return;
+		const { key, to } = this.#pending;
+		this.#pending = null;
+		const card = this.data.find((c) => String(c[this.cardKey]) === key);
+		if (!card || String(card[this.groupBy]) !== to) return;
+		this.#focusCard(key);
+		const laneCards = this.#laneCards(to);
+		const lane = this.effectiveLanes().find((l) => l.value === to);
+		this.#announce(this.#msg("boardMoved", { lane: lane?.label ?? to, pos: laneCards.indexOf(card) + 1, n: laneCards.length }));
+	}
+
+	// ------------------------------------------------------------------ menu
+
 	#openMenu(anchor: HTMLElement, card: Card, laneValue: string, index: number, laneLen: number) {
+		this.#pending = null;
 		this.#menuAnchor = anchor;
 		this.menu = { card, key: card[this.cardKey], laneValue, index, laneLen };
+		void this.updateComplete.then(() => this.renderRoot?.querySelector<HTMLElement & { focus(): void }>("dj-list")?.focus());
 	}
 
 	#menuOptions(): ListOption[] {
@@ -141,22 +204,119 @@ export class DjBoard extends DojoElement {
 		this.menu = null;
 		if (!m) return;
 		const v = (e.target as HTMLElement & { value: string }).value;
-		let detail: CardMoveDetail | undefined;
+		// Keyboard continuity: put focus back on the card now; a successful move re-focuses via
+		// the pending mechanism once the app's data update lands.
+		this.#focusCard(String(m.key));
 		if (v === "__up" && m.index > 0) {
-			detail = { card: m.card, key: m.key, from: m.laneValue, to: m.laneValue, fromIndex: m.index, toIndex: m.index - 1 };
+			this.#emitMove(m.card, m.laneValue, m.laneValue, m.index, m.index - 1);
 		} else if (v === "__down" && m.index < m.laneLen - 1) {
-			detail = { card: m.card, key: m.key, from: m.laneValue, to: m.laneValue, fromIndex: m.index, toIndex: m.index + 1 };
+			this.#emitMove(m.card, m.laneValue, m.laneValue, m.index, m.index + 1);
 		} else if (v.startsWith("to:")) {
 			const to = v.slice(3);
-			detail = { card: m.card, key: m.key, from: m.laneValue, to, fromIndex: m.index, toIndex: this.#laneCards(to).length };
+			this.#emitMove(m.card, m.laneValue, to, m.index, this.#laneCards(to).length);
 		}
-		if (detail) this.emit("dj-card-move", { detail });
 	}
 
-	#cardShell(card: Card, laneValue: string, index: number, laneLen: number): TemplateResult {
+	#onMenuClose() {
+		this.menu = null;
+		if (this.activeKey) this.#shellFor(this.activeKey)?.focus();
+	}
+
+	// ------------------------------------------------------------------ keyboard
+
+	#onKeydown(e: KeyboardEvent) {
+		const shell = (e.target as HTMLElement).closest?.('[role="listitem"]') as HTMLElement | null;
+		if (!shell) return;
+		const key = shell.getAttribute("data-key");
+		if (key === null) return;
+		const pos = this.#locate(key);
+		if (!pos) return;
+		const { lanes, li, idx, cards } = pos;
+		const card = cards[idx];
+		const laneValue = lanes[li].value;
+		const mod = e.ctrlKey || e.metaKey;
+
+		const focusInLane = (i: number) => {
+			const target = cards[Math.min(Math.max(i, 0), cards.length - 1)];
+			if (target) this.#focusCard(String(target[this.cardKey]));
+		};
+		const nearestLane = (dir: 1 | -1): { lane: BoardLane; cards: Card[] } | null => {
+			for (let i = li + dir; i >= 0 && i < lanes.length; i += dir) {
+				const c = this.#laneCards(lanes[i].value);
+				if (c.length) return { lane: lanes[i], cards: c };
+			}
+			return null;
+		};
+
+		switch (e.key) {
+			case "ArrowDown":
+			case "ArrowUp": {
+				const dir = e.key === "ArrowDown" ? 1 : -1;
+				e.preventDefault();
+				this.#pending = null;
+				if (mod) {
+					const to = idx + dir;
+					if (to >= 0 && to < cards.length) this.#emitMove(card, laneValue, laneValue, idx, to);
+				} else {
+					focusInLane(idx + dir);
+				}
+				break;
+			}
+			case "ArrowRight":
+			case "ArrowLeft": {
+				const dir = e.key === "ArrowRight" ? (1 as const) : (-1 as const);
+				e.preventDefault();
+				this.#pending = null;
+				if (mod) {
+					// Move to the ADJACENT lane (empty lanes included), appended at the end.
+					const target = lanes[li + dir];
+					if (target) this.#emitMove(card, laneValue, target.value, idx, this.#laneCards(target.value).length);
+				} else {
+					// Navigate to the same (clamped) position in the nearest NON-empty lane.
+					const t = nearestLane(dir);
+					if (t) {
+						const target = t.cards[Math.min(idx, t.cards.length - 1)];
+						this.#focusCard(String(target[this.cardKey]));
+					}
+				}
+				break;
+			}
+			case "Home":
+				e.preventDefault();
+				focusInLane(0);
+				break;
+			case "End":
+				e.preventDefault();
+				focusInLane(cards.length - 1);
+				break;
+			case "Enter":
+				e.preventDefault();
+				this.emit("dj-card-click", { detail: { card, key: card[this.cardKey] } });
+				break;
+			case " ":
+			case "m":
+			case "M": {
+				e.preventDefault();
+				const btn = shell.querySelector<HTMLElement>('[part="move-button"]');
+				this.#openMenu(btn ?? shell, card, laneValue, idx, cards.length);
+				break;
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------ render
+
+	#cardShell(card: Card, laneValue: string, index: number, laneLen: number, tabbable: boolean): TemplateResult {
 		const key = card[this.cardKey];
 		const title = String(card[this.cardTitle] ?? "");
-		return html`<div part="card" class="card" role="listitem" data-key=${String(key)} aria-label=${title || nothing}>
+		return html`<div
+			part="card"
+			class="card"
+			role="listitem"
+			data-key=${String(key)}
+			tabindex=${tabbable ? "0" : "-1"}
+			aria-label=${title || nothing}
+		>
 			<div class="card-content" @click=${() => this.emit("dj-card-click", { detail: { card, key } })}>
 				${this.renderCard ? this.renderCard(card) : html`<dj-card kind="outlined">${title}</dj-card>`}
 			</div>
@@ -164,6 +324,7 @@ export class DjBoard extends DojoElement {
 				part="move-button"
 				class="move-btn"
 				type="button"
+				tabindex="-1"
 				aria-haspopup="menu"
 				aria-expanded=${this.menu?.key === key ? "true" : "false"}
 				aria-label=${this.#msg("boardMoveCard")}
@@ -175,10 +336,20 @@ export class DjBoard extends DojoElement {
 	override render() {
 		const lanes = this.effectiveLanes();
 		this.#warnUnmatched(lanes);
+		const cardsByLane = lanes.map((l) => this.#laneCards(l.value));
+		const allKeys = cardsByLane.flat().map((c) => String(c[this.cardKey]));
+		const roving = this.activeKey !== null && allKeys.includes(this.activeKey) ? this.activeKey : allKeys[0] ?? null;
 		return html`
-			<div part="board" class="board" role="group" aria-label=${this.label ?? nothing}>
-				${lanes.map((lane) => {
-					const cards = this.#laneCards(lane.value);
+			<div
+				part="board"
+				class="board"
+				role="group"
+				aria-label=${this.label ?? nothing}
+				tabindex=${allKeys.length ? nothing : "0"}
+				@keydown=${(e: KeyboardEvent) => this.#onKeydown(e)}
+			>
+				${lanes.map((lane, li) => {
+					const cards = cardsByLane[li];
 					const label = lane.label ?? lane.value;
 					const over = lane.limit !== undefined && cards.length > lane.limit;
 					return html`<div part="lane${over ? " lane-over" : ""}" class="lane ${over ? "lane--over" : ""}">
@@ -187,14 +358,15 @@ export class DjBoard extends DojoElement {
 							<span part="lane-count" class="lane-count">${lane.limit !== undefined ? `${cards.length}/${lane.limit}` : cards.length}</span>
 						</div>
 						<div part="lane-body" class="lane-body" role="list" aria-label=${this.#msg("boardCards", { label, n: cards.length })}>
-							${repeat(cards, (c) => String(c[this.cardKey]), (c, i) => this.#cardShell(c, lane.value, i, cards.length))}
+							${repeat(cards, (c) => String(c[this.cardKey]), (c, i) => this.#cardShell(c, lane.value, i, cards.length, String(c[this.cardKey]) === roving))}
 						</div>
 					</div>`;
 				})}
 			</div>
-			<dj-popup .anchor=${this.#menuAnchor} .open=${this.menu !== null} .scrollLock=${false} @dj-close=${() => (this.menu = null)}>
+			<dj-popup .anchor=${this.#menuAnchor} .open=${this.menu !== null} .scrollLock=${false} @dj-close=${() => this.#onMenuClose()}>
 				<dj-list menu .options=${this.#menuOptions()} .value=${""} @change=${(e: Event) => this.#onMenuSelect(e)}></dj-list>
 			</dj-popup>
+			<div class="announce" aria-live="polite"></div>
 		`;
 	}
 }

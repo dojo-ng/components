@@ -192,3 +192,121 @@ test("clicking a card's content emits dj-card-click with the card and key", asyn
 	assert.equal(clicks[0].key, "t1");
 	assert.equal(clicks[0].card.title, "Write spec");
 });
+
+// --- K4: keyboard, focus-follow, announcer ---
+
+const shells = (el) => [...el.renderRoot.querySelectorAll('[role="listitem"]')];
+const shellByKey = (el, key) => el.renderRoot.querySelector(`[data-key="${key}"]`);
+const press = (target, key, mods = {}) =>
+	target.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, composed: true, ...mods }));
+const active = (el) => el.shadowRoot.activeElement;
+
+test("one tab stop: exactly one card is tabbable (the first), the rest are -1", async () => {
+	const el = await board();
+	const tabbables = shells(el).filter((s) => s.getAttribute("tabindex") === "0");
+	assert.equal(tabbables.length, 1);
+	assert.equal(tabbables[0].getAttribute("data-key"), "t1");
+});
+
+test("ArrowDown/ArrowUp walk the lane; Home/End jump; roving tab stop follows", async () => {
+	const el = await board();
+	const t1 = shellByKey(el, "t1");
+	t1.focus();
+	press(t1, "ArrowDown");
+	await settled(el);
+	assert.equal(active(el)?.getAttribute("data-key"), "t2");
+	assert.equal(shellByKey(el, "t2").getAttribute("tabindex"), "0", "tab stop moved");
+	assert.equal(shellByKey(el, "t1").getAttribute("tabindex"), "-1");
+	press(active(el), "ArrowUp");
+	await settled(el);
+	assert.equal(active(el)?.getAttribute("data-key"), "t1");
+	press(active(el), "End");
+	await settled(el);
+	assert.equal(active(el)?.getAttribute("data-key"), "t2");
+	press(active(el), "Home");
+	await settled(el);
+	assert.equal(active(el)?.getAttribute("data-key"), "t1");
+});
+
+test("ArrowRight lands at the clamped index in the nearest NON-empty lane; empty lanes are skipped", async () => {
+	const el = await board({
+		lanes: [{ value: "todo" }, { value: "review" }, { value: "done" }], // review is empty
+	});
+	const t2 = shellByKey(el, "t2"); // index 1 of todo
+	t2.focus();
+	press(t2, "ArrowRight");
+	await settled(el);
+	// done has one card (z1): clamped from index 1 → index 0, review skipped entirely.
+	assert.equal(active(el)?.getAttribute("data-key"), "z1");
+	press(active(el), "ArrowLeft");
+	await settled(el);
+	assert.equal(active(el)?.getAttribute("data-key"), "t1", "back into todo at clamped index 0");
+});
+
+test("Ctrl/Cmd+ArrowDown emits an in-lane move; edges are no-ops", async () => {
+	const el = await board();
+	const moves = [];
+	el.addEventListener("dj-card-move", (e) => moves.push(e.detail));
+	const t1 = shellByKey(el, "t1");
+	press(t1, "ArrowDown", { ctrlKey: true });
+	assert.equal(moves.length, 1);
+	assert.deepEqual([moves[0].from, moves[0].to, moves[0].fromIndex, moves[0].toIndex], ["todo", "todo", 0, 1]);
+	press(t1, "ArrowUp", { ctrlKey: true });
+	assert.equal(moves.length, 1, "up at the top edge is a no-op");
+});
+
+test("Ctrl/Cmd+ArrowRight moves to the ADJACENT lane (empty included), appended at the end", async () => {
+	const el = await board({ lanes: [{ value: "todo" }, { value: "review" }, { value: "done" }] });
+	const moves = [];
+	el.addEventListener("dj-card-move", (e) => moves.push(e.detail));
+	press(shellByKey(el, "t1"), "ArrowRight", { metaKey: true });
+	assert.equal(moves.length, 1);
+	assert.deepEqual([moves[0].to, moves[0].toIndex], ["review", 0], "into the EMPTY adjacent lane at position 0");
+});
+
+test("focus-follow: applying the emitted move refocuses the moved card and announces it", async () => {
+	const el = await board();
+	el.addEventListener("dj-card-move", (e) => {
+		el.data = applyCardMove(el.data, e.detail, el.groupBy);
+	});
+	const t1 = shellByKey(el, "t1");
+	t1.focus();
+	press(t1, "ArrowRight", { ctrlKey: true }); // move t1 → doing (append)
+	await settled(el);
+	await settled(el); // the handler set data during the update; settle the follow-up cycle
+	const moved = shellByKey(el, "t1");
+	assert.equal(active(el), moved, "focus followed the card into its new lane");
+	assert.equal(moved.getAttribute("tabindex"), "0");
+	assert.equal(moved.closest(".lane").querySelector(".lane-title").textContent, "In progress");
+	const announced = el.renderRoot.querySelector(".announce").textContent;
+	assert.match(announced, /In progress/, "announcement names the lane");
+	assert.match(announced, /4/, "announcement carries position/count (position 4 of 4)");
+});
+
+test("a rejected move stays silent: no announcement, pending cleared", async () => {
+	const el = await board();
+	// No dj-card-move handler: the app "rejects" by never applying the move.
+	press(shellByKey(el, "t1"), "ArrowRight", { ctrlKey: true });
+	await settled(el);
+	el.data = [...el.data]; // unrelated data refresh, move NOT applied
+	await settled(el);
+	assert.equal(el.renderRoot.querySelector(".announce").textContent, "", "no announcement");
+	el.data = applyCardMove(el.data, { card: el.data[0], key: "t1", from: "todo", to: "doing", fromIndex: 0, toIndex: 3 }, el.groupBy);
+	await settled(el);
+	assert.equal(el.renderRoot.querySelector(".announce").textContent, "", "pending was cleared — a later matching change no longer announces");
+});
+
+test("Enter emits dj-card-click; Space opens the move menu for the focused card", async () => {
+	const el = await board();
+	const clicks = [];
+	el.addEventListener("dj-card-click", (e) => clicks.push(e.detail));
+	const t2 = shellByKey(el, "t2");
+	press(t2, "Enter");
+	assert.equal(clicks.length, 1);
+	assert.equal(clicks[0].key, "t2");
+	press(t2, " ");
+	await settled(el);
+	assert.ok(el.menu, "menu open");
+	assert.equal(String(el.menu.key), "t2");
+	assert.equal(el.menu.index, 1);
+});

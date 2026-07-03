@@ -8,6 +8,7 @@ import type { DefineComponent } from "vue";
 import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
 import type { DjAvatar } from "@dojo-ng/avatar";
+import type { DjBoard } from "@dojo-ng/board";
 import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
 import type { DjButton } from "@dojo-ng/button";
 import type { DjCalendar } from "@dojo-ng/calendar";
@@ -78,6 +79,7 @@ declare module "@vue/runtime-core" {
     "dj-accordion": DefineComponent<{ exclusive?: DjAccordion["exclusive"] }, {}, {}, {}, {}, {}, {}>;
     "dj-action-button": DefineComponent<{  }, {}, {}, {}, {}, {}, {}>;
     "dj-avatar": DefineComponent<{ type?: DjAvatar["type"]; size?: DjAvatar["size"]; src?: DjAvatar["src"]; alt?: DjAvatar["alt"]; secondary?: DjAvatar["secondary"]; outline?: DjAvatar["outline"] }, {}, {}, {}, {}, {}, {}>;
+    "dj-board": DefineComponent<{ data?: DjBoard["data"]; lanes?: DjBoard["lanes"]; groupBy?: DjBoard["groupBy"]; cardKey?: DjBoard["cardKey"]; cardTitle?: DjBoard["cardTitle"]; label?: DjBoard["label"]; renderCard?: DjBoard["renderCard"] }, {}, {}, {}, {}, {}, { "dj-card-move": (e: CustomEvent) => void, "dj-card-click": (e: CustomEvent) => void }>;
     "dj-breadcrumb-group": DefineComponent<{ items?: DjBreadcrumbGroup["items"] }, {}, {}, {}, {}, {}, {}>;
     "dj-button": DefineComponent<{ disabled?: DjButton["disabled"]; kind?: DjButton["kind"]; type?: DjButton["type"]; name?: DjButton["name"]; value?: DjButton["value"]; label?: DjButton["label"]; iconPosition?: DjButton["iconPosition"]; title?: DjButton["title"] }, {}, {}, {}, {}, {}, {}>;
     "dj-calendar": DefineComponent<{ value?: DjCalendar["value"]; name?: DjCalendar["name"]; min?: DjCalendar["min"]; max?: DjCalendar["max"]; locale?: DjCalendar["locale"]; firstDayOfWeek?: DjCalendar["firstDayOfWeek"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;

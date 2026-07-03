@@ -437,6 +437,7 @@ def infra_readme(pkg):
 
 # Data-grid plugin packages: notes + worked examples (support packages, rendered by infra_readme).
 NOTES.update({
+ "board": "The board is CONTROLLED: it never changes `data`. Listen for `dj-card-move`, apply it (the exported `applyCardMove` makes that one line), and assign the new array — focus then follows the moved card and the move is announced. Explicit `lanes` are recommended over the derived fallback (they fix lane order, give labels, and include empty lanes).",
  "data-grid": "Plugins: pass an array of plugin objects via the `plugins` property (JavaScript only). Recommended order: structural first (`treePlugin` OR `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, `formatsPlugin`, then chrome-only plugins (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`). A `plugins` change rebuilds the table.",
  "data-grid-edit": "CONTROLLED editing: the plugin never writes to `data`. Listen for `dj-cell-commit`, update your store, and assign a new `data` array. Place this plugin first in the array so its editor wins the cell.",
  "data-grid-export": "Exports RAW cell values (formatting is presentation). Default set = filtered but unpaginated rows; `all: true` exports the pre-filter set. Synthetic `__` columns (like the detail expander) are skipped.",
@@ -444,6 +445,38 @@ NOTES.update({
  "data-grid-detail": "Detail rows switch the grid virtualizer to measured (variable-height) mode; grids without this plugin keep the fixed-height fast path.",
 })
 EXAMPLES.update({
+ "board": [
+  ("A three-lane board with the controlled move handler", "Moves (menu, Ctrl/Cmd+arrows) emit `dj-card-move`; the app applies them with `applyCardMove`.",
+   """<dj-board id="b" label="Sprint board" group-by="status"></dj-board>
+<script type="module">
+  import { applyCardMove } from "@dojo-ng/board";
+  const b = document.getElementById("b");
+  b.lanes = [
+    { value: "todo", label: "To do" },
+    { value: "doing", label: "In progress", limit: 3 },
+    { value: "done", label: "Done" },
+  ];
+  b.data = [
+    { id: "T-1", status: "todo", title: "Write the spec" },
+    { id: "T-2", status: "doing", title: "Build the board" },
+    { id: "T-3", status: "done", title: "Design review" },
+  ];
+  b.addEventListener("dj-card-move", (e) => {
+    b.data = applyCardMove(b.data, e.detail, b.groupBy);
+  });
+  b.addEventListener("dj-card-click", (e) => console.log("open", e.detail.card));
+</script>"""),
+  ("Custom card content", "`renderCard` supplies the inside of the card; the accessible shell (focus, move menu) stays component-owned.",
+   """<script type="module">
+  import { html } from "lit";
+  import "@dojo-ng/board";
+  document.querySelector("dj-board").renderCard = (card) =>
+    html`<dj-card kind="outlined">
+      <strong>${card.title}</strong>
+      <div>${card.assignee ?? "Unassigned"}</div>
+    </dj-card>`;
+</script>"""),
+ ],
  "data-grid-formats": [
   ("Currency and date columns", "Set `format` on a column; other columns are untouched. Formatting follows the active locale (set `lang` on the grid or an ancestor).",
    """<dj-data-grid id="g"></dj-data-grid>

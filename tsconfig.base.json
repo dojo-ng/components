@@ -45,6 +45,9 @@
       "@dojo-ng/data-grid-pagination": [
         "./packages/data-grid-pagination/dist/index.d.ts"
       ],
+      "@dojo-ng/data-grid-edit": [
+        "./packages/data-grid-edit/dist/index.d.ts"
+      ],
       "@dojo-ng/toolbar": [
         "./packages/toolbar/dist/index.d.ts"
       ],

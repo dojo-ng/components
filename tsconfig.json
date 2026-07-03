@@ -221,6 +221,9 @@
       "path": "packages/data-grid-pagination"
     },
     {
+      "path": "packages/data-grid-edit"
+    },
+    {
       "path": "packages/i18n"
     },
     {

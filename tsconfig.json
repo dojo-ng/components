@@ -215,6 +215,9 @@
       "path": "packages/data-grid-cell-components"
     },
     {
+      "path": "packages/data-grid-filter"
+    },
+    {
       "path": "packages/i18n"
     },
     {

@@ -94,6 +94,7 @@ const SUPPORT_PACKAGES = [
 	"rich-text-lists",
 	"data-grid-formats",
 	"data-grid-cell-components",
+	"data-grid-filter",
 ];
 
 for (const pkg of SUPPORT_PACKAGES) {

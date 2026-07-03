@@ -1,16 +1,28 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { property, state, query } from "lit/decorators.js";
+import { ref } from "lit/directives/ref.js";
 import DojoElement from "@dojo-ng/dojo-element";
 import {
 	createTable, getCoreRowModel, getSortedRowModel, functionalUpdate,
 	type Table, type TableOptionsResolved, type TableState, type ColumnDef, type Cell,
-	type SortingState, type RowSelectionState, type Updater,
+	type Row as TableRow, type SortingState, type RowSelectionState, type Updater,
 } from "@tanstack/table-core";
 import { Virtualizer, elementScroll, observeElementOffset, observeElementRect } from "@tanstack/virtual-core";
 import type { DataGridPlugin, DataGridContext } from "./plugin.js";
 import styles from "./dj-data-grid.styles.js";
 
 export type Row = Record<string, unknown>;
+
+// Reconcile a plain attribute map onto a row element across re-renders and virtualizer recycling:
+// remove keys a plugin stopped returning, set the current ones. The `ref` callback runs every render.
+const rowAttrKeys = new WeakMap<Element, Set<string>>();
+function applyRowAttrs(el: Element, attrs: Record<string, string>) {
+	const prev = rowAttrKeys.get(el);
+	if (prev) for (const k of prev) if (!(k in attrs)) el.removeAttribute(k);
+	for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+	rowAttrKeys.set(el, new Set(Object.keys(attrs)));
+}
+
 export interface GridColumn {
 	id: string;
 	header?: string;
@@ -204,6 +216,13 @@ export class DjDataGrid extends DojoElement {
 
 	/** A cell's content: the first plugin `renderCell` that returns non-undefined wins (else the
 	 *  core string default), then every `decorateCell` folds over it in array order. */
+	/** Merge every plugin's row attributes for a row (array order, later wins). */
+	#rowAttributes(row: TableRow<Row>): Record<string, string> {
+		let attrs: Record<string, string> = {};
+		for (const p of this.plugins) if (p.rowAttributes) attrs = { ...attrs, ...p.rowAttributes(row, this.#ctx) };
+		return attrs;
+	}
+
 	#cellContent(cell: Cell<Row, unknown>): unknown {
 		let content: unknown = undefined;
 		for (const p of this.plugins) {
@@ -261,6 +280,7 @@ export class DjDataGrid extends DojoElement {
 									class="vrow ${vi.index === this.activeIndex ? "vrow--active" : ""} ${selected ? "vrow--selected" : ""}"
 									role="row" aria-rowindex=${vi.index + headerRows + 1} aria-selected=${this.selectionMode !== "none" ? (selected ? "true" : "false") : nothing}
 									style=${`transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`}
+									${ref((el) => el && applyRowAttrs(el as Element, this.#rowAttributes(row)))}
 									@click=${() => { this.activeIndex = vi.index; this.toggleAt(vi.index); }}>
 									${row.getVisibleCells().map((cell) => html`<div part="cell" class="cell" role="gridcell">${this.#cellContent(cell)}</div>`)}
 								</div>`;

@@ -97,6 +97,7 @@ const SUPPORT_PACKAGES = [
 	"data-grid-filter",
 	"data-grid-pagination",
 	"data-grid-edit",
+	"data-grid-tree",
 ];
 
 for (const pkg of SUPPORT_PACKAGES) {

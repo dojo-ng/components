@@ -25,6 +25,9 @@ export interface DataGridPlugin {
 	renderCell?(cell: Cell<Row, unknown>, ctx: DataGridContext): TemplateResult | string | undefined;
 	/** WRAP a cell's content (indent, expander, badges). Applied in array order after renderCell. */
 	decorateCell?(cell: Cell<Row, unknown>, content: unknown, ctx: DataGridContext): unknown;
+	/** Merge attributes onto each rendered row element (aria-level, aria-expanded…). Array order;
+	 *  later wins. Core reconciles them per render, removing keys a plugin stops returning. */
+	rowAttributes?(row: TableRow<Row>, ctx: DataGridContext): Record<string, string>;
 	/** A second header row (filters): one entry per visible leaf column, or undefined for none.
 	 *  Core lays the row out with the grid's column template; entries may be null (empty cell). */
 	subheaderCells?(ctx: DataGridContext): Array<TemplateResult | null> | undefined;

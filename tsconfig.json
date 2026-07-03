@@ -236,6 +236,9 @@
       "path": "packages/data-grid-detail"
     },
     {
+      "path": "packages/board"
+    },
+    {
       "path": "packages/i18n"
     },
     {

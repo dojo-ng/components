@@ -60,6 +60,9 @@
       "@dojo-ng/data-grid-detail": [
         "./packages/data-grid-detail/dist/index.d.ts"
       ],
+      "@dojo-ng/board": [
+        "./packages/board/dist/index.d.ts"
+      ],
       "@dojo-ng/toolbar": [
         "./packages/toolbar/dist/index.d.ts"
       ],

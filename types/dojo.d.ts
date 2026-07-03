@@ -17,6 +17,7 @@ import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
 import type { DjButton } from "@dojo-ng/button";
 import type { DjCalendar } from "@dojo-ng/calendar";
 import type { DjCard } from "@dojo-ng/card";
+import type { DjCarousel } from "@dojo-ng/carousel";
 import type { DjChart } from "@dojo-ng/chart";
 import type { DjCheckbox } from "@dojo-ng/checkbox";
 import type { DjCheckboxGroup } from "@dojo-ng/checkbox-group";
@@ -131,6 +132,12 @@ declare module "@dojo-ng/framework" {
         "media-src"?: DjCard["mediaSrc"];
         "media-title"?: DjCard["mediaTitle"];
         "clickable"?: DjCard["clickable"];
+      };
+      "dj-carousel": DjVNodeBase & {
+        "per-view"?: DjCarousel["perView"];
+        "nav"?: DjCarousel["nav"];
+        "dots"?: DjCarousel["dots"];
+        "label"?: DjCarousel["label"];
       };
       "dj-chart": DjVNodeBase & {
         "data"?: DjChart["data"];

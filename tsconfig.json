@@ -252,6 +252,9 @@
     },
     {
       "path": "packages/transition-group"
+    },
+    {
+      "path": "packages/carousel"
     }
   ]
 }

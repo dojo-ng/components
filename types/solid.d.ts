@@ -11,6 +11,7 @@ import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
 import type { DjButton } from "@dojo-ng/button";
 import type { DjCalendar } from "@dojo-ng/calendar";
 import type { DjCard } from "@dojo-ng/card";
+import type { DjCarousel } from "@dojo-ng/carousel";
 import type { DjChart } from "@dojo-ng/chart";
 import type { DjCheckbox } from "@dojo-ng/checkbox";
 import type { DjCheckboxGroup } from "@dojo-ng/checkbox-group";
@@ -125,6 +126,12 @@ declare module "solid-js" {
         "media-src"?: DjCard["mediaSrc"];
         "media-title"?: DjCard["mediaTitle"];
         "clickable"?: DjCard["clickable"];
+      };
+      "dj-carousel": JSX.HTMLAttributes<DjCarousel> & {
+        "per-view"?: DjCarousel["perView"];
+        "nav"?: DjCarousel["nav"];
+        "dots"?: DjCarousel["dots"];
+        "label"?: DjCarousel["label"];
       };
       "dj-chart": JSX.HTMLAttributes<DjChart> & {
         "data"?: DjChart["data"];
@@ -550,6 +557,7 @@ declare module "solid-js" {
       "dj-card-move": CustomEvent;
       "dj-card-click": CustomEvent;
       "change": CustomEvent;
+      "dj-slide-change": CustomEvent;
       "dj-legend-toggle": CustomEvent;
       "dj-hover": CustomEvent;
       "dj-close": CustomEvent;
@@ -574,6 +582,7 @@ declare module "solid-js" {
       "dj-card-move": CustomEvent;
       "dj-card-click": CustomEvent;
       "change": CustomEvent;
+      "dj-slide-change": CustomEvent;
       "dj-legend-toggle": CustomEvent;
       "dj-hover": CustomEvent;
       "dj-close": CustomEvent;

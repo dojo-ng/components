@@ -69,6 +69,9 @@
       "@dojo-ng/chart": [
         "./packages/chart/dist/index.d.ts"
       ],
+      "@dojo-ng/carousel": [
+        "./packages/carousel/dist/index.d.ts"
+      ],
       "@dojo-ng/button": [
         "./packages/button/dist/index.d.ts"
       ],

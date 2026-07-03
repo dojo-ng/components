@@ -13,6 +13,7 @@ import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
 import type { DjButton } from "@dojo-ng/button";
 import type { DjCalendar } from "@dojo-ng/calendar";
 import type { DjCard } from "@dojo-ng/card";
+import type { DjCarousel } from "@dojo-ng/carousel";
 import type { DjChart } from "@dojo-ng/chart";
 import type { DjCheckbox } from "@dojo-ng/checkbox";
 import type { DjCheckboxGroup } from "@dojo-ng/checkbox-group";
@@ -84,6 +85,7 @@ declare module "@vue/runtime-core" {
     "dj-button": DefineComponent<{ disabled?: DjButton["disabled"]; kind?: DjButton["kind"]; type?: DjButton["type"]; name?: DjButton["name"]; value?: DjButton["value"]; label?: DjButton["label"]; iconPosition?: DjButton["iconPosition"]; title?: DjButton["title"] }, {}, {}, {}, {}, {}, {}>;
     "dj-calendar": DefineComponent<{ value?: DjCalendar["value"]; name?: DjCalendar["name"]; min?: DjCalendar["min"]; max?: DjCalendar["max"]; locale?: DjCalendar["locale"]; firstDayOfWeek?: DjCalendar["firstDayOfWeek"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
     "dj-card": DefineComponent<{ kind?: DjCard["kind"]; square?: DjCard["square"]; title?: DjCard["title"]; subtitle?: DjCard["subtitle"]; mediaSrc?: DjCard["mediaSrc"]; mediaTitle?: DjCard["mediaTitle"]; clickable?: DjCard["clickable"] }, {}, {}, {}, {}, {}, {}>;
+    "dj-carousel": DefineComponent<{ perView?: DjCarousel["perView"]; nav?: DjCarousel["nav"]; dots?: DjCarousel["dots"]; label?: DjCarousel["label"] }, {}, {}, {}, {}, {}, { "dj-slide-change": (e: CustomEvent) => void }>;
     "dj-chart": DefineComponent<{ data?: DjChart["data"]; series?: DjChart["series"]; categoryKey?: DjChart["categoryKey"]; type?: DjChart["type"]; orientation?: DjChart["orientation"]; stacked?: DjChart["stacked"]; showLegend?: DjChart["showLegend"]; showGrid?: DjChart["showGrid"]; xLabel?: DjChart["xLabel"]; yLabel?: DjChart["yLabel"]; yLabelRight?: DjChart["yLabelRight"]; label?: DjChart["label"]; markers?: DjChart["markers"]; xKey?: DjChart["xKey"]; sizeKey?: DjChart["sizeKey"]; innerRadius?: DjChart["innerRadius"]; centerLabel?: DjChart["centerLabel"]; centerSubLabel?: DjChart["centerSubLabel"]; legendToggle?: DjChart["legendToggle"]; brush?: DjChart["brush"]; numberFormat?: DjChart["numberFormat"]; formatY?: DjChart["formatY"]; formatX?: DjChart["formatX"] }, {}, {}, {}, {}, {}, { "dj-legend-toggle": (e: CustomEvent) => void, "dj-hover": (e: CustomEvent) => void }>;
     "dj-checkbox": DefineComponent<{ checked?: DjCheckbox["checked"]; value?: DjCheckbox["value"]; name?: DjCheckbox["name"]; disabled?: DjCheckbox["disabled"]; readonly?: DjCheckbox["readonly"]; required?: DjCheckbox["required"]; labelHidden?: DjCheckbox["labelHidden"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
     "dj-checkbox-group": DefineComponent<{ options?: DjCheckboxGroup["options"]; value?: DjCheckboxGroup["value"]; name?: DjCheckboxGroup["name"]; label?: DjCheckboxGroup["label"]; orientation?: DjCheckboxGroup["orientation"]; disabled?: DjCheckboxGroup["disabled"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;

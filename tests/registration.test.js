@@ -15,6 +15,7 @@ const ELEMENT_PACKAGES = [
 	"button",
 	"calendar",
 	"card",
+	"carousel",
 	"chart",
 	"checkbox",
 	"checkbox-group",

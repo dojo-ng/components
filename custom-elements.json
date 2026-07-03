@@ -1054,6 +1054,171 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/carousel/src/dj-carousel.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjCarousel",
+          "customElement": true,
+          "tagName": "dj-carousel",
+          "description": "a slotted, swipeable carousel. Each top-level element in the default slot is one item (cards, images, tiles \u2014 arbitrary content). The item strip is a native horizontal scroll container with CSS scroll-snap, so touch and trackpad swiping is real scrolling: there is no pointer/drag code and no WCAG 2.5.7 (dragging) concern \u2014 the prev/next buttons are the non-drag path. `per-view` sizes items to show N at once (gap-adjusted); `dots` adds one dot per item; `nav` (default on) shows prev/next buttons that disable at the ends (no looping in v1). The settled index is detected from element rects (not `scrollLeft`, which is RTL-inconsistent), debounced after scrolling. `next`/`previous`/`goTo` smooth-scroll the target into view and, because a headless environment has no layout, update `index` and emit optimistically; the scroll listener reconciles in a real browser (guarded so an unchanged index does not re-emit). Under `prefers-reduced-motion` navigation jumps instantly (the composed `reducedMotion` snippet forces `scroll-behavior: auto`, and button navigation passes `behavior: \"auto\"`). ARIA follows the APG carousel pattern: the region carries `aria-roledescription=\"carousel\"` and the `label`; each slotted item gets `role=\"group\"`, `aria-roledescription=\"slide\"`, and an \"{n} of {total}\" label, reconciled on every `slotchange` and locale change. Keyboard: with the viewport focused, ArrowRight/ArrowLeft move forward/back in the reading direction (RTL-aware). Deferred (not built): `loop`, autoplay (an accessibility liability), and vertical orientation.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "perView",
+              "type": {
+                "text": "number"
+              },
+              "default": "1",
+              "description": "Items shown at once; each item gets `1/n` of the viewport, gap-adjusted.",
+              "attribute": "per-view"
+            },
+            {
+              "kind": "field",
+              "name": "nav",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "true",
+              "description": "Show prev/next buttons (disabled at the ends).",
+              "attribute": "nav"
+            },
+            {
+              "kind": "field",
+              "name": "dots",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Show one navigation dot per item.",
+              "attribute": "dots"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name for the carousel region (recommended).",
+              "attribute": "label"
+            },
+            {
+              "kind": "method",
+              "name": "next"
+            },
+            {
+              "kind": "method",
+              "name": "previous"
+            },
+            {
+              "kind": "method",
+              "name": "goTo",
+              "parameters": [
+                {
+                  "name": "index",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
+            }
+          ],
+          "attributes": [
+            {
+              "name": "per-view",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "perView",
+              "description": "Items shown at once; each item gets `1/n` of the viewport, gap-adjusted."
+            },
+            {
+              "name": "nav",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "nav",
+              "description": "Show prev/next buttons (disabled at the ends)."
+            },
+            {
+              "name": "dots",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "dots",
+              "description": "Show one navigation dot per item."
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label",
+              "description": "Accessible name for the carousel region (recommended)."
+            }
+          ],
+          "slots": [
+            {
+              "name": "",
+              "description": ""
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "viewport",
+              "description": "the scroller"
+            },
+            {
+              "name": "prev",
+              "description": ""
+            },
+            {
+              "name": "next",
+              "description": ""
+            },
+            {
+              "name": "dots",
+              "description": ""
+            },
+            {
+              "name": "dot",
+              "description": ""
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-carousel-gap",
+              "default": "1rem",
+              "description": "Gap between items (also subtracted from the per-view basis)."
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-slide-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ index }`"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-carousel",
+          "declaration": {
+            "name": "DjCarousel",
+            "module": "packages/carousel/src/dj-carousel.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/chart/src/dj-chart.ts",
       "declarations": [
         {

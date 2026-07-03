@@ -17,6 +17,7 @@
 					"@dojo-ng/i18n": "../packages/i18n/dist/index.js",
 					"@dojo-ng/toolbar": "../packages/toolbar/dist/index.js",
 					"@dojo-ng/chart": "../packages/chart/dist/index.js",
+					"@dojo-ng/carousel": "../packages/carousel/dist/index.js",
 					"d3-scale": "https://esm.sh/d3-scale@4",
 					"d3-shape": "https://esm.sh/d3-shape@3",
 					"d3-array": "https://esm.sh/d3-array@3",
@@ -326,6 +327,24 @@
 		</div>
 		<span id="chart-state" style="color: var(--dj-color-text-muted)">hover a category…</span>
 
+		<h2>Carousel</h2>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Swipe/trackpad, prev/next, and dots. Toggle per-view; switch the Locale to <code>ar-EG</code> to check RTL (order flips, ArrowRight still means forward).
+		</p>
+		<div class="row" style="gap: var(--dj-spacing-small); margin-block-end: 0.5rem">
+			<dj-button id="carousel-perview" kind="outlined">per-view: 1</dj-button>
+			<span id="carousel-state" style="color: var(--dj-color-text-muted)">slide 1</span>
+		</div>
+		<div style="max-width: 520px">
+			<dj-carousel id="carousel-demo" label="Featured items" dots>
+				<dj-card style="min-height: 120px">Card one</dj-card>
+				<dj-card style="min-height: 120px">Card two</dj-card>
+				<img src="https://picsum.photos/id/1015/520/160" alt="A river in the mountains" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px" />
+				<dj-card style="min-height: 120px">Card four</dj-card>
+				<dj-card style="min-height: 120px">Card five</dj-card>
+			</dj-carousel>
+		</div>
+
 		<h2>Scoped theme island (always dark)</h2>
 		<dj-theme theme="dark"><div class="island"><div class="row"><dj-button kind="contained">Inside dark island</dj-button><dj-loading-indicator type="circular-small"></dj-loading-indicator></div></div></dj-theme>
 
@@ -410,7 +429,7 @@
 			import "@dojo-ng/header"; import "@dojo-ng/progress"; import "@dojo-ng/breadcrumb-group"; import "@dojo-ng/snackbar";
 			import "@dojo-ng/global-event"; import "@dojo-ng/accordion"; import "@dojo-ng/checkbox-group"; import "@dojo-ng/rate";
 			import "@dojo-ng/form"; import "@dojo-ng/date-input"; import "@dojo-ng/time-picker"; import "@dojo-ng/popup-confirmation";
-			import "@dojo-ng/context-menu"; import "@dojo-ng/pagination"; import "@dojo-ng/speed-dial"; import "@dojo-ng/tree"; import "@dojo-ng/grid"; import "@dojo-ng/toolbar"; import "@dojo-ng/chart";
+			import "@dojo-ng/context-menu"; import "@dojo-ng/pagination"; import "@dojo-ng/speed-dial"; import "@dojo-ng/tree"; import "@dojo-ng/grid"; import "@dojo-ng/toolbar"; import "@dojo-ng/chart"; import "@dojo-ng/carousel";
 				import "@dojo-ng/transition"; import "@dojo-ng/transition-group";
 			import { createStore } from "@dojo-ng/store";
 			import { storeContext, ContextProvider, ContextConsumer } from "@dojo-ng/context";
@@ -542,6 +561,18 @@
 				{ month: "May", revenue: 58, target: 55 }, { month: "Jun", revenue: 70, target: 60 },
 				{ month: "Jul", revenue: 66, target: 62 }, { month: "Aug", revenue: 74, target: 68 },
 			];
+
+			// carousel: per-view toggle + slide-change log
+			const carousel = document.getElementById("carousel-demo");
+			const carouselPerView = document.getElementById("carousel-perview");
+			carouselPerView.addEventListener("click", () => {
+				const next = (carousel.perView % 3) + 1;
+				carousel.perView = next;
+				carouselPerView.textContent = `per-view: ${next}`;
+			});
+			carousel.addEventListener("dj-slide-change", (e) => {
+				document.getElementById("carousel-state").textContent = `slide ${e.detail.index + 1}`;
+			});
 
 			// constrained-input validator (function property)
 			document.getElementById("username").validator = (v) => v.length < 3 ? "Must be at least 3 characters." : undefined;

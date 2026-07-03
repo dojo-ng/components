@@ -409,12 +409,197 @@ def infra_readme(pkg):
     if desc:
         o.append(desc + "\n")
     o.append("Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.\n")
+    note = NOTES.get(pkg)
+    if note:
+        o.append("> " + note + "\n")
     o.append("## Install\n")
     o.append(f"```bash\nnpm install @dojo-ng/{pkg}\n```\n")
+    # Support packages (data-grid plugins, rich-text plugins) carry worked examples too.
+    exs = EXAMPLES.get(pkg)
+    if exs:
+        o.append("## Usage\n")
+        _, d0, code0 = exs[0]
+        if d0:
+            o.append(d0 + "\n")
+        o.append("```html\n" + code0 + "\n```\n")
+        if len(exs) > 1:
+            o.append("## Examples\n")
+            for title, d, code in exs[1:]:
+                o.append(f"### {title}\n")
+                if d:
+                    o.append(d + "\n")
+                o.append("```html\n" + code + "\n```\n")
     doc = INFRA_DOC.get(pkg)
     if doc:
         o.append(f"## Usage\n\nSee the [Dojo NG documentation](../../README.md) ({doc}) for design and usage details.\n")
     return "\n".join(o)
+
+
+# Data-grid plugin packages: notes + worked examples (support packages, rendered by infra_readme).
+NOTES.update({
+ "data-grid": "Plugins: pass an array of plugin objects via the `plugins` property (JavaScript only). Recommended order: structural first (`treePlugin` OR `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, `formatsPlugin`, then chrome-only plugins (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`). A `plugins` change rebuilds the table.",
+ "data-grid-edit": "CONTROLLED editing: the plugin never writes to `data`. Listen for `dj-cell-commit`, update your store, and assign a new `data` array. Place this plugin first in the array so its editor wins the cell.",
+ "data-grid-export": "Exports RAW cell values (formatting is presentation). Default set = filtered but unpaginated rows; `all: true` exports the pre-filter set. Synthetic `__` columns (like the detail expander) are skipped.",
+ "data-grid-tree": "Use `treePlugin` OR `groupsPlugin` per grid, never both (they both own expansion).",
+ "data-grid-detail": "Detail rows switch the grid virtualizer to measured (variable-height) mode; grids without this plugin keep the fixed-height fast path.",
+})
+EXAMPLES.update({
+ "data-grid-formats": [
+  ("Currency and date columns", "Set `format` on a column; other columns are untouched. Formatting follows the active locale (set `lang` on the grid or an ancestor).",
+   """<dj-data-grid id="g"></dj-data-grid>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { formatsPlugin } from "@dojo-ng/data-grid-formats";
+  const g = document.getElementById("g");
+  g.columns = [
+    { id: "name", header: "Name" },
+    { id: "price", header: "Price", format: { kind: "currency", currency: "USD" } },
+    { id: "when", header: "Updated", format: { kind: "date" } },
+    { id: "growth", header: "Growth", format: (v) => (v >= 0 ? "+" : "") + v + "%" },
+  ];
+  g.data = [{ name: "Widget", price: 1234.5, when: "2026-07-01", growth: 4 }];
+  g.plugins = [formatsPlugin()];
+</script>"""),
+ ],
+ "data-grid-cell-components": [
+  ("Buttons and checkmarks in cells", "Set `render` on a column for arbitrary Lit content, or use the prebuilt helpers. Action buttons emit `dj-cell-action` with the row.",
+   """<dj-data-grid id="g"></dj-data-grid>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { cellComponentsPlugin, actionButton, checkmarkCell } from "@dojo-ng/data-grid-cell-components";
+  const g = document.getElementById("g");
+  g.columns = [
+    { id: "name", header: "Name" },
+    { id: "active", header: "Active", sortable: false, render: checkmarkCell() },
+    { id: "act", header: "", sortable: false, render: actionButton("Open", "open") },
+  ];
+  g.data = [{ name: "Widget", active: true }];
+  g.plugins = [cellComponentsPlugin()];
+  g.addEventListener("dj-cell-action", (e) => console.log(e.detail.action, e.detail.row));
+</script>"""),
+ ],
+ "data-grid-filter": [
+  ("Quick filter plus per-column filters", "The quick filter searches all columns; columns opt into their own filter with `filter: \"text\"` or `filter: \"select\"` (distinct values).",
+   """<dj-data-grid id="g"></dj-data-grid>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { filterPlugin } from "@dojo-ng/data-grid-filter";
+  const g = document.getElementById("g");
+  g.columns = [
+    { id: "name", header: "Name", filter: "text" },
+    { id: "status", header: "Status", filter: "select" },
+  ];
+  g.data = [{ name: "Widget", status: "active" }, { name: "Gadget", status: "retired" }];
+  g.plugins = [filterPlugin()];
+</script>"""),
+ ],
+ "data-grid-pagination": [
+  ("Paged rows with a size selector", "Filtering (when present) applies first, then pagination — TanStack's row-model order handles the composition.",
+   """<dj-data-grid id="g"></dj-data-grid>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { paginationPlugin } from "@dojo-ng/data-grid-pagination";
+  const g = document.getElementById("g");
+  g.columns = [{ id: "name", header: "Name" }];
+  g.data = Array.from({ length: 100 }, (_, i) => ({ name: "Row " + i }));
+  g.plugins = [paginationPlugin({ pageSize: 10 })];
+</script>"""),
+ ],
+ "data-grid-edit": [
+  ("Inline editing, controlled", "F2/Enter on the active row or double-click starts editing; Enter/blur commits, Escape cancels. The grid never mutates your data — apply the commit yourself.",
+   """<dj-data-grid id="g"></dj-data-grid>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { editPlugin } from "@dojo-ng/data-grid-edit";
+  const g = document.getElementById("g");
+  g.columns = [
+    { id: "name", header: "Name", editable: true },
+    { id: "qty", header: "Qty", editable: { control: "number" } },
+    { id: "status", header: "Status", editable: { control: "select", options: [
+      { value: "active", label: "Active" }, { value: "retired", label: "Retired" },
+    ] } },
+  ];
+  let rows = [{ name: "Widget", qty: 2, status: "active" }];
+  g.data = rows;
+  g.plugins = [editPlugin()];
+  g.addEventListener("dj-cell-commit", (e) => {
+    const { row, columnId, value } = e.detail;
+    rows = rows.map((r) => (r === row ? { ...r, [columnId]: value } : r));
+    g.data = rows; // controlled: you own the data
+  });
+</script>"""),
+ ],
+ "data-grid-tree": [
+  ("Hierarchical rows", "Nested `children` arrays become an expandable tree; ArrowRight/ArrowLeft expand and collapse the active row.",
+   """<dj-data-grid id="g"></dj-data-grid>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { treePlugin } from "@dojo-ng/data-grid-tree";
+  const g = document.getElementById("g");
+  g.columns = [{ id: "name", header: "Name" }, { id: "size", header: "Size" }];
+  g.data = [
+    { name: "src", size: "", children: [
+      { name: "index.ts", size: "2 KB" },
+      { name: "lib", size: "", children: [{ name: "util.ts", size: "1 KB" }] },
+    ] },
+  ];
+  g.plugins = [treePlugin()];
+</script>"""),
+ ],
+ "data-grid-groups": [
+  ("Grouping with aggregates and totals", "Group rows show the value and count; aggregated columns show sums (or mean/min/max/count/custom). A totals row renders below the grid.",
+   """<dj-data-grid id="g"></dj-data-grid>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { groupsPlugin } from "@dojo-ng/data-grid-groups";
+  const g = document.getElementById("g");
+  g.columns = [
+    { id: "region", header: "Region" },
+    { id: "product", header: "Product" },
+    { id: "sales", header: "Sales" },
+  ];
+  g.data = [
+    { region: "West", product: "Widget", sales: 100 },
+    { region: "West", product: "Gadget", sales: 50 },
+    { region: "East", product: "Widget", sales: 75 },
+  ];
+  g.plugins = [groupsPlugin({ by: "region", aggregates: { sales: "sum" } })];
+</script>"""),
+ ],
+ "data-grid-export": [
+  ("Export the filtered view as CSV", "The chrome button downloads the current (filtered, unpaginated) rows. Import `toCsv`/`downloadCsv` and pass the grid element to build your own button.",
+   """<dj-data-grid id="g"></dj-data-grid>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { exportPlugin, toCsv } from "@dojo-ng/data-grid-export";
+  const g = document.getElementById("g");
+  g.columns = [{ id: "name", header: "Name" }];
+  g.data = [{ name: "Widget" }, { name: "Gadget" }];
+  g.plugins = [exportPlugin({ filename: "inventory.csv" })];
+  // or, from your own UI: console.log(toCsv(g));
+</script>"""),
+ ],
+ "data-grid-detail": [
+  ("Master-detail with a nested grid", "Each row gains an expander; the detail panel renders any template — here a nested dj-data-grid (the subgrid case).",
+   """<dj-data-grid id="g"></dj-data-grid>
+<script type="module">
+  import { html } from "lit";
+  import "@dojo-ng/data-grid";
+  import { detailPlugin } from "@dojo-ng/data-grid-detail";
+  const g = document.getElementById("g");
+  g.columns = [{ id: "order", header: "Order" }, { id: "customer", header: "Customer" }];
+  g.data = [
+    { order: "A-1", customer: "Acme", items: [{ sku: "W-1", qty: 2 }, { sku: "G-9", qty: 1 }] },
+  ];
+  g.plugins = [detailPlugin({
+    render: (row) => html`<dj-data-grid
+      height="8rem"
+      .columns=${[{ id: "sku", header: "SKU" }, { id: "qty", header: "Qty" }]}
+      .data=${row.original.items}></dj-data-grid>`,
+  })];
+</script>"""),
+ ],
+})
 
 count = 0
 infra = 0

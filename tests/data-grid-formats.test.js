@@ -90,3 +90,27 @@ test("null/undefined values render as an empty string", async () => {
 	assert.equal(cells[0], "");
 	assert.equal(cells[1], "");
 });
+
+test("locale reactivity: changing the document lang re-formats cells", async () => {
+	// The playground's locale switcher sets document.documentElement.lang; the plugin's
+	// LocaleController (attached in setup) must re-render with the new locale. This only works
+	// when the plugin's setup actually ran — the upgrade-order race silently disabled it.
+	const prev = document.documentElement.getAttribute("lang");
+	document.documentElement.setAttribute("lang", "en-US");
+	const el = document.createElement("dj-data-grid");
+	el.columns = [{ id: "amount", header: "Amount", format: { kind: "currency", currency: "USD" } }];
+	el.data = [{ amount: 1234.5 }];
+	document.body.appendChild(el);
+	el.plugins = [formatsPlugin()]; // deliberately the racing assignment order
+	await settled(el);
+	// Intl inserts no-break spaces (U+00A0/U+202F) around currency symbols; normalize for literals.
+	const cell = () => el.renderRoot.querySelector('[part="cell"]').textContent.replace(/[\u00a0\u202f]/g, " ");
+	assert.equal(cell(), "$1,234.50", "en-US currency");
+	document.documentElement.setAttribute("lang", "de-DE");
+	await new Promise((r) => setTimeout(r, 0)); // let the MutationObserver deliver
+	await settled(el);
+	assert.equal(cell(), "1.234,50 $", "de-DE formatting (USD in German locale) after a runtime locale change");
+	if (prev === null) document.documentElement.removeAttribute("lang");
+	else document.documentElement.setAttribute("lang", prev);
+	el.remove();
+});

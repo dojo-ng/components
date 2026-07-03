@@ -1,0 +1,5 @@
+{ "name": "@dojo-ng/data-grid-export", "version": "0.1.0", "license": "BSD-3-Clause", "description": "CSV export for @dojo-ng/data-grid", "type": "module",
+  "main": "./dist/index.js", "module": "./dist/index.js", "types": "./dist/index.d.ts",
+  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
+  "dependencies": { "@dojo-ng/data-grid": "^0.1.0", "@dojo-ng/button": "^0.1.0", "@dojo-ng/i18n": "^0.1.0", "@tanstack/table-core": "^8.0.0", "lit": "^3.3.0" },
+  "devDependencies": { "typescript": "^5.8.3" } }

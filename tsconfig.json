@@ -230,6 +230,12 @@
       "path": "packages/data-grid-groups"
     },
     {
+      "path": "packages/data-grid-export"
+    },
+    {
+      "path": "packages/data-grid-detail"
+    },
+    {
       "path": "packages/i18n"
     },
     {

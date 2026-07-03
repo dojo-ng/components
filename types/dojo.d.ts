@@ -192,6 +192,7 @@ declare module "@dojo-ng/framework" {
         "selection-mode"?: DjDataGrid["selectionMode"];
         "row-height"?: DjDataGrid["rowHeight"];
         "height"?: DjDataGrid["height"];
+        "plugins"?: DjDataGrid["plugins"];
       };
       "dj-date-input": DjVNodeBase & {
         "value"?: DjDateInput["value"];

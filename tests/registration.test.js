@@ -99,6 +99,8 @@ const SUPPORT_PACKAGES = [
 	"data-grid-edit",
 	"data-grid-tree",
 	"data-grid-groups",
+	"data-grid-export",
+	"data-grid-detail",
 ];
 
 for (const pkg of SUPPORT_PACKAGES) {

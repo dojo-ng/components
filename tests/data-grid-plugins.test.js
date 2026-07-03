@@ -125,3 +125,25 @@ test("setting plugins after mount rebuilds the table and disposes the old setups
 	assert.equal(disposed, 1, "the old build's setup disposer ran on rebuild");
 	assert.ok(!headerText(el).includes("Z"), "the plugin's column is gone after the rebuild");
 });
+
+test("upgrade-order race: plugins assigned after connect but before the first update flush still build the table", async () => {
+	// The playground pattern: the upgrading import connects the element (table builds with the
+	// default plugins=[]), then the SAME script task assigns plugins. A changedProperties guard
+	// mistook that for the initial cycle and never rebuilt; the reference-compare rebuild in
+	// willUpdate must catch it.
+	let setupRan = false;
+	const marker = {
+		name: "race",
+		tableOptions: () => ({ getRowCanExpand: () => true }),
+		setup: () => { setupRan = true; },
+	};
+	const el = document.createElement("dj-data-grid");
+	el.columns = COLUMNS;
+	el.data = rows(3);
+	document.body.appendChild(el); // connectedCallback builds with plugins=[]
+	el.plugins = [marker]; // same task, before the first update flush
+	await settled(el);
+	assert.equal(setupRan, true, "plugin setup ran after the in-cycle assignment");
+	assert.equal(typeof el.table.options.getRowCanExpand, "function", "plugin tableOptions reached the table");
+	el.remove();
+});

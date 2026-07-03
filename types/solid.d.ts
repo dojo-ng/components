@@ -186,6 +186,7 @@ declare module "solid-js" {
         "selection-mode"?: DjDataGrid["selectionMode"];
         "row-height"?: DjDataGrid["rowHeight"];
         "height"?: DjDataGrid["height"];
+        "plugins"?: DjDataGrid["plugins"];
       };
       "dj-date-input": JSX.HTMLAttributes<DjDateInput> & {
         "value"?: DjDateInput["value"];

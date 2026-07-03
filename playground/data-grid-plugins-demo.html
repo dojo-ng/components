@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — data-grid plugins demo</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"zustand/vanilla": "https://esm.sh/zustand@4/vanilla",
+					"@tanstack/table-core": "https://esm.sh/@tanstack/table-core@8",
+					"@tanstack/virtual-core": "https://esm.sh/@tanstack/virtual-core@3",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/i18n": "../packages/i18n/dist/index.js",
+					"@dojo-ng/icon": "../packages/icon/dist/index.js",
+					"@dojo-ng/label": "../packages/label/dist/index.js",
+					"@dojo-ng/helper-text": "../packages/helper-text/dist/index.js",
+					"@dojo-ng/button": "../packages/button/dist/index.js",
+					"@dojo-ng/text-input": "../packages/text-input/dist/index.js",
+					"@dojo-ng/number-input": "../packages/number-input/dist/index.js",
+					"@dojo-ng/constrained-input": "../packages/constrained-input/dist/index.js",
+					"@dojo-ng/native-select": "../packages/native-select/dist/index.js",
+					"@dojo-ng/pagination": "../packages/pagination/dist/index.js",
+					"@dojo-ng/data-grid": "../packages/data-grid/dist/index.js",
+					"@dojo-ng/data-grid-formats": "../packages/data-grid-formats/dist/index.js",
+					"@dojo-ng/data-grid-cell-components": "../packages/data-grid-cell-components/dist/index.js",
+					"@dojo-ng/data-grid-filter": "../packages/data-grid-filter/dist/index.js",
+					"@dojo-ng/data-grid-pagination": "../packages/data-grid-pagination/dist/index.js",
+					"@dojo-ng/data-grid-edit": "../packages/data-grid-edit/dist/index.js",
+					"@dojo-ng/data-grid-tree": "../packages/data-grid-tree/dist/index.js",
+					"@dojo-ng/data-grid-groups": "../packages/data-grid-groups/dist/index.js",
+					"@dojo-ng/data-grid-export": "../packages/data-grid-export/dist/index.js",
+					"@dojo-ng/data-grid-detail": "../packages/data-grid-detail/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			h1 { font-size: 1.2rem; } h2 { font-size: 1rem; margin-top: 2.5rem; }
+			.hint { color: var(--dj-color-text-muted); max-width: 52rem; }
+			dj-data-grid { max-width: 52rem; display: block; }
+			pre { background: var(--dj-color-neutral-100); padding: .5rem .75rem; border-radius: .375rem; max-width: 52rem; }
+			.bar { display: flex; gap: 1rem; align-items: center; margin: .5rem 0 1.5rem; }
+		</style>
+	</head>
+	<body>
+		<h1>Data grid — plugin demos</h1>
+		<div class="bar">
+			<label>Locale
+				<select id="locale">
+					<option value="en-US" selected>en-US</option>
+					<option value="de-DE">de-DE</option>
+					<option value="fr-FR">fr-FR</option>
+					<option value="ja-JP">ja-JP</option>
+				</select>
+			</label>
+			<span class="hint">Formats follow the document locale (dates, currency, group totals).</span>
+		</div>
+
+		<h2>1 — Formats + filter + pagination + export</h2>
+		<p class="hint">Quick filter above, column filters under the header (Name text / City select), currency + date formatting, paged 10 at a time; Export CSV downloads the filtered set across all pages.</p>
+		<dj-data-grid id="g1" height="22rem"></dj-data-grid>
+
+		<h2>2 — Inline editing (controlled)</h2>
+		<p class="hint">F2 or double-click to edit Name (text), Qty (number), or Status (select). Enter/blur commits, Escape cancels. The page applies commits to its own data.</p>
+		<dj-data-grid id="g2" height="12rem"></dj-data-grid>
+		<pre id="g2out">last commit: —</pre>
+
+		<h2>3 — Tree data</h2>
+		<p class="hint">Expander + indent on the first column; ArrowRight/ArrowLeft expand and collapse the active row (role=treegrid).</p>
+		<dj-data-grid id="g3" height="14rem"></dj-data-grid>
+
+		<h2>4 — Groups with aggregates</h2>
+		<p class="hint">Grouped by Region with sum(Sales); group rows show counts, and a totals row renders below.</p>
+		<dj-data-grid id="g4" height="16rem"></dj-data-grid>
+
+		<h2>5 — Master-detail (nested grid)</h2>
+		<p class="hint">Each order expands into a nested dj-data-grid of its line items — the measured variable-height virtualizer path.</p>
+		<dj-data-grid id="g5" height="16rem"></dj-data-grid>
+
+		<script type="module">
+			import { html } from "lit";
+			import "@dojo-ng/data-grid";
+			import { formatsPlugin } from "@dojo-ng/data-grid-formats";
+			import { cellComponentsPlugin, actionButton } from "@dojo-ng/data-grid-cell-components";
+			import { filterPlugin } from "@dojo-ng/data-grid-filter";
+			import { paginationPlugin } from "@dojo-ng/data-grid-pagination";
+			import { editPlugin } from "@dojo-ng/data-grid-edit";
+			import { treePlugin } from "@dojo-ng/data-grid-tree";
+			import { groupsPlugin } from "@dojo-ng/data-grid-groups";
+			import { exportPlugin } from "@dojo-ng/data-grid-export";
+			import { detailPlugin } from "@dojo-ng/data-grid-detail";
+
+			document.getElementById("locale").addEventListener("change", (e) => {
+				document.documentElement.lang = e.target.value;
+			});
+
+			// 1 — formats + filter + pagination + export
+			const first = ["Ada","Bo","Cy","Dee","Eli","Fay","Gus","Hana","Ivy","Jo","Kai","Lena","Mo","Nia","Omar","Pia"];
+			const cities = ["Austin","Boston","Cairo","Denver","Edinburgh"];
+			const g1 = document.getElementById("g1");
+			g1.columns = [
+				{ id: "name", header: "Name", filter: "text" },
+				{ id: "city", header: "City", filter: "select" },
+				{ id: "amount", header: "Amount", format: { kind: "currency", currency: "USD" } },
+				{ id: "joined", header: "Joined", format: { kind: "date" } },
+			];
+			g1.data = Array.from({ length: 137 }, (_, i) => ({
+				name: first[i % first.length] + " " + (i + 1),
+				city: cities[i % cities.length],
+				amount: Math.round(((i * 733) % 9000) + 100) / (i % 3 === 0 ? 10 : 1),
+				joined: new Date(2024, i % 12, (i % 27) + 1).toISOString(),
+			}));
+			g1.plugins = [formatsPlugin(), filterPlugin(), paginationPlugin({ pageSize: 10 }), exportPlugin({ filename: "people.csv" })];
+
+			// 2 — inline editing, controlled
+			const g2 = document.getElementById("g2");
+			g2.columns = [
+				{ id: "name", header: "Name", editable: true },
+				{ id: "qty", header: "Qty", editable: { control: "number" } },
+				{ id: "status", header: "Status", editable: { control: "select", options: [
+					{ value: "active", label: "Active" }, { value: "retired", label: "Retired" },
+				] } },
+			];
+			let g2rows = [
+				{ name: "Widget", qty: 2, status: "active" },
+				{ name: "Gadget", qty: 7, status: "retired" },
+				{ name: "Sprocket", qty: 1, status: "active" },
+			];
+			g2.data = g2rows;
+			g2.plugins = [editPlugin()];
+			g2.addEventListener("dj-cell-commit", (e) => {
+				const { row, columnId, value, oldValue } = e.detail;
+				g2rows = g2rows.map((r) => (r === row ? { ...r, [columnId]: value } : r));
+				g2.data = g2rows;
+				document.getElementById("g2out").textContent = `last commit: ${columnId} ${JSON.stringify(oldValue)} → ${JSON.stringify(value)}`;
+			});
+
+			// 3 — tree
+			const g3 = document.getElementById("g3");
+			g3.columns = [{ id: "name", header: "Name" }, { id: "size", header: "Size" }];
+			g3.data = [
+				{ name: "src", size: "", children: [
+					{ name: "index.ts", size: "2 KB" },
+					{ name: "lib", size: "", children: [
+						{ name: "util.ts", size: "1 KB" },
+						{ name: "deep", size: "", children: [{ name: "leaf.ts", size: "3 KB" }] },
+					] },
+				] },
+				{ name: "docs", size: "", children: [{ name: "readme.md", size: "4 KB" }] },
+			];
+			g3.plugins = [treePlugin()];
+
+			// 4 — groups + aggregates + totals
+			const g4 = document.getElementById("g4");
+			g4.columns = [
+				{ id: "region", header: "Region" },
+				{ id: "product", header: "Product" },
+				{ id: "sales", header: "Sales" },
+			];
+			g4.data = [
+				{ region: "West", product: "Widget", sales: 100 },
+				{ region: "West", product: "Gadget", sales: 50 },
+				{ region: "East", product: "Widget", sales: 75 },
+				{ region: "East", product: "Sprocket", sales: 25 },
+				{ region: "North", product: "Widget", sales: 60 },
+			];
+			g4.plugins = [groupsPlugin({ by: "region", aggregates: { sales: "sum" } })];
+
+			// 5 — master-detail with a nested grid
+			const g5 = document.getElementById("g5");
+			g5.columns = [{ id: "order", header: "Order" }, { id: "customer", header: "Customer" }];
+			g5.data = [
+				{ order: "A-1", customer: "Acme", items: [{ sku: "W-1", qty: 2 }, { sku: "G-9", qty: 1 }] },
+				{ order: "A-2", customer: "Globex", items: [{ sku: "S-4", qty: 5 }] },
+				{ order: "A-3", customer: "Initech", items: [{ sku: "W-1", qty: 1 }, { sku: "S-4", qty: 2 }, { sku: "G-9", qty: 3 }] },
+			];
+			g5.plugins = [detailPlugin({
+				render: (row) => html`<dj-data-grid
+					height="7rem"
+					.columns=${[{ id: "sku", header: "SKU" }, { id: "qty", header: "Qty" }]}
+					.data=${row.original.items}></dj-data-grid>`,
+			})];
+		</script>
+	</body>
+</html>

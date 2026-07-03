@@ -15,6 +15,10 @@ export default css`
 	.scroll { overflow: auto; outline: none; }
 	.scroll:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: -2px; }
 	.vrow { position: absolute; left: 0; right: 0; display: grid; align-items: center; border-bottom: 1px solid var(--dj-color-neutral-100, #f3f4f6); }
+	/* Measured wrapper for master-detail: carries the absolute positioning; the row inside is static. */
+	.vwrap { position: absolute; left: 0; right: 0; }
+	.vdetail { border-bottom: 1px solid var(--dj-color-neutral-100, #f3f4f6); background: var(--dj-color-neutral-50, #f9fafb); }
+	.detail { padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); }
 	.vrow:hover { background: var(--dj-color-neutral-50, #f9fafb); }
 	.vrow--active { background: var(--dj-color-neutral-100, #f3f4f6); }
 	.vrow--selected { background: var(--dj-color-primary-100, #dbeafe); }

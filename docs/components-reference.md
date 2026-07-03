@@ -949,7 +949,7 @@ A data grid from `columns` + `rows`. Click a sortable header to sort (emits `dj-
 
 ### `<dj-data-grid>` · `@dojo-ng/data-grid`
 
-A virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). v1 scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation. Async data sources, filtering, column resize/reorder/hide, inline editing, tree rows and pagination are v2. ARIA role=grid. Events: `dj-sort`, `dj-selection-change`. Parts: `grid`, `head`, `row`, `cell`.
+Derive the cell value from the whole row (calculated columns). Maps to a TanStack `accessorFn`. A row total is `compute: r => r.a + r.b`; no plugin needed. */ compute?: (row: Row) =&gt; unknown; /** TanStack aggregation for this column when grouping (set by the groups plugin's columns() hook; copied onto the ColumnDef). Core never sets it itself. */ aggregationFn?: AggregationFnOption&lt;Row&gt;; } export type SelectionMode = "none" | "single" | "multiple"; /** `<dj-data-grid>` — a virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). Core scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]` behaves exactly as before. ARIA role=grid. Events: `dj-sort`, `dj-selection-change`. Parts: `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -958,8 +958,9 @@ A virtualized, sortable, selectable data grid built on TanStack Table (column/so
 | `selectionMode` | selection-mode ↻ | `SelectionMode` | `"none"` |
 | `rowHeight` | row-height | `number` | `36` |
 | `height` | height | `string` | `"20rem"` |
+| `plugins` | — | `DataGridPlugin[]` | `[]` |
 
-**Parts:** `grid`, `head`, `row`, `cell`
+**Parts:** `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`, `detail`
 
 **Events:** `dj-sort`, `dj-selection-change`
 

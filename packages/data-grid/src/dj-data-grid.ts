@@ -71,6 +71,14 @@ export class DjDataGrid extends DojoElement {
 	@query(".scroll") private scrollEl!: HTMLElement;
 
 	#table!: Table<Row>;
+	/** Read-only access to the live TanStack table, so consumers outside a plugin (CSV export,
+	 *  tests) can reach it. Rebuilt when `plugins` changes; do not cache across rebuilds. */
+	get table(): Table<Row> { return this.#table; }
+	/** The plugin array the table was last built with. Compared by reference in willUpdate so a
+	 *  `plugins` assignment ALWAYS rebuilds — including one landing between upgrade-time
+	 *  connectedCallback and the first update flush (script-after-import order), which a
+	 *  changedProperties-based guard mistakes for the initial cycle. */
+	#builtPlugins?: DataGridPlugin[];
 	#tstate!: TableState;
 	#ctx!: DataGridContext;
 	#disposers: Array<() => void> = [];
@@ -152,7 +160,20 @@ export class DjDataGrid extends DojoElement {
 			const dispose = p.setup?.(this.#ctx);
 			if (dispose) this.#disposers.push(dispose);
 		}
+		this.#builtPlugins = this.plugins;
 		this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#table.getRowModel().rows.length });
+	}
+
+	protected override willUpdate(changed: Map<PropertyKey, unknown>) {
+		super.willUpdate(changed);
+		// Rebuild BEFORE render whenever the plugin array is not the one the table was built with.
+		// Row models and setup() only exist at table creation, so a missed rebuild silently drops
+		// plugin behavior (this bit the playground: plugins assigned right after the upgrading
+		// import, inside the first update cycle).
+		if (this.#table && this.plugins !== this.#builtPlugins) {
+			this.#buildTable();
+			this.#virtualizer?.measure();
+		}
 	}
 
 	override connectedCallback() {
@@ -175,21 +196,20 @@ export class DjDataGrid extends DojoElement {
 			scrollToFn: elementScroll,
 			observeElementRect,
 			observeElementOffset,
+			// Used only when a renderDetail plugin switches rows to measured wrappers. Falls back to
+			// the row-height estimate when layout reports no size (headless test DOM).
+			measureElement: (el) => {
+				const h = (el as HTMLElement).getBoundingClientRect?.().height ?? 0;
+				return h > 0 ? h : this.rowHeight;
+			},
 			onChange: () => this.requestUpdate(),
 		});
 		this.#cleanup = this.#virtualizer._didMount();
 		this.requestUpdate();
 	}
 	protected override updated(c: Map<PropertyKey, unknown>) {
-		// A genuine post-creation plugins change rebuilds the table (row models must exist at
-		// creation). Guard against the first update cycle, exactly like dj-rich-text.
-		if (c.has("plugins") && c.get("plugins") !== undefined) {
-			this.#buildTable();
-			this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#table.getRowModel().rows.length });
-			this.#virtualizer?.measure();
-			this.requestUpdate();
-			return;
-		}
+		// Plugins-change rebuilds happen in willUpdate (reference compare against #builtPlugins),
+		// which is immune to the upgrade-order race a changedProperties guard has here.
 		if (c.has("data") || c.has("columns") || c.has("selectionMode")) {
 			this.#table.setOptions(() => this.#mergedOptions());
 			this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#table.getRowModel().rows.length });
@@ -239,6 +259,15 @@ export class DjDataGrid extends DojoElement {
 		return content;
 	}
 
+	/** Detail content for a row: the first plugin `renderDetail` returning non-undefined wins. */
+	#detailContent(row: TableRow<Row>): TemplateResult | undefined {
+		for (const p of this.plugins) {
+			const d = p.renderDetail?.(row, this.#ctx);
+			if (d !== undefined) return d;
+		}
+		return undefined;
+	}
+
 	override render() {
 		const template = this.#computeColumns().map((c) => c.width ?? "1fr").join(" ");
 		const headers = this.#table?.getHeaderGroups()[0]?.headers ?? [];
@@ -256,6 +285,7 @@ export class DjDataGrid extends DojoElement {
 		// aria-activedescendant must point at a rendered row; with virtualization the active row can
 		// be scrolled out of the rendered window, so omit it then.
 		const activeRendered = items.some((vi) => vi.index === this.activeIndex);
+		const hasDetail = this.plugins.some((p) => p.renderDetail);
 		return html`
 			<div class="wrap">
 				${chromeTops.map((c) => html`<div part="chrome-top" class="chrome">${c}</div>`)}
@@ -281,13 +311,29 @@ export class DjDataGrid extends DojoElement {
 								const row = rows[vi.index];
 								if (!row) return nothing;
 								const selected = row.getIsSelected();
-								return html`<div part="row" id=${`r-${vi.index}`}
+								// With a renderDetail plugin, rows have variable height: each virtual item
+								// becomes a measured wrapper (data-index + measureElement ref, the TanStack
+								// dynamic-size contract) holding the fixed-height row plus its detail panel.
+								const rowStyle = hasDetail
+									? `position:static;height:${this.rowHeight}px;grid-template-columns:${template}`
+									: `transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`;
+								const rowTpl = html`<div part="row" id=${`r-${vi.index}`}
 									class="vrow ${vi.index === this.activeIndex ? "vrow--active" : ""} ${selected ? "vrow--selected" : ""}"
 									role="row" aria-rowindex=${vi.index + headerRows + 1} aria-selected=${this.selectionMode !== "none" ? (selected ? "true" : "false") : nothing}
-									style=${`transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`}
+									style=${rowStyle}
 									${ref((el) => el && applyRowAttrs(el as Element, this.#rowAttributes(row)))}
 									@click=${() => { this.activeIndex = vi.index; this.toggleAt(vi.index); }}>
 									${row.getVisibleCells().map((cell) => html`<div part="cell" class="cell" role="gridcell">${this.#cellContent(cell)}</div>`)}
+								</div>`;
+								if (!hasDetail) return rowTpl;
+								const detail = this.#detailContent(row);
+								return html`<div class="vwrap" data-index=${vi.index}
+									style=${`transform:translateY(${vi.start}px)`}
+									${ref((el) => { if (el) this.#virtualizer?.measureElement(el as HTMLElement); })}>
+									${rowTpl}
+									${detail !== undefined
+										? html`<div class="vdetail" role="row"><div part="detail" class="detail" role="gridcell">${detail}</div></div>`
+										: nothing}
 								</div>`;
 							})}
 						</div>

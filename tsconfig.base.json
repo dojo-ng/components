@@ -51,6 +51,9 @@
       "@dojo-ng/data-grid-tree": [
         "./packages/data-grid-tree/dist/index.d.ts"
       ],
+      "@dojo-ng/data-grid-groups": [
+        "./packages/data-grid-groups/dist/index.d.ts"
+      ],
       "@dojo-ng/toolbar": [
         "./packages/toolbar/dist/index.d.ts"
       ],

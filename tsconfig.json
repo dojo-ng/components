@@ -227,6 +227,9 @@
       "path": "packages/data-grid-tree"
     },
     {
+      "path": "packages/data-grid-groups"
+    },
+    {
       "path": "packages/i18n"
     },
     {

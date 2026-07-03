@@ -5,7 +5,7 @@ import DojoElement from "@dojo-ng/dojo-element";
 import {
 	createTable, getCoreRowModel, getSortedRowModel, functionalUpdate,
 	type Table, type TableOptionsResolved, type TableState, type ColumnDef, type Cell,
-	type Row as TableRow, type SortingState, type RowSelectionState, type Updater,
+	type Row as TableRow, type SortingState, type RowSelectionState, type Updater, type AggregationFnOption,
 } from "@tanstack/table-core";
 import { Virtualizer, elementScroll, observeElementOffset, observeElementRect } from "@tanstack/virtual-core";
 import type { DataGridPlugin, DataGridContext } from "./plugin.js";
@@ -32,6 +32,9 @@ export interface GridColumn {
 	/** Derive the cell value from the whole row (calculated columns). Maps to a TanStack
 	 *  `accessorFn`. A row total is `compute: r => r.a + r.b`; no plugin needed. */
 	compute?: (row: Row) => unknown;
+	/** TanStack aggregation for this column when grouping (set by the groups plugin's columns()
+	 *  hook; copied onto the ColumnDef). Core never sets it itself. */
+	aggregationFn?: AggregationFnOption<Row>;
 }
 export type SelectionMode = "none" | "single" | "multiple";
 
@@ -84,6 +87,8 @@ export class DjDataGrid extends DojoElement {
 			// A computed column derives its value from the whole row; otherwise key off the field.
 			if (c.compute) (def as { accessorFn?: (row: Row) => unknown }).accessorFn = c.compute;
 			else (def as { accessorKey?: string }).accessorKey = c.accessorKey ?? c.id;
+			// Pass a plugin-set aggregation through to TanStack (groups plugin sets this via columns()).
+			if (c.aggregationFn) def.aggregationFn = c.aggregationFn;
 			return def;
 		});
 	}

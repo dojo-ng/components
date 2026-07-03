@@ -95,6 +95,7 @@ const SUPPORT_PACKAGES = [
 	"data-grid-formats",
 	"data-grid-cell-components",
 	"data-grid-filter",
+	"data-grid-pagination",
 ];
 
 for (const pkg of SUPPORT_PACKAGES) {

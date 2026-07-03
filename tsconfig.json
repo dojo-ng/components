@@ -218,6 +218,9 @@
       "path": "packages/data-grid-filter"
     },
     {
+      "path": "packages/data-grid-pagination"
+    },
+    {
       "path": "packages/i18n"
     },
     {

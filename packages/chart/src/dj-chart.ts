@@ -18,9 +18,15 @@ import {
 	areaPath,
 	groupedBars,
 	stackedBars,
+	buildScalesH,
+	horizontalBars,
+	horizontalStackedBars,
+	centerLabelSize,
+	centerSubLabelSize,
 	yTicks,
 	ticksOf,
 	summary,
+	accessibleName,
 	hasBars,
 } from "./core.js";
 
@@ -67,6 +73,9 @@ export class DjChart extends DojoElement {
 	@property({ attribute: false }) series: ChartSeries[] = [];
 	@property({ attribute: "category-key" }) categoryKey = "";
 	@property({ reflect: true }) type: ChartType = "line";
+	/** Bar orientation. `"horizontal"` puts categories on the Y axis and values on the X axis;
+	 * it applies only to `bar` charts and ignores `brush` and a secondary (right) axis (v1). */
+	@property({ reflect: true }) orientation: "vertical" | "horizontal" = "vertical";
 	@property({ type: Boolean }) stacked = false;
 	@property({ attribute: "show-legend", type: Boolean }) showLegend = true;
 	@property({ attribute: "show-grid", type: Boolean }) showGrid = true;
@@ -84,6 +93,10 @@ export class DjChart extends DojoElement {
 	@property({ attribute: "size-key" }) sizeKey?: string;
 	/** Donut/pie hole size as a fraction of the radius (0 = pie); donut defaults to 0.6. */
 	@property({ attribute: "inner-radius", type: Number }) innerRadius?: number;
+	/** Text centered in a donut hole (ignored for other types). Also appended to the aria-label. */
+	@property({ attribute: "center-label" }) centerLabel?: string;
+	/** Smaller text below the donut center label. */
+	@property({ attribute: "center-sub-label" }) centerSubLabel?: string;
 	/** Make legend items toggle series visibility (cartesian and x/y charts). */
 	@property({ attribute: "legend-toggle", type: Boolean }) legendToggle = false;
 	/** Show a brush strip below cartesian charts to select the visible category window. */
@@ -108,6 +121,31 @@ export class DjChart extends DojoElement {
 	#i18n = new LocaleController(this);
 	// Active brush-handle drag, if any.
 	#brushDrag?: { mode: "start" | "end" | "pan"; n: number; origStart: number; origEnd: number; x0: number };
+	// Keys of already-emitted console.warn messages, so each is logged at most once per element.
+	#warned = new Set<string>();
+
+	/** Log a message once per element (keyed), for unsupported option combinations. */
+	private warnOnce(key: string, message: string) {
+		if (this.#warned.has(key)) return;
+		this.#warned.add(key);
+		console.warn(message);
+	}
+
+	/** True when this chart should render as horizontal bars (orientation set AND a bar chart). */
+	private get isHBar(): boolean {
+		return this.orientation === "horizontal" && this.type === "bar";
+	}
+
+	// Warn once (and ignore) for the documented horizontal-orientation limitations.
+	override willUpdate() {
+		if (this.orientation !== "horizontal") return;
+		if (this.type !== "bar") {
+			this.warnOnce("h-nonbar", `dj-chart: orientation="horizontal" applies only to bar charts; ignoring orientation for type="${this.type}".`);
+			return;
+		}
+		if (this.brush) this.warnOnce("h-brush", `dj-chart: brush is not supported with orientation="horizontal"; ignoring brush.`);
+		if (this.series.some((s) => s.axis === "right")) this.warnOnce("h-right-axis", `dj-chart: a secondary (right) axis is not supported with orientation="horizontal"; ignoring it.`);
+	}
 
 	/** Format a y value for ticks and tooltips: explicit override, else locale-aware Intl. */
 	private fmtY(v: number): string {
@@ -187,7 +225,9 @@ export class DjChart extends DojoElement {
 
 	override render() {
 		const cats = categories(this.data, this.categoryKey);
-		const accName = `${this.label ? this.label + ". " : ""}${summary(this.type, this.series, cats)}`;
+		// Donut center label rides along in the accessible name so AT users hear the highlighted value.
+		const centerForAria = this.type === "donut" ? this.centerLabel : undefined;
+		const accName = accessibleName(this.label, this.type, this.series, cats, centerForAria);
 		const ready = this.w > 0 && this.h > 0 && this.data.length > 0 && this.series.length > 0;
 		const showLegend = this.showLegend && this.series.length > 0;
 		// The .plot box is ALWAYS this same node (only its contents vary), so the
@@ -197,7 +237,7 @@ export class DjChart extends DojoElement {
 			<div class="plot">
 				${ready ? this.renderPlot(cats, accName) : html`<div class="sr-only" role="img" aria-label=${accName}></div>`}
 			</div>
-			${ready && this.brush && this.group() === "cartesian" ? this.renderBrush() : nothing}
+			${ready && this.brush && this.group() === "cartesian" && !this.isHBar ? this.renderBrush() : nothing}
 			${ready && showLegend ? this.renderLegend() : nothing}
 			${this.renderTable(cats)}
 		`;
@@ -210,6 +250,8 @@ export class DjChart extends DojoElement {
 		if (fam === "radial") return this.renderRadial(W, H, cats, accName);
 		const innerH = Math.max(0, H - MARGIN.top - MARGIN.bottom);
 		if (fam === "xy") return this.renderXY(W, H, Math.max(0, W - MARGIN.left - MARGIN.right), innerH, accName);
+		// Horizontal bars are a separate render so the vertical path below stays byte-identical.
+		if (this.isHBar) return this.renderCartesianH(W, H, innerH, accName);
 		// Cartesian. A secondary axis needs extra right margin for its tick labels.
 		const hasRight = this.series.some((s) => s.axis === "right");
 		const innerW = Math.max(0, W - MARGIN.left - (hasRight ? RIGHT_AXIS_MARGIN : MARGIN.right));
@@ -303,6 +345,82 @@ export class DjChart extends DojoElement {
 		})}`;
 	}
 
+	/** Horizontal bars: categories on the left (Y) axis, values on the bottom (X) axis, bars
+	 * growing rightward from zero. Grouped and stacked both supported. Brush and a secondary
+	 * axis are unsupported here (warned in willUpdate); axis labels track their DATA dimension,
+	 * so `x-label` names the category axis and `y-label` the value axis in both orientations. */
+	private renderCartesianH(W: number, H: number, innerH: number, accName: string): TemplateResult {
+		const cats = categories(this.data, this.categoryKey);
+		// Widen the left margin to fit category labels (no text metrics available; estimate from
+		// the longest label, clamped so it never eats more than ~40% of the width).
+		const longest = cats.reduce((m, c) => Math.max(m, this.fmtX(c).length), 0);
+		const hLeft = Math.min(Math.max(MARGIN.left, longest * 7 + 14), Math.floor(W * 0.4));
+		const innerW = Math.max(0, W - hLeft - MARGIN.right);
+		const scales = buildScalesH(this.data, this.series, this.categoryKey, this.stacked, innerW, innerH, this.hiddenKeys);
+		const band = scales.yBand;
+		const xticks = ticksOf(scales.x, 5);
+		const bars = this.stacked
+			? horizontalStackedBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys)
+			: horizontalBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys);
+		return html`
+			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot">
+				<g transform="translate(${hLeft},${MARGIN.top})">
+					${this.showGrid
+						? svg`<g class="grid" part="grid">${xticks.map(
+								(t) => svg`<line x1="${scales.x(t)}" x2="${scales.x(t)}" y1="0" y2="${innerH}"></line>`,
+							)}</g>`
+						: nothing}
+					<g class="axis" part="axis">
+						<line x1="0" y1="0" x2="0" y2="${innerH}"></line>
+						${cats.map(
+							(c) => svg`<text x="-8" y="${(band(c) ?? 0) + band.bandwidth() / 2}" text-anchor="end" dominant-baseline="middle">${this.fmtX(c)}</text>`,
+						)}
+						<line x1="0" y1="${innerH}" x2="${innerW}" y2="${innerH}"></line>
+						${xticks.map(
+							(t) => svg`<text x="${scales.x(t)}" y="${innerH + 18}" text-anchor="middle">${this.fmtY(t)}</text>`,
+						)}
+						${this.xLabel
+							? svg`<text class="axis-title" transform="translate(${-hLeft + 12},${innerH / 2}) rotate(-90)" text-anchor="middle">${this.xLabel}</text>`
+							: nothing}
+						${this.yLabel
+							? svg`<text class="axis-title" x="${innerW / 2}" y="${innerH + MARGIN.bottom}" text-anchor="middle">${this.yLabel}</text>`
+							: nothing}
+					</g>
+					<g part="series">
+						${this.series.map((s, i) =>
+							this.hiddenKeys.has(s.key)
+								? nothing
+								: svg`${bars
+										.filter((b) => b.seriesIndex === i)
+										.map((b) => svg`<rect class="bar" part="bar" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}" fill=${this.color(s, i)}></rect>`)}`,
+						)}
+					</g>
+					<g>
+						${cats.map(
+							(c) => svg`<rect class="hit" x="0" y="${band(c) ?? 0}" width="${innerW}" height="${band.bandwidth()}" @pointerenter=${() => this.onHover(c)} @pointerleave=${() => this.onHover(null)}></rect>`,
+						)}
+					</g>
+				</g>
+			</svg>
+			${this.renderTooltipH(scales, hLeft, innerW)}
+		`;
+	}
+
+	private renderTooltipH(scales: ReturnType<typeof buildScalesH>, hLeft: number, innerW: number): TemplateResult {
+		if (this.hovered == null) return html`<div class="tooltip" part="tooltip" hidden></div>`;
+		const c = this.hovered;
+		const row = this.data.find((d) => cat(d, this.categoryKey) === c);
+		const band = scales.yBand;
+		const left = hLeft + innerW / 2;
+		const top = MARGIN.top + (band(c) ?? 0) + band.bandwidth() / 2;
+		return html`<div class="tooltip" part="tooltip" style=${`left:${left}px; top:${top}px`}>
+			<strong>${this.fmtX(c)}</strong>
+			${this.series.map(
+				(s, i) => html`<div class="tooltip-row"><span class="tooltip-swatch" style=${`background:${this.color(s, i)}`}></span>${s.label ?? s.key}: ${this.fmtY(row ? num(row[s.key]) : 0)}</div>`,
+			)}
+		</div>`;
+	}
+
 	/** Scatter and bubble: linear x and y axes with point (or size-encoded) marks. */
 	private renderXY(W: number, H: number, innerW: number, innerH: number, accName: string): TemplateResult {
 		const vis = this.series.filter((s) => !this.hiddenKeys.has(s.key));
@@ -374,7 +492,10 @@ export class DjChart extends DojoElement {
 		const valueKey = this.series[0]?.key ?? "";
 		const R = Math.max(0, Math.min(W, H) / 2 - 4);
 		const ratio = this.type === "donut" ? this.innerRadius ?? 0.6 : this.innerRadius ?? 0;
-		const slices = pieArcs(this.data, this.categoryKey, valueKey, R, Math.max(0, Math.min(0.95, ratio)) * R);
+		const innerR = Math.max(0, Math.min(0.95, ratio)) * R;
+		const slices = pieArcs(this.data, this.categoryKey, valueKey, R, innerR);
+		// Center label: only for donut (a pie has no hole); sized from the hole radius, token-colored.
+		const showCenter = this.type === "donut" && !!this.centerLabel;
 		return html`
 			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot">
 				<g transform="translate(${W / 2},${H / 2})" part="series">
@@ -382,6 +503,11 @@ export class DjChart extends DojoElement {
 						(sl) => svg`<path class="slice" part="slice" d=${sl.d} fill=${this.sliceColor(sl.index)}
 							@pointerenter=${() => this.onHover(sl.category)} @pointerleave=${() => this.onHover(null)}></path>`,
 					)}
+					${showCenter
+						? svg`<text class="center-label" part="center-label" text-anchor="middle" dominant-baseline="central" font-size="${centerLabelSize(innerR)}">${this.centerLabel}${this.centerSubLabel
+								? svg`<tspan class="center-sub-label" part="center-sub-label" x="0" dy="1.4em" font-size="${centerSubLabelSize(innerR)}">${this.centerSubLabel}</tspan>`
+								: nothing}</text>`
+						: nothing}
 				</g>
 			</svg>
 			${this.renderRadialTooltip(valueKey, W)}

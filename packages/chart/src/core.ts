@@ -218,6 +218,125 @@ export function stackedBars(
 	return out;
 }
 
+// ---- horizontal bars ----
+//
+// Horizontal is an ORIENTATION of `bar`, not a new chart type: the band scale moves to the
+// Y axis (categories run top-to-bottom) and the linear value scale moves to the X axis (bars
+// grow rightward from x=0). These are separate pure functions so the vertical path stays
+// byte-identical; they return the same `Bar` rect shape with x/y/width/height swapped.
+
+export interface ScalesH {
+	/** Band scale over categories, sized to the inner HEIGHT. */
+	yBand: ScaleBand<string>;
+	/** Linear value scale, sized to the inner WIDTH (always includes zero). */
+	x: ScaleLinear<number, number>;
+	cats: string[];
+}
+
+/** Build horizontal-bar scales: a Y band for categories and an X linear scale for values.
+ * Honors `hidden` and the stacked domain exactly as {@link buildScales} does. */
+export function buildScalesH(
+	data: ChartDatum[],
+	series: ChartSeries[],
+	categoryKey: string,
+	stacked: boolean,
+	innerW: number,
+	innerH: number,
+	hidden: Set<string> = new Set(),
+): ScalesH {
+	const cats = categories(data, categoryKey);
+	const visible = series.filter((s) => !hidden.has(s.key));
+	const yBand = scaleBand<string>().domain(cats).range([0, innerH]).padding(0.2);
+	const x = scaleLinear().domain(yDomain(data, visible, stacked)).range([0, innerW]).nice();
+	return { yBand, x, cats };
+}
+
+/** Rectangles for grouped (side-by-side) horizontal bars. Bars grow rightward from x=0;
+ * each category band is split among the visible bar series. Mirrors {@link groupedBars}. */
+export function horizontalBars(
+	data: ChartDatum[],
+	categoryKey: string,
+	series: ChartSeries[],
+	scales: ScalesH,
+	hidden: Set<string> = new Set(),
+): Bar[] {
+	const band = scales.yBand;
+	const barKeys = series
+		.map((s, i) => ({ s, i }))
+		.filter(({ s }) => (s.type ?? "bar") !== "line" && (s.type ?? "bar") !== "area" && !hidden.has(s.key));
+	const inner = scaleBand<number>()
+		.domain(barKeys.map((_, j) => j))
+		.range([0, band.bandwidth()])
+		.padding(0.1);
+	const x0 = scales.x(0);
+	const out: Bar[] = [];
+	for (const row of data) {
+		const c = cat(row, categoryKey);
+		const gy = band(c) ?? 0;
+		barKeys.forEach(({ s, i }, j) => {
+			const v = num(row[s.key]);
+			const xv = scales.x(v);
+			out.push({
+				x: Math.min(x0, xv),
+				y: gy + (inner(j) ?? 0),
+				width: Math.abs(xv - x0),
+				height: inner.bandwidth(),
+				seriesIndex: i,
+				category: c,
+				value: v,
+			});
+		});
+	}
+	return out;
+}
+
+/** Rectangles for stacked horizontal bars (uses d3-stack). Hidden series are dropped from the
+ * stack; `seriesIndex` stays the original index so colors stay stable. Mirrors {@link stackedBars}. */
+export function horizontalStackedBars(
+	data: ChartDatum[],
+	categoryKey: string,
+	series: ChartSeries[],
+	scales: ScalesH,
+	hidden: Set<string> = new Set(),
+): Bar[] {
+	const visible = series.map((s, i) => ({ s, i })).filter(({ s }) => !hidden.has(s.key));
+	const keys = visible.map((v) => v.s.key);
+	const layers = d3stack<ChartDatum>().keys(keys)(data);
+	const band = scales.yBand;
+	const out: Bar[] = [];
+	layers.forEach((layer, li) => {
+		const seriesIndex = visible[li].i;
+		layer.forEach((seg, rowIndex) => {
+			const c = cat(data[rowIndex], categoryKey);
+			const xLeft = scales.x(seg[0]);
+			const xRight = scales.x(seg[1]);
+			out.push({
+				x: Math.min(xLeft, xRight),
+				y: band(c) ?? 0,
+				width: Math.abs(xRight - xLeft),
+				height: band.bandwidth(),
+				seriesIndex,
+				category: c,
+				value: num(data[rowIndex][visible[li].s.key]),
+			});
+		});
+	});
+	return out;
+}
+
+// ---- donut center label ----
+
+/** Font size (px) for a donut center label, scaled to the hole radius and clamped to a
+ * legible range. The sub-label is rendered smaller (see {@link centerSubLabelSize}). */
+export function centerLabelSize(innerRadius: number): number {
+	return Math.max(10, Math.min(28, innerRadius * 0.5));
+}
+
+/** Font size (px) for the smaller donut center sub-label. */
+export function centerSubLabelSize(innerRadius: number): number {
+	return Math.max(9, Math.min(16, innerRadius * 0.28));
+}
+
 /** Y-axis tick values from the primary scale. */
 export function yTicks(scales: Scales, count = 5): number[] {
 	return scales.y.ticks(count);
@@ -312,4 +431,17 @@ export function summary(chartType: ChartType, series: ChartSeries[], cats: strin
 	const hasCats = cats.length > 0 && cats[0] !== "";
 	const span = hasCats ? ` across ${cats.length} categories (${cats[0]} to ${cats[cats.length - 1]})` : "";
 	return `${cap} chart, ${series.length} series: ${names}${span}.`;
+}
+
+/** The chart's accessible name: an optional lead-in label, the generated data summary, and an
+ * optional center-label (donut) appended so assistive tech hears the highlighted value too. */
+export function accessibleName(
+	label: string | undefined,
+	chartType: ChartType,
+	series: ChartSeries[],
+	cats: string[],
+	centerLabel?: string,
+): string {
+	const base = `${label ? label + ". " : ""}${summary(chartType, series, cats)}`;
+	return centerLabel ? `${base} ${centerLabel}.` : base;
 }

@@ -131,6 +131,7 @@ declare module "solid-js" {
         "series"?: DjChart["series"];
         "category-key"?: DjChart["categoryKey"];
         "type"?: DjChart["type"];
+        "orientation"?: DjChart["orientation"];
         "stacked"?: DjChart["stacked"];
         "show-legend"?: DjChart["showLegend"];
         "show-grid"?: DjChart["showGrid"];
@@ -142,6 +143,8 @@ declare module "solid-js" {
         "x-key"?: DjChart["xKey"];
         "size-key"?: DjChart["sizeKey"];
         "inner-radius"?: DjChart["innerRadius"];
+        "center-label"?: DjChart["centerLabel"];
+        "center-sub-label"?: DjChart["centerSubLabel"];
         "legend-toggle"?: DjChart["legendToggle"];
         "brush"?: DjChart["brush"];
         "numberFormat"?: DjChart["numberFormat"];

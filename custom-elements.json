@@ -1103,6 +1103,17 @@
             },
             {
               "kind": "field",
+              "name": "orientation",
+              "type": {
+                "text": "\"vertical\" | \"horizontal\""
+              },
+              "default": "\"vertical\"",
+              "description": "Bar orientation. `\"horizontal\"` puts categories on the Y axis and values on the X axis; it applies only to `bar` charts and ignores `brush` and a secondary (right) axis (v1).",
+              "attribute": "orientation",
+              "reflects": true
+            },
+            {
+              "kind": "field",
               "name": "stacked",
               "type": {
                 "text": "boolean"
@@ -1202,6 +1213,24 @@
             },
             {
               "kind": "field",
+              "name": "centerLabel",
+              "type": {
+                "text": "string"
+              },
+              "description": "Text centered in a donut hole (ignored for other types). Also appended to the aria-label.",
+              "attribute": "center-label"
+            },
+            {
+              "kind": "field",
+              "name": "centerSubLabel",
+              "type": {
+                "text": "string"
+              },
+              "description": "Smaller text below the donut center label.",
+              "attribute": "center-sub-label"
+            },
+            {
+              "kind": "field",
               "name": "legendToggle",
               "type": {
                 "text": "boolean"
@@ -1259,6 +1288,14 @@
                 "text": "ChartType"
               },
               "fieldName": "type"
+            },
+            {
+              "name": "orientation",
+              "type": {
+                "text": "\"vertical\" | \"horizontal\""
+              },
+              "fieldName": "orientation",
+              "description": "Bar orientation. `\"horizontal\"` puts categories on the Y axis and values on the X axis; it applies only to `bar` charts and ignores `brush` and a secondary (right) axis (v1)."
             },
             {
               "name": "stacked",
@@ -1344,6 +1381,22 @@
               "description": "Donut/pie hole size as a fraction of the radius (0 = pie); donut defaults to 0.6."
             },
             {
+              "name": "center-label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "centerLabel",
+              "description": "Text centered in a donut hole (ignored for other types). Also appended to the aria-label."
+            },
+            {
+              "name": "center-sub-label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "centerSubLabel",
+              "description": "Smaller text below the donut center label."
+            },
+            {
               "name": "legend-toggle",
               "type": {
                 "text": "boolean"
@@ -1407,6 +1460,14 @@
             },
             {
               "name": "tooltip",
+              "description": ""
+            },
+            {
+              "name": "center-label",
+              "description": ""
+            },
+            {
+              "name": "center-sub-label",
               "description": ""
             }
           ],

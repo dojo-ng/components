@@ -319,6 +319,8 @@
 			<div style="width: 360px"><dj-chart id="chart-stack" type="bar" stacked category-key="month" label="Revenue by region" show-grid></dj-chart></div>
 			<div style="width: 360px"><dj-chart id="chart-scatter" type="bubble" x-key="spend" size-key="deals" label="Spend vs revenue" show-grid x-label="Spend" y-label="Revenue"></dj-chart></div>
 			<div style="width: 360px"><dj-chart id="chart-pie" type="donut" category-key="region" label="Revenue share"></dj-chart></div>
+			<div style="width: 360px"><dj-chart id="chart-hbar" type="bar" orientation="horizontal" category-key="team" label="Tickets by team" show-grid y-label="Tickets"></dj-chart></div>
+			<div style="width: 360px"><dj-chart id="chart-donut-label" type="donut" category-key="region" label="Quota attainment"></dj-chart></div>
 			<div style="width: 360px"><dj-chart id="chart-combo" type="bar" category-key="month" label="Revenue and growth" show-grid y-label="USD (k)" y-label-right="Growth %"></dj-chart></div>
 			<div style="width: 480px; --dj-chart-height: 280px"><dj-chart id="chart-interactive" type="line" markers legend-toggle brush category-key="month" label="Interactive: toggle the legend, drag the brush" show-grid y-label="USD (k)"></dj-chart></div>
 		</div>
@@ -412,7 +414,7 @@
 				import "@dojo-ng/transition"; import "@dojo-ng/transition-group";
 			import { createStore } from "@dojo-ng/store";
 			import { storeContext, ContextProvider, ContextConsumer } from "@dojo-ng/context";
-			import { messages } from "@dojo-ng/i18n";
+			import { messages, formatNumber } from "@dojo-ng/i18n";
 
 			// Sample translations for the built-in component strings (the shared "dj" namespace).
 			// Register more locales the same way, or supply a MessageLoader. Only de is shown here.
@@ -502,6 +504,27 @@
 				{ region: "West", value: 148 }, { region: "East", value: 104 },
 				{ region: "Central", value: 81 }, { region: "South", value: 63 },
 			];
+			const hbarChart = document.getElementById("chart-hbar");
+			hbarChart.series = [{ key: "open", label: "Open" }, { key: "closed", label: "Closed" }];
+			hbarChart.data = [
+				{ team: "Platform", open: 12, closed: 40 },
+				{ team: "Payments", open: 7, closed: 33 },
+				{ team: "Growth", open: 18, closed: 21 },
+			];
+			hbarChart.addEventListener("dj-hover", (e) => {
+				document.getElementById("chart-state").textContent = e.detail.category ? `hover: ${e.detail.category}` : "hover a category…";
+			});
+			// Donut with a locale-aware percent center label — proves i18n composes with the label.
+			const donutLabelChart = document.getElementById("chart-donut-label");
+			donutLabelChart.series = [{ key: "value" }];
+			donutLabelChart.data = [{ region: "Attained", value: 72 }, { region: "Remaining", value: 28 }];
+			const setDonutLabel = () => {
+				const locale = root.getAttribute("lang") || "en-US";
+				donutLabelChart.centerLabel = formatNumber(0.72, locale, { style: "percent", maximumFractionDigits: 0 });
+				donutLabelChart.centerSubLabel = "of goal";
+			};
+			setDonutLabel();
+			localeSelect.addEventListener("change", setDonutLabel);
 			const comboChart = document.getElementById("chart-combo");
 			comboChart.series = [
 				{ key: "revenue", label: "Revenue" },

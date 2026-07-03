@@ -1111,6 +1111,7 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 | `series` | — | `ChartSeries[]` | `[]` |
 | `categoryKey` | category-key | `string` | `""` |
 | `type` | type ↻ | `ChartType` | `"line"` |
+| `orientation` | orientation ↻ | `"vertical" \| "horizontal"` | `"vertical"` |
 | `stacked` | stacked | `boolean` | `false` |
 | `showLegend` | show-legend | `boolean` | `true` |
 | `showGrid` | show-grid | `boolean` | `true` |
@@ -1122,13 +1123,15 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 | `xKey` | x-key | `string` | `""` |
 | `sizeKey` | size-key | `string` | — |
 | `innerRadius` | inner-radius | `number` | — |
+| `centerLabel` | center-label | `string` | — |
+| `centerSubLabel` | center-sub-label | `string` | — |
 | `legendToggle` | legend-toggle | `boolean` | `false` |
 | `brush` | brush | `boolean` | `false` |
 | `numberFormat` | — | `Intl.NumberFormatOptions` | — |
 | `formatY` | — | `(value: number) => string` | — |
 | `formatX` | — | `(category: string) => string` | — |
 
-**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`
+**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `center-label`, `center-sub-label`
 
 **Events:** `dj-legend-toggle` (detail `{ key, hidden }`), `dj-hover` (detail `{ category }` or `null`; cartesian and radial)
 

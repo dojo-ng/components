@@ -24,6 +24,8 @@ export default css`
 	.marker { stroke: var(--dj-color-background, #fff); stroke-width: 1.5; }
 	.point-mark { stroke: var(--dj-color-background, #fff); stroke-width: 1; }
 	.slice { stroke: var(--dj-color-background, #fff); stroke-width: 1.5; }
+	.center-label { fill: var(--dj-color-text, #1f2937); font-weight: 600; }
+	.center-sub-label { fill: var(--dj-color-text-muted, #6b7280); font-weight: 400; }
 	.hit { fill: transparent; }
 	/* Enter/update transitions. The shared reducedMotion rule zeroes these durations under
 	   prefers-reduced-motion, so they are automatically disabled for that preference. */
@@ -66,5 +68,6 @@ export default css`
 		.brush-window { fill: Highlight; opacity: 0.3; }
 		.brush-handle { fill: CanvasText; }
 		.brush-context { stroke: CanvasText; }
+		.center-label, .center-sub-label { fill: CanvasText; }
 	}
 `;

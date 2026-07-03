@@ -47,6 +47,7 @@ Set `data` (array of rows), `series` (one entry per plotted value), and `categor
 | `series` | — | `ChartSeries[]` | `[]` |
 | `categoryKey` | category-key | `string` | `""` |
 | `type` | type ↻ | `ChartType` | `"line"` |
+| `orientation` | orientation ↻ | `"vertical" \| "horizontal"` | `"vertical"` |
 | `stacked` | stacked | `boolean` | `false` |
 | `showLegend` | show-legend | `boolean` | `true` |
 | `showGrid` | show-grid | `boolean` | `true` |
@@ -58,13 +59,15 @@ Set `data` (array of rows), `series` (one entry per plotted value), and `categor
 | `xKey` | x-key | `string` | `""` |
 | `sizeKey` | size-key | `string` | — |
 | `innerRadius` | inner-radius | `number` | — |
+| `centerLabel` | center-label | `string` | — |
+| `centerSubLabel` | center-sub-label | `string` | — |
 | `legendToggle` | legend-toggle | `boolean` | `false` |
 | `brush` | brush | `boolean` | `false` |
 | `numberFormat` | — | `Intl.NumberFormatOptions` | — |
 | `formatY` | — | `(value: number) => string` | — |
 | `formatX` | — | `(category: string) => string` | — |
 
-**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`
+**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `center-label`, `center-sub-label`
 
 **Events:** `dj-legend-toggle` (detail `{ key, hidden }`), `dj-hover` (detail `{ category }` or `null`; cartesian and radial)
 
@@ -85,6 +88,26 @@ Add `stacked` to stack the series (works for bars and areas). Each series takes 
   const s = document.getElementById("s");
   s.series = [{ key: "west", label: "West" }, { key: "east", label: "East" }];
   s.data = [{ month: "Jan", west: 18, east: 14 }, { month: "Feb", west: 22, east: 16 }];
+</script>
+```
+
+### Horizontal bars
+
+Set `orientation="horizontal"` on a `bar` chart to put categories on the Y axis and values on the X axis; bars grow rightward from zero. Grouped and stacked both work. The `brush` and a secondary (right) axis are vertical-only, so they are ignored (with a console warning) when horizontal.
+
+```html
+<div style="width: 480px; height: 280px">
+  <dj-chart id="h" type="bar" orientation="horizontal" category-key="team" label="Tickets by team" show-grid y-label="Tickets"></dj-chart>
+</div>
+<script type="module">
+  import "@dojo-ng/chart";
+  const h = document.getElementById("h");
+  h.series = [{ key: "open", label: "Open" }, { key: "closed", label: "Closed" }];
+  h.data = [
+    { team: "Platform", open: 12, closed: 40 },
+    { team: "Payments", open: 7, closed: 33 },
+    { team: "Growth", open: 18, closed: 21 },
+  ];
 </script>
 ```
 
@@ -145,6 +168,25 @@ Add `markers` to show a point at each datum on line and area series. `numberForm
     { region: "West", value: 148 },
     { region: "East", value: 104 },
     { region: "Central", value: 81 },
+  ];
+</script>
+```
+
+### Donut with a center label
+
+On a `donut`, `center-label` renders centered text in the hole (with an optional smaller `center-sub-label` below). It is sized from the hole radius, token-colored, exposed as `part="center-label"`, and appended to the chart's `aria-label` so assistive tech hears it. Ignored for non-donut types.
+
+```html
+<div style="width: 360px; height: 280px">
+  <dj-chart id="dl" type="donut" category-key="region" label="Quota attainment" center-label="72%" center-sub-label="of goal"></dj-chart>
+</div>
+<script type="module">
+  import "@dojo-ng/chart";
+  const dl = document.getElementById("dl");
+  dl.series = [{ key: "value" }];
+  dl.data = [
+    { region: "Attained", value: 72 },
+    { region: "Remaining", value: 28 },
   ];
 </script>
 ```

@@ -212,6 +212,9 @@
       "path": "packages/data-grid-formats"
     },
     {
+      "path": "packages/data-grid-cell-components"
+    },
+    {
       "path": "packages/i18n"
     },
     {

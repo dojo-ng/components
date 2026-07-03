@@ -36,6 +36,9 @@
       "@dojo-ng/data-grid-formats": [
         "./packages/data-grid-formats/dist/index.d.ts"
       ],
+      "@dojo-ng/data-grid-cell-components": [
+        "./packages/data-grid-cell-components/dist/index.d.ts"
+      ],
       "@dojo-ng/toolbar": [
         "./packages/toolbar/dist/index.d.ts"
       ],

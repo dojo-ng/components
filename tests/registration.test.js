@@ -93,6 +93,7 @@ const SUPPORT_PACKAGES = [
 	"rich-text-headings",
 	"rich-text-lists",
 	"data-grid-formats",
+	"data-grid-cell-components",
 ];
 
 for (const pkg of SUPPORT_PACKAGES) {

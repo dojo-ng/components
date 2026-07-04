@@ -3,12 +3,15 @@ import { property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
 import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
+import { DragZoneController } from "@dojo-ng/dnd";
 import type { ListOption } from "@dojo-ng/list";
 import "@dojo-ng/card";
 import "@dojo-ng/popup";
 import "@dojo-ng/list";
 import styles from "./dj-board.styles.js";
 import type { Card, CardMoveDetail } from "./apply-card-move.js";
+
+let boardSeq = 0;
 
 registerDefaults("dj", {
 	boardMoveCard: "Move card",
@@ -81,6 +84,9 @@ export class DjBoard extends DojoElement {
 	@property() label?: string;
 	/** Custom card content, rendered inside the component-owned shell. Set in JavaScript. */
 	@property({ attribute: false }) renderCard?: (card: Card) => TemplateResult;
+	/** Progressive enhancement: enable pointer drag of cards between lanes. The move menu and
+	 *  keyboard shortcuts remain the accessibility contract (WCAG 2.5.7); drag never replaces them. */
+	@property({ type: Boolean, reflect: true }) override draggable = false;
 
 	@state() private menu: MenuContext | null = null;
 	/** The card (by key, as a string) holding the roving tab stop. */
@@ -91,6 +97,9 @@ export class DjBoard extends DojoElement {
 	#warned = new Set<string>();
 	/** A move we emitted and are waiting for the app to apply (controlled focus-follow). */
 	#pending: { key: string; to: string } | null = null;
+	/** One drag zone per lane while `draggable`; keyed by lane value. Group = this board only. */
+	#zones = new Map<string, DragZoneController>();
+	readonly #dndGroup = `dj-board-${++boardSeq}`;
 
 	#msg(key: string, params?: Record<string, string | number>): string {
 		return messages.resolve("dj", this.#i18n.locale, key, params) ?? EN[key] ?? key;
@@ -133,7 +142,66 @@ export class DjBoard extends DojoElement {
 
 	#focusCard(key: string) {
 		this.activeKey = key;
-		this.#shellFor(key)?.focus();
+		const el = this.#shellFor(key);
+		if (!el) return;
+		// Focus without the browser's default scroll, then reveal the card ourselves. We do NOT
+		// use scrollIntoView: Safari handles it unreliably here (the board scrolls horizontally,
+		// the lane body vertically, and it often scrolls only one), and calling it before layout
+		// settles races intermittently. Instead defer one frame, then walk the scrollable
+		// ancestors and adjust each axis minimally, only when the card is actually out of view.
+		el.focus({ preventScroll: true });
+		this.#reveal(el);
+	}
+
+	/** Bring `el` into view, on both axes, one frame later so layout has settled. Walks the
+	 *  scrollable ancestors — crossing the shadow boundary via the host and, last, the page
+	 *  viewport — because the real scroller may live OUTSIDE this component (e.g. the demo lets
+	 *  the page scroll horizontally, not the board). Re-reads the card's rect per container so
+	 *  nested scrollers compose. Leaves a small MARGIN so a card that is partially clipped, or
+	 *  sitting flush at an edge after Safari's own focus nudge, is pulled fully inside with
+	 *  breathing room; a comfortably visible card is a no-op. */
+	#reveal(el: HTMLElement) {
+		const M = 12; // px of breathing room past the edge
+		const scrollable = (v: string) => v === "auto" || v === "scroll" || v === "overlay";
+		const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (fn: () => void) => fn();
+		raf(() => {
+			if (!el.isConnected) return;
+			// 1. Element scroll containers, in-shadow and (after the host hop) in the light DOM,
+			//    stopping before the root element — the page is handled as the viewport below.
+			let node: Node | null = el.parentNode;
+			while (node) {
+				if (node instanceof ShadowRoot) { node = node.host; continue; }
+				if (!(node instanceof HTMLElement)) break;
+				if (node === document.documentElement || node === document.body) break;
+				const st = getComputedStyle(node);
+				const canY = scrollable(st.overflowY) && node.scrollHeight > node.clientHeight;
+				const canX = scrollable(st.overflowX) && node.scrollWidth > node.clientWidth;
+				if (canY || canX) {
+					const er = el.getBoundingClientRect();
+					const cr = node.getBoundingClientRect();
+					if (canY) {
+						if (er.top < cr.top + M) node.scrollTop -= cr.top + M - er.top;
+						else if (er.bottom > cr.bottom - M) node.scrollTop += er.bottom - (cr.bottom - M);
+					}
+					if (canX) {
+						if (er.left < cr.left + M) node.scrollLeft -= cr.left + M - er.left;
+						else if (er.right > cr.right - M) node.scrollLeft += er.right - (cr.right - M);
+					}
+				}
+				node = node.parentNode;
+			}
+			// 2. The page viewport (whichever of html/body scrolls). Re-read the rect after the
+			//    in-shadow scrolls above so this only finishes what they didn't.
+			if (typeof window === "undefined" || typeof window.scrollBy !== "function") return;
+			const er = el.getBoundingClientRect();
+			const vw = window.innerWidth, vh = window.innerHeight;
+			let dx = 0, dy = 0;
+			if (er.left < M) dx = er.left - M;
+			else if (er.right > vw - M) dx = er.right - (vw - M);
+			if (er.top < M) dy = er.top - M;
+			else if (er.bottom > vh - M) dy = er.bottom - (vh - M);
+			if (dx || dy) window.scrollBy(dx, dy);
+		});
 	}
 
 	/** Where a card (by string key) sits: its lane list, lane index, and position. */
@@ -164,6 +232,7 @@ export class DjBoard extends DojoElement {
 	 *  target lane), focus follows it and the move is announced. A data change that does NOT
 	 *  apply the move clears the pending state silently — no announcement for a rejected move. */
 	protected override updated(changed: Map<PropertyKey, unknown>) {
+		this.#syncZones();
 		if (!changed.has("data") || !this.#pending) return;
 		const { key, to } = this.#pending;
 		this.#pending = null;
@@ -173,6 +242,52 @@ export class DjBoard extends DojoElement {
 		const laneCards = this.#laneCards(to);
 		const lane = this.effectiveLanes().find((l) => l.value === to);
 		this.#announce(this.#msg("boardMoved", { lane: lane?.label ?? to, pos: laneCards.indexOf(card) + 1, n: laneCards.length }));
+	}
+
+	// ------------------------------------------------------------------ drag (progressive)
+
+	#laneBodyEl(value: string): HTMLElement | null {
+		const esc = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(value) : value;
+		return this.renderRoot?.querySelector<HTMLElement>(`.lane-body[data-lane="${esc}"]`) ?? null;
+	}
+
+	#cardShellsIn(value: string): HTMLElement[] {
+		const body = this.#laneBodyEl(value);
+		return body ? [...body.querySelectorAll<HTMLElement>('[role="listitem"]')] : [];
+	}
+
+	/** A drag drop routes through the SAME emit path as the menu/keyboard moves, so focus-follow
+	 *  and announcements are identical. */
+	#applyDndMove(m: { key: string; from: string; to: string; fromIndex: number; toIndex: number }) {
+		const card = this.data.find((c) => String(c[this.cardKey]) === m.key);
+		if (!card) return;
+		this.#emitMove(card, m.from, m.to, m.fromIndex, m.toIndex);
+	}
+
+	/** Keep one drag zone per lane while `draggable`; tear them down otherwise or as lanes change. */
+	#syncZones() {
+		const wanted = this.draggable ? new Set(this.effectiveLanes().map((l) => l.value)) : new Set<string>();
+		for (const [value, ctrl] of this.#zones) {
+			if (!wanted.has(value)) {
+				ctrl.hostDisconnected();
+				this.removeController(ctrl);
+				this.#zones.delete(value);
+			}
+		}
+		if (!this.draggable) return;
+		for (const lane of this.effectiveLanes()) {
+			const value = lane.value;
+			if (this.#zones.has(value)) continue;
+			const ctrl = new DragZoneController(this, {
+				container: () => this.#laneBodyEl(value) as HTMLElement,
+				items: () => this.#cardShellsIn(value),
+				group: this.#dndGroup,
+				zoneId: value,
+				axis: "y",
+				onMove: (mv) => this.#applyDndMove(mv),
+			});
+			this.#zones.set(value, ctrl);
+		}
 	}
 
 	// ------------------------------------------------------------------ menu
@@ -357,7 +472,7 @@ export class DjBoard extends DojoElement {
 							<span part="lane-title" class="lane-title">${label}</span>
 							<span part="lane-count" class="lane-count">${lane.limit !== undefined ? `${cards.length}/${lane.limit}` : cards.length}</span>
 						</div>
-						<div part="lane-body" class="lane-body" role="list" aria-label=${this.#msg("boardCards", { label, n: cards.length })}>
+						<div part="lane-body" class="lane-body" data-lane=${lane.value} role="list" aria-label=${this.#msg("boardCards", { label, n: cards.length })}>
 							${repeat(cards, (c) => String(c[this.cardKey]), (c, i) => this.#cardShell(c, lane.value, i, cards.length, String(c[this.cardKey]) === roving))}
 						</div>
 					</div>`;

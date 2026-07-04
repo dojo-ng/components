@@ -18,6 +18,7 @@
 					"@dojo-ng/card": "../packages/card/dist/index.js",
 					"@dojo-ng/popup": "../packages/popup/dist/index.js",
 					"@dojo-ng/list": "../packages/list/dist/index.js",
+					"@dojo-ng/dnd": "../packages/dnd/dist/index.js",
 					"@dojo-ng/board": "../packages/board/dist/index.js"
 				}
 			}
@@ -40,6 +41,12 @@
 			"opens" a card (logged below). The In-progress lane has a WIP limit of 3 — over-limit turns
 			the count red but never blocks. With "Reject all moves" checked, the app ignores
 			<code>dj-card-move</code>: nothing moves, focus stays put, and no announcement fires.
+			</p>
+			<p class="hint">
+				<strong>Drag (v2):</strong> the board has <code>draggable</code> set, so you can also drag a
+				card within or across lanes with the mouse or by touch — a ghost follows the pointer and a
+				drop indicator shows where it will land. Drag is progressive enhancement: the move menu and
+				keyboard shortcuts remain the accessibility contract, so drag is never the only way to move.
 		</p>
 		<div class="bar">
 			<label>Locale
@@ -50,15 +57,28 @@
 				</select>
 			</label>
 			<label><input type="checkbox" id="reject" /> Reject all moves</label>
+				<button type="button" id="theme-toggle">Cycle theme</button>
+				<span id="theme-state" class="hint">theme: light</span>
 			<span class="hint">German menu strings need a "dj" bundle — one is registered below for de.</span>
 		</div>
 
-		<dj-board id="b" label="Sprint board" group-by="status" card-key="id" card-title="title"></dj-board>
+		<dj-board id="b" label="Sprint board" group-by="status" card-key="id" card-title="title" draggable></dj-board>
 		<pre id="out">last event: —</pre>
+
+			<h1 style="margin-top:2.5rem">Reorderable list — dj-list drag &amp; keyboard reorder (v2)</h1>
+			<p class="hint">
+				A <code>reorderable</code> <code>&lt;dj-list&gt;</code>. Drag an item with the mouse or touch to
+				reorder, or use the keyboard: focus the list, <kbd>Space</kbd> grabs the active item,
+				<kbd>↑</kbd>/<kbd>↓</kbd> move it, <kbd>Space</kbd> drops, <kbd>Esc</kbd> cancels. It is
+				controlled: the list emits <code>dj-reorder</code> and the demo reorders the options.
+			</p>
+			<dj-list id="rl" reorderable style="max-width:18rem"></dj-list>
+			<pre id="rout">last event: —</pre>
 
 		<script type="module">
 			import { html } from "lit";
 			import { applyCardMove } from "@dojo-ng/board";
+			import "@dojo-ng/list";
 			import { messages } from "@dojo-ng/i18n";
 
 			// Sample German strings so the locale switcher localizes the board's own UI too.
@@ -73,6 +93,18 @@
 
 			document.getElementById("locale").addEventListener("change", (e) => {
 				document.documentElement.lang = e.target.value;
+			});
+
+			// Theme cycle: light → dark → high-contrast (matches the main playground).
+			const root = document.documentElement;
+			const themeToggle = document.getElementById("theme-toggle");
+			const themeState = document.getElementById("theme-state");
+			const themes = ["light", "dark", "high-contrast"];
+			themeToggle.addEventListener("click", () => {
+				const cur = root.getAttribute("data-dj-theme") || "light";
+				const next = themes[(themes.indexOf(cur) + 1) % themes.length];
+				root.setAttribute("data-dj-theme", next);
+				themeState.textContent = `theme: ${next}`;
 			});
 
 			const b = document.getElementById("b");
@@ -108,6 +140,25 @@
 			});
 			b.addEventListener("dj-card-click", (e) => {
 				out.textContent = `last event: dj-card-click ${e.detail.key} ("${e.detail.card.title}")`;
+			});
+
+			// Reorderable list (controlled): reorder `options` on dj-reorder.
+			const rl = document.getElementById("rl");
+			const rout = document.getElementById("rout");
+			rl.options = [
+				{ value: "backlog", label: "Backlog" },
+				{ value: "design", label: "Design" },
+				{ value: "build", label: "Build" },
+				{ value: "review", label: "Review" },
+				{ value: "ship", label: "Ship" },
+			];
+			rl.addEventListener("dj-reorder", (e) => {
+				const { key, fromIndex, toIndex } = e.detail;
+				const next = rl.options.slice();
+				const [moved] = next.splice(fromIndex, 1);
+				next.splice(toIndex, 0, moved);
+				rl.options = next;
+				rout.textContent = `last event: dj-reorder ${key}: ${fromIndex} → ${toIndex}  [${next.map((o) => o.value).join(", ")}]`;
 			});
 		</script>
 	</body>

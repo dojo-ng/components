@@ -255,6 +255,9 @@
     },
     {
       "path": "packages/carousel"
+    },
+    {
+      "path": "packages/dnd"
     }
   ]
 }

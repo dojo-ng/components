@@ -310,3 +310,51 @@ test("Enter emits dj-card-click; Space opens the move menu for the focused card"
 	assert.equal(String(el.menu.key), "t2");
 	assert.equal(el.menu.index, 1);
 });
+
+// --- K9: drag (progressive enhancement) ---
+// happy-dom has no layout, so stub the rects and drive a pointer sequence. Real geometry,
+// ghost/indicator rendering, and touch are the K11 browser check.
+function rectFor({ top = 0, bottom = 0, left = 0, right = 0 }) {
+	return { top, bottom, left, right, width: right - left, height: bottom - top, x: left, y: top };
+}
+function stubRect(el, r) { el.getBoundingClientRect = () => rectFor(r); }
+function pointer(type, x, y) { return new PointerEvent(type, { clientX: x, clientY: y, bubbles: true, cancelable: true, pointerId: 1 }); }
+
+test("with `draggable`, a pointer drag across lanes emits dj-card-move with drop indices", async () => {
+	const el = await board({ draggable: true });
+	await settled(el);
+	const bodyTodo = el.renderRoot.querySelector('.lane-body[data-lane="todo"]');
+	const bodyDoing = el.renderRoot.querySelector('.lane-body[data-lane="doing"]');
+	stubRect(bodyTodo, { left: 0, right: 100, top: 0, bottom: 200 });
+	stubRect(bodyDoing, { left: 200, right: 300, top: 0, bottom: 200 });
+	const todoCards = [...bodyTodo.querySelectorAll('[role="listitem"]')];
+	const doingCards = [...bodyDoing.querySelectorAll('[role="listitem"]')];
+	todoCards.forEach((c, i) => stubRect(c, { left: 0, right: 100, top: i * 20, bottom: i * 20 + 20 }));
+	doingCards.forEach((c, i) => stubRect(c, { left: 200, right: 300, top: i * 20, bottom: i * 20 + 20 }));
+
+	let detail = null;
+	el.addEventListener("dj-card-move", (e) => { detail = e.detail; });
+	todoCards[0].dispatchEvent(pointer("pointerdown", 50, 5)); // grab t1
+	window.dispatchEvent(pointer("pointermove", 250, 25)); // over doing, past d1 center
+	window.dispatchEvent(pointer("pointerup", 250, 25));
+	assert.ok(detail, "dj-card-move fired");
+	assert.equal(detail.from, "todo");
+	assert.equal(detail.to, "doing");
+	assert.equal(detail.fromIndex, 0);
+	assert.equal(detail.toIndex, 1);
+});
+
+test("without `draggable`, a pointer drag emits no dj-card-move", async () => {
+	const el = await board();
+	await settled(el);
+	const bodyTodo = el.renderRoot.querySelector('.lane-body[data-lane="todo"]');
+	const card = bodyTodo.querySelector('[role="listitem"]');
+	stubRect(bodyTodo, { left: 0, right: 100, top: 0, bottom: 200 });
+	stubRect(card, { left: 0, right: 100, top: 0, bottom: 20 });
+	let fired = false;
+	el.addEventListener("dj-card-move", () => { fired = true; });
+	card.dispatchEvent(pointer("pointerdown", 50, 5));
+	window.dispatchEvent(pointer("pointermove", 50, 25));
+	window.dispatchEvent(pointer("pointerup", 50, 25));
+	assert.equal(fired, false, "no drag zones when not draggable");
+});

@@ -65,8 +65,24 @@ export default css`
 		overflow: hidden;
 		white-space: nowrap;
 	}
+	/* Drag (progressive enhancement; hooks the @dojo-ng/dnd core renders). */
+	:host([draggable]) .card { cursor: grab; touch-action: none; }
+	.dj-drag-source { opacity: .4; }
+	.dj-drag-ghost {
+		border-radius: var(--dj-input-border-radius-medium, .25rem);
+		box-shadow: 0 6px 16px rgba(0, 0, 0, .28);
+		opacity: .95;
+		background: var(--dj-color-neutral-50, #f9fafb);
+	}
+	.dj-drop-indicator {
+		height: 2px;
+		margin: .1rem .1rem;
+		background: var(--dj-color-primary-600, #2563eb);
+		border-radius: 1px;
+	}
 	@media (forced-colors: active) {
 		.lane, .card { border: 1px solid CanvasText; }
 		.move-btn:focus-visible { outline: 2px solid Highlight; }
+		.dj-drop-indicator { background: Highlight; }
 	}
 `;

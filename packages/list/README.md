@@ -4,9 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. Virtualization and drag-reorder are deferred. Parts: `list`, `item`. @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.
+A single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard (space to grab, arrows to move, space to drop, escape to cancel) — controlled: it emits `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`. @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.
 
-> Coming from Dojo's **Listbox**? Use this component: it provides the selectable listbox role and keyboard model that Listbox did.
+> Coming from Dojo's **Listbox**? Use this component: it provides the selectable listbox role and keyboard model that Listbox did. Set `reorderable` to let items be reordered by drag or keyboard (space to grab, arrows to move, space to drop, escape to cancel); it is controlled — the list emits `dj-reorder` and you reorder `options`.
 
 ## Install
 
@@ -41,10 +41,11 @@ Provide `options`; read `value` from the `change` event.
 | `name` | name ↻ | `string` | — |
 | `menu` | menu | `boolean` | `false` |
 | `loading` | loading | `boolean` | `false` |
+| `reorderable` | reorderable ↻ | `boolean` | `false` |
 
 **Parts:** `list`, `item`
 
-**Events:** `change`
+**Events:** `change`, `dj-reorder`
 
 **Methods:** `checkValidity(): boolean`, `focus(options: FocusOptions)`
 

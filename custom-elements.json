@@ -302,6 +302,17 @@
               "description": "Custom card content, rendered inside the component-owned shell. Set in JavaScript."
             },
             {
+              "kind": "field",
+              "name": "draggable",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Progressive enhancement: enable pointer drag of cards between lanes. The move menu and keyboard shortcuts remain the accessibility contract (WCAG 2.5.7); drag never replaces them.",
+              "attribute": "draggable",
+              "reflects": true
+            },
+            {
               "kind": "method",
               "name": "effectiveLanes",
               "description": "The lanes to display: the `lanes` property, or distinct `group-by` values in data order.",
@@ -344,6 +355,14 @@
               },
               "fieldName": "label",
               "description": "Accessible name for the board."
+            },
+            {
+              "name": "draggable",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "draggable",
+              "description": "Progressive enhancement: enable pointer drag of cards between lanes. The move menu and keyboard shortcuts remain the accessibility contract (WCAG 2.5.7); drag never replaces them."
             }
           ],
           "slots": [
@@ -3959,7 +3978,7 @@
           "name": "DjList",
           "customElement": true,
           "tagName": "dj-list",
-          "description": "a single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. Virtualization and drag-reorder are deferred. Parts: `list`, `item`. @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.",
+          "description": "a single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard (space to grab, arrows to move, space to drop, escape to cancel) \u2014 controlled: it emits `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`. @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -4008,6 +4027,17 @@
               },
               "default": "false",
               "attribute": "loading"
+            },
+            {
+              "kind": "field",
+              "name": "reorderable",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Progressive enhancement: allow pointer/keyboard reordering of items. Controlled \u2014 the list emits `dj-reorder` and never mutates `options` itself.",
+              "attribute": "reorderable",
+              "reflects": true
             },
             {
               "kind": "method",
@@ -4066,6 +4096,14 @@
                 "text": "boolean"
               },
               "fieldName": "loading"
+            },
+            {
+              "name": "reorderable",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "reorderable",
+              "description": "Progressive enhancement: allow pointer/keyboard reordering of items. Controlled \u2014 the list emits `dj-reorder` and never mutates `options` itself."
             }
           ],
           "cssParts": [
@@ -4088,6 +4126,13 @@
           "events": [
             {
               "name": "change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            },
+            {
+              "name": "dj-reorder",
               "type": {
                 "text": "CustomEvent"
               },

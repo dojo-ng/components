@@ -96,6 +96,7 @@ declare module "solid-js" {
         "card-title"?: DjBoard["cardTitle"];
         "label"?: DjBoard["label"];
         "renderCard"?: DjBoard["renderCard"];
+        "draggable"?: DjBoard["draggable"];
       };
       "dj-breadcrumb-group": JSX.HTMLAttributes<DjBreadcrumbGroup> & {
         "items"?: DjBreadcrumbGroup["items"];
@@ -277,6 +278,7 @@ declare module "solid-js" {
         "name"?: DjList["name"];
         "menu"?: DjList["menu"];
         "loading"?: DjList["loading"];
+        "reorderable"?: DjList["reorderable"];
       };
       "dj-loading-indicator": JSX.HTMLAttributes<DjLoadingIndicator> & {
         "active"?: DjLoadingIndicator["active"];
@@ -567,6 +569,7 @@ declare module "solid-js" {
       "dj-selection-change": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
+      "dj-reorder": CustomEvent;
       "dj-page": CustomEvent;
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;
@@ -592,6 +595,7 @@ declare module "solid-js" {
       "dj-selection-change": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
+      "dj-reorder": CustomEvent;
       "dj-page": CustomEvent;
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;

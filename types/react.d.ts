@@ -100,6 +100,7 @@ declare module "react" {
         "card-title"?: DjBoard["cardTitle"];
         "label"?: DjBoard["label"];
         "renderCard"?: DjBoard["renderCard"];
+        "draggable"?: DjBoard["draggable"];
       };
       "dj-breadcrumb-group": DjProps<DjBreadcrumbGroup> & {
         "items"?: DjBreadcrumbGroup["items"];
@@ -281,6 +282,7 @@ declare module "react" {
         "name"?: DjList["name"];
         "menu"?: DjList["menu"];
         "loading"?: DjList["loading"];
+        "reorderable"?: DjList["reorderable"];
       };
       "dj-loading-indicator": DjProps<DjLoadingIndicator> & {
         "active"?: DjLoadingIndicator["active"];

@@ -16,11 +16,23 @@ export default css`
 	.item--selected .check { visibility: visible; }
 	.divider { height: 1px; margin: var(--dj-spacing-2x-small, 0.25rem) 0; background: var(--dj-color-border, #d1d5db); }
 	.loading { display: flex; justify-content: center; padding: var(--dj-spacing-medium, 1rem); }
+	/* Reorder (progressive enhancement; hooks the @dojo-ng/dnd core renders). */
+	:host([reorderable]) .item { cursor: grab; touch-action: none; }
+	/* Keyboard "picked up" state: lift the item so a sighted keyboard user sees the grab. */
+	.item--grabbed { outline: 2px solid var(--dj-color-primary-600, #2563eb); outline-offset: -2px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); background: var(--dj-color-primary-50, #eff6ff); }
+	@media (forced-colors: active) { .item--grabbed { outline: 2px solid Highlight; } }
+	.dj-drag-source { opacity: 0.4; }
+	.dj-drag-ghost { border-radius: var(--dj-input-border-radius-small, 0.1875rem);
+		box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28); opacity: 0.95; background: var(--dj-color-background, #fff); }
+	.dj-drop-indicator { height: 2px; margin: 1px 0; background: var(--dj-color-primary-600, #2563eb); border-radius: 1px; }
+	.announce { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
 	/* Forced colors: the active row's grey fill and the selected row's color tint both
 	   collapse, so use the system selected pair for the active row and pin selected text. */
 	@media (forced-colors: active) {
 		.item--active { background: Highlight; color: HighlightText; }
 		.item--selected { color: Highlight; }
 		.item--active.item--selected { color: HighlightText; }
+		.dj-drop-indicator { background: Highlight; }
 	}
 `;

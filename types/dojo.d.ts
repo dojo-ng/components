@@ -102,6 +102,7 @@ declare module "@dojo-ng/framework" {
         "card-title"?: DjBoard["cardTitle"];
         "label"?: DjBoard["label"];
         "renderCard"?: DjBoard["renderCard"];
+        "draggable"?: DjBoard["draggable"];
       };
       "dj-breadcrumb-group": DjVNodeBase & {
         "items"?: DjBreadcrumbGroup["items"];
@@ -283,6 +284,7 @@ declare module "@dojo-ng/framework" {
         "name"?: DjList["name"];
         "menu"?: DjList["menu"];
         "loading"?: DjList["loading"];
+        "reorderable"?: DjList["reorderable"];
       };
       "dj-loading-indicator": DjVNodeBase & {
         "active"?: DjLoadingIndicator["active"];

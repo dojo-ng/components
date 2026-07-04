@@ -2,5 +2,5 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "rootDir": "src", "outDir": "dist" },
   "include": ["src"],
-  "references": [{ "path": "../dojo-element" }, { "path": "../icon" }, { "path": "../loading-indicator" }]
+  "references": [{ "path": "../dojo-element" }, { "path": "../icon" }, { "path": "../loading-indicator" }, { "path": "../dnd" }, { "path": "../i18n" }]
 }

@@ -25,7 +25,7 @@ INFRA_DOC = {
 # Migration pointers for Dojo widgets superseded by a differently-named component.
 NOTES = {
     "typeahead": "Coming from Dojo's **ComboBox**? Typeahead is its successor: an editable field that filters a list. For multi-select, see [`@dojo-ng/chip-typeahead`](../chip-typeahead/README.md).",
-    "list": "Coming from Dojo's **Listbox**? Use this component: it provides the selectable listbox role and keyboard model that Listbox did.",
+    "list": "Coming from Dojo's **Listbox**? Use this component: it provides the selectable listbox role and keyboard model that Listbox did. Set `reorderable` to let items be reordered by drag or keyboard (space to grab, arrows to move, space to drop, escape to cancel); it is controlled — the list emits `dj-reorder` and you reorder `options`.",
     "chart": "Sizing: the chart fills its width and takes its height from the `--dj-chart-height` custom property (default `18rem`). Set that property to resize it; a fixed `height` on a wrapper element will not constrain the chart, and a wrapper shorter than the chart's height will let the legend overflow. The legend sits below the plot and is included in that height.",
     "transition": "The component defines no effects itself: it reflects a `state` attribute you animate with page CSS. Enter effects must be `@keyframes` animations on `dj-transition[state=\"entering\"]`; enter-by-transition is not supported. Leave effects may be an animation on `[state=\"leaving\"]` or transitioned properties.",
     "transition-group": "Coordinates slotted `dj-transition` children only (v1 is stagger, no list-move animation). The effects live on the children; the group just drives their `show` with a delay. Set `appear` on the children directly.",
@@ -446,7 +446,8 @@ def infra_readme(pkg):
 
 # Data-grid plugin packages: notes + worked examples (support packages, rendered by infra_readme).
 NOTES.update({
- "board": "The board is CONTROLLED: it never changes `data`. Listen for `dj-card-move`, apply it (the exported `applyCardMove` makes that one line), and assign the new array — focus then follows the moved card and the move is announced. Explicit `lanes` are recommended over the derived fallback (they fix lane order, give labels, and include empty lanes).",
+ "board": "The board is CONTROLLED: it never changes `data`. Listen for `dj-card-move`, apply it (the exported `applyCardMove` makes that one line), and assign the new array — focus then follows the moved card and the move is announced. Explicit `lanes` are recommended over the derived fallback (they fix lane order, give labels, and include empty lanes). Set `draggable` to enable pointer and touch drag between lanes (built on `@dojo-ng/dnd`); it is progressive enhancement — the move menu and keyboard shortcuts remain the accessibility contract, so drag is never the only way to move a card.",
+ "dnd": "The keyboard/menu path in a consuming component is the accessibility contract (WCAG 2.5.7); drag is enhancement layered on top. The pointer core works inside shadow roots and on touch, mouse, and pen alike, with no dependency. Drops are CONTROLLED: the zone calls `onMove` and the consumer applies the change.",
  "data-grid": "Plugins: pass an array of plugin objects via the `plugins` property (JavaScript only). Recommended order: structural first (`treePlugin` OR `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, `formatsPlugin`, then chrome-only plugins (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`). A `plugins` change rebuilds the table.",
  "data-grid-edit": "CONTROLLED editing: the plugin never writes to `data`. Listen for `dj-cell-commit`, update your store, and assign a new `data` array. Place this plugin first in the array so its editor wins the cell.",
  "data-grid-export": "Exports RAW cell values (formatting is presentation). Default set = filtered but unpaginated rows; `all: true` exports the pre-filter set. Synthetic `__` columns (like the detail expander) are skipped.",
@@ -454,6 +455,29 @@ NOTES.update({
  "data-grid-detail": "Detail rows switch the grid virtualizer to measured (variable-height) mode; grids without this plugin keep the fixed-height fast path.",
 })
 EXAMPLES.update({
+ "dnd": [
+  ("Add a drag zone to a component", "In a Lit component, construct a `DragZoneController` over the item container. Drops are controlled — apply the change in `onMove`. Zones sharing a `group` accept transfers from each other.",
+   """import { DragZoneController } from "@dojo-ng/dnd";
+
+class MyList extends LitElement {
+  #zone = new DragZoneController(this, {
+    container: () => this.renderRoot.querySelector(".items"),
+    items: () => [...this.renderRoot.querySelectorAll("[data-key]")],
+    zoneId: "list",
+    axis: "y",
+    onMove: ({ key, fromIndex, toIndex }) => {
+      // reorder your data, then re-render
+    },
+  });
+}"""),
+  ("Keyboard grab mode", "For components without their own move UI, wire `keyboardGrabMode` to a keydown handler: space grabs the focused item, arrows move it, space drops, escape cancels. Announcements go through your callback.",
+   """import { keyboardGrabMode } from "@dojo-ng/dnd";
+
+const onKeydown = keyboardGrabMode({
+  zones: () => [this.zoneConfig],
+  announce: (msg) => this.liveRegion.textContent = msg,
+});"""),
+ ],
  "board": [
   ("A three-lane board with the controlled move handler", "Moves (menu, Ctrl/Cmd+arrows) emit `dj-card-move`; the app applies them with `applyCardMove`.",
    """<dj-board id="b" label="Sprint board" group-by="status"></dj-board>

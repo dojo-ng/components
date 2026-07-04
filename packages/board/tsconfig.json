@@ -8,6 +8,7 @@
     { "path": "../icon" },
     { "path": "../popup" },
     { "path": "../list" },
-    { "path": "../i18n" }
+    { "path": "../i18n" },
+    { "path": "../dnd" }
   ]
 }

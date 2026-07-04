@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — K7 DnD engine spike (pdnd vs pointer core)</title>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 1.5rem; color: #1f2937; }
+			h1 { font-size: 1.2rem; }
+			h2 { font-size: 1rem; margin-top: 2rem; }
+			.hint { color: #6b7280; max-width: 60rem; }
+			.cols { display: flex; gap: 1rem; align-items: flex-start; margin-top: .75rem; }
+			.log { background: #0b1021; color: #d1e7ff; font: 12px/1.5 ui-monospace, monospace;
+				padding: .5rem .75rem; border-radius: .375rem; height: 9rem; overflow: auto; max-width: 60rem; margin-top: .5rem; white-space: pre-wrap; }
+			.verdict { font-weight: 600; }
+			/* Bare custom-element hosts get shadow DOM; these style the LIGHT-DOM host box. */
+			spike-pdnd-list, spike-ptr-list { display: block; flex: 0 0 16rem; }
+		</style>
+	</head>
+	<body>
+		<h1>K7 — DnD engine spike: pragmatic-drag-and-drop vs an in-house pointer core</h1>
+		<p class="hint">
+			Two questions decide the <code>@dojo-ng/dnd</code> engine: (a) does drag work when the draggable
+			items live INSIDE a shadow root (every Dojo NG component does), and (b) does it work on touch.
+			Both sections below put their lists inside real custom-element shadow roots, matching how the
+			board and list actually render. Watch the logs; a short verdict is written to each after you try
+			a drag. To test touch, open your browser's device/responsive mode (or a real device) and repeat.
+		</p>
+
+		<h2>Section A — pragmatic-drag-and-drop (loaded from esm.sh, spike-only)</h2>
+		<p class="hint">
+			Expected per Atlassian issue #116 (still open): a <code>draggable</code> registered on an element
+			inside a shadow root never fires <code>onDragStart</code>/<code>onDrop</code>, because native drag
+			events retarget to the shadow host. If the log stays empty when you drag, that reproduces the
+			blocker. (If the import 403s or fails, that's noted in the log — it's a CDN issue, not the point.)
+		</p>
+		<div class="cols">
+			<spike-pdnd-list id="pdndA" data-label="Lane A"></spike-pdnd-list>
+			<spike-pdnd-list id="pdndB" data-label="Lane B"></spike-pdnd-list>
+		</div>
+		<div class="log" id="pdndLog"></div>
+
+		<h2>Section B — in-house pointer-events core (no dependency)</h2>
+		<p class="hint">
+			The fallback design: <code>pointerdown</code> + <code>setPointerCapture</code>, a ghost that
+			follows the pointer, hit-testing the pointer against the (shadow-internal) lane containers, a drop
+			indicator, and <code>pointerup</code> computing the drop index. Pointer events unify mouse, touch,
+			and pen, so this works across shadow roots and on touch by construction. Drag a card between the
+			two lanes with the mouse, then again in touch/device mode.
+		</p>
+		<div class="cols">
+			<spike-ptr-list id="ptrA" data-label="Lane A"></spike-ptr-list>
+			<spike-ptr-list id="ptrB" data-label="Lane B"></spike-ptr-list>
+		</div>
+		<div class="log" id="ptrLog"></div>
+
+		<script type="module">
+			// ---- tiny logging helpers -------------------------------------------------
+			const mkLog = (id) => {
+				const el = document.getElementById(id);
+				return (msg) => { el.textContent += msg + "\n"; el.scrollTop = el.scrollHeight; };
+			};
+			const pdndLog = mkLog("pdndLog");
+			const ptrLog = mkLog("ptrLog");
+
+			// ---- shared: a bare custom element rendering a small list in its shadow root
+			const CARD_CSS = `
+				:host { display:block; }
+				.lane { border:1px solid #d1d5db; border-radius:.375rem; padding:.5rem; min-height:8rem; background:#f9fafb; }
+				.lane h3 { font:600 13px system-ui; margin:.1rem .1rem .5rem; }
+				.item { border:1px solid #cbd5e1; border-radius:.375rem; background:#fff; padding:.5rem .6rem;
+					margin:.35rem 0; font:13px system-ui; touch-action:none; cursor:grab; user-select:none; }
+				.item.dragging { opacity:.4; }
+				.indicator { height:2px; background:#2563eb; margin:.35rem 0; border-radius:1px; }
+			`;
+			function laneTemplate(label, keys) {
+				const items = keys.map((k) => `<div class="item" data-key="${k}" draggable="true">${k}</div>`).join("");
+				return `<style>${CARD_CSS}</style><div class="lane" part="lane"><h3>${label}</h3>${items}</div>`;
+			}
+
+			// =====================================================================
+			// Section A: pragmatic-drag-and-drop inside shadow DOM
+			// =====================================================================
+			class SpikePdndList extends HTMLElement {
+				connectedCallback() {
+					const label = this.dataset.label;
+					this.attachShadow({ mode: "open" }).innerHTML =
+						laneTemplate(label, this.id === "pdndA" ? ["A-1", "A-2", "A-3"] : ["B-1", "B-2"]);
+				}
+			}
+			customElements.define("spike-pdnd-list", SpikePdndList);
+
+			(async () => {
+				let draggable, dropTargetForElements;
+				try {
+					const mod = await import("https://esm.sh/@atlaskit/pragmatic-drag-and-drop@1.5.0/element/adapter");
+					({ draggable, dropTargetForElements } = mod);
+					pdndLog("pdnd loaded from esm.sh ✓");
+				} catch (err) {
+					pdndLog("pdnd import FAILED (CDN/network, not the shadow-DOM test): " + err.message);
+					return;
+				}
+				let fired = false;
+				for (const hostId of ["pdndA", "pdndB"]) {
+					const host = document.getElementById(hostId);
+					const root = host.shadowRoot;
+					root.querySelectorAll(".item").forEach((item) => {
+						draggable({
+							element: item,
+							onDragStart: () => { fired = true; pdndLog(`onDragStart fired for ${item.dataset.key} ✓`); },
+							onDrop: () => pdndLog(`onDrop fired for ${item.dataset.key} ✓`),
+						});
+					});
+					dropTargetForElements({
+						element: root.querySelector(".lane"),
+						onDrop: () => pdndLog(`drop target hit in ${hostId} ✓`),
+					});
+				}
+				pdndLog("Registered pdnd draggable on shadow-DOM items. Now drag a card…");
+				// After a few seconds with no interaction we can't know; the verdict is written on first dragstart
+				// attempt. Provide a manual note:
+				setTimeout(() => {
+					if (!fired) pdndLog("(If dragging produced no 'onDragStart fired' line above, that reproduces issue #116: pdnd does not work inside shadow DOM.)");
+				}, 8000);
+			})();
+
+			// =====================================================================
+			// Section B: in-house pointer-events core across shadow roots
+			// =====================================================================
+			class SpikePtrList extends HTMLElement {
+				connectedCallback() {
+					const label = this.dataset.label;
+					this.attachShadow({ mode: "open" }).innerHTML =
+						laneTemplate(label, this.id === "ptrA" ? ["A-1", "A-2", "A-3"] : ["B-1", "B-2"]);
+				}
+				get lane() { return this.shadowRoot.querySelector(".lane"); }
+				items() { return [...this.shadowRoot.querySelectorAll(".item")]; }
+			}
+			customElements.define("spike-ptr-list", SpikePtrList);
+
+			const lanes = () => [document.getElementById("ptrA"), document.getElementById("ptrB")];
+
+			let drag = null; // { key, ghost, fromHost }
+			let indicator = null;
+
+			function clearIndicator() {
+				if (indicator) { indicator.remove(); indicator = null; }
+			}
+
+			// Which lane host is under the pointer? Rect test against each shadow-internal lane — no generic
+			// hit-testing needed since we hold references straight into the shadow roots.
+			function laneUnder(x, y) {
+				for (const host of lanes()) {
+					const r = host.lane.getBoundingClientRect();
+					if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return host;
+				}
+				return null;
+			}
+
+			function placeIndicator(host, y) {
+				clearIndicator();
+				indicator = document.createElement("div");
+				indicator.className = "indicator";
+				const items = host.items().filter((i) => i.dataset.key !== drag.key);
+				let before = null;
+				for (const it of items) {
+					const r = it.getBoundingClientRect();
+					if (y < r.top + r.height / 2) { before = it; break; }
+				}
+				const lane = host.lane;
+				if (before) lane.insertBefore(indicator, before);
+				else lane.appendChild(indicator);
+				return items.indexOf(before); // -1 => append at end
+			}
+
+			function onPointerDown(e) {
+				const path = e.composedPath();
+				const item = path.find((n) => n.classList && n.classList.contains("item"));
+				if (!item) return;
+				const host = lanes().find((h) => h.shadowRoot.contains(item));
+				if (!host) return;
+				e.preventDefault();
+				item.setPointerCapture(e.pointerId);
+				item.classList.add("dragging");
+				const ghost = item.cloneNode(true);
+				Object.assign(ghost.style, { position: "fixed", pointerEvents: "none", width: item.offsetWidth + "px",
+					left: e.clientX + 8 + "px", top: e.clientY + 8 + "px", opacity: "0.9", zIndex: "9999", boxShadow: "0 4px 12px rgba(0,0,0,.25)" });
+				document.body.appendChild(ghost);
+				drag = { key: item.dataset.key, item, ghost, fromHost: host, dropIndex: -1, dropHost: null };
+				ptrLog(`grab ${drag.key} from ${host.id} (pointerType=${e.pointerType})`);
+				item.addEventListener("pointermove", onPointerMove);
+				item.addEventListener("pointerup", onPointerUp, { once: true });
+			}
+			function onPointerMove(e) {
+				if (!drag) return;
+				drag.ghost.style.left = e.clientX + 8 + "px";
+				drag.ghost.style.top = e.clientY + 8 + "px";
+				const host = laneUnder(e.clientX, e.clientY);
+				if (host) { drag.dropHost = host; drag.dropIndex = placeIndicator(host, e.clientY); }
+				else { drag.dropHost = null; clearIndicator(); }
+			}
+			function onPointerUp() {
+				if (!drag) return;
+				drag.item.classList.remove("dragging");
+				drag.ghost.remove();
+				clearIndicator();
+				if (drag.dropHost) {
+					const to = drag.dropHost.id;
+					const pos = drag.dropIndex === -1 ? "end" : `index ${drag.dropIndex}`;
+					ptrLog(`DROP ${drag.key}: ${drag.fromHost.id} → ${to} at ${pos}  ✓ (works across shadow roots + touch)`);
+				} else {
+					ptrLog(`cancel ${drag.key} (dropped outside a lane)`);
+				}
+				drag.item.removeEventListener("pointermove", onPointerMove);
+				drag = null;
+			}
+
+			// Delegate pointerdown at the document; composedPath() pierces shadow roots so we find the item.
+			document.addEventListener("pointerdown", onPointerDown);
+			ptrLog("Pointer core ready. Drag a card between the two lanes (mouse now, touch in device mode).");
+		</script>
+	</body>
+</html>

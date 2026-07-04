@@ -6,7 +6,7 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 A lane definition: the `group-by` value it collects, an optional header label (defaults to the value), and an optional advisory WIP limit. */ export interface BoardLane { value: string; label?: string; limit?: number; } /** The move menu's context: which card it is open for, and where that card sits. */ interface MenuContext { card: Card; key: unknown; laneValue: string; index: number; laneLen: number; } /** `<dj-board>` — a Kanban board over plain records. Lanes are the values of one field (`group-by`); cards are the records of `data`, ordered within a lane by their order of appearance. The board is CONTROLLED: it never mutates `data` — every move (menu, keyboard) emits `dj-card-move` and the app applies it (the exported `applyCardMove` helper makes that one line); focus then follows the moved card and the move is announced to assistive tech once the app's data update lands. Card content comes from `renderCard`, rendered inside the component-owned accessible shell (so custom cards cannot regress accessibility), or defaults to a `dj-card` showing the `card-title` field. Keyboard: one tab stop (roving); arrows move between cards and lanes, Home/End within a lane, Enter activates, Space or M opens the move menu, and Ctrl/Cmd+arrows move the card itself. WIP limits are advisory (`n/limit` count and an over-limit style hook, never blocking).
 
-> The board is CONTROLLED: it never changes `data`. Listen for `dj-card-move`, apply it (the exported `applyCardMove` makes that one line), and assign the new array — focus then follows the moved card and the move is announced. Explicit `lanes` are recommended over the derived fallback (they fix lane order, give labels, and include empty lanes).
+> The board is CONTROLLED: it never changes `data`. Listen for `dj-card-move`, apply it (the exported `applyCardMove` makes that one line), and assign the new array — focus then follows the moved card and the move is announced. Explicit `lanes` are recommended over the derived fallback (they fix lane order, give labels, and include empty lanes). Set `draggable` to enable pointer and touch drag between lanes (built on `@dojo-ng/dnd`); it is progressive enhancement — the move menu and keyboard shortcuts remain the accessibility contract, so drag is never the only way to move a card.
 
 ## Install
 
@@ -55,6 +55,7 @@ Moves (menu, Ctrl/Cmd+arrows) emit `dj-card-move`; the app applies them with `ap
 | `cardTitle` | card-title | `string` | `"title"` |
 | `label` | label | `string` | — |
 | `renderCard` | — | `(card: Card) => TemplateResult` | — |
+| `draggable` | draggable ↻ | `boolean` | `false` |
 
 **Slots:** `none` (cards come from `data`)
 

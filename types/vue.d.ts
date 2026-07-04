@@ -7,6 +7,7 @@
 import type { DefineComponent } from "vue";
 import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
+import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
 import type { DjBoard } from "@dojo-ng/board";
 import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
@@ -73,12 +74,14 @@ import type { DjTree } from "@dojo-ng/tree";
 import type { DjTriggerPopup } from "@dojo-ng/trigger-popup";
 import type { DjTwoColumnLayout } from "@dojo-ng/two-column-layout";
 import type { DjTypeahead } from "@dojo-ng/typeahead";
+import type { DjVideo } from "@dojo-ng/video";
 import type { DjWizard } from "@dojo-ng/wizard";
 
 declare module "@vue/runtime-core" {
   interface GlobalComponents {
     "dj-accordion": DefineComponent<{ exclusive?: DjAccordion["exclusive"] }, {}, {}, {}, {}, {}, {}>;
     "dj-action-button": DefineComponent<{  }, {}, {}, {}, {}, {}, {}>;
+    "dj-audio": DefineComponent<{ src?: DjAudio["src"]; label?: DjAudio["label"]; preload?: DjAudio["preload"] }, {}, {}, {}, {}, {}, { "dj-play": (e: CustomEvent) => void, "dj-pause": (e: CustomEvent) => void, "dj-ended": (e: CustomEvent) => void, "dj-time": (e: CustomEvent) => void }>;
     "dj-avatar": DefineComponent<{ type?: DjAvatar["type"]; size?: DjAvatar["size"]; src?: DjAvatar["src"]; alt?: DjAvatar["alt"]; secondary?: DjAvatar["secondary"]; outline?: DjAvatar["outline"] }, {}, {}, {}, {}, {}, {}>;
     "dj-board": DefineComponent<{ data?: DjBoard["data"]; lanes?: DjBoard["lanes"]; groupBy?: DjBoard["groupBy"]; cardKey?: DjBoard["cardKey"]; cardTitle?: DjBoard["cardTitle"]; label?: DjBoard["label"]; renderCard?: DjBoard["renderCard"]; draggable?: DjBoard["draggable"] }, {}, {}, {}, {}, {}, { "dj-card-move": (e: CustomEvent) => void, "dj-card-click": (e: CustomEvent) => void }>;
     "dj-breadcrumb-group": DefineComponent<{ items?: DjBreadcrumbGroup["items"] }, {}, {}, {}, {}, {}, {}>;
@@ -145,6 +148,7 @@ declare module "@vue/runtime-core" {
     "dj-trigger-popup": DefineComponent<{ open?: DjTriggerPopup["open"]; position?: DjTriggerPopup["position"]; matchWidth?: DjTriggerPopup["matchWidth"]; underlayVisible?: DjTriggerPopup["underlayVisible"] }, {}, {}, {}, {}, {}, { "dj-open": (e: CustomEvent) => void }>;
     "dj-two-column-layout": DefineComponent<{ bias?: DjTwoColumnLayout["bias"] }, {}, {}, {}, {}, {}, {}>;
     "dj-typeahead": DefineComponent<{ options?: DjTypeahead["options"]; value?: DjTypeahead["value"]; name?: DjTypeahead["name"]; label?: DjTypeahead["label"]; placeholder?: DjTypeahead["placeholder"]; helperText?: DjTypeahead["helperText"]; disabled?: DjTypeahead["disabled"]; required?: DjTypeahead["required"]; strict?: DjTypeahead["strict"]; position?: DjTypeahead["position"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
+    "dj-video": DefineComponent<{ sources?: DjVideo["sources"]; src?: DjVideo["src"]; poster?: DjVideo["poster"]; muted?: DjVideo["muted"]; autoplay?: DjVideo["autoplay"]; loop?: DjVideo["loop"]; tracks?: DjVideo["tracks"]; label?: DjVideo["label"] }, {}, {}, {}, {}, {}, { "dj-play": (e: CustomEvent) => void, "dj-pause": (e: CustomEvent) => void, "dj-ended": (e: CustomEvent) => void, "dj-time": (e: CustomEvent) => void }>;
     "dj-wizard": DefineComponent<{ steps?: DjWizard["steps"]; activeStep?: DjWizard["activeStep"]; direction?: DjWizard["direction"]; clickable?: DjWizard["clickable"] }, {}, {}, {}, {}, {}, { "dj-step": (e: CustomEvent) => void }>;
   }
 }

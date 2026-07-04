@@ -947,6 +947,7 @@ A lane definition: the `group-by` value it collects, an optional header label (d
 | `cardTitle` | card-title | `string` | `"title"` |
 | `label` | label | `string` | — |
 | `renderCard` | — | `(card: Card) => TemplateResult` | — |
+| `draggable` | draggable ↻ | `boolean` | `false` |
 
 **Slots:** `none` (cards come from `data`)
 
@@ -962,7 +963,7 @@ applies it itself), `dj-card-click` (detail `{ card, key }`)
 
 ### `<dj-list>` · `@dojo-ng/list`
 
-A single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. Virtualization and drag-reorder are deferred. Parts: `list`, `item`. @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.
+A single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard (space to grab, arrows to move, space to drop, escape to cancel) — controlled: it emits `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`. @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -971,10 +972,11 @@ A single-select list/menu driven by `options`. Uses the active-descendant patter
 | `name` | name ↻ | `string` | — |
 | `menu` | menu | `boolean` | `false` |
 | `loading` | loading | `boolean` | `false` |
+| `reorderable` | reorderable ↻ | `boolean` | `false` |
 
-**Parts:** `list`, `item`
+**Parts:** `list`, `item`, `drop-indicator`
 
-**Events:** `change`
+**Events:** `change`, `dj-reorder`
 
 **Methods:** `checkValidity(): boolean`, `focus(options: FocusOptions)`
 
@@ -1253,6 +1255,46 @@ Coordinates slotted `dj-transition` children, staggering their `show` toggles. W
 | `stagger` | stagger | `number` | `0` |
 
 **Slots:** default
+
+
+## Media
+
+
+### `<dj-audio>` · `@dojo-ng/audio`
+
+Mm:ss (or h:mm:ss past an hour) for a duration in seconds. Not a date — plain string math. */ function formatTime(seconds: number): string { if (!isFinite(seconds) || seconds &lt; 0) seconds = 0; const total = Math.floor(seconds); const s = total % 60; const m = Math.floor(total / 60) % 60; const h = Math.floor(total / 3600); const ss = String(s).padStart(2, "0"); if (h &gt; 0) return `${h}:${String(m).padStart(2, "0")}:${ss}`; return `${m}:${ss}`; } /** `<dj-audio>` — a themed audio player wrapping the native `HTMLAudioElement`. The `<audio>` element is ours (hidden in the shadow root); the UI is dj- controls: a play/pause `<dj-button>` whose icon and localized label follow the media's real `play`/`pause` events (not the click, so the button stays correct if the media is driven through `media()`), a seek `<dj-slider>` whose max is set from the media duration and whose value tracks playback, and a current/total time readout. No vendor engine — audio needs none.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `src` | src | `string` | — |
+| `label` | label | `string` | — |
+| `preload` | preload | `string` | `"metadata"` |
+
+**Parts:** `bar` (the control row), `play` (the play/pause button), `seek` (the slider), `time`, `pause`, `media`
+
+**Events:** `dj-play`, `dj-pause`, `dj-ended`, `dj-time`
+
+**Methods:** `play()` (Start playback.), `pause()` (Pause playback.), `media(): HTMLAudioElement | null` (The underlying `HTMLAudioElement`. Advanced escape hatch; no support implied.)
+
+
+### `<dj-video>` · `@dojo-ng/video`
+
+A themed video player wrapping video.js (the product's engine; v8, which bundles HLS). We own integration; video.js owns playback and renders its own control bar (`controls: true` — we do NOT rebuild video controls in v1). LIGHT DOM: this component renders its player region into light DOM (`createRenderRoot()` returns `this`, the dj-rich-text precedent) because video.js injects DOM, needs its global stylesheet, and its fullscreen/track menus misbehave inside a shadow root. video.js's stylesheet is a documented APP PREREQUISITE, loaded at document level (see the README's link tag) — the same arrangement as element-internals-polyfill. Test seam: the engine is only ever created through `protected createPlayer(el, options)`, which defaults to lazily importing the real video.js factory. Tests replace it with a stub player. Methods: `play()`, `pause()`, `player()` (the raw video.js instance; advanced, no support implied). Events: `dj-play`, `dj-pause`, `dj-ended`, and `dj-time` `{ current, duration }` throttled to at most once per second. xAPI/analytics/resume-position are app listeners on these. Prop changes after creation: `src`/`sources`/`poster` update the live player; the rest (`muted`/`autoplay`/`loop`/`tracks`/`label`) recreate it (dispose → createPlayer).
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `sources` | — | `VideoJsSource[]` | — |
+| `src` | src | `string` | — |
+| `poster` | poster | `string` | — |
+| `muted` | muted | `boolean` | `false` |
+| `autoplay` | autoplay | `boolean` | `false` |
+| `loop` | loop | `boolean` | `false` |
+| `tracks` | — | `unknown[]` | — |
+| `label` | label | `string` | — |
+
+**Events:** `dj-play`, `dj-pause`, `dj-ended`, `dj-time`
+
+**Methods:** `play()` (Start playback.), `pause()` (Pause playback.), `player(): VideoJsPlayer | null` (The underlying video.js player instance. Advanced escape hatch; no support implied.)
 
 
 ## Utilities and infrastructure

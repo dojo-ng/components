@@ -5,6 +5,7 @@
 import type { JSX } from "solid-js";
 import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
+import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
 import type { DjBoard } from "@dojo-ng/board";
 import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
@@ -71,6 +72,7 @@ import type { DjTree } from "@dojo-ng/tree";
 import type { DjTriggerPopup } from "@dojo-ng/trigger-popup";
 import type { DjTwoColumnLayout } from "@dojo-ng/two-column-layout";
 import type { DjTypeahead } from "@dojo-ng/typeahead";
+import type { DjVideo } from "@dojo-ng/video";
 import type { DjWizard } from "@dojo-ng/wizard";
 
 declare module "solid-js" {
@@ -80,6 +82,11 @@ declare module "solid-js" {
         "exclusive"?: DjAccordion["exclusive"];
       };
       "dj-action-button": JSX.HTMLAttributes<DjActionButton>;
+      "dj-audio": JSX.HTMLAttributes<DjAudio> & {
+        "src"?: DjAudio["src"];
+        "label"?: DjAudio["label"];
+        "preload"?: DjAudio["preload"];
+      };
       "dj-avatar": JSX.HTMLAttributes<DjAvatar> & {
         "type"?: DjAvatar["type"];
         "size"?: DjAvatar["size"];
@@ -548,6 +555,16 @@ declare module "solid-js" {
         "strict"?: DjTypeahead["strict"];
         "position"?: DjTypeahead["position"];
       };
+      "dj-video": JSX.HTMLAttributes<DjVideo> & {
+        "sources"?: DjVideo["sources"];
+        "src"?: DjVideo["src"];
+        "poster"?: DjVideo["poster"];
+        "muted"?: DjVideo["muted"];
+        "autoplay"?: DjVideo["autoplay"];
+        "loop"?: DjVideo["loop"];
+        "tracks"?: DjVideo["tracks"];
+        "label"?: DjVideo["label"];
+      };
       "dj-wizard": JSX.HTMLAttributes<DjWizard> & {
         "steps"?: DjWizard["steps"];
         "active-step"?: DjWizard["activeStep"];
@@ -556,6 +573,10 @@ declare module "solid-js" {
       };
     }
     interface CustomEvents {
+      "dj-play": CustomEvent;
+      "dj-pause": CustomEvent;
+      "dj-ended": CustomEvent;
+      "dj-time": CustomEvent;
       "dj-card-move": CustomEvent;
       "dj-card-click": CustomEvent;
       "change": CustomEvent;
@@ -582,6 +603,10 @@ declare module "solid-js" {
       "dj-step": CustomEvent;
     }
     interface CustomCaptureEvents {
+      "dj-play": CustomEvent;
+      "dj-pause": CustomEvent;
+      "dj-ended": CustomEvent;
+      "dj-time": CustomEvent;
       "dj-card-move": CustomEvent;
       "dj-card-click": CustomEvent;
       "change": CustomEvent;

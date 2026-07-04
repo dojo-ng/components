@@ -4,20 +4,16 @@ import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import "@dojo-ng/button";
 import "@dojo-ng/slider";
-import { registerIcons, hasIcon } from "@dojo-ng/icon";
+import "@dojo-ng/icon";
 import styles from "./dj-audio.styles.js";
 
 registerDefaults("dj", { play: "Play", pause: "Pause", seek: "Seek" });
 const EN: Record<string, string> = { play: "Play", pause: "Pause", seek: "Seek" };
 
-// Register default play/pause glyphs so the button shows something out of the box.
-// Registration is last-wins, so an app can override these; only fill gaps here.
-if (!hasIcon("play")) {
-	registerIcons({ play: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>` });
-}
-if (!hasIcon("pause")) {
-	registerIcons({ pause: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>` });
-}
+// Glyphs are SLOTTED into dj-icon (not registered by name): dj-icon only sizes/colors
+// `::slotted(svg)`, and slotting keeps play/pause out of the global icon registry.
+const PLAY_ICON = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>`;
+const PAUSE_ICON = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"></path></svg>`;
 
 /** mm:ss (or h:mm:ss past an hour) for a duration in seconds. Not a date — plain string math. */
 function formatTime(seconds: number): string {
@@ -133,7 +129,7 @@ export class DjAudio extends DojoElement {
 					title=${label}
 					@click=${this.#onToggle}
 				>
-					<dj-icon slot="icon" type=${action} alt-text=${label}></dj-icon>
+					<dj-icon slot="icon" alt-text=${label}>${this.playing ? PAUSE_ICON : PLAY_ICON}</dj-icon>
 				</dj-button>
 				<dj-slider
 					part="seek"

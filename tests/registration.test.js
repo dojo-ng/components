@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 const ELEMENT_PACKAGES = [
 	"accordion",
 	"action-button",
+	"audio",
 	"avatar",
 	"board",
 	"breadcrumb-group",
@@ -73,6 +74,7 @@ const ELEMENT_PACKAGES = [
 	"trigger-popup",
 	"two-column-layout",
 	"typeahead",
+	"video",
 	"wizard",
 ];
 

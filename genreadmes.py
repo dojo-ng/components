@@ -667,6 +667,21 @@ const onKeydown = keyboardGrabMode({
  ],
 })
 
+NOTES.update({
+ "audio": "Wraps the native `HTMLAudioElement` (no vendor engine — audio needs none): the `<audio>` is ours and hidden, the UI is dj- controls, so keyboard support comes free from the button and slider. Give it a `label` for an accessible name. The play/pause state follows the media's real `play`/`pause` events, not the button click, so it stays correct even if you drive playback through `media()`. `dj-time` is throttled to at most once per second; wire xAPI/analytics/resume-position as listeners on the events, not in the component. `media()` returns the raw audio element (advanced; no support implied).",
+ "video": "Wraps video.js (the product's engine; v8, which bundles HLS): video.js owns playback and renders its own control bar, we own integration and theming. TWO app prerequisites, both loaded at document level (the component does not bundle them): video.js's stylesheet (a `<link>` in the page head) and video.js itself (resolved by your bundler or an import map). The player region renders in LIGHT DOM by design — video.js injects its own DOM/CSS and its fullscreen and track menus misbehave inside a shadow root. `src`/`sources`/`poster` update the live player; `muted`/`autoplay`/`loop`/`tracks`/`label` recreate it. `dj-time` is throttled to at most once per second. `player()` returns the raw video.js instance (advanced escape hatch; no support implied).",
+})
+EXAMPLES.update({
+ "audio": [
+  ("Basic audio player", "Set `src` and a `label`. The play/pause button, seek slider, and time readout are dj- controls; keyboard works out of the box. Listen for `dj-play`/`dj-pause`/`dj-ended` and the throttled `dj-time` `{ current, duration }`.",
+   '<dj-audio src="/media/episode-1.mp3" label="Episode 1"></dj-audio>\n<script type="module">\n  import "@dojo-ng/audio";\n  const a = document.querySelector("dj-audio");\n  a.addEventListener("dj-time", (e) => console.log(e.detail.current, "/", e.detail.duration));\n</script>'),
+ ],
+ "video": [
+  ("Video player with sources", "video.js needs its stylesheet loaded at the document level (an app prerequisite, like a polyfill) and the engine resolvable as `video.js`. Pass ordered `sources` (`{ src, type }`); video.js draws its own controls. `player()` is an advanced escape hatch onto the raw video.js instance — no support implied.",
+   '<!-- App prerequisite: load video.js\'s stylesheet once, in the page head. -->\n<link rel="stylesheet" href="https://vjs.zencdn.net/8.10.0/video-js.css" />\n\n<dj-video\n  label="Intro"\n  poster="/media/intro-poster.jpg"\n  .sources=${[{ src: "/media/intro.m3u8", type: "application/x-mpegURL" }]}\n></dj-video>\n<script type="module">\n  import "@dojo-ng/video";\n  const v = document.querySelector("dj-video");\n  v.addEventListener("dj-play", () => console.log("playing"));\n  // Advanced, no support implied:\n  // v.player().requestFullscreen();\n</script>'),
+ ],
+})
+
 count = 0
 infra = 0
 for pkg in sorted(os.listdir(PKGS)):

@@ -70,16 +70,15 @@ test("play/pause events (not the click) drive the button state and emit dj-play/
 	el.addEventListener("dj-pause", () => events.push("pause"));
 
 	// Starts showing the play glyph, labeled Play.
-	assert.equal(iconOf(el).getAttribute("type"), "play");
+	assert.equal(iconOf(el).getAttribute("alt-text"), "Play");
 
 	fire(audio, "play");
 	await settled(el);
-	assert.equal(iconOf(el).getAttribute("type"), "pause", "icon flips to pause on the play event");
-	assert.equal(iconOf(el).getAttribute("alt-text"), "Pause");
+	assert.equal(iconOf(el).getAttribute("alt-text"), "Pause", "icon flips to pause on the play event");
 
 	fire(audio, "pause");
 	await settled(el);
-	assert.equal(iconOf(el).getAttribute("type"), "play", "icon flips back on the pause event");
+	assert.equal(iconOf(el).getAttribute("alt-text"), "Play", "icon flips back on the pause event");
 	assert.deepEqual(events, ["play", "pause"]);
 });
 
@@ -91,7 +90,7 @@ test("ended emits dj-ended and resets the button to play", async () => {
 	await settled(el);
 	fire(audio, "ended");
 	await settled(el);
-	assert.equal(iconOf(el).getAttribute("type"), "play");
+	assert.equal(iconOf(el).getAttribute("alt-text"), "Play");
 	assert.deepEqual(events, ["ended"]);
 });
 

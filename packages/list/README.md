@@ -43,7 +43,7 @@ Provide `options`; read `value` from the `change` event.
 | `loading` | loading | `boolean` | `false` |
 | `reorderable` | reorderable ↻ | `boolean` | `false` |
 
-**Parts:** `list`, `item`
+**Parts:** `list`, `item`, `drop-indicator`
 
 **Events:** `change`, `dj-reorder`
 

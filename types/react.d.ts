@@ -7,6 +7,7 @@
 import type { DetailedHTMLProps, HTMLAttributes } from "react";
 import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
+import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
 import type { DjBoard } from "@dojo-ng/board";
 import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
@@ -73,6 +74,7 @@ import type { DjTree } from "@dojo-ng/tree";
 import type { DjTriggerPopup } from "@dojo-ng/trigger-popup";
 import type { DjTwoColumnLayout } from "@dojo-ng/two-column-layout";
 import type { DjTypeahead } from "@dojo-ng/typeahead";
+import type { DjVideo } from "@dojo-ng/video";
 import type { DjWizard } from "@dojo-ng/wizard";
 
 type DjProps<T> = DetailedHTMLProps<HTMLAttributes<T>, T>;
@@ -84,6 +86,11 @@ declare module "react" {
         "exclusive"?: DjAccordion["exclusive"];
       };
       "dj-action-button": DjProps<DjActionButton>;
+      "dj-audio": DjProps<DjAudio> & {
+        "src"?: DjAudio["src"];
+        "label"?: DjAudio["label"];
+        "preload"?: DjAudio["preload"];
+      };
       "dj-avatar": DjProps<DjAvatar> & {
         "type"?: DjAvatar["type"];
         "size"?: DjAvatar["size"];
@@ -551,6 +558,16 @@ declare module "react" {
         "required"?: DjTypeahead["required"];
         "strict"?: DjTypeahead["strict"];
         "position"?: DjTypeahead["position"];
+      };
+      "dj-video": DjProps<DjVideo> & {
+        "sources"?: DjVideo["sources"];
+        "src"?: DjVideo["src"];
+        "poster"?: DjVideo["poster"];
+        "muted"?: DjVideo["muted"];
+        "autoplay"?: DjVideo["autoplay"];
+        "loop"?: DjVideo["loop"];
+        "tracks"?: DjVideo["tracks"];
+        "label"?: DjVideo["label"];
       };
       "dj-wizard": DjProps<DjWizard> & {
         "steps"?: DjWizard["steps"];

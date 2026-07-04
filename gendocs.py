@@ -20,6 +20,7 @@ GROUPS = [
  ("Editing", ["rich-text"]),
  ("Feedback", ["progress","loading-indicator","global-event"]),
  ("Animation", ["transition","transition-group"]),
+ ("Media", ["audio","video"]),
 ]
 
 o = ["# Dojo NG component reference\n",

@@ -78,6 +78,9 @@
       "@dojo-ng/audio": [
         "./packages/audio/dist/index.d.ts"
       ],
+      "@dojo-ng/video": [
+        "./packages/video/dist/index.d.ts"
+      ],
       "@dojo-ng/button": [
         "./packages/button/dist/index.d.ts"
       ],

@@ -261,6 +261,9 @@
     },
     {
       "path": "packages/audio"
+    },
+    {
+      "path": "packages/video"
     }
   ]
 }

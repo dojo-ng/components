@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
+  "include": ["src"],
+  "references": [
+    { "path": "../dojo-element" },
+    { "path": "../button" },
+    { "path": "../slider" },
+    { "path": "../icon" },
+    { "path": "../i18n" }
+  ]
+}

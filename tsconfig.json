@@ -258,6 +258,9 @@
     },
     {
       "path": "packages/dnd"
+    },
+    {
+      "path": "packages/audio"
     }
   ]
 }

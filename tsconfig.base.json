@@ -75,6 +75,9 @@
       "@dojo-ng/carousel": [
         "./packages/carousel/dist/index.d.ts"
       ],
+      "@dojo-ng/audio": [
+        "./packages/audio/dist/index.d.ts"
+      ],
       "@dojo-ng/button": [
         "./packages/button/dist/index.d.ts"
       ],

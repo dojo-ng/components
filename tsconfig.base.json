@@ -24,6 +24,9 @@
       "@dojo-ng/rich-text-links": [
         "./packages/rich-text-links/dist/index.d.ts"
       ],
+      "@dojo-ng/rich-text-markdown": [
+        "./packages/rich-text-markdown/dist/index.d.ts"
+      ],
       "@dojo-ng/rich-text-lists": [
         "./packages/rich-text-lists/dist/index.d.ts"
       ],

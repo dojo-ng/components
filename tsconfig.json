@@ -209,6 +209,9 @@
       "path": "packages/rich-text-links"
     },
     {
+      "path": "packages/rich-text-markdown"
+    },
+    {
       "path": "packages/data-grid"
     },
     {

@@ -5,6 +5,12 @@
       "path": "packages/dojo-element"
     },
     {
+      "path": "packages/color-picker"
+    },
+    {
+      "path": "packages/file-input"
+    },
+    {
       "path": "packages/theme"
     },
     {

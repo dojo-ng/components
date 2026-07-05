@@ -30,6 +30,12 @@
       "@dojo-ng/rich-text-lists": [
         "./packages/rich-text-lists/dist/index.d.ts"
       ],
+      "@dojo-ng/color-picker": [
+        "./packages/color-picker/dist/index.d.ts"
+      ],
+      "@dojo-ng/file-input": [
+        "./packages/file-input/dist/index.d.ts"
+      ],
       "@dojo-ng/dojo-element": [
         "./packages/dojo-element/dist/index.d.ts"
       ],

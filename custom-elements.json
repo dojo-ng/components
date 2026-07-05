@@ -2581,6 +2581,212 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/color-picker/src/dj-color-picker.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjColorPicker",
+          "customElement": true,
+          "tagName": "dj-color-picker",
+          "description": "an inline color picker with a 2D saturation/brightness area, a hue slider, an optional opacity slider, a text field, and optional swatches. Form-associated: it submits the formatted color string under `name`. There is no built-in trigger or popup \u2014 compose `dj-popup` to make it a dropdown. The internal model is HSV + alpha; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`). Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "format",
+              "type": {
+                "text": "ColorFormat"
+              },
+              "default": "\"hex\"",
+              "attribute": "format"
+            },
+            {
+              "kind": "field",
+              "name": "alpha",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "attribute": "alpha",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "swatches",
+              "type": {
+                "text": "Swatch[]"
+              },
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "name",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "attribute": "disabled",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "get",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "get"
+            },
+            {
+              "kind": "method",
+              "name": "checkValidity",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reportValidity",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "format",
+              "type": {
+                "text": "ColorFormat"
+              },
+              "fieldName": "format"
+            },
+            {
+              "name": "alpha",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "alpha"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            },
+            {
+              "name": "name",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "name"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "disabled"
+            },
+            {
+              "name": "get",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "get"
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "area",
+              "description": ""
+            },
+            {
+              "name": "thumb",
+              "description": ""
+            },
+            {
+              "name": "hue",
+              "description": ""
+            },
+            {
+              "name": "alpha",
+              "description": ""
+            },
+            {
+              "name": "input",
+              "description": ""
+            },
+            {
+              "name": "swatches",
+              "description": ""
+            },
+            {
+              "name": "swatch",
+              "description": ""
+            },
+            {
+              "name": "picker",
+              "description": ""
+            },
+            {
+              "name": "label",
+              "description": ""
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-color-picker-width",
+              "default": "240px",
+              "description": "Overall width of the inline panel."
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "`{ value }`"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-color-picker",
+          "declaration": {
+            "name": "DjColorPicker",
+            "module": "packages/color-picker/src/dj-color-picker.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/constrained-input/src/dj-constrained-input.ts",
       "declarations": [
         {
@@ -3311,6 +3517,217 @@
           "declaration": {
             "name": "DjEmailInput",
             "module": "packages/email-input/src/dj-email-input.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "packages/file-input/src/dj-file-input.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjFileInput",
+          "customElement": true,
+          "tagName": "dj-file-input",
+          "description": "a form-associated file selector with a button (opens the OS picker) and a drop zone. Selected files are copied into component state, shown as a removable list; the element only SELECTS files (no upload/preview). Form value: a single `File` normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`, `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "accept",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "accept"
+            },
+            {
+              "kind": "field",
+              "name": "multiple",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "attribute": "multiple"
+            },
+            {
+              "kind": "field",
+              "name": "required",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "attribute": "required",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "maxSize",
+              "type": {
+                "text": "number"
+              },
+              "attribute": "max-size"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "name",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "name",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "attribute": "disabled",
+              "reflects": true
+            },
+            {
+              "kind": "method",
+              "name": "checkValidity",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "reportValidity",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "focus",
+              "parameters": [
+                {
+                  "name": "options",
+                  "type": {
+                    "text": "FocusOptions"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "clear",
+              "description": "Remove all selected files (no `dj-change`)."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "accept",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "accept"
+            },
+            {
+              "name": "multiple",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "multiple"
+            },
+            {
+              "name": "required",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "required"
+            },
+            {
+              "name": "max-size",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "maxSize"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            },
+            {
+              "name": "name",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "name"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "disabled"
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "button",
+              "description": ""
+            },
+            {
+              "name": "dropzone",
+              "description": ""
+            },
+            {
+              "name": "list",
+              "description": ""
+            },
+            {
+              "name": "item",
+              "description": ""
+            },
+            {
+              "name": "remove",
+              "description": ""
+            },
+            {
+              "name": "label",
+              "description": ""
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "`{ files }`"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-file-input",
+          "declaration": {
+            "name": "DjFileInput",
+            "module": "packages/file-input/src/dj-file-input.ts"
           }
         }
       ]

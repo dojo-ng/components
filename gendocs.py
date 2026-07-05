@@ -11,7 +11,7 @@ import os
 import genlib as G
 
 GROUPS = [
- ("Form controls", ["button","action-button","floating-action-button","label","helper-text","text-input","email-input","number-input","password-input","constrained-input","text-area","native-select","select","typeahead","chip-typeahead","checkbox","checkbox-group","radio","radio-group","switch","slider","range-slider","rate","date-input","time-picker","form"]),
+ ("Form controls", ["button","action-button","floating-action-button","label","helper-text","text-input","email-input","number-input","password-input","constrained-input","text-area","native-select","select","typeahead","chip-typeahead","checkbox","checkbox-group","radio","radio-group","switch","slider","range-slider","rate","date-input","time-picker","color-picker","file-input","form"]),
  ("Overlays", ["popup","trigger-popup","context-popup","popup-confirmation","context-menu","dialog","slide-pane","tooltip","snackbar"]),
  ("Layout", ["card","header-card","stack","two-column-layout","three-column-layout","title-pane","accordion","carousel"]),
  ("Navigation", ["breadcrumb-group","header","toolbar","pagination","tab-container","wizard","speed-dial","tree"]),

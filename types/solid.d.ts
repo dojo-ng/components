@@ -18,6 +18,7 @@ import type { DjCheckbox } from "@dojo-ng/checkbox";
 import type { DjCheckboxGroup } from "@dojo-ng/checkbox-group";
 import type { DjChip } from "@dojo-ng/chip";
 import type { DjChipTypeahead } from "@dojo-ng/chip-typeahead";
+import type { DjColorPicker } from "@dojo-ng/color-picker";
 import type { DjConstrainedInput } from "@dojo-ng/constrained-input";
 import type { DjContextMenu } from "@dojo-ng/context-menu";
 import type { DjContextPopup } from "@dojo-ng/context-popup";
@@ -25,6 +26,7 @@ import type { DjDataGrid } from "@dojo-ng/data-grid";
 import type { DjDateInput } from "@dojo-ng/date-input";
 import type { DjDialog } from "@dojo-ng/dialog";
 import type { DjEmailInput } from "@dojo-ng/email-input";
+import type { DjFileInput } from "@dojo-ng/file-input";
 import type { DjFloatingActionButton } from "@dojo-ng/floating-action-button";
 import type { DjForm } from "@dojo-ng/form";
 import type { DjGlobalEvent } from "@dojo-ng/global-event";
@@ -199,6 +201,15 @@ declare module "solid-js" {
         "duplicates"?: DjChipTypeahead["duplicates"];
         "position"?: DjChipTypeahead["position"];
       };
+      "dj-color-picker": JSX.HTMLAttributes<DjColorPicker> & {
+        "format"?: DjColorPicker["format"];
+        "alpha"?: DjColorPicker["alpha"];
+        "swatches"?: DjColorPicker["swatches"];
+        "label"?: DjColorPicker["label"];
+        "name"?: DjColorPicker["name"];
+        "disabled"?: DjColorPicker["disabled"];
+        "get"?: DjColorPicker["get"];
+      };
       "dj-constrained-input": JSX.HTMLAttributes<DjConstrainedInput> & {
         "validator"?: DjConstrainedInput["validator"];
       };
@@ -235,6 +246,15 @@ declare module "solid-js" {
       };
       "dj-email-input": JSX.HTMLAttributes<DjEmailInput> & {
         "type"?: DjEmailInput["type"];
+      };
+      "dj-file-input": JSX.HTMLAttributes<DjFileInput> & {
+        "accept"?: DjFileInput["accept"];
+        "multiple"?: DjFileInput["multiple"];
+        "required"?: DjFileInput["required"];
+        "max-size"?: DjFileInput["maxSize"];
+        "label"?: DjFileInput["label"];
+        "name"?: DjFileInput["name"];
+        "disabled"?: DjFileInput["disabled"];
       };
       "dj-floating-action-button": JSX.HTMLAttributes<DjFloatingActionButton> & {
         "size"?: DjFloatingActionButton["size"];
@@ -586,6 +606,7 @@ declare module "solid-js" {
       "dj-legend-toggle": CustomEvent;
       "dj-hover": CustomEvent;
       "dj-close": CustomEvent;
+      "dj-change": CustomEvent;
       "dj-select": CustomEvent;
       "dj-open": CustomEvent;
       "dj-sort": CustomEvent;
@@ -596,7 +617,6 @@ declare module "solid-js" {
       "dj-page": CustomEvent;
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;
-      "dj-change": CustomEvent;
       "dj-toggle": CustomEvent;
       "dj-tab-close": CustomEvent;
       "dj-action": CustomEvent;
@@ -616,6 +636,7 @@ declare module "solid-js" {
       "dj-legend-toggle": CustomEvent;
       "dj-hover": CustomEvent;
       "dj-close": CustomEvent;
+      "dj-change": CustomEvent;
       "dj-select": CustomEvent;
       "dj-open": CustomEvent;
       "dj-sort": CustomEvent;
@@ -626,7 +647,6 @@ declare module "solid-js" {
       "dj-page": CustomEvent;
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;
-      "dj-change": CustomEvent;
       "dj-toggle": CustomEvent;
       "dj-tab-close": CustomEvent;
       "dj-action": CustomEvent;

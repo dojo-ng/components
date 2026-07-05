@@ -702,6 +702,24 @@ EXAMPLES.update({
    '<dj-rich-text id="editor" label="Article" format="markdown"></dj-rich-text>\n<script type="module">\n  import "@dojo-ng/rich-text";\n  import { defaultPlugins } from "@dojo-ng/rich-text";\n  import { headingsPlugin } from "@dojo-ng/rich-text-headings";\n  import { listsPlugin } from "@dojo-ng/rich-text-lists";\n  import { linksPlugin } from "@dojo-ng/rich-text-links";\n  import { markdownPlugin } from "@dojo-ng/rich-text-markdown";\n  const el = document.getElementById("editor");\n  el.plugins = [...defaultPlugins, headingsPlugin, listsPlugin, linksPlugin, markdownPlugin];\n  el.value = "# Title\\n\\nSome **bold** text.";\n</script>'),
  ],
 })
+NOTES.update({
+ "color-picker": "An inline color picker: a 2D saturation/brightness area, a hue slider, an optional opacity slider (`alpha`), a text field, and optional `swatches`. Form-associated — it submits the formatted color string under `name`. There is no built-in trigger or popup by design; compose `dj-popup` to make a dropdown. The model is HSV internally; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`), so reading `value` after switching `format` returns the new representation. `swatches` is an array of color strings or `{ value, label }`. Emits `dj-change` (`{ value }`) on every user change, including during a drag (no separate input event). Named CSS colors are not parsed; alpha appears in the output only when the color is translucent or `alpha` is on. Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.",
+})
+EXAMPLES.update({
+ "color-picker": [
+  ("Picker with swatches", "Set `format`, turn on `alpha` for opacity, and pass `swatches`. Listen for `dj-change` to read the formatted `value`.",
+   '<dj-color-picker id="picker" label="Brand color" format="rgb" alpha></dj-color-picker>\n<script type="module">\n  import "@dojo-ng/color-picker";\n  const p = document.getElementById("picker");\n  p.swatches = ["#e11d48", "#2563eb", { value: "#16a34a", label: "Green" }];\n  p.addEventListener("dj-change", (e) => console.log(e.detail.value));\n</script>'),
+ ],
+})
+NOTES.update({
+ "file-input": "A form-associated file selector: a `dj-button` opens the OS picker and the host doubles as a drop zone. Selected files are copied into component state and listed with their size and a remove button; the component only SELECTS files — it does no uploading or preview. `accept` filters both the picker and drops (extension, exact MIME, or `type/*`); `multiple` allows more than one (otherwise a new pick replaces the current file); `max-size` (bytes, per file) rejects an oversize file and sets a `fileTooLarge` validity error, cleared on the next change; `required` with no files reports `valueMissing`. Form value is a single `File`, or a `FormData` with one entry per file under `name` when `multiple`. Read `files` (read-only) for the current selection; call `clear()` to empty it. Emits `dj-change` (`{ files }`) on add and remove. The keyboard path is the button, so drag-and-drop adds no accessibility gap. Parts: `button`, `dropzone`, `list`, `item`, `remove`.",
+})
+EXAMPLES.update({
+ "file-input": [
+  ("Accept images, allow several", "Set `accept` and `multiple`; read the selection from `dj-change` or the `files` property.",
+   '<dj-file-input id="files" label="Attachments" accept="image/*" multiple max-size="5000000"></dj-file-input>\n<script type="module">\n  import "@dojo-ng/file-input";\n  document.getElementById("files").addEventListener("dj-change", (e) => console.log(e.detail.files));\n</script>'),
+ ],
+})
 
 def main():
     count = 0

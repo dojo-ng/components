@@ -24,6 +24,7 @@ import type { DjCheckbox } from "@dojo-ng/checkbox";
 import type { DjCheckboxGroup } from "@dojo-ng/checkbox-group";
 import type { DjChip } from "@dojo-ng/chip";
 import type { DjChipTypeahead } from "@dojo-ng/chip-typeahead";
+import type { DjColorPicker } from "@dojo-ng/color-picker";
 import type { DjConstrainedInput } from "@dojo-ng/constrained-input";
 import type { DjContextMenu } from "@dojo-ng/context-menu";
 import type { DjContextPopup } from "@dojo-ng/context-popup";
@@ -31,6 +32,7 @@ import type { DjDataGrid } from "@dojo-ng/data-grid";
 import type { DjDateInput } from "@dojo-ng/date-input";
 import type { DjDialog } from "@dojo-ng/dialog";
 import type { DjEmailInput } from "@dojo-ng/email-input";
+import type { DjFileInput } from "@dojo-ng/file-input";
 import type { DjFloatingActionButton } from "@dojo-ng/floating-action-button";
 import type { DjForm } from "@dojo-ng/form";
 import type { DjGlobalEvent } from "@dojo-ng/global-event";
@@ -205,6 +207,15 @@ declare module "@dojo-ng/framework" {
         "duplicates"?: DjChipTypeahead["duplicates"];
         "position"?: DjChipTypeahead["position"];
       };
+      "dj-color-picker": DjVNodeBase & {
+        "format"?: DjColorPicker["format"];
+        "alpha"?: DjColorPicker["alpha"];
+        "swatches"?: DjColorPicker["swatches"];
+        "label"?: DjColorPicker["label"];
+        "name"?: DjColorPicker["name"];
+        "disabled"?: DjColorPicker["disabled"];
+        "get"?: DjColorPicker["get"];
+      };
       "dj-constrained-input": DjVNodeBase & {
         "validator"?: DjConstrainedInput["validator"];
       };
@@ -241,6 +252,15 @@ declare module "@dojo-ng/framework" {
       };
       "dj-email-input": DjVNodeBase & {
         "type"?: DjEmailInput["type"];
+      };
+      "dj-file-input": DjVNodeBase & {
+        "accept"?: DjFileInput["accept"];
+        "multiple"?: DjFileInput["multiple"];
+        "required"?: DjFileInput["required"];
+        "max-size"?: DjFileInput["maxSize"];
+        "label"?: DjFileInput["label"];
+        "name"?: DjFileInput["name"];
+        "disabled"?: DjFileInput["disabled"];
       };
       "dj-floating-action-button": DjVNodeBase & {
         "size"?: DjFloatingActionButton["size"];

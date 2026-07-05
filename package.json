@@ -16,6 +16,7 @@
     "types": "python3 gentypes.py",
     "manifest": "python3 gencem.py && python3 gentypes.py",
     "docs": "python3 gendocs.py && python3 genreadmes.py",
+    "catalog": "python3 gencatalog.py",
     "serve": "python3 -m http.server 8080 --bind 0.0.0.0",
     "start": "npm run build && npm run serve",
     "changeset": "changeset",

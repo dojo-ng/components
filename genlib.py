@@ -64,7 +64,10 @@ ANY_DOC = re.compile(r"/\*\*(.*?)\*/", re.S)
 
 def classdoc(s):
     """The class-level JSDoc body (star prefixes stripped), or ''."""
-    m = re.search(r"/\*\*(.*?)\*/\s*export class Dj", s, re.S)
+    # Tempered body — (?!\*/) stops the match spanning across an earlier comment's
+    # closing */, so a JSDoc-commented helper before the class (e.g. a formatTime
+    # utility) is not swallowed into the class doc; grab only the block adjacent to it.
+    m = re.search(r"/\*\*((?:(?!\*/).)*)\*/\s*export class Dj", s, re.S)
     if not m:
         return ""
     lines = [re.sub(r"^\s*\*\s?", "", ln).rstrip() for ln in m.group(1).splitlines()]
@@ -78,16 +81,16 @@ def clean_jsdoc(raw):
 
 
 def description(doc, tag):
-    """The lead description: class JSDoc up to the first Slots/Parts/Events
+    """The lead description: class JSDoc up to the first Slots/Parts/Events/Methods
     section, with a leading `<tag> —` prefix removed."""
-    cut = re.split(r"\n\s*(?:Slots?:|Parts?:|Events?:)", doc)[0]
+    cut = re.split(r"\n\s*(?:Slots?:|Parts?:|Events?:|Methods?:)", doc)[0]
     t = " ".join(cut.split()).strip()
     return re.sub(rf"^`?<{re.escape(tag)}>`?\s*[—\-–]\s*", "", t).strip()
 
 
 def _section(doc, keyword):
     """Raw text of a named section in the class JSDoc."""
-    m = re.search(rf"{keyword}:(.*?)(?=(?:Slots?|Parts?|Events?):|\Z)", doc, re.S)
+    m = re.search(rf"{keyword}:(.*?)(?=(?:Slots?|Parts?|Events?|Methods?):|\Z)", doc, re.S)
     return m.group(1).strip() if m else ""
 
 

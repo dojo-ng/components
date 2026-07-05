@@ -1,10 +1,10 @@
 # @dojo-ng/audio
 
-`<dj-audio>` — Mm:ss (or h:mm:ss past an hour) for a duration in seconds.
+`<dj-audio>` — A themed audio player wrapping the native `HTMLAudioElement`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Mm:ss (or h:mm:ss past an hour) for a duration in seconds. Not a date — plain string math. */ function formatTime(seconds: number): string { if (!isFinite(seconds) || seconds &lt; 0) seconds = 0; const total = Math.floor(seconds); const s = total % 60; const m = Math.floor(total / 60) % 60; const h = Math.floor(total / 3600); const ss = String(s).padStart(2, "0"); if (h &gt; 0) return `${h}:${String(m).padStart(2, "0")}:${ss}`; return `${m}:${ss}`; } /** `<dj-audio>` — a themed audio player wrapping the native `HTMLAudioElement`. The `<audio>` element is ours (hidden in the shadow root); the UI is dj- controls: a play/pause `<dj-button>` whose icon and localized label follow the media's real `play`/`pause` events (not the click, so the button stays correct if the media is driven through `media()`), a seek `<dj-slider>` whose max is set from the media duration and whose value tracks playback, and a current/total time readout. No vendor engine — audio needs none.
+A themed audio player wrapping the native `HTMLAudioElement`. The `<audio>` element is ours (hidden in the shadow root); the UI is dj- controls: a play/pause `<dj-button>` whose icon and localized label follow the media's real `play`/`pause` events (not the click, so the button stays correct if the media is driven through `media()`), a seek `<dj-slider>` whose max is set from the media duration and whose value tracks playback, and a current/total time readout. No vendor engine — audio needs none.
 
 > Wraps the native `HTMLAudioElement` (no vendor engine — audio needs none): the `<audio>` is ours and hidden, the UI is dj- controls, so keyboard support comes free from the button and slider. Give it a `label` for an accessible name. The play/pause state follows the media's real `play`/`pause` events, not the button click, so it stays correct even if you drive playback through `media()`. `dj-time` is throttled to at most once per second; wire xAPI/analytics/resume-position as listeners on the events, not in the component. `media()` returns the raw audio element (advanced; no support implied).
 
@@ -39,7 +39,7 @@ Set `src` and a `label`. The play/pause button, seek slider, and time readout ar
 | `label` | label | `string` | — |
 | `preload` | preload | `string` | `"metadata"` |
 
-**Parts:** `bar` (the control row), `play` (the play/pause button), `seek` (the slider), `time`, `pause`, `media`
+**Parts:** `bar` (the control row), `play` (the play/pause button), `seek` (the slider), `time`
 
 **Events:** `dj-play`, `dj-pause`, `dj-ended`, `dj-time`
 

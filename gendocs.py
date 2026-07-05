@@ -23,14 +23,15 @@ GROUPS = [
  ("Media", ["audio","video"]),
 ]
 
-o = ["# Dojo NG component reference\n",
+def main():
+  o = ["# Dojo NG component reference\n",
 "First-pass API reference for the Dojo NG web components, generated from source. For conventions (naming, `--dj-*` theming tokens, events, the WCAG 2.2 AA / mobile requirements) see `component-conventions.md`; for theming see `theming-proposal.md`; for state/data see `state-and-framework-analysis.md`.\n",
 "Usage: import a package to register its tag, then use it. Example:\n",
 "```html\n<script type=\"module\">import \"@dojo-ng/button\";</script>\n<dj-button kind=\"outlined\">Save</dj-button>\n```\n",
 "In the property tables, **Attribute** is the HTML attribute name (↻ = reflected to the DOM); a dash means the property is set in JavaScript only. Components also expose CSS `part`s for `::part()` styling.\n"]
 
-seen = set()
-for group, names in GROUPS:
+  seen = set()
+  for group, names in GROUPS:
     o.append(f"\n## {group}\n")
     for pkg in names:
         if not os.path.isdir(f"{G.PKGS}/{pkg}/src"):
@@ -69,13 +70,17 @@ for group, names in GROUPS:
         if cssprops:
             o.append(f"**CSS properties:** {G.md_safe(G.fmt_cssprops_md(cssprops))}\n")
 
-o.append("\n## Utilities and infrastructure\n")
-o.append("Not custom elements (except `<dj-theme>`); these support theming and app-level state.\n")
-o.append("- **`@dojo-ng/dojo-element`** — `DojoElement`, the Lit base class every component extends (typed `emit()`, idempotent `define()`, auto-registered `dependencies`); plus the `DojoFormControl` interface and shared `baseStyles`.")
-o.append("- **`@dojo-ng/theme`** — `theme.css` (the `--dj-*` token layers, light/dark/OS) and `<dj-theme theme=\"light|dark|auto\">` for scoped theming.")
-o.append("- **`@dojo-ng/store`** — `createStore` (Zustand vanilla) and `StoreController`, a Lit reactive controller that re-renders a host on a selected store slice.")
-o.append("- **`@dojo-ng/context`** — the typed context-key registry (`storeContext`, `localeContext`) plus the `@lit/context` provider/consumer primitives.")
-o.append("- **`@dojo-ng/pubsub`** — `createPubSub()`: a publish/subscribe facade backed by the store (last value retained + replayed to late subscribers).")
+  o.append("\n## Utilities and infrastructure\n")
+  o.append("Not custom elements (except `<dj-theme>`); these support theming and app-level state.\n")
+  o.append("- **`@dojo-ng/dojo-element`** — `DojoElement`, the Lit base class every component extends (typed `emit()`, idempotent `define()`, auto-registered `dependencies`); plus the `DojoFormControl` interface and shared `baseStyles`.")
+  o.append("- **`@dojo-ng/theme`** — `theme.css` (the `--dj-*` token layers, light/dark/OS) and `<dj-theme theme=\"light|dark|auto\">` for scoped theming.")
+  o.append("- **`@dojo-ng/store`** — `createStore` (Zustand vanilla) and `StoreController`, a Lit reactive controller that re-renders a host on a selected store slice.")
+  o.append("- **`@dojo-ng/context`** — the typed context-key registry (`storeContext`, `localeContext`) plus the `@lit/context` provider/consumer primitives.")
+  o.append("- **`@dojo-ng/pubsub`** — `createPubSub()`: a publish/subscribe facade backed by the store (last value retained + replayed to late subscribers).")
 
-open("/tmp/components-reference.md", "w").write("\n".join(o))
-print("documented:", len(seen))
+  open("/tmp/components-reference.md", "w").write("\n".join(o))
+  print("documented:", len(seen))
+
+
+if __name__ == "__main__":
+  main()

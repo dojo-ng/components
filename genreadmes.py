@@ -682,16 +682,21 @@ EXAMPLES.update({
  ],
 })
 
-count = 0
-infra = 0
-for pkg in sorted(os.listdir(PKGS)):
-    if not os.path.isdir(f"{PKGS}/{pkg}/src"):
-        continue
-    _, s = G.main_file(pkg)
-    md = component_readme(pkg, s) if s else infra_readme(pkg)
-    open(f"{PKGS}/{pkg}/README.md", "w").write(md)
-    if s:
-        count += 1
-    else:
-        infra += 1
-print(f"component READMEs: {count} | infra READMEs: {infra}")
+def main():
+    count = 0
+    infra = 0
+    for pkg in sorted(os.listdir(PKGS)):
+        if not os.path.isdir(f"{PKGS}/{pkg}/src"):
+            continue
+        _, s = G.main_file(pkg)
+        md = component_readme(pkg, s) if s else infra_readme(pkg)
+        open(f"{PKGS}/{pkg}/README.md", "w").write(md)
+        if s:
+            count += 1
+        else:
+            infra += 1
+    print(f"component READMEs: {count} | infra READMEs: {infra}")
+
+
+if __name__ == "__main__":
+    main()

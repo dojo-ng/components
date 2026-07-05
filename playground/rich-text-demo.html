@@ -17,12 +17,14 @@
 					"@lexical/utils": "https://esm.sh/@lexical/utils@0.21.0",
 					"@lexical/list": "https://esm.sh/@lexical/list@0.21.0",
 					"@lexical/selection": "https://esm.sh/@lexical/selection@0.21.0",
+					"@lexical/link": "https://esm.sh/@lexical/link@0.21.0",
 					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
 					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
 					"@dojo-ng/button": "../packages/button/dist/index.js",
 					"@dojo-ng/rich-text": "../packages/rich-text/dist/index.js",
 					"@dojo-ng/rich-text-headings": "../packages/rich-text-headings/dist/index.js",
-					"@dojo-ng/rich-text-lists": "../packages/rich-text-lists/dist/index.js"
+					"@dojo-ng/rich-text-lists": "../packages/rich-text-lists/dist/index.js",
+					"@dojo-ng/rich-text-links": "../packages/rich-text-links/dist/index.js"
 				}
 			}
 		</script>
@@ -40,6 +42,7 @@
 			.dj-rt-editable blockquote { margin: .4em 0; padding-left: .8em; border-left: 3px solid var(--dj-color-border); color: var(--dj-color-text-muted); }
 			.dj-rt-editable ul { list-style: disc; padding-left: 1.5em; }
 			.dj-rt-editable ol { list-style: decimal; padding-left: 1.5em; }
+			.dj-rt-editable a { color: var(--dj-color-primary, #0066cc); text-decoration: underline; }
 		</style>
 	</head>
 	<body>
@@ -49,6 +52,11 @@
 			the node types, and the output format all come from plugins. The first editor uses the
 			default set; the second composes headings and lists with the defaults, plus a custom
 			strikethrough plugin authored right here in the page to show third-party authoring.
+		</p>
+		<p class="hint">
+			Paste is sanitized by default: try pasting rich content from a web page or word processor —
+			scripts, inline styles, and unsafe links are stripped, and unknown tags are unwrapped to
+			plain text with formatting preserved.
 		</p>
 
 		<h2>Default plugins (bold / italic / underline + undo / redo)</h2>
@@ -68,6 +76,7 @@
 			import { defineRichTextPlugin, defaultPlugins, formattingPlugin, historyPlugin } from "@dojo-ng/rich-text";
 			import { headingsPlugin } from "@dojo-ng/rich-text-headings";
 			import { listsPlugin } from "@dojo-ng/rich-text-lists";
+			import { linksPlugin } from "@dojo-ng/rich-text-links";
 			import { FORMAT_TEXT_COMMAND } from "lexical";
 
 			// A custom plugin written against the public API: one command button that toggles
@@ -99,8 +108,8 @@
 			// Order in the array is the toolbar order; separators fall between differing groups.
 			wire(
 				"full",
-				[headingsPlugin, formattingPlugin, listsPlugin, historyPlugin, strikethroughPlugin],
-				"<h2>Release notes</h2><p>A <strong>plugin-driven</strong> editor.</p><ul><li>Headings</li><li>Lists</li></ul>",
+				[headingsPlugin, formattingPlugin, linksPlugin, listsPlugin, historyPlugin, strikethroughPlugin],
+				'<h2>Release notes</h2><p>A <strong>plugin-driven</strong> editor with <a href="https://dojo.io">a link</a>.</p><ul><li>Headings</li><li>Lists</li></ul>',
 			);
 		</script>
 	</body>

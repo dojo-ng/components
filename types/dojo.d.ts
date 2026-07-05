@@ -391,6 +391,8 @@ declare module "@dojo-ng/framework" {
         "disabled"?: DjRichText["disabled"];
         "plugins"?: DjRichText["plugins"];
         "format"?: DjRichText["format"];
+        "sanitizePaste"?: DjRichText["sanitizePaste"];
+        "pasteSanitizer"?: DjRichText["pasteSanitizer"];
       };
       "dj-select": DjVNodeBase & {
         "options"?: DjSelect["options"];

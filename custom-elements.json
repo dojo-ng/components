@@ -6192,6 +6192,23 @@
               "reflects": true
             },
             {
+              "kind": "field",
+              "name": "sanitizePaste",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "true",
+              "description": "Sanitize pasted HTML against an allowlist (on by default). Set in JS to disable."
+            },
+            {
+              "kind": "field",
+              "name": "pasteSanitizer",
+              "type": {
+                "text": "(html: string) => string"
+              },
+              "description": "Custom paste sanitizer `(html) => html`; defaults to the built-in allowlist `sanitizeHtml`."
+            },
+            {
               "kind": "method",
               "name": "checkValidity",
               "return": {

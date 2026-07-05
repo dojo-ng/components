@@ -6,6 +6,8 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 A form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM. The editor is a PLUGIN HOST: bold/italic/underline and undo/redo ship as the default plugin set (`default-plugins.ts`) and flow through the same {@link RichTextPlugin} API third-party plugins use. Foundational behavior (`registerRichText`, value sync, root-element setup) stays as core. Toolbar controls, node registration, and output formats all come from plugins. Constraint: Lexical needs node classes at creation, so a `plugins` change after creation rebuilds the editor (serialize → recreate → deserialize). Value is HTML by default; the `format` property selects an alternate serializer contributed by a plugin. Event: `dj-change`.
 
+> Pasted HTML is sanitized against an allowlist by default (scripts, styles, event handlers, inline styles, and unsafe `javascript:`/`data:` URLs are stripped; unknown tags are unwrapped, keeping their text) — a security and consistency hook, not a nicety. Set `sanitizePaste = false` in JS to turn it off, or supply your own `pasteSanitizer(html) => html`. Plain-text pastes bypass it. The exported `sanitizeHtml(html)` is the default and can be reused. Formatting, headings/lists/links, and other node types come from plugins; setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep the basics.
+
 ## Install
 
 ```bash
@@ -39,6 +41,8 @@ Lexical-based; set and read `value` (HTML).
 | `disabled` | disabled ↻ | `boolean` | `false` |
 | `plugins` | — | `RichTextPlugin[]` | `[]` |
 | `format` | format ↻ | `string` | `"html"` |
+| `sanitizePaste` | — | `boolean` | `true` |
+| `pasteSanitizer` | — | `(html: string) => string` | — |
 
 **Events:** `dj-change`
 

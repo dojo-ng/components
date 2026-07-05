@@ -1178,6 +1178,8 @@ A form-associated WYSIWYG editor built on the Lexical core. The editable region 
 | `disabled` | disabled ↻ | `boolean` | `false` |
 | `plugins` | — | `RichTextPlugin[]` | `[]` |
 | `format` | format ↻ | `string` | `"html"` |
+| `sanitizePaste` | — | `boolean` | `true` |
+| `pasteSanitizer` | — | `(html: string) => string` | — |
 
 **Events:** `dj-change`
 

@@ -4,6 +4,7 @@ import DojoElement, { DojoFormControl, FormControl } from "@dojo-ng/dojo-element
 import "@dojo-ng/button";
 import {
 	createEditor, $getRoot, $getSelection, $isRangeSelection,
+	COMMAND_PRIORITY_HIGH, PASTE_COMMAND,
 	type LexicalEditor, type LexicalCommand, type TextFormatType,
 } from "lexical";
 import { registerRichText } from "@lexical/rich-text";
@@ -13,6 +14,7 @@ import {
 	type RichTextPlugin, type RichTextContext, type RichTextToolbarItem, type RichTextFormat,
 } from "./plugin.js";
 import { defaultPlugins } from "./default-plugins.js";
+import { sanitizeHtml } from "./sanitize-html.js";
 
 /** Inline text formats inspected for toolbar active state. */
 const TEXT_FORMATS: TextFormatType[] = [
@@ -73,6 +75,10 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 	@property({ attribute: false }) plugins: RichTextPlugin[] = [];
 	/** Output format; selects which serializer the value getter/setter uses. `"html"` is built in. */
 	@property({ reflect: true }) format = "html";
+	/** Sanitize pasted HTML against an allowlist (on by default). Set in JS to disable. */
+	@property({ attribute: false, type: Boolean }) sanitizePaste = true;
+	/** Custom paste sanitizer `(html) => html`; defaults to the built-in allowlist `sanitizeHtml`. */
+	@property({ attribute: false }) pasteSanitizer?: (html: string) => string;
 	/** Bumped on every selection change to re-render the toolbar's active state. */
 	@state() private selVersion = 0;
 	/** Becomes true once the editor is built; gates toolbar rendering so plugin toolbar items that
@@ -159,6 +165,27 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 
 		this.#disposers = [
 			registerRichText(editor),
+			// Sanitize pasted HTML before Lexical's own paste handler runs (higher priority + return
+			// true stops it). Plain-text pastes (no text/html) fall through to the safe default.
+			editor.registerCommand(
+				PASTE_COMMAND,
+				(event: ClipboardEvent | InputEvent | KeyboardEvent) => {
+					if (!this.sanitizePaste) return false;
+					const cd = (event as ClipboardEvent).clipboardData;
+					const raw = cd?.getData("text/html");
+					if (!raw) return false; // no HTML → let the default handle text/plain
+					event.preventDefault();
+					const clean = (this.pasteSanitizer ?? sanitizeHtml)(raw);
+					editor.update(() => {
+						const sel = $getSelection();
+						if (!$isRangeSelection(sel)) return;
+						const dom = new DOMParser().parseFromString(clean || "", "text/html");
+						sel.insertNodes($generateNodesFromDOM(editor, dom));
+					});
+					return true;
+				},
+				COMMAND_PRIORITY_HIGH,
+			),
 			editor.registerUpdateListener(({ editorState }) => {
 				editorState.read(() => {
 					const sel = $getSelection();

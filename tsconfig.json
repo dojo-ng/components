@@ -206,6 +206,9 @@
       "path": "packages/rich-text-lists"
     },
     {
+      "path": "packages/rich-text-links"
+    },
+    {
       "path": "packages/data-grid"
     },
     {

@@ -681,6 +681,18 @@ EXAMPLES.update({
    '<!-- App prerequisite: load video.js\'s stylesheet once, in the page head. -->\n<link rel="stylesheet" href="https://vjs.zencdn.net/8.10.0/video-js.css" />\n\n<dj-video\n  label="Intro"\n  poster="/media/intro-poster.jpg"\n  .sources=${[{ src: "/media/intro.m3u8", type: "application/x-mpegURL" }]}\n></dj-video>\n<script type="module">\n  import "@dojo-ng/video";\n  const v = document.querySelector("dj-video");\n  v.addEventListener("dj-play", () => console.log("playing"));\n  // Advanced, no support implied:\n  // v.player().requestFullscreen();\n</script>'),
  ],
 })
+NOTES.update({
+ "rich-text": "Pasted HTML is sanitized against an allowlist by default (scripts, styles, event handlers, inline styles, and unsafe `javascript:`/`data:` URLs are stripped; unknown tags are unwrapped, keeping their text) — a security and consistency hook, not a nicety. Set `sanitizePaste = false` in JS to turn it off, or supply your own `pasteSanitizer(html) => html`. Plain-text pastes bypass it. The exported `sanitizeHtml(html)` is the default and can be reused. Formatting, headings/lists/links, and other node types come from plugins; setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep the basics.",
+})
+NOTES.update({
+ "rich-text-links": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. The one toolbar button reflects whether the selection is a link (`aria-pressed`) and, on click, asks for a URL — an empty value removes the link, a new value sets or updates it, cancelling changes nothing. The default URL prompt is `window.prompt`; pass your own via `createLinksPlugin({ promptForUrl })` (it may be async — return a Promise) to drive it from an overlay. Auto-linking on paste/typing is a later addition.",
+})
+EXAMPLES.update({
+ "rich-text-links": [
+  ("Add links to the editor", "Compose the links plugin with the default set. `createLinksPlugin({ promptForUrl })` swaps the built-in `window.prompt` for your own (overlay) URL editor.",
+   '<dj-rich-text id="editor" label="Article"></dj-rich-text>\n<script type="module">\n  import "@dojo-ng/rich-text";\n  import { defaultPlugins } from "@dojo-ng/rich-text";\n  import { linksPlugin } from "@dojo-ng/rich-text-links";\n  document.getElementById("editor").plugins = [...defaultPlugins, linksPlugin];\n</script>'),
+ ],
+})
 
 def main():
     count = 0

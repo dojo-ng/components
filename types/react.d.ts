@@ -389,6 +389,8 @@ declare module "react" {
         "disabled"?: DjRichText["disabled"];
         "plugins"?: DjRichText["plugins"];
         "format"?: DjRichText["format"];
+        "sanitizePaste"?: DjRichText["sanitizePaste"];
+        "pasteSanitizer"?: DjRichText["pasteSanitizer"];
       };
       "dj-select": DjProps<DjSelect> & {
         "options"?: DjSelect["options"];

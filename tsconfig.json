@@ -218,6 +218,12 @@
       "path": "packages/rich-text-markdown"
     },
     {
+      "path": "packages/rich-text-color"
+    },
+    {
+      "path": "packages/rich-text-image"
+    },
+    {
       "path": "packages/data-grid"
     },
     {

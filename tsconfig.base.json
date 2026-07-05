@@ -24,6 +24,12 @@
       "@dojo-ng/rich-text-links": [
         "./packages/rich-text-links/dist/index.d.ts"
       ],
+      "@dojo-ng/rich-text-color": [
+        "./packages/rich-text-color/dist/index.d.ts"
+      ],
+      "@dojo-ng/rich-text-image": [
+        "./packages/rich-text-image/dist/index.d.ts"
+      ],
       "@dojo-ng/rich-text-markdown": [
         "./packages/rich-text-markdown/dist/index.d.ts"
       ],

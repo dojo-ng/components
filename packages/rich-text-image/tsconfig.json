@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
+  "include": ["src"],
+  "references": [{ "path": "../rich-text" }, { "path": "../file-input" }, { "path": "../dialog" }, { "path": "../text-input" }, { "path": "../button" }, { "path": "../i18n" }]
+}

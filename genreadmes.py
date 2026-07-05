@@ -720,6 +720,24 @@ EXAMPLES.update({
    '<dj-file-input id="files" label="Attachments" accept="image/*" multiple max-size="5000000"></dj-file-input>\n<script type="module">\n  import "@dojo-ng/file-input";\n  document.getElementById("files").addEventListener("dj-change", (e) => console.log(e.detail.files));\n</script>'),
  ],
 })
+NOTES.update({
+ "rich-text-color": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Color is an inline `TextNode` style, so it contributes no nodes: it patches `color` (or `background-color`) on the selection via `$patchStyleText`. Exports `colorPlugin` (text color), `backgroundColorPlugin`, and `createColorPlugin({ styleProperty, label, swatches })`. The toolbar control is a `dj-button` whose icon is a swatch chip of the selection's current color; clicking it opens a `dj-popup` with a `dj-color-picker` and a Remove color button. The picker applies live (a preview during a drag) without stealing focus; the popup light-dismisses (outside click / Escape) and focus returns to the editor. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. PASTE CAVEAT: the default paste sanitizer strips inline `style`, so pasted colored text loses its color — color round-trips through the `value` property (which does not pass the paste sanitizer); a trusted app can supply its own `pasteSanitizer`.",
+})
+EXAMPLES.update({
+ "rich-text-color": [
+  ("Text and highlight color", "Compose the color plugins with the default set. `createColorPlugin` customizes the style property, label, or swatches.",
+   '<dj-rich-text id="editor" label="Article"></dj-rich-text>\n<script type="module">\n  import "@dojo-ng/rich-text";\n  import { defaultPlugins } from "@dojo-ng/rich-text";\n  import { colorPlugin, backgroundColorPlugin } from "@dojo-ng/rich-text-color";\n  document.getElementById("editor").plugins = [...defaultPlugins, colorPlugin, backgroundColorPlugin];\n</script>'),
+ ],
+})
+NOTES.update({
+ "rich-text-image": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes an `ImageNode` (a decorator node rendering an `<img>`) plus an `INSERT_IMAGE_COMMAND`, and a toolbar button that opens a `dj-dialog` for inserting an image from a file (`dj-file-input`) or a URL — the most recent source wins. Alt text is REQUIRED: the insert button stays disabled until it is non-empty, because the accessible name is mandatory. Exports `imagePlugin`, `createImagePlugin({ upload })`, `ImageNode`, `$createImageNode`, `$isImageNode`, and `INSERT_IMAGE_COMMAND`. Clicking an image selects it (a NodeSelection); Backspace/Delete then removes it (handled by Lexical). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. DATA-URL CAVEAT: the default `upload` reads the file to a data URL, which bloats the HTML value — pass your own `upload(file) => Promise<string>` in production to host the file and return a URL. PASTE CAVEAT: the default paste sanitizer drops `<img>` tags, so images enter via the dialog or the `value` property, not paste. DEFERRED: resize/crop, captions, drag/paste insertion, alignment.",
+})
+EXAMPLES.update({
+ "rich-text-image": [
+  ("Insert images", "Compose the image plugin with the default set. Pass `createImagePlugin({ upload })` to host files instead of embedding data URLs.",
+   '<dj-rich-text id="editor" label="Article"></dj-rich-text>\n<script type="module">\n  import "@dojo-ng/rich-text";\n  import { defaultPlugins } from "@dojo-ng/rich-text";\n  import { createImagePlugin } from "@dojo-ng/rich-text-image";\n  const imagePlugin = createImagePlugin({ upload: async (file) => (await myUploader(file)).url });\n  document.getElementById("editor").plugins = [...defaultPlugins, imagePlugin];\n</script>'),
+ ],
+})
 
 def main():
     count = 0

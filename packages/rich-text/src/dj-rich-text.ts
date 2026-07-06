@@ -10,6 +10,7 @@ import {
 } from "lexical";
 import { registerRichText } from "@lexical/rich-text";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
+import { $insertGeneratedNodes } from "@lexical/clipboard";
 import { mergeRegister } from "@lexical/utils";
 import {
 	type RichTextPlugin, type RichTextContext, type RichTextToolbarItem, type RichTextFormat,
@@ -192,7 +193,12 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 						const sel = $getSelection();
 						if (!$isRangeSelection(sel)) return;
 						const dom = new DOMParser().parseFromString(clean || "", "text/html");
-						sel.insertNodes($generateNodesFromDOM(editor, dom));
+						const nodes = $generateNodesFromDOM(editor, dom);
+						// Route through Lexical's own clipboard-insert command (handled by registerRichText),
+						// not a bare `selection.insertNodes`: block/"shadow-root" nodes like tables are
+						// flattened to their text by the naive path in real browsers, but inserted intact by
+						// the command handler. Falls back to insertNodes when nothing consumes the command.
+						$insertGeneratedNodes(editor, nodes, sel);
 					});
 					return true;
 				},

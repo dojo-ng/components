@@ -1,6 +1,15 @@
 import { html } from "lit";
 import { createRef, ref } from "lit/directives/ref.js";
-import { $getSelection, $isRangeSelection } from "lexical";
+import {
+	$getSelection,
+	$isRangeSelection,
+	$isTextNode,
+	$setSelection,
+	TextNode,
+	type BaseSelection,
+	type DOMConversionMap,
+	type DOMConversionOutput,
+} from "lexical";
 import { $getSelectionStyleValueForProperty, $patchStyleText } from "@lexical/selection";
 import { defineRichTextPlugin, type RichTextContext, type RichTextPlugin } from "@dojo-ng/rich-text";
 import "@dojo-ng/color-picker";
@@ -65,6 +74,56 @@ export function applyColor(ctx: RichTextContext, styleProperty: StyleProperty, v
 	});
 }
 
+/**
+ * HTML import overrides that preserve inline `color`/`background-color` on the text produced by DOM
+ * import. The default DOM converters (from `TextNode.importDOM`) drop these, so a value set via the
+ * `value` property would lose its colors on the export→import round-trip. We wrap each of TextNode's
+ * tag converters, adding a `forChild` that copies the element's `color`/`background-color` onto the
+ * resulting text node. Contributed through the plugin API's `html.import` hook.
+ */
+export function colorStyleImportMap(): DOMConversionMap {
+	const map: DOMConversionMap = {};
+	const textConversions = TextNode.importDOM?.() ?? {};
+	for (const tag of Object.keys(textConversions)) {
+		const original = textConversions[tag];
+		map[tag] = (node: HTMLElement) => {
+			const conv = original(node);
+			if (!conv) return null;
+			const innerConversion = conv.conversion;
+			return {
+				...conv,
+				conversion: (element: HTMLElement): DOMConversionOutput | null => {
+					const out = innerConversion(element);
+					if (!out) return out;
+					const style = (element as HTMLElement).style;
+					const color = style ? style.color : "";
+					const background = style ? style.backgroundColor : "";
+					if (!color && !background) return out;
+					const originalForChild = out.forChild;
+					return {
+						...out,
+						forChild: (child, parent) => {
+							const result = originalForChild ? originalForChild(child, parent) : child;
+							if ($isTextNode(result)) {
+								const extra = [
+									color ? `color: ${color}` : "",
+									background ? `background-color: ${background}` : "",
+								]
+									.filter(Boolean)
+									.join("; ");
+								const existing = result.getStyle();
+								result.setStyle(existing ? `${existing}; ${extra}` : extra);
+							}
+							return result;
+						},
+					};
+				},
+			};
+		};
+	}
+	return map;
+}
+
 /** Build a color plugin. `styleProperty` selects text vs background color. */
 export function createColorPlugin(options: ColorPluginOptions = {}): RichTextPlugin {
 	const styleProperty = options.styleProperty ?? "color";
@@ -73,9 +132,17 @@ export function createColorPlugin(options: ColorPluginOptions = {}): RichTextPlu
 	const swatches = options.swatches ?? DEFAULT_SWATCHES;
 	const popupRef = createRef<HTMLElement & { open: boolean; anchor?: HTMLElement }>();
 	const triggerRef = createRef<HTMLElement>();
+	const pickerRef = createRef<HTMLElement & { value: string }>();
+	// The selection captured when the popup opens. We restore it before each live apply so the color
+	// previews on exactly the originally-selected text — never drifting or growing even if a stray
+	// pointer event reaches the editor mid-drag — and re-snapshot after (since $patchStyleText splits
+	// text nodes, which would otherwise make the saved keys stale).
+	let saved: BaseSelection | null = null;
 
 	return defineRichTextPlugin({
 		name: isBg ? "background-color" : "color",
+		// Preserve inline color/background on `value` round-trips (the default DOM import drops them).
+		html: { import: colorStyleImportMap() },
 		toolbar: [
 			{
 				id: isBg ? "background-color" : "color",
@@ -88,12 +155,25 @@ export function createColorPlugin(options: ColorPluginOptions = {}): RichTextPlu
 						const p = popupRef.value;
 						if (!p) return;
 						p.anchor = triggerRef.value ?? undefined;
+						// Snapshot the selection, and seed the picker from it once (uncontrolled thereafter).
+						ctx.editor.getEditorState().read(() => {
+							const s = $getSelection();
+							saved = s ? s.clone() : null;
+						});
+						if (pickerRef.value) pickerRef.value.value = currentColor(ctx, styleProperty) || "#000000";
 						p.open = true;
 					};
-					const close = () => {
-						const p = popupRef.value;
-						if (p) p.open = false;
-						ctx.host.focus();
+					// Live apply to the snapshot selection (restore it first so the preview never drifts;
+					// re-snapshot after, since $patchStyleText splits text nodes and moves the keys).
+					const applyLive = (value: string | null) => {
+						ctx.editor.update(() => {
+							if (saved) $setSelection(saved.clone());
+							const s = $getSelection();
+							if (!$isRangeSelection(s)) return;
+							$patchStyleText(s, { [styleProperty]: value });
+							const after = $getSelection();
+							if (after) saved = after.clone();
+						});
 					};
 					return html`
 						<span class="dj-rt-color">
@@ -114,17 +194,17 @@ export function createColorPlugin(options: ColorPluginOptions = {}): RichTextPlu
 							<dj-popup ${ref(popupRef)} position="below" .scrollLock=${false} @dj-close=${() => ctx.host.focus()}>
 								<div style="padding:var(--dj-spacing-small,0.75rem);display:flex;flex-direction:column;gap:var(--dj-spacing-small,0.75rem)">
 									<dj-color-picker
+										${ref(pickerRef)}
 										label=${label}
 										.swatches=${swatches}
-										.value=${color || "#000000"}
-										@dj-change=${(e: CustomEvent<{ value: string }>) =>
-											applyColor(ctx, styleProperty, e.detail.value)}
+										@dj-change=${(e: CustomEvent<{ value: string }>) => applyLive(e.detail.value)}
 									></dj-color-picker>
 									<dj-button
 										kind="text"
 										@click=${() => {
-											applyColor(ctx, styleProperty, null);
-											close();
+											applyLive(null);
+											if (popupRef.value) popupRef.value.open = false;
+											ctx.host.focus();
 										}}
 										>Remove color</dj-button
 									>

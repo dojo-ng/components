@@ -18,13 +18,27 @@
 					"@lexical/list": "https://esm.sh/@lexical/list@0.21.0",
 					"@lexical/selection": "https://esm.sh/@lexical/selection@0.21.0",
 					"@lexical/link": "https://esm.sh/@lexical/link@0.21.0",
+					"@lexical/markdown": "https://esm.sh/@lexical/markdown@0.21.0",
 					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
 					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
 					"@dojo-ng/button": "../packages/button/dist/index.js",
+					"@dojo-ng/icon": "../packages/icon/dist/index.js",
+					"@dojo-ng/label": "../packages/label/dist/index.js",
+					"@dojo-ng/helper-text": "../packages/helper-text/dist/index.js",
+					"@dojo-ng/i18n": "../packages/i18n/dist/index.js",
+					"@dojo-ng/slider": "../packages/slider/dist/index.js",
+					"@dojo-ng/text-input": "../packages/text-input/dist/index.js",
+					"@dojo-ng/popup": "../packages/popup/dist/index.js",
+					"@dojo-ng/dialog": "../packages/dialog/dist/index.js",
+					"@dojo-ng/color-picker": "../packages/color-picker/dist/index.js",
+					"@dojo-ng/file-input": "../packages/file-input/dist/index.js",
 					"@dojo-ng/rich-text": "../packages/rich-text/dist/index.js",
 					"@dojo-ng/rich-text-headings": "../packages/rich-text-headings/dist/index.js",
 					"@dojo-ng/rich-text-lists": "../packages/rich-text-lists/dist/index.js",
-					"@dojo-ng/rich-text-links": "../packages/rich-text-links/dist/index.js"
+					"@dojo-ng/rich-text-links": "../packages/rich-text-links/dist/index.js",
+					"@dojo-ng/rich-text-color": "../packages/rich-text-color/dist/index.js",
+					"@dojo-ng/rich-text-image": "../packages/rich-text-image/dist/index.js",
+					"@dojo-ng/rich-text-markdown": "../packages/rich-text-markdown/dist/index.js"
 				}
 			}
 		</script>
@@ -71,12 +85,33 @@
 			<pre id="full-out">(type above)</pre>
 		</div>
 
+		<h2>CMS editor — headings, lists, links, color, image, markdown</h2>
+		<p class="hint">
+			The full plugin set. Use the toolbar color controls (text and highlight) and the image button
+			(insert from a file or a URL — alt text is required). Toggle the output format between HTML and
+			Markdown; the readout below is the live <code>value</code>. Colors survive a value round-trip
+			via the color plugin's <code>html.import</code> hook.
+		</p>
+		<div class="grid">
+			<label>Format:
+				<select id="cms-format">
+					<option value="html">html</option>
+					<option value="markdown">markdown</option>
+				</select>
+			</label>
+			<dj-rich-text id="cms" label="Article"></dj-rich-text>
+			<pre id="cms-out">(type above)</pre>
+		</div>
+
 		<script type="module">
 			import "@dojo-ng/rich-text";
 			import { defineRichTextPlugin, defaultPlugins, formattingPlugin, historyPlugin } from "@dojo-ng/rich-text";
 			import { headingsPlugin } from "@dojo-ng/rich-text-headings";
 			import { listsPlugin } from "@dojo-ng/rich-text-lists";
 			import { linksPlugin } from "@dojo-ng/rich-text-links";
+			import { colorPlugin, backgroundColorPlugin } from "@dojo-ng/rich-text-color";
+			import { imagePlugin } from "@dojo-ng/rich-text-image";
+			import { markdownPlugin } from "@dojo-ng/rich-text-markdown";
 			import { FORMAT_TEXT_COMMAND } from "lexical";
 
 			// A custom plugin written against the public API: one command button that toggles
@@ -111,6 +146,25 @@
 				[headingsPlugin, formattingPlugin, linksPlugin, listsPlugin, historyPlugin, strikethroughPlugin],
 				'<h2>Release notes</h2><p>A <strong>plugin-driven</strong> editor with <a href="https://dojo.io">a link</a>.</p><ul><li>Headings</li><li>Lists</li></ul>',
 			);
+
+			// CMS editor: the full plugin set, with an html/markdown format toggle and a live readout.
+			const cms = document.getElementById("cms");
+			const cmsOut = document.getElementById("cms-out");
+			const cmsFormat = document.getElementById("cms-format");
+			cms.plugins = [
+				headingsPlugin, formattingPlugin, listsPlugin, linksPlugin,
+				colorPlugin, backgroundColorPlugin, imagePlugin, markdownPlugin, historyPlugin,
+			];
+			cms.setHtml(
+				'<h2>Getting started</h2><p>Text with <strong>bold</strong>, ' +
+				'<span style="color: rgb(220, 38, 38)">color</span>, and a ' +
+				'<a href="https://dojo.io">link</a>.</p><ul><li>One</li><li>Two</li></ul>',
+			);
+			const showCms = () => { cmsOut.textContent = cms.value || "(empty)"; };
+			cms.addEventListener("dj-change", showCms);
+			// Toggle the output format; the value getter switches serializer, so re-read after.
+			cmsFormat.addEventListener("change", () => { cms.format = cmsFormat.value; showCms(); });
+			requestAnimationFrame(showCms);
 		</script>
 	</body>
 </html>

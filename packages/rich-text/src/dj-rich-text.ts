@@ -6,6 +6,7 @@ import {
 	createEditor, $getRoot, $getSelection, $isRangeSelection,
 	COMMAND_PRIORITY_HIGH, PASTE_COMMAND,
 	type LexicalEditor, type LexicalCommand, type TextFormatType,
+	type DOMConversionMap, type DOMExportOutputMap,
 } from "lexical";
 import { registerRichText } from "@lexical/rich-text";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
@@ -151,10 +152,21 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 		this.#serializers = { html: HTML_FORMAT };
 		for (const p of plugins) if (p.formats) Object.assign(this.#serializers, p.formats);
 
+		// Merge plugin-contributed HTML import/export overrides (later plugins win on tag collisions).
+		// This is how the color plugin preserves inline color/background on `value` round-trips, which
+		// the default DOM import would otherwise strip.
+		const htmlImport: DOMConversionMap = {};
+		const htmlExport: DOMExportOutputMap = new Map();
+		for (const p of plugins) {
+			if (p.html?.import) Object.assign(htmlImport, p.html.import);
+			if (p.html?.export) for (const [k, v] of p.html.export) htmlExport.set(k, v);
+		}
+
 		const editor = createEditor({
 			namespace: "dj-rich-text",
 			nodes,
 			onError: (e) => console.error("[dj-rich-text]", e),
+			html: { import: htmlImport, export: htmlExport },
 		});
 		this.#editor = editor;
 		// Lexical's vanilla setRootElement does NOT make the element editable; we own that.

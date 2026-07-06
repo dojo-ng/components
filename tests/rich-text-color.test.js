@@ -4,13 +4,14 @@ import "./setup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createEditor, $getRoot, $createParagraphNode, $createTextNode } from "lexical";
-import { $generateHtmlFromNodes } from "@lexical/html";
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { $patchStyleText } from "@lexical/selection";
 import {
 	colorPlugin,
 	backgroundColorPlugin,
 	createColorPlugin,
 	applyColor,
+	colorStyleImportMap,
 } from "../packages/rich-text-color/dist/index.js";
 
 function editorWithText(text = "hello") {
@@ -85,6 +86,29 @@ test("$patchStyleText applies background-color that survives to HTML, then clear
 		{ discrete: true },
 	);
 	assert.doesNotMatch(htmlOf(editor), /background-color:\s*rgb\(255, 255, 0\)/);
+});
+
+test("colorStyleImportMap preserves inline color/background on DOM import (the P6 hook)", () => {
+	// Without the hook, $generateNodesFromDOM drops inline color; with the plugin's html.import
+	// override it survives, so a value round-trip keeps colors.
+	const plugin = colorPlugin;
+	assert.ok(plugin.html && plugin.html.import, "colorPlugin contributes html.import");
+	const editor = createEditor({ html: { import: colorStyleImportMap() }, onError: (e) => { throw e; } });
+	editor.update(
+		() => {
+			const root = $getRoot();
+			root.clear();
+			const dom = new DOMParser().parseFromString(
+				'<p><span style="color: rgb(255, 0, 0); background-color: rgb(0, 255, 0);">hi</span></p>',
+				"text/html",
+			);
+			for (const n of $generateNodesFromDOM(editor, dom)) root.append(n);
+		},
+		{ discrete: true },
+	);
+	const out = (() => { let s = ""; editor.getEditorState().read(() => { s = $generateHtmlFromNodes(editor, null); }); return s; })();
+	assert.match(out, /color:\s*rgb\(255, 0, 0\)/);
+	assert.match(out, /background-color:\s*rgb\(0, 255, 0\)/);
 });
 
 test("applyColor is a safe no-op when there is no range selection", () => {

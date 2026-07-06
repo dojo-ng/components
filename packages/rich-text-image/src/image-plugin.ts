@@ -1,4 +1,4 @@
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { createRef, ref } from "lit/directives/ref.js";
 import {
 	$createParagraphNode,
@@ -37,6 +37,8 @@ const IMAGE_ICON = html`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="
 export interface ImagePluginOptions {
 	/** Resolve a picked file to an image `src`. Default reads the file to a data URL. */
 	upload?: (file: File) => Promise<string>;
+	/** Optional per-file size cap (bytes) for the picker's file input. Default: no limit. */
+	maxSize?: number;
 }
 
 /** Default uploader: read the file to a data URL. Data URLs bloat the HTML value — pass a real uploader in production. */
@@ -60,6 +62,7 @@ const defaultUpload = (file: File): Promise<string> =>
  */
 export function createImagePlugin(options: ImagePluginOptions = {}): RichTextPlugin {
 	const upload = options.upload ?? defaultUpload;
+	const maxSize = options.maxSize;
 	const dialogRef = createRef<HTMLElement & { open: boolean }>();
 	const fileRef = createRef<HTMLElement & { files: File[] }>();
 	const urlRef = createRef<HTMLInputElement & { value: string }>();
@@ -153,6 +156,7 @@ export function createImagePlugin(options: ImagePluginOptions = {}): RichTextPlu
 									<dj-file-input
 										${ref(fileRef)}
 										accept="image/*"
+										max-size=${maxSize ?? nothing}
 										label=${insertImage}
 										@dj-change=${() => {
 											lastSource = "file";

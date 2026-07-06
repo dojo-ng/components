@@ -50,9 +50,44 @@ test("keeps allowed formatting and structure", () => {
 });
 
 test("unwraps disallowed elements but keeps their (cleaned) contents", () => {
-	const out = sanitizeHtml('<div class="wrap"><table><tr><td><strong>cell</strong></td></tr></table></div>');
-	assert.equal(/<(div|table|tr|td)/i.test(out), false);
+	const out = sanitizeHtml('<div class="wrap"><section><strong>cell</strong></section></div>');
+	assert.equal(/<(div|section)/i.test(out), false);
 	assert.equal(out.includes("<strong>cell</strong>"), true);
+});
+
+test("keeps a pasted table with its structural tags and colspan/rowspan", () => {
+	const out = sanitizeHtml(
+		'<table><thead><tr><th colspan="2">H</th></tr></thead>' +
+		'<tbody><tr><td rowspan="2">a</td><td>b</td></tr></tbody></table>'
+	);
+	for (const tag of ["table", "thead", "tbody", "tr", "th", "td"]) {
+		assert.equal(new RegExp(`<${tag}[ >]`, "i").test(out), true, `${tag} kept`);
+	}
+	assert.match(out, /colspan="2"/);
+	assert.match(out, /rowspan="2"/);
+});
+
+test("strips style/class/onclick from a table cell but keeps the cell", () => {
+	const out = sanitizeHtml('<table><tr><td onclick="x()" style="color:red" class="c">cell</td></tr></table>');
+	assert.equal(out.includes("onclick"), false);
+	assert.equal(out.includes("style"), false);
+	assert.equal(out.includes("class"), false);
+	assert.equal(/<td[ >]/i.test(out), true);
+	assert.equal(out.includes("cell"), true);
+});
+
+test("drops <col>/<colgroup> without leaving text", () => {
+	const out = sanitizeHtml('<table><colgroup><col><col></colgroup><tr><td>x</td></tr></table>');
+	assert.equal(/<(col|colgroup)[ >]/i.test(out), false);
+	assert.equal(/<td[ >]/i.test(out), true);
+	assert.equal(out.includes("x"), true);
+});
+
+test("a table inside a removed <iframe> is gone entirely", () => {
+	const out = sanitizeHtml('<iframe><table><tr><td>secret</td></tr></table></iframe><p>ok</p>');
+	assert.equal(/<(iframe|table|tr|td)[ >]/i.test(out), false);
+	assert.equal(out.includes("secret"), false);
+	assert.equal(out.includes("<p>ok</p>"), true);
 });
 
 test("empty / nullish input is safe", () => {

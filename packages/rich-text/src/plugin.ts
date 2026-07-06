@@ -1,4 +1,4 @@
-import type { LexicalCommand, LexicalEditor, LexicalNode, Klass } from "lexical";
+import type { LexicalCommand, LexicalEditor, LexicalNode, Klass, DOMConversionMap, DOMExportOutputMap } from "lexical";
 import type { TemplateResult } from "lit";
 
 /**
@@ -69,6 +69,14 @@ export interface RichTextPlugin {
 	toolbar?: RichTextToolbarItem[] | ((ctx: RichTextContext) => RichTextToolbarItem[]);
 	/** Optional alternate output formats, keyed by name (for example `"markdown"`). */
 	formats?: Record<string, RichTextFormat>;
+	/**
+	 * Optional HTML import/export overrides passed to `createEditor`'s `html` config. `import` is a
+	 * `DOMConversionMap` merged across plugins (later plugins win on tag collisions); it lets a plugin
+	 * preserve markup the default converters drop — for example the color plugin uses it to keep inline
+	 * `color`/`background-color` on `value` round-trips (the default DOM import strips them). `export`
+	 * is the matching `DOMExportOutputMap`.
+	 */
+	html?: { import?: DOMConversionMap; export?: DOMExportOutputMap };
 }
 
 /** Identity helper for typing and authoring a plugin. */

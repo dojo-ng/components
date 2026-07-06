@@ -17,6 +17,8 @@ const ALLOWED: Record<string, string[]> = {
 	ul: [], ol: ["start", "type"], li: [],
 	strong: [], b: [], em: [], i: [], u: [], s: [], strike: [], del: [], ins: [],
 	sub: [], sup: [], mark: [], span: [],
+	table: [], thead: [], tbody: [], tfoot: [], tr: [], caption: [],
+	th: ["colspan", "rowspan"], td: ["colspan", "rowspan"],
 };
 
 /** Elements removed entirely, content and all (never merely unwrapped). */

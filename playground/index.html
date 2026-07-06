@@ -45,6 +45,8 @@
 					"@dojo-ng/tab-container": "../packages/tab-container/dist/index.js",
 					"@dojo-ng/slider": "../packages/slider/dist/index.js",
 					"@dojo-ng/range-slider": "../packages/range-slider/dist/index.js",
+					"@dojo-ng/color-picker": "../packages/color-picker/dist/index.js",
+					"@dojo-ng/file-input": "../packages/file-input/dist/index.js",
 					"@dojo-ng/calendar": "../packages/calendar/dist/index.js",
 					"@dojo-ng/avatar": "../packages/avatar/dist/index.js",
 					"@dojo-ng/card": "../packages/card/dist/index.js",
@@ -225,6 +227,18 @@
 		<div class="col">
 			<dj-slider label="Volume" min="0" max="11" value="7"></dj-slider>
 			<dj-range-slider label="Price range" min="0" max="100" value-min="20" value-max="80" show-output></dj-range-slider>
+		</div>
+
+		<h2>Color picker</h2>
+		<div class="col">
+			<dj-color-picker id="color-picker" label="Brand color" format="hex" alpha></dj-color-picker>
+			<span id="color-value" style="color: var(--dj-color-text-muted)">value: (none)</span>
+		</div>
+
+		<h2>File input</h2>
+		<div class="col">
+			<dj-file-input id="file-input" label="Attachments" accept="image/*" multiple max-size="5000000"></dj-file-input>
+			<span id="file-value" style="color: var(--dj-color-text-muted)">files: (none)</span>
 		</div>
 
 		<h2>Title pane</h2>
@@ -432,6 +446,7 @@
 			import "@dojo-ng/form"; import "@dojo-ng/date-input"; import "@dojo-ng/time-picker"; import "@dojo-ng/popup-confirmation";
 			import "@dojo-ng/context-menu"; import "@dojo-ng/pagination"; import "@dojo-ng/speed-dial"; import "@dojo-ng/tree"; import "@dojo-ng/grid"; import "@dojo-ng/toolbar"; import "@dojo-ng/chart"; import "@dojo-ng/carousel";
 				import "@dojo-ng/transition"; import "@dojo-ng/transition-group";
+			import "@dojo-ng/color-picker"; import "@dojo-ng/file-input";
 			import { createStore } from "@dojo-ng/store";
 			import { storeContext, ContextProvider, ContextConsumer } from "@dojo-ng/context";
 			import { messages, formatNumber } from "@dojo-ng/i18n";
@@ -703,6 +718,22 @@
 			document.getElementById("anim-toggle").addEventListener("click", () => { animPanel.show = !animPanel.show; });
 			const animGroup = document.getElementById("anim-group");
 			document.getElementById("anim-reveal").addEventListener("click", () => { animGroup.show = !animGroup.show; });
+
+			// Color picker: swatches + a live value readout.
+			const colorPicker = document.getElementById("color-picker");
+			const colorValue = document.getElementById("color-value");
+			colorPicker.swatches = ["#e11d48", "#ea580c", "#ca8a04", "#16a34a", "#2563eb", "#7c3aed"];
+			const showColor = () => { colorValue.textContent = `value: ${colorPicker.value}`; };
+			colorPicker.addEventListener("dj-change", showColor);
+			showColor();
+
+			// File input: live list readout.
+			const fileInput = document.getElementById("file-input");
+			const fileValue = document.getElementById("file-value");
+			fileInput.addEventListener("dj-change", (e) => {
+				const names = e.detail.files.map((f) => f.name);
+				fileValue.textContent = names.length ? `files: ${names.join(", ")}` : "files: (none)";
+			});
 		</script>
 	</body>
 </html>

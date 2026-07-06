@@ -98,6 +98,7 @@ const SUPPORT_PACKAGES = [
 	"pubsub",
 	"rich-text-headings",
 	"rich-text-lists",
+	"rich-text-table",
 	"rich-text-markdown",
 	"rich-text-color",
 	"rich-text-image",

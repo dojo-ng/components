@@ -694,6 +694,15 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
+ "rich-text-table": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes the three `@lexical/table` node classes (`TableNode`, `TableRowNode`, `TableCellNode`), registers `INSERT_TABLE_COMMAND` and Lexical's grid mouse-selection + Tab/arrow cell navigation, and adds two toolbar controls. \"Insert table\" opens an 8×8 grid picker (hover to size, click to insert); \"Table menu\" is enabled only when the caret is inside a table and offers insert row above/below, insert column left/right, delete row, delete column, toggle header row, and delete table. Exports `tablePlugin` and `createTablePlugin()`. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. PASTE: with this plugin loaded a pasted `<table>` imports as a real table (the paste sanitizer allowlists table markup); WITHOUT the plugin, pasted table elements degrade to paragraphs. DEFERRED: merge/split cells, column widths/resizing, caption UI (the tag survives paste, nothing more), nested-table styling beyond level 1.",
+})
+EXAMPLES.update({
+ "rich-text-table": [
+  ("Add tables to the editor", "Compose the table plugin with the default set. Insert from the 8×8 grid picker, then edit rows and columns from the table menu.",
+   '<dj-rich-text id="editor" label="Article"></dj-rich-text>\n<script type="module">\n  import "@dojo-ng/rich-text";\n  import { defaultPlugins } from "@dojo-ng/rich-text";\n  import { tablePlugin } from "@dojo-ng/rich-text-table";\n  document.getElementById("editor").plugins = [...defaultPlugins, tablePlugin];\n</script>'),
+ ],
+})
+NOTES.update({
  "rich-text-markdown": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes no nodes and no toolbar: it adds a `markdown` output format (set `format=\"markdown\"` on `dj-rich-text` and the `value` getter emits Markdown, the setter parses it) and, by default, registers type-a-shortcut behaviour (`# ` for a heading, `- ` for a list, `**bold**`, and so on) even when the output format stays HTML. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. Markdown coverage follows the node-contributing plugins that are loaded: transformers whose node classes are not registered are dropped, so pair this with `rich-text-headings`, `rich-text-lists`, and `rich-text-links` for headings, lists, and links. Without the headings plugin, `# ` stays literal text. `createMarkdownPlugin({ shortcuts, transformers })` turns shortcuts off or supplies a custom transformer set; `usableTransformers(editor, transformers)` is exported for inspection. Requires the `@lexical/markdown` dependency. Note: pasted Markdown-looking text is not converted; Markdown enters via the `value` property or the shortcuts.",
 })
 EXAMPLES.update({

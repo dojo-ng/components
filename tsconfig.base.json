@@ -36,6 +36,9 @@
       "@dojo-ng/rich-text-lists": [
         "./packages/rich-text-lists/dist/index.d.ts"
       ],
+      "@dojo-ng/rich-text-table": [
+        "./packages/rich-text-table/dist/index.d.ts"
+      ],
       "@dojo-ng/color-picker": [
         "./packages/color-picker/dist/index.d.ts"
       ],

@@ -19,6 +19,7 @@
 					"@lexical/selection": "https://esm.sh/@lexical/selection@0.21.0",
 					"@lexical/link": "https://esm.sh/@lexical/link@0.21.0",
 					"@lexical/markdown": "https://esm.sh/@lexical/markdown@0.21.0",
+					"@lexical/table": "https://esm.sh/@lexical/table@0.21.0",
 					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
 					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
 					"@dojo-ng/button": "../packages/button/dist/index.js",
@@ -38,7 +39,8 @@
 					"@dojo-ng/rich-text-links": "../packages/rich-text-links/dist/index.js",
 					"@dojo-ng/rich-text-color": "../packages/rich-text-color/dist/index.js",
 					"@dojo-ng/rich-text-image": "../packages/rich-text-image/dist/index.js",
-					"@dojo-ng/rich-text-markdown": "../packages/rich-text-markdown/dist/index.js"
+					"@dojo-ng/rich-text-markdown": "../packages/rich-text-markdown/dist/index.js",
+					"@dojo-ng/rich-text-table": "../packages/rich-text-table/dist/index.js"
 				}
 			}
 		</script>
@@ -85,12 +87,13 @@
 			<pre id="full-out">(type above)</pre>
 		</div>
 
-		<h2>CMS editor — headings, lists, links, color, image, markdown</h2>
+		<h2>CMS editor — headings, lists, links, color, image, table, markdown</h2>
 		<p class="hint">
-			The full plugin set. Use the toolbar color controls (text and highlight) and the image button
-			(insert from a file or a URL — alt text is required). Toggle the output format between HTML and
-			Markdown; the readout below is the live <code>value</code>. Colors survive a value round-trip
-			via the color plugin's <code>html.import</code> hook.
+			The full plugin set. Use the toolbar color controls (text and highlight), the image button
+			(insert from a file or a URL — alt text is required), and the table controls (insert from the
+			8×8 grid picker, then edit rows/columns from the table menu). Toggle the output format between
+			HTML and Markdown; the readout below is the live <code>value</code>. Colors survive a value
+			round-trip via the color plugin's <code>html.import</code> hook.
 		</p>
 		<div class="grid">
 			<label>Format:
@@ -112,6 +115,7 @@
 			import { colorPlugin, backgroundColorPlugin } from "@dojo-ng/rich-text-color";
 			import { imagePlugin } from "@dojo-ng/rich-text-image";
 			import { markdownPlugin } from "@dojo-ng/rich-text-markdown";
+			import { tablePlugin } from "@dojo-ng/rich-text-table";
 			import { FORMAT_TEXT_COMMAND } from "lexical";
 
 			// A custom plugin written against the public API: one command button that toggles
@@ -153,7 +157,7 @@
 			const cmsFormat = document.getElementById("cms-format");
 			cms.plugins = [
 				headingsPlugin, formattingPlugin, listsPlugin, linksPlugin,
-				colorPlugin, backgroundColorPlugin, imagePlugin, markdownPlugin, historyPlugin,
+				colorPlugin, backgroundColorPlugin, imagePlugin, tablePlugin, markdownPlugin, historyPlugin,
 			];
 			cms.setHtml(
 				'<h2>Getting started</h2><p>Text with <strong>bold</strong>, ' +

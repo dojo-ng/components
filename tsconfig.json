@@ -224,6 +224,9 @@
       "path": "packages/rich-text-image"
     },
     {
+      "path": "packages/rich-text-table"
+    },
+    {
       "path": "packages/data-grid"
     },
     {

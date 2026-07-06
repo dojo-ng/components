@@ -712,6 +712,24 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
+ "rich-text-menu": "Internal plumbing for `@dojo-ng/rich-text` caret-anchored menus (used by the mentions and slash-command plugins) — not a custom element and not a plugin you load directly. Exports `createEditorMenu(ctx, config)` plus the `EditorMenuConfig`/`MenuMatch` types and the pure `computeMatch(textBeforeCaret, matchFn)` helper. You give it a `config` with `match(textBeforeCaret) => { start, query } | null` (locate the trigger + query in the caret's text), `onQueryChange(query)` (fetch/filter, then call the returned menu's `setOptions(options, loading?)`), and `onPick(option)` (called AFTER the trigger text has been removed). The menu owns a `dj-popup` + `dj-list` positioned at the caret, arrow/Enter/Tab/Escape navigation, a polite live region, and light-dismiss (outside click, Escape, or blur). Positioning and the interactive feel are browser-verified; the matcher is unit-testable via `computeMatch`.",
+})
+EXAMPLES.update({
+ "rich-text-menu": [
+  ("Build a caret menu (plugin author)", "Inside a plugin's `setup(ctx)`, create a menu from a trigger config and drive it with `setOptions`. See `@dojo-ng/rich-text-mentions` for a complete plugin built on this.",
+   'import { createEditorMenu } from "@dojo-ng/rich-text-menu";\n\nexport const myPlugin = {\n  name: "at-menu",\n  setup(ctx) {\n    const menu = createEditorMenu(ctx, {\n      match: (text) => { const m = /(^|\\s)@(\\w*)$/.exec(text); return m ? { start: m.index + m[1].length, query: m[2] } : null; },\n      onQueryChange: async (q) => menu.setOptions((await fetchPeople(q)).map((p) => ({ value: p.id, label: p.name }))),\n      onPick: (opt) => ctx.editor.update(() => { /* insert something for opt */ }),\n    });\n    return () => menu.dispose();\n  },\n};'),
+ ],
+})
+NOTES.update({
+ "rich-text-mentions": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Typing the trigger (default `@`) opens a caret-anchored menu (built on `@dojo-ng/rich-text-menu`); ArrowUp/Down move the highlight, Enter/Tab or a click inserts an atomic `MentionNode` (`@label`, `segmented` mode so it deletes as a unit) plus a trailing space, Escape closes. Exports `createMentionsPlugin({ source, trigger? })`, `MentionNode`, `$createMentionNode`, `$isMentionNode`, and `DEFAULT_MENTION_TRIGGER` — there is NO default `mentionsPlugin` because `source` is app-owned and REQUIRED: `source(query) => Promise<Array<{ id, label }>>` (called debounced, with a stale-response guard and a loading spinner). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Mentions survive the `value` round-trip via the node's own `importDOM` (`<span data-dj-mention=\"id\">@label</span>`). PASTE CAVEAT: the sanitizer keeps `span` but strips its attributes, so a pasted mention degrades to plain `@label` text. DEFERRED: multiple trigger characters, hover-cards, in-place editing, SSR guidance.",
+})
+EXAMPLES.update({
+ "rich-text-mentions": [
+  ("Add @-mentions with a static source", "Compose the mentions plugin with the default set and supply a `source`. Here it filters a static list; in production, call your directory API.",
+   '<dj-rich-text id="editor" label="Comment"></dj-rich-text>\n<script type="module">\n  import "@dojo-ng/rich-text";\n  import { defaultPlugins } from "@dojo-ng/rich-text";\n  import { createMentionsPlugin } from "@dojo-ng/rich-text-mentions";\n  const PEOPLE = [{ id: "u1", label: "Jeff" }, { id: "u2", label: "Esther" }];\n  const mentions = createMentionsPlugin({\n    source: async (q) => PEOPLE.filter((p) => p.label.toLowerCase().includes(q.toLowerCase())),\n  });\n  document.getElementById("editor").plugins = [...defaultPlugins, mentions];\n</script>'),
+ ],
+})
+NOTES.update({
  "rich-text-markdown": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes no nodes and no toolbar: it adds a `markdown` output format (set `format=\"markdown\"` on `dj-rich-text` and the `value` getter emits Markdown, the setter parses it) and, by default, registers type-a-shortcut behaviour (`# ` for a heading, `- ` for a list, `**bold**`, and so on) even when the output format stays HTML. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. Markdown coverage follows the node-contributing plugins that are loaded: transformers whose node classes are not registered are dropped, so pair this with `rich-text-headings`, `rich-text-lists`, and `rich-text-links` for headings, lists, and links. Without the headings plugin, `# ` stays literal text. `createMarkdownPlugin({ shortcuts, transformers })` turns shortcuts off or supplies a custom transformer set; `usableTransformers(editor, transformers)` is exported for inspection. Requires the `@lexical/markdown` dependency. Note: pasted Markdown-looking text is not converted; Markdown enters via the `value` property or the shortcuts.",
 })
 EXAMPLES.update({

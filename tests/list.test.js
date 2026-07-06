@@ -37,6 +37,46 @@ test("keyboard: ArrowDown moves the active item, Enter selects it", async () => 
 	assert.equal(changes, 1);
 });
 
+// --- MN1: public active-item API (moveActive / activateFirst / chooseActive) ---
+
+test("activateFirst + chooseActive selects the first non-disabled value, one change", async () => {
+	const el = await mount("dj-list", { options: OPTIONS });
+	let changes = 0;
+	el.addEventListener("change", () => changes++);
+	el.activateFirst();
+	assert.equal(el.chooseActive(), true);
+	assert.equal(el.value, "a");
+	assert.equal(changes, 1);
+});
+
+test("moveActive skips disabled options and wraps", async () => {
+	const el = await mount("dj-list", {
+		options: [
+			{ value: "a", label: "A" },
+			{ value: "b", label: "B", disabled: true },
+			{ value: "c", label: "C" },
+		],
+	});
+	el.activateFirst(); // a
+	el.moveActive(1); // skips disabled b -> c
+	assert.equal(el.chooseActive(), true);
+	assert.equal(el.value, "c");
+	el.moveActive(1); // wraps -> a
+	assert.equal(el.chooseActive(), true);
+	assert.equal(el.value, "a");
+	el.moveActive(-1); // backward wraps -> c
+	assert.equal(el.chooseActive(), true);
+	assert.equal(el.value, "c");
+});
+
+test("chooseActive with no active option returns false and fires nothing", async () => {
+	const el = await mount("dj-list", { options: OPTIONS });
+	let changes = 0;
+	el.addEventListener("change", () => changes++);
+	assert.equal(el.chooseActive(), false);
+	assert.equal(changes, 0);
+});
+
 // --- K10: reorderable (progressive enhancement) ---
 // happy-dom has no layout; stub rects and drive the sequence. Real drag/geometry is K11's browser check.
 function rectFor({ top = 0, bottom = 0, left = 0, right = 0 }) {

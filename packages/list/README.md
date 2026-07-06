@@ -47,7 +47,7 @@ Provide `options`; read `value` from the `change` event.
 
 **Events:** `change`, `dj-reorder`
 
-**Methods:** `checkValidity(): boolean`, `focus(options: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `focus(options: FocusOptions)`, `moveActive(delta: 1 | -1)` (Move the highlighted (active) option by one selectable step, wrapping; skips disabled items and dividers.), `activateFirst()` (Highlight the first selectable option (skipping disabled items and dividers); clears the highlight if none.), `chooseActive(): boolean` (Select the active option, firing the normal `change`. Returns false and fires nothing if none is active.)
 
 **CSS properties:** `--dj-list-max-height` (default `none`; Maximum height before the list scrolls.)
 

@@ -99,6 +99,8 @@ const SUPPORT_PACKAGES = [
 	"rich-text-headings",
 	"rich-text-lists",
 	"rich-text-table",
+	"rich-text-menu",
+	"rich-text-mentions",
 	"rich-text-markdown",
 	"rich-text-color",
 	"rich-text-image",

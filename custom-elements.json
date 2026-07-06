@@ -4626,6 +4626,34 @@
                   }
                 }
               ]
+            },
+            {
+              "kind": "method",
+              "name": "moveActive",
+              "description": "Move the highlighted (active) option by one selectable step, wrapping; skips disabled items and dividers.",
+              "parameters": [
+                {
+                  "name": "delta",
+                  "type": {
+                    "text": "1 | -1"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "activateFirst",
+              "description": "Highlight the first selectable option (skipping disabled items and dividers); clears the highlight if none."
+            },
+            {
+              "kind": "method",
+              "name": "chooseActive",
+              "description": "Select the active option, firing the normal `change`. Returns false and fires nothing if none is active.",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
             }
           ],
           "attributes": [

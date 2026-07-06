@@ -39,6 +39,12 @@
       "@dojo-ng/rich-text-table": [
         "./packages/rich-text-table/dist/index.d.ts"
       ],
+      "@dojo-ng/rich-text-menu": [
+        "./packages/rich-text-menu/dist/index.d.ts"
+      ],
+      "@dojo-ng/rich-text-mentions": [
+        "./packages/rich-text-mentions/dist/index.d.ts"
+      ],
       "@dojo-ng/color-picker": [
         "./packages/color-picker/dist/index.d.ts"
       ],

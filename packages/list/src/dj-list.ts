@@ -94,6 +94,25 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 		this.activeIndex = sel[next].i;
 	}
 
+	// ------------------------------------------------- public active-item API (caret-anchored menus)
+	// Drive the active (highlighted) option from outside the list — used by the rich-text mention and
+	// slash menus, which keep DOM focus in the editor and steer this list programmatically. Built on
+	// the same private selectable-walk as the keyboard handler; `activeIndex` stays private.
+
+	/** Move the highlighted (active) option by one selectable step, wrapping; skips disabled items and dividers. */
+	moveActive(delta: 1 | -1): void { this.move(delta === 1); }
+
+	/** Highlight the first selectable option (skipping disabled items and dividers); clears the highlight if none. */
+	activateFirst(): void { this.activeIndex = this.selectable()[0]?.i ?? -1; }
+
+	/** Select the active option, firing the normal `change`. Returns false and fires nothing if none is active. */
+	chooseActive(): boolean {
+		const opt = this.activeIndex >= 0 ? this.options[this.activeIndex] : undefined;
+		if (!opt || opt.disabled || opt.divider) return false;
+		this.select(this.activeIndex);
+		return true;
+	}
+
 	private onKeyDown(e: KeyboardEvent) {
 		// When reorderable, route everything but Enter through grab mode first (Enter stays
 		// "select"; Space grabs/drops, arrows move a grabbed item, Escape cancels). If grab mode

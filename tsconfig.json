@@ -227,6 +227,12 @@
       "path": "packages/rich-text-table"
     },
     {
+      "path": "packages/rich-text-menu"
+    },
+    {
+      "path": "packages/rich-text-mentions"
+    },
+    {
       "path": "packages/data-grid"
     },
     {

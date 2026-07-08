@@ -53,7 +53,9 @@
 					"@dojo-ng/rich-text-embed": "../packages/rich-text-embed/dist/index.js",
 					"@dojo-ng/video": "../packages/video/dist/index.js",
 					"@dojo-ng/audio": "../packages/audio/dist/index.js",
-					"video.js": "https://esm.sh/video.js@8.10.0"
+					"video.js": "https://esm.sh/video.js@8.10.0",
+					"@dojo-ng/rich-text-autolink": "../packages/rich-text-autolink/dist/index.js",
+					"@dojo-ng/rich-text-emoji": "../packages/rich-text-emoji/dist/index.js"
 				}
 			}
 		</script>
@@ -100,7 +102,7 @@
 			<pre id="full-out">(type above)</pre>
 		</div>
 
-		<h2>CMS editor — headings, lists, links, color, image, table, embed, mentions, slash, markdown</h2>
+		<h2>CMS editor — headings, lists, links, color, image, table, embed, emoji, mentions, slash, autolink, markdown</h2>
 		<p class="hint">
 			The full plugin set. Use the toolbar color controls (text and highlight), the image button
 			(insert from a file or a URL — alt text is required), the table controls (insert from the
@@ -111,7 +113,9 @@
 			someone — a menu opens at the caret; ArrowUp/Down then Enter (or click) inserts a pill. Type
 			<code>/</code> at the start of a block (or after a space) to open the slash command menu —
 			<code>/h</code> filters to headings, Enter applies the block; <code>/image</code> and
-			<code>/table</code> insert those. Toggle the output format between HTML and Markdown; the
+			<code>/table</code> insert those. The emoji button opens a searchable picker, and typing a
+			shortcode like <code>:tada:</code> becomes an emoji. Type a URL or email and it auto-links on
+			the next space. Toggle the output format between HTML and Markdown; the
 			readout below is the live <code>value</code>. Colors survive a value round-trip via the color
 			plugin's <code>html.import</code> hook.
 		</p>
@@ -139,6 +143,8 @@
 			import { createMentionsPlugin } from "@dojo-ng/rich-text-mentions";
 			import { slashPlugin } from "@dojo-ng/rich-text-slash";
 			import { embedPlugin } from "@dojo-ng/rich-text-embed";
+			import { autolinkPlugin } from "@dojo-ng/rich-text-autolink";
+			import { emojiPlugin } from "@dojo-ng/rich-text-emoji";
 			import { FORMAT_TEXT_COMMAND } from "lexical";
 
 			// A custom plugin written against the public API: one command button that toggles
@@ -193,7 +199,8 @@
 			});
 			cms.plugins = [
 				headingsPlugin, formattingPlugin, listsPlugin, linksPlugin,
-				colorPlugin, backgroundColorPlugin, imagePlugin, tablePlugin, embedPlugin, mentionsPlugin, slashPlugin, markdownPlugin, historyPlugin,
+				colorPlugin, backgroundColorPlugin, imagePlugin, tablePlugin, embedPlugin, emojiPlugin,
+				mentionsPlugin, slashPlugin, autolinkPlugin, markdownPlugin, historyPlugin,
 			];
 			cms.setHtml(
 				'<h2>Getting started</h2><p>Text with <strong>bold</strong>, ' +

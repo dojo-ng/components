@@ -51,6 +51,12 @@
       "@dojo-ng/rich-text-embed": [
         "./packages/rich-text-embed/dist/index.d.ts"
       ],
+      "@dojo-ng/rich-text-autolink": [
+        "./packages/rich-text-autolink/dist/index.d.ts"
+      ],
+      "@dojo-ng/rich-text-emoji": [
+        "./packages/rich-text-emoji/dist/index.d.ts"
+      ],
       "@dojo-ng/color-picker": [
         "./packages/color-picker/dist/index.d.ts"
       ],

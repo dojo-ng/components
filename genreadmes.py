@@ -741,6 +741,24 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
+ "rich-text-autolink": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element, no toolbar, no CSS). A `TextNode` transform detects URLs and emails as you type and wraps them in `AutoLinkNode`s; editing the text so it no longer matches unwraps the link, and editing it to a different URL updates the href. It contributes `AutoLinkNode` AND `LinkNode` so the exported `<a>` re-imports on the `value` path even without the links plugin (loading both `rich-text-links` and this is harmless — the core de-duplicates node classes). Manual links are never touched. Exports `autolinkPlugin`, `createAutoLinkPlugin({ matchers? })`, `defaultMatchers`, and the `AutoLinkMatcher = { regex, url(matched) }` type (regex is NON-global; earliest match wins; `www.` URLs get `https://`, bare emails get `mailto:`). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Pair it with `rich-text-links` for manual link editing. OUT OF SCOPE (v1): URLs split across formatting boundaries, un-autolinking via a toolbar, click-to-open in the editor.",
+})
+EXAMPLES.update({
+ "rich-text-autolink": [
+  ("Auto-link URLs and emails", "Compose the autolink plugin with the default set; typing a URL or email followed by a space (or any boundary) links it. Add the links plugin too for manual link editing.",
+   '<dj-rich-text id="editor" label="Article"></dj-rich-text>\n<script type="module">\n  import "@dojo-ng/rich-text";\n  import { defaultPlugins } from "@dojo-ng/rich-text";\n  import { autolinkPlugin } from "@dojo-ng/rich-text-autolink";\n  document.getElementById("editor").plugins = [...defaultPlugins, autolinkPlugin];\n</script>'),
+ ],
+})
+NOTES.update({
+ "rich-text-emoji": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element; contributes NO nodes — emoji are plain text). Adds a toolbar button opening a searchable 8-column emoji picker (filter by name/shortcode/keyword, arrow-key roving, click or Enter to insert); the popup stays open for multi-insert and closes on Escape/outside click, returning focus to the editor. With `shortcodes` on (default), typing a GitHub-style `:name:` for a known shortcode replaces it with the character; unknown shortcodes are left literal. Exports `emojiPlugin`, `createEmojiPlugin({ shortcodes?, set? })`, `EMOJI` (~170 curated single-grapheme entries across smileys, people, hearts, animals, food, activities, objects, symbols), the pure `filterEmoji(set, query)` helper, and the `EmojiEntry` type. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Note: the native OS emoji picker (macOS Ctrl-Cmd-Space, Windows Win-.) already works in the editor — this adds a discoverable, cross-platform path, not the only one. RELATED PATTERN: to highlight hashtags or other tokens, build a node on the public plugin API the way `@dojo-ng/rich-text-mentions` builds `MentionNode` (hashtags are intentionally not shipped). DEFERRED: skin-tone variants, recently-used, category headers, a `:shortcode:` typeahead menu, custom image sets.",
+})
+EXAMPLES.update({
+ "rich-text-emoji": [
+  ("Add an emoji picker and shortcodes", "Compose the emoji plugin with the default set. The toolbar gains an emoji button; typing `:tada:` becomes 🎉.",
+   '<dj-rich-text id="editor" label="Comment"></dj-rich-text>\n<script type="module">\n  import "@dojo-ng/rich-text";\n  import { defaultPlugins } from "@dojo-ng/rich-text";\n  import { emojiPlugin } from "@dojo-ng/rich-text-emoji";\n  document.getElementById("editor").plugins = [...defaultPlugins, emojiPlugin];\n</script>'),
+ ],
+})
+NOTES.update({
  "rich-text-slash": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Typing `/` at the start of a block or after whitespace opens a caret-anchored command menu (built on `@dojo-ng/rich-text-menu`); ArrowUp/Down move the highlight, Enter/Tab or a click runs the item, Escape closes. The menu's items are aggregated from every loaded plugin's `inserts` plus any `extra` you pass, so it reflects whatever plugins you compose: headings contribute Paragraph/Heading 1–3/Quote, lists contribute Bulleted/Numbered/Checklist, image contributes Image, table contributes Table. Picking an item removes the `/query` text, then runs the item's `run(ctx)` (convert the block, insert a table, open the image dialog, …). The menu never opens when no plugin contributes an insert, and a query that matches nothing hides it. Exports `slashPlugin`, `createSlashPlugin({ extra? })`, `DEFAULT_SLASH_TRIGGER`, and the pure `aggregateInserts`/`filterInserts` helpers. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. To expose block/insert actions from your own plugin, add an `inserts` array (or `(ctx) => items`) of `{ id, label, keywords?, run(ctx) }`.",
 })
 EXAMPLES.update({

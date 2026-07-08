@@ -239,6 +239,12 @@
       "path": "packages/rich-text-embed"
     },
     {
+      "path": "packages/rich-text-autolink"
+    },
+    {
+      "path": "packages/rich-text-emoji"
+    },
+    {
       "path": "packages/data-grid"
     },
     {

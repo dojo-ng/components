@@ -94,9 +94,7 @@ export function hsvToRgb(hsv: HSV): RGB {
 	const c = v * s;
 	const x = c * (1 - Math.abs((h % 2) - 1));
 	const m = v - c;
-	let r = 0;
-	let g = 0;
-	let b = 0;
+	let r: number, g: number, b: number;
 	if (h < 1) [r, g, b] = [c, x, 0];
 	else if (h < 2) [r, g, b] = [x, c, 0];
 	else if (h < 3) [r, g, b] = [0, c, x];
@@ -135,9 +133,7 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
 	const hp = h / 60;
 	const x = c * (1 - Math.abs((hp % 2) - 1));
 	const m = lN - c / 2;
-	let r = 0;
-	let g = 0;
-	let b = 0;
+	let r: number, g: number, b: number;
 	if (hp < 1) [r, g, b] = [c, x, 0];
 	else if (hp < 2) [r, g, b] = [x, c, 0];
 	else if (hp < 3) [r, g, b] = [0, c, x];

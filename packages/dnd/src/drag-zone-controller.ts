@@ -46,9 +46,7 @@ function prefersReducedMotion(): boolean {
  * `dj-drag-source`. Cleans up zones and any in-flight drag on host disconnect.
  */
 export class DragZoneController implements ReactiveController {
-	#host: ReactiveControllerHost & HTMLElement;
 	#config: DragZoneConfig;
-	#bound = false;
 	#listenEl: HTMLElement | null = null;
 	#onDown = (e: PointerEvent) => this.#pointerDown(e);
 
@@ -57,7 +55,6 @@ export class DragZoneController implements ReactiveController {
 	get config(): DragZoneConfig { return this.#config; }
 
 	constructor(host: ReactiveControllerHost & HTMLElement, config: DragZoneConfig) {
-		this.#host = host;
 		this.#config = config;
 		host.addController(this);
 	}
@@ -87,19 +84,17 @@ export class DragZoneController implements ReactiveController {
 		if (this.#listenEl) {
 			this.#listenEl.removeEventListener("pointerdown", this.#onDown as EventListener);
 			this.#listenEl = null;
-			this.#bound = false;
 		}
 		if (active && (active.origin === this || active.target?.zone === this)) cancelActiveDrag();
 	}
 
 	#bind() {
-		let el: HTMLElement | null = null;
+		let el: HTMLElement | null;
 		try { el = this.#config.container(); } catch { el = null; }
 		if (!el || el === this.#listenEl) return;
 		if (this.#listenEl) this.#listenEl.removeEventListener("pointerdown", this.#onDown as EventListener);
 		el.addEventListener("pointerdown", this.#onDown as EventListener);
 		this.#listenEl = el;
-		this.#bound = true;
 	}
 
 	/** Zones this one can drop into: itself plus grouped peers. */

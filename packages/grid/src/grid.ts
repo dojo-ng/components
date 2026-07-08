@@ -32,7 +32,7 @@ export class DjGrid extends DojoElement {
 	override render(){
 		return html`<table part="table" role="grid">
 			<thead><tr>${this.columns.map(c=>html`<th class=${c.sortable?"sortable":""} role="columnheader" aria-sort=${this.sortCol===c.id?(this.sortDir==="asc"?"ascending":"descending"):nothing} @click=${()=>this.onSort(c)}>
-				<span class="th-inner">${c.title}${c.sortable?html`<span class="sort"><dj-icon size="small"><svg viewBox="0 0 24 24" aria-hidden="true">${this.sortCol===c.id?(this.sortDir==="asc"?html`<path d="M12 8l-4 4h8z" fill="currentColor"/>`:html`<path d="M12 16l4-4H8z" fill="currentColor"/>`):html`<path d="M8 10l4-4 4 4M8 14l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2"/>`}</svg></dj-icon></span>`:nothing}</span>
+				<span class="th-inner">${c.title}${c.sortable?html`<span class="sort"><dj-icon size="small"><svg viewBox="0 0 24 24" aria-hidden="true">${this.sortCol===c.id?(this.sortDir==="asc"?html`<path d="M12 8l-4 4h8z" fill="currentColor"></path>`:html`<path d="M12 16l4-4H8z" fill="currentColor"></path>`):html`<path d="M8 10l4-4 4 4M8 14l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2"></path>`}</svg></dj-icon></span>`:nothing}</span>
 			</th>`)}</tr></thead>
 			<tbody>${this.sortedRows.map(r=>html`<tr>${this.columns.map(c=>html`<td>${String(r[c.id] ?? "")}</td>`)}</tr>`)}</tbody>
 		</table>`;

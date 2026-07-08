@@ -1,7 +1,7 @@
 import { html, type TemplateResult } from "lit";
 import "@dojo-ng/text-input";
 import { getFilteredRowModel, type TableOptionsResolved } from "@tanstack/table-core";
-import { defineDataGridPlugin, type DataGridContext, type DataGridPlugin, type Row } from "@dojo-ng/data-grid";
+import { defineDataGridPlugin, type DataGridPlugin, type Row } from "@dojo-ng/data-grid";
 
 // Per-column config rides on GridColumn (plain objects). Core never reads it.
 declare module "@dojo-ng/data-grid" {

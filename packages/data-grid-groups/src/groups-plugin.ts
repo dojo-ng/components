@@ -2,7 +2,7 @@ import { html, type TemplateResult } from "lit";
 import { getGroupedRowModel, getExpandedRowModel, type Row as TableRow, type TableOptionsResolved, type AggregationFnOption } from "@tanstack/table-core";
 import { getLocale, formatNumber } from "@dojo-ng/i18n";
 import { expanderButton } from "@dojo-ng/data-grid-tree";
-import { defineDataGridPlugin, type DataGridContext, type DataGridPlugin, type Row } from "@dojo-ng/data-grid";
+import { defineDataGridPlugin, type DataGridPlugin, type Row } from "@dojo-ng/data-grid";
 
 /** A per-column aggregate: a built-in reducer name, or a function over the group's leaf rows. */
 export type Aggregate = "sum" | "mean" | "min" | "max" | "count" | ((rows: TableRow<Row>[]) => unknown);

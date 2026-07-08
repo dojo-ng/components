@@ -146,7 +146,7 @@ export function createEmojiPlugin(options: EmojiPluginOptions = {}): RichTextPlu
 						grid.setAttribute("aria-label", insertEmoji);
 						grid.addEventListener("keydown", (e) => {
 							const k = e.key;
-							let next = rovingIndex;
+							let next: number;
 							if (k === "ArrowRight") next = rovingIndex + 1;
 							else if (k === "ArrowLeft") next = rovingIndex - 1;
 							else if (k === "ArrowDown") next = rovingIndex + COLS;

@@ -8,9 +8,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import "../packages/audio/dist/index.js";
 
-const tick = async (n = 2) => {
-	for (let i = 0; i < n; i++) await new Promise((r) => setTimeout(r, 0));
-};
 
 /** Build a dj-audio, stub its inner <audio>, and settle. Returns { el, audio, calls }. */
 async function build(props = {}) {

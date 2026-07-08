@@ -34,7 +34,7 @@ test("plugin shape: name slash, no nodes, no toolbar", () => {
 
 test("aggregateInserts merges static + factory inserts + extra, in plugin order", () => {
 	const staticP = { name: "s", inserts: [{ id: "a", label: "A", run: () => {} }] };
-	const fnP = { name: "f", inserts: (c) => [{ id: "b", label: "B", run: () => {} }, { id: "c", label: "C", run: () => {} }] };
+	const fnP = { name: "f", inserts: () => [{ id: "b", label: "B", run: () => {} }, { id: "c", label: "C", run: () => {} }] };
 	const noneP = { name: "n" };
 	const ctx = { plugins: [staticP, fnP, noneP] };
 	const extra = [{ id: "z", label: "Z", run: () => {} }];

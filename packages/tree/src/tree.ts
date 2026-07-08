@@ -20,7 +20,7 @@ export class DjTree extends DojoElement {
 	@property({type:Array}) nodes: TreeNode[] = [];
 	@property() value = "";
 	@state() private expanded = new Set<string>();
-	private toggle(id:string){ const s=new Set(this.expanded); s.has(id)?s.delete(id):s.add(id); this.expanded=s; }
+	private toggle(id:string){ const s=new Set(this.expanded); if(s.has(id)) s.delete(id); else s.add(id); this.expanded=s; }
 	private select(id:string){ this.value=id; this.emit("dj-select",{detail:{id}}); }
 	private renderNode(node: TreeNode): TemplateResult {
 		const hasChildren = !!node.children?.length;

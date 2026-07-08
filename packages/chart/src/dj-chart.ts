@@ -316,7 +316,7 @@ export class DjChart extends DojoElement {
 					</g>
 				</g>
 			</svg>
-			${this.renderTooltip(scales, innerH)}
+			${this.renderTooltip(scales)}
 		`;
 	}
 
@@ -654,7 +654,7 @@ export class DjChart extends DojoElement {
 		</div>`;
 	}
 
-	private renderTooltip(scales: ReturnType<typeof buildScales>, innerH: number): TemplateResult {
+	private renderTooltip(scales: ReturnType<typeof buildScales>): TemplateResult {
 		if (this.hovered == null) return html`<div class="tooltip" part="tooltip" hidden></div>`;
 		const c = this.hovered;
 		const row = this.data.find((d) => cat(d, this.categoryKey) === c);

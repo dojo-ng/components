@@ -3,7 +3,7 @@
 import "./setup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createEditor, $getRoot, $createParagraphNode, $createTextNode, $nodesOfType } from "lexical";
+import { createEditor, $getRoot, $createParagraphNode, $createTextNode } from "lexical";
 import { EMOJI, filterEmoji, emojiPlugin, createEmojiPlugin } from "../packages/rich-text-emoji/dist/index.js";
 
 const CATEGORIES = ["smileys", "people", "hearts", "animals", "food", "activities", "objects", "symbols"];

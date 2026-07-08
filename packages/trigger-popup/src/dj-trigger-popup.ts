@@ -1,4 +1,4 @@
-import { html, css, nothing } from "lit";
+import { html, css } from "lit";
 import { property, query } from "lit/decorators.js";
 import DojoElement from "@dojo-ng/dojo-element";
 import "@dojo-ng/popup";

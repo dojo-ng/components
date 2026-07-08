@@ -1,4 +1,4 @@
-import { html, nothing } from "lit";
+import { html } from "lit";
 import { property, state } from "lit/decorators.js";
 import DojoElement, { DojoFormControl, FormControl } from "@dojo-ng/dojo-element";
 import { LocaleController, dateTimeFormat, messages, registerDefaults } from "@dojo-ng/i18n";

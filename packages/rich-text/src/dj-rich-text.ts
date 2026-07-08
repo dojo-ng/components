@@ -93,6 +93,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 		this.#internals = this.attachInternals();
 		// Stable context object — safe to read before the editor exists (activeFormats() is empty,
 		// command() is a no-op until then). `editor` is a live getter because rebuilds replace it.
+		// eslint-disable-next-line @typescript-eslint/no-this-alias -- stable context object needs a captured host for its live `editor` getter
 		const host = this;
 		this.#ctx = {
 			get editor(): LexicalEditor { return host.#editor!; },

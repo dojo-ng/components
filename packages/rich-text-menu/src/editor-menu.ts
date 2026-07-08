@@ -30,8 +30,18 @@ export interface EditorMenuConfig {
 	match(textBeforeCaret: string): { start: number; query: string } | null;
 	/** The query changed: fetch/filter, then call `setOptions`. */
 	onQueryChange(query: string): void;
-	/** An option was chosen. Called AFTER the trigger+query text has been removed from the editor. */
+	/**
+	 * An option was chosen; the trigger+query text has already been removed. WHERE this runs depends on
+	 * `pickInUpdate`:
+	 *  - `pickInUpdate: true` — called INSIDE the active `editor.update`, selection collapsed at the
+	 *    removal point. Insert nodes directly (or open a nested `editor.update`); do NOT dispatch
+	 *    commands. Use this when the pick inserts at the caret (mentions).
+	 *  - default — called AFTER the removal update commits, OUTSIDE any `editor.update`, so the handler
+	 *    may dispatch commands or open dialogs (the slash menu's `run`).
+	 */
 	onPick(option: ListOption): void;
+	/** Run `onPick` inside the trigger-removal update (see `onPick`). Default false. */
+	pickInUpdate?: boolean;
 }
 
 export interface EditorMenu {
@@ -156,25 +166,49 @@ export function createEditorMenu(ctx: RichTextContext, config: EditorMenuConfig)
 		blurTimer = setTimeout(() => close(), 150);
 	};
 
+	// Show the popup only while open AND there is something to show (options, or a pending load). An
+	// empty, not-loading list keeps the popup hidden — so the slash menu never opens when no plugin
+	// contributes an insert, and a query that filters to nothing hides rather than showing an empty box.
+	function syncPopupOpen(): void {
+		if (!popup) return;
+		popup.open = isOpen && (!!list?.loading || selectable().length > 0);
+	}
+
 	function registerKeys(): void {
 		if (keyDisposers.length) return;
+		// Each handler must call preventDefault on the KeyboardEvent payload: returning true only stops
+		// Lexical's own command chain, not the browser's native contentEditable action. Without it the
+		// caret still moves (ArrowUp then leaves the trigger and closes the menu) and Enter still inserts
+		// a newline even though we consumed the key.
 		keyDisposers = [
-			editor.registerCommand(KEY_ARROW_DOWN_COMMAND, () => {
+			editor.registerCommand(KEY_ARROW_DOWN_COMMAND, (event) => {
+				event?.preventDefault();
 				list?.moveActive(1);
 				const n = selectable().length;
 				if (n) activePos = (activePos + 1 + n) % n;
 				updateLive();
 				return true;
 			}, COMMAND_PRIORITY_HIGH),
-			editor.registerCommand(KEY_ARROW_UP_COMMAND, () => {
+			editor.registerCommand(KEY_ARROW_UP_COMMAND, (event) => {
+				event?.preventDefault();
 				list?.moveActive(-1);
 				const n = selectable().length;
 				if (n) activePos = (activePos - 1 + n) % n;
 				updateLive();
 				return true;
 			}, COMMAND_PRIORITY_HIGH),
-			editor.registerCommand(KEY_ENTER_COMMAND, () => list?.chooseActive() ?? false, COMMAND_PRIORITY_HIGH),
-			editor.registerCommand(KEY_TAB_COMMAND, () => list?.chooseActive() ?? false, COMMAND_PRIORITY_HIGH),
+			// Enter/Tab pick the active option; when nothing is active, fall through (no preventDefault)
+			// so a normal newline/tab still works.
+			editor.registerCommand(KEY_ENTER_COMMAND, (event) => {
+				if (!list?.chooseActive()) return false;
+				event?.preventDefault();
+				return true;
+			}, COMMAND_PRIORITY_HIGH),
+			editor.registerCommand(KEY_TAB_COMMAND, (event) => {
+				if (!list?.chooseActive()) return false;
+				event?.preventDefault();
+				return true;
+			}, COMMAND_PRIORITY_HIGH),
 			editor.registerCommand(KEY_ESCAPE_COMMAND, () => { close(); return true; }, COMMAND_PRIORITY_HIGH),
 		];
 	}
@@ -192,13 +226,17 @@ export function createEditorMenu(ctx: RichTextContext, config: EditorMenuConfig)
 		ed.setAttribute("aria-expanded", "true");
 		ed.addEventListener("blur", onBlur);
 		registerKeys();
-		if (popup) popup.open = true;
+		syncPopupOpen();
 	}
 
 	function pick(option: ListOption): void {
 		const match = currentMatch;
 		if (!match) { close(); return; }
-		let stillApplies = false;
+		// Remove the trigger text. When `pickInUpdate` is set, run onPick in the SAME update so an
+		// at-caret insertion keeps the collapsed selection (a separate update loses it — the emptied
+		// trigger node is reconciled away). Otherwise run onPick AFTER the update commits, so the
+		// handler may dispatch commands / open dialogs outside any active update (the slash menu).
+		let removed = false;
 		editor.update(() => {
 			const sel = $getSelection();
 			if (!$isRangeSelection(sel) || !sel.isCollapsed()) return;
@@ -208,18 +246,19 @@ export function createEditorMenu(ctx: RichTextContext, config: EditorMenuConfig)
 			const before = node.getTextContent().slice(0, offset);
 			const m = config.match(before);
 			if (!m) return;
-			stillApplies = true;
+			removed = true;
 			const start = m.start;
 			const end = offset;
 			if (typeof node.spliceText === "function") {
-				node.spliceText(start, end - start, "");
+				node.spliceText(start, end - start, "", true);
 			} else {
 				const pieces = node.splitText(start, end);
 				const mid = start > 0 ? pieces[1] : pieces[0];
 				if (mid) mid.remove();
 			}
+			if (config.pickInUpdate) config.onPick(option);
 		});
-		if (stillApplies) config.onPick(option);
+		if (removed && !config.pickInUpdate) config.onPick(option);
 		close();
 	}
 
@@ -270,6 +309,7 @@ export function createEditorMenu(ctx: RichTextContext, config: EditorMenuConfig)
 			list.activateFirst();
 			activePos = selectable().length ? 0 : -1;
 			updateLive();
+			syncPopupOpen();
 		},
 		get open(): boolean { return isOpen; },
 		close,

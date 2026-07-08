@@ -28,6 +28,11 @@ test("plugin shape: name image, contributes ImageNode, one render toolbar item",
 	assert.equal(typeof imagePlugin.toolbar[0].render, "function");
 });
 
+test("SL2: inserts resolve to the image id", () => {
+	assert.deepEqual(imagePlugin.inserts.map((i) => i.id), ["image"]);
+	assert.equal(typeof imagePlugin.inserts[0].run, "function");
+});
+
 test("exportJSON/importJSON round-trip", () => {
 	const editor = makeEditor();
 	editor.update(

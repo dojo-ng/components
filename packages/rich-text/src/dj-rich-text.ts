@@ -65,6 +65,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 	#active: Set<string> = new Set();
 	#selectionSubs = new Set<() => void>();
 	#serializers: Record<string, RichTextFormat> = { html: HTML_FORMAT };
+	#plugins: RichTextPlugin[] = [];
 	#ctx: RichTextContext;
 	@query(".dj-rt-editable") private editable!: HTMLElement;
 
@@ -105,6 +106,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 				return () => host.#selectionSubs.delete(cb);
 			},
 			activeFormats: () => host.#active as ReadonlySet<string>,
+			get plugins(): readonly RichTextPlugin[] { return host.#plugins; },
 		};
 	}
 
@@ -145,6 +147,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 
 	#buildEditor() {
 		const plugins = this.#resolvePlugins();
+		this.#plugins = plugins; // expose the resolved set via ctx.plugins (for the slash menu, etc.)
 		// Collect node classes contributed by plugins, de-duplicated. The core registers no nodes of
 		// its own: heading/quote/list nodes come from their plugins, so an editor only pays for what
 		// it loads (an editor without the headings plugin renders pasted headings as paragraphs).

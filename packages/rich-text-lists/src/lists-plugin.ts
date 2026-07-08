@@ -190,6 +190,13 @@ function registerCheckSpaceToggle(editor: LexicalEditor): () => void {
 export const listsPlugin = defineRichTextPlugin({
 	name: "lists",
 	nodes: [ListNode, ListItemNode],
+	// Slash-menu list conversions. `run` reuses toggleList, dispatching the same commands as the
+	// toolbar buttons. Checklist is included because this plugin wires INSERT_CHECK_LIST_COMMAND (CK).
+	inserts: (ctx) => [
+		{ id: "bulleted-list", label: "Bulleted list", keywords: ["ul", "bullet", "unordered"], run: (c) => toggleList(c, "bullet") },
+		{ id: "numbered-list", label: "Numbered list", keywords: ["ol", "number", "ordered"], run: (c) => toggleList(c, "number") },
+		{ id: "checklist", label: msg(ctx, "checkList"), keywords: ["check", "checklist", "todo", "task"], run: (c) => toggleList(c, "check") },
+	],
 	setup: (ctx) => {
 		ensureEditorStyles("dj-rich-text-checklist", CHECKLIST_CSS);
 		const editor = ctx.editor;

@@ -34,6 +34,11 @@ test("plugin shape: name table, contributes 3 table nodes, 2 render toolbar item
 	assert.equal(createTablePlugin().name, "table");
 });
 
+test("SL2: inserts resolve to the table id", () => {
+	assert.deepEqual(tablePlugin.inserts.map((i) => i.id), ["table"]);
+	assert.equal(typeof tablePlugin.inserts[0].run, "function");
+});
+
 test("INSERT_TABLE_COMMAND builds a 2×3 table with first-row header cells", () => {
 	const editor = makeEditor();
 	const ctx = {

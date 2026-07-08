@@ -1,0 +1,5 @@
+{ "name": "@dojo-ng/rich-text-embed", "version": "0.1.0", "license": "BSD-3-Clause", "description": "Media embed plugin for @dojo-ng/rich-text", "type": "module",
+  "main": "./dist/index.js", "module": "./dist/index.js", "types": "./dist/index.d.ts",
+  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
+  "dependencies": { "@dojo-ng/rich-text": "^0.1.0", "@dojo-ng/dialog": "^0.1.0", "@dojo-ng/text-input": "^0.1.0", "@dojo-ng/button": "^0.1.0", "@dojo-ng/video": "^0.1.0", "@dojo-ng/audio": "^0.1.0", "@dojo-ng/i18n": "^0.1.0", "lexical": "^0.21.0", "@lexical/utils": "^0.21.0", "lit": "^3.3.0" },
+  "devDependencies": { "typescript": "^5.8.3" } }

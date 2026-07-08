@@ -37,6 +37,12 @@ test("plugin now has three toolbar items (bulleted, numbered, checklist)", () =>
 	assert.deepEqual(items.map((i) => i.id), ["bullet-list", "numbered-list", "check-list"]);
 });
 
+test("SL2: inserts resolve to bulleted/numbered/checklist ids", () => {
+	const items = listsPlugin.inserts(fakeCtx(makeEditor()));
+	assert.deepEqual(items.map((i) => i.id), ["bulleted-list", "numbered-list", "checklist"]);
+	assert.ok(items.every((i) => typeof i.run === "function" && typeof i.label === "string"));
+});
+
 test("INSERT_CHECK_LIST_COMMAND produces a ListNode of type check", () => {
 	const editor = makeEditor();
 	const dispose = listsPlugin.setup(fakeCtx(editor));

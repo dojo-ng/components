@@ -24,6 +24,26 @@ export interface RichTextContext {
 	onSelectionChange(cb: () => void): () => void;
 	/** The current selection's active inline formats (`bold`, `italic`, …). */
 	activeFormats(): ReadonlySet<string>;
+	/**
+	 * The resolved plugin list the editor was built with (empty array before the editor is built).
+	 * Used by aggregating plugins such as the slash menu to gather every loaded plugin's `inserts`.
+	 */
+	readonly plugins: readonly RichTextPlugin[];
+}
+
+/**
+ * A block/insert action a plugin exposes to a command menu (the slash menu). Aggregated across all
+ * loaded plugins by `@dojo-ng/rich-text-slash`. When run, the menu has already removed the "/query"
+ * trigger text and the caret sits in that block. `run` executes within the removal `editor.update` so
+ * a block transform keeps the caret's selection (a separate update would lose it); a nested
+ * `editor.update`, a command dispatch, or opening a dialog all work from here.
+ */
+export interface RichTextInsertItem {
+	id: string;
+	label: string;
+	icon?: TemplateResult | string;
+	keywords?: string[];
+	run(ctx: RichTextContext): void;
 }
 
 /**
@@ -69,6 +89,11 @@ export interface RichTextPlugin {
 	toolbar?: RichTextToolbarItem[] | ((ctx: RichTextContext) => RichTextToolbarItem[]);
 	/** Optional alternate output formats, keyed by name (for example `"markdown"`). */
 	formats?: Record<string, RichTextFormat>;
+	/**
+	 * Block/insert actions this plugin exposes to a command menu (the slash menu). Static, or a
+	 * function of context so a plugin can vary its offerings. Resolved once per menu open.
+	 */
+	inserts?: RichTextInsertItem[] | ((ctx: RichTextContext) => RichTextInsertItem[]);
 	/**
 	 * Optional HTML import/export overrides passed to `createEditor`'s `html` config. `import` is a
 	 * `DOMConversionMap` merged across plugins (later plugins win on tag collisions); it lets a plugin

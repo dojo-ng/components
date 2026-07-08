@@ -45,6 +45,12 @@
       "@dojo-ng/rich-text-mentions": [
         "./packages/rich-text-mentions/dist/index.d.ts"
       ],
+      "@dojo-ng/rich-text-slash": [
+        "./packages/rich-text-slash/dist/index.d.ts"
+      ],
+      "@dojo-ng/rich-text-embed": [
+        "./packages/rich-text-embed/dist/index.d.ts"
+      ],
       "@dojo-ng/color-picker": [
         "./packages/color-picker/dist/index.d.ts"
       ],

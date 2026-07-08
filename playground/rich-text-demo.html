@@ -46,7 +46,8 @@
 					"@dojo-ng/dnd": "../packages/dnd/dist/index.js",
 					"@dojo-ng/loading-indicator": "../packages/loading-indicator/dist/index.js",
 					"@dojo-ng/rich-text-menu": "../packages/rich-text-menu/dist/index.js",
-					"@dojo-ng/rich-text-mentions": "../packages/rich-text-mentions/dist/index.js"
+					"@dojo-ng/rich-text-mentions": "../packages/rich-text-mentions/dist/index.js",
+					"@dojo-ng/rich-text-slash": "../packages/rich-text-slash/dist/index.js"
 				}
 			}
 		</script>
@@ -93,15 +94,18 @@
 			<pre id="full-out">(type above)</pre>
 		</div>
 
-		<h2>CMS editor — headings, lists, links, color, image, table, mentions, markdown</h2>
+		<h2>CMS editor — headings, lists, links, color, image, table, mentions, slash, markdown</h2>
 		<p class="hint">
 			The full plugin set. Use the toolbar color controls (text and highlight), the image button
 			(insert from a file or a URL — alt text is required), the table controls (insert from the
 			8×8 grid picker, then edit rows/columns from the table menu), and the checklist button (click a
 			box or press Space at the start of an item to toggle it). Type <code>@</code> to mention
-			someone — a menu opens at the caret; ArrowUp/Down then Enter (or click) inserts a pill. Toggle
-			the output format between HTML and Markdown; the readout below is the live <code>value</code>.
-			Colors survive a value round-trip via the color plugin's <code>html.import</code> hook.
+			someone — a menu opens at the caret; ArrowUp/Down then Enter (or click) inserts a pill. Type
+			<code>/</code> at the start of a block (or after a space) to open the slash command menu —
+			<code>/h</code> filters to headings, Enter applies the block; <code>/image</code> and
+			<code>/table</code> insert those. Toggle the output format between HTML and Markdown; the
+			readout below is the live <code>value</code>. Colors survive a value round-trip via the color
+			plugin's <code>html.import</code> hook.
 		</p>
 		<div class="grid">
 			<label>Format:
@@ -125,6 +129,7 @@
 			import { markdownPlugin } from "@dojo-ng/rich-text-markdown";
 			import { tablePlugin } from "@dojo-ng/rich-text-table";
 			import { createMentionsPlugin } from "@dojo-ng/rich-text-mentions";
+			import { slashPlugin } from "@dojo-ng/rich-text-slash";
 			import { FORMAT_TEXT_COMMAND } from "lexical";
 
 			// A custom plugin written against the public API: one command button that toggles
@@ -179,7 +184,7 @@
 			});
 			cms.plugins = [
 				headingsPlugin, formattingPlugin, listsPlugin, linksPlugin,
-				colorPlugin, backgroundColorPlugin, imagePlugin, tablePlugin, mentionsPlugin, markdownPlugin, historyPlugin,
+				colorPlugin, backgroundColorPlugin, imagePlugin, tablePlugin, mentionsPlugin, slashPlugin, markdownPlugin, historyPlugin,
 			];
 			cms.setHtml(
 				'<h2>Getting started</h2><p>Text with <strong>bold</strong>, ' +

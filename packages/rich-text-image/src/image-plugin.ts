@@ -78,6 +78,14 @@ export function createImagePlugin(options: ImagePluginOptions = {}): RichTextPlu
 	return defineRichTextPlugin({
 		name: "image",
 		nodes: [ImageNode],
+		// Slash-menu entry: open the same insert dialog. `dialogRef` is factory-scoped, and the dialog
+		// element always renders with the toolbar, so the ref resolves once the editor is ready.
+		inserts: [
+			{
+				id: "image", label: "Image", keywords: ["image", "img", "picture", "photo"],
+				run: () => { if (dialogRef.value) dialogRef.value.open = true; },
+			},
+		],
 		setup: (ctx) =>
 			mergeRegister(
 				ctx.editor.registerCommand(

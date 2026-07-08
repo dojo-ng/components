@@ -210,6 +210,13 @@ export function createTablePlugin(_options: TablePluginOptions = {}): RichTextPl
 	return defineRichTextPlugin({
 		name: "table",
 		nodes: [TableNode, TableRowNode, TableCellNode],
+		// Slash-menu entry: insert a default 3×3 table with headers (payload takes strings in 0.21).
+		inserts: [
+			{
+				id: "table", label: "Table", keywords: ["table", "grid"],
+				run: (ctx) => ctx.command(INSERT_TABLE_COMMAND, { rows: "3", columns: "3", includeHeaders: true }),
+			},
+		],
 		setup: (ctx) => {
 			ensureEditorStyles("dj-rich-text-table", CONTENT_CSS);
 			ensureEditorStyles("dj-rich-text-table-picker", PICKER_CSS);

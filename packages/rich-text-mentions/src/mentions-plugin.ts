@@ -66,6 +66,8 @@ export function createMentionsPlugin(options: MentionsPluginOptions): RichTextPl
 							});
 					}, DEBOUNCE_MS);
 				},
+				// Insert at the caret inside the trigger-removal update so the collapsed selection survives.
+				pickInUpdate: true,
 				onPick: (option) => {
 					ctx.editor.update(() => {
 						const mention = $createMentionNode(option.value, option.label ?? option.value);

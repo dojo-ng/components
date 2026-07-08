@@ -233,6 +233,12 @@
       "path": "packages/rich-text-mentions"
     },
     {
+      "path": "packages/rich-text-slash"
+    },
+    {
+      "path": "packages/rich-text-embed"
+    },
+    {
       "path": "packages/data-grid"
     },
     {

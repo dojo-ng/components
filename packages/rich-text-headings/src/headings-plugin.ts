@@ -46,6 +46,14 @@ function setBlockType(ctx: RichTextContext, value: BlockType) {
 export const headingsPlugin = defineRichTextPlugin({
 	name: "headings",
 	nodes: [HeadingNode, QuoteNode],
+	// Slash-menu block conversions. `run` reuses the same setBlockType logic as the toolbar select.
+	inserts: [
+		{ id: "paragraph", label: "Paragraph", keywords: ["p"], run: (ctx) => setBlockType(ctx, "paragraph") },
+		{ id: "h1", label: "Heading 1", keywords: ["h1", "title"], run: (ctx) => setBlockType(ctx, "h1") },
+		{ id: "h2", label: "Heading 2", keywords: ["h2"], run: (ctx) => setBlockType(ctx, "h2") },
+		{ id: "h3", label: "Heading 3", keywords: ["h3"], run: (ctx) => setBlockType(ctx, "h3") },
+		{ id: "quote", label: "Quote", keywords: ["quote", "blockquote"], run: (ctx) => setBlockType(ctx, "quote") },
+	],
 	toolbar: [
 		{
 			id: "block-type", group: "block", order: 0, label: "Paragraph style",

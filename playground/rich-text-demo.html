@@ -5,6 +5,8 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>Dojo NG — rich-text plugins demo</title>
 		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<!-- App prerequisite for dj-video (rich-text-embed): video.js's stylesheet, loaded document-level. -->
+		<link rel="stylesheet" href="https://vjs.zencdn.net/8.10.0/video-js.css" />
 		<script type="importmap">
 			{
 				"imports": {
@@ -47,7 +49,11 @@
 					"@dojo-ng/loading-indicator": "../packages/loading-indicator/dist/index.js",
 					"@dojo-ng/rich-text-menu": "../packages/rich-text-menu/dist/index.js",
 					"@dojo-ng/rich-text-mentions": "../packages/rich-text-mentions/dist/index.js",
-					"@dojo-ng/rich-text-slash": "../packages/rich-text-slash/dist/index.js"
+					"@dojo-ng/rich-text-slash": "../packages/rich-text-slash/dist/index.js",
+					"@dojo-ng/rich-text-embed": "../packages/rich-text-embed/dist/index.js",
+					"@dojo-ng/video": "../packages/video/dist/index.js",
+					"@dojo-ng/audio": "../packages/audio/dist/index.js",
+					"video.js": "https://esm.sh/video.js@8.10.0"
 				}
 			}
 		</script>
@@ -94,12 +100,14 @@
 			<pre id="full-out">(type above)</pre>
 		</div>
 
-		<h2>CMS editor — headings, lists, links, color, image, table, mentions, slash, markdown</h2>
+		<h2>CMS editor — headings, lists, links, color, image, table, embed, mentions, slash, markdown</h2>
 		<p class="hint">
 			The full plugin set. Use the toolbar color controls (text and highlight), the image button
 			(insert from a file or a URL — alt text is required), the table controls (insert from the
-			8×8 grid picker, then edit rows/columns from the table menu), and the checklist button (click a
-			box or press Space at the start of an item to toggle it). Type <code>@</code> to mention
+			8×8 grid picker, then edit rows/columns from the table menu), the embed button (paste a
+			YouTube/Vimeo URL or a direct .mp4/.mp3 link — video.js CSS is loaded in the page head), and
+			the checklist button (click a box or press Space at the start of an item to toggle it). Type
+			<code>@</code> to mention
 			someone — a menu opens at the caret; ArrowUp/Down then Enter (or click) inserts a pill. Type
 			<code>/</code> at the start of a block (or after a space) to open the slash command menu —
 			<code>/h</code> filters to headings, Enter applies the block; <code>/image</code> and
@@ -130,6 +138,7 @@
 			import { tablePlugin } from "@dojo-ng/rich-text-table";
 			import { createMentionsPlugin } from "@dojo-ng/rich-text-mentions";
 			import { slashPlugin } from "@dojo-ng/rich-text-slash";
+			import { embedPlugin } from "@dojo-ng/rich-text-embed";
 			import { FORMAT_TEXT_COMMAND } from "lexical";
 
 			// A custom plugin written against the public API: one command button that toggles
@@ -184,7 +193,7 @@
 			});
 			cms.plugins = [
 				headingsPlugin, formattingPlugin, listsPlugin, linksPlugin,
-				colorPlugin, backgroundColorPlugin, imagePlugin, tablePlugin, mentionsPlugin, slashPlugin, markdownPlugin, historyPlugin,
+				colorPlugin, backgroundColorPlugin, imagePlugin, tablePlugin, embedPlugin, mentionsPlugin, slashPlugin, markdownPlugin, historyPlugin,
 			];
 			cms.setHtml(
 				'<h2>Getting started</h2><p>Text with <strong>bold</strong>, ' +

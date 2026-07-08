@@ -39,6 +39,7 @@ Provide `options`; read `value` from the `change` event.
 | `options` | options | `ListOption[]` | `[]` |
 | `value` | value | `string` | `""` |
 | `name` | name ↻ | `string` | — |
+| `label` | label | `string` | — |
 | `menu` | menu | `boolean` | `false` |
 | `loading` | loading | `boolean` | `false` |
 | `reorderable` | reorderable ↻ | `boolean` | `false` |

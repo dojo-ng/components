@@ -303,6 +303,7 @@ declare module "solid-js" {
         "options"?: DjList["options"];
         "value"?: DjList["value"];
         "name"?: DjList["name"];
+        "label"?: DjList["label"];
         "menu"?: DjList["menu"];
         "loading"?: DjList["loading"];
         "reorderable"?: DjList["reorderable"];

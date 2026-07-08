@@ -1,5 +1,5 @@
 import { html, nothing } from "lit";
-import { property, state } from "lit/decorators.js";
+import { property } from "lit/decorators.js";
 import DojoElement, { lockBodyScroll } from "@dojo-ng/dojo-element";
 import styles from "./dj-popup.styles.js";
 
@@ -37,7 +37,10 @@ export class DjPopup extends DojoElement {
 	/** Element to anchor against (property only; takes precedence over x/y attributes). */
 	anchor?: HTMLElement;
 
-	@state() private wrapperStyle = "opacity:0";
+	// The wrapper's position is applied imperatively by `reposition()` (not via a
+	// reactive binding), so positioning after render never schedules a second update.
+	// This mirror string is kept for observability/tests; it is NOT reactive.
+	private wrapperStyle = "opacity:0";
 	#needsReposition = false;
 	#releaseScroll?: () => void;
 	#rafPending = false;
@@ -109,7 +112,13 @@ export class DjPopup extends DojoElement {
 		// Keep within the viewport.
 		left = Math.min(Math.max(left, 0), Math.max(vw - w, 0));
 		top = Math.min(Math.max(top, 0), Math.max(vh - h, 0));
-		this.wrapperStyle = `top:${Math.round(top)}px;left:${Math.round(left)}px;opacity:1`;
+		const t = Math.round(top);
+		const l = Math.round(left);
+		// Apply position imperatively — no reactive state write inside the update cycle.
+		wrapper.style.top = `${t}px`;
+		wrapper.style.left = `${l}px`;
+		wrapper.style.opacity = "1";
+		this.wrapperStyle = `top:${t}px;left:${l}px;opacity:1`;
 	}
 
 	/** Reposition at most once per animation frame, so a burst of scroll/resize
@@ -178,7 +187,6 @@ export class DjPopup extends DojoElement {
 		if (changed.has("open")) {
 			if (this.open) {
 				this.#needsReposition = true;
-				this.wrapperStyle = "opacity:0";
 			}
 		}
 	}
@@ -207,7 +215,7 @@ export class DjPopup extends DojoElement {
 				class="underlay ${this.underlayVisible ? "underlay--visible" : ""}"
 				@click=${this.close}
 			></div>
-			<div part="wrapper" class="wrapper" style=${this.wrapperStyle}>
+			<div part="wrapper" class="wrapper">
 				<slot></slot>
 			</div>
 		`;

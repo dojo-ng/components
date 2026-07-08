@@ -309,6 +309,7 @@ declare module "@dojo-ng/framework" {
         "options"?: DjList["options"];
         "value"?: DjList["value"];
         "name"?: DjList["name"];
+        "label"?: DjList["label"];
         "menu"?: DjList["menu"];
         "loading"?: DjList["loading"];
         "reorderable"?: DjList["reorderable"];

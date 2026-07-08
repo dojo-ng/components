@@ -4579,6 +4579,15 @@
             },
             {
               "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name for the list/menu container (sets `aria-label` on the listbox/menu, which otherwise has no accessible name). Mirrors dj-text-input's `label` approach.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
               "name": "menu",
               "type": {
                 "text": "boolean"
@@ -4677,6 +4686,14 @@
                 "text": "string"
               },
               "fieldName": "name"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label",
+              "description": "Accessible name for the list/menu container (sets `aria-label` on the listbox/menu, which otherwise has no accessible name). Mirrors dj-text-input's `label` approach."
             },
             {
               "name": "menu",

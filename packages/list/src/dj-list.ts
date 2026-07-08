@@ -46,6 +46,9 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 	@property({ type: Array }) options: ListOption[] = [];
 	@property() value = "";
 	@property({ reflect: true }) name?: string;
+	/** Accessible name for the list/menu container (sets `aria-label` on the listbox/menu,
+	 *  which otherwise has no accessible name). Mirrors dj-text-input's `label` approach. */
+	@property() label?: string;
 	@property({ type: Boolean }) menu = false;
 	@property({ type: Boolean }) loading = false;
 	/** Progressive enhancement: allow pointer/keyboard reordering of items. Controlled — the
@@ -237,6 +240,7 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 		const activeId = this.activeIndex >= 0 ? `opt-${this.activeIndex}` : nothing;
 		return html`<ul
 			part="list" class="list" role=${this.menu ? "menu" : "listbox"}
+			aria-label=${this.label ?? nothing}
 			tabindex="0" aria-activedescendant=${activeId}
 			@keydown=${this.onKeyDown}
 		>

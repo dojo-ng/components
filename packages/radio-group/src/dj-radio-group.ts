@@ -40,7 +40,6 @@ export class DjRadioGroup extends FormControl(DojoElement) implements Partial<Do
 	constructor() {
 		super();
 		this.#internals = this.attachInternals();
-		this.addEventListener("change", this.onChildChange as EventListener);
 		this.addEventListener("keydown", this.onKeyDown as EventListener);
 	}
 
@@ -86,15 +85,15 @@ export class DjRadioGroup extends FormControl(DojoElement) implements Partial<Do
 		}
 	}
 
-	protected override firstUpdated() { this.sync(); }
+	protected override firstUpdated() { this.sync(); this.renderRoot.addEventListener("change", this.onChildChange as EventListener); }
 	protected override updated(changed: Map<PropertyKey, unknown>) {
 		if (changed.has("value") || changed.has("disabled")) this.sync();
 	}
 
 	private onChildChange = (event: Event) => {
-		const target = event.target as Element | null;
-		if (!target || target.localName !== "dj-radio") return;
-		const radio = target as DjRadio;
+		const radio = event.composedPath().find((n) => (n as Element).localName === "dj-radio") as DjRadio | undefined;
+		if (!radio) return;
+		event.stopPropagation();
 		if (!radio.checked) return;
 		if (this.value !== radio.value) {
 			this.value = radio.value;

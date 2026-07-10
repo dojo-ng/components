@@ -70,6 +70,7 @@ export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFo
 	private close() { this.open = false; }
 
 	private onSelect(e: Event) {
+		e.stopPropagation();
 		const list = e.target as HTMLElement & { value: string };
 		this.value = list.value;
 		this.valid = this.required ? !!this.value : undefined;

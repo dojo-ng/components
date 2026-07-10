@@ -400,6 +400,7 @@ declare module "@dojo-ng/framework" {
         "allow-half"?: DjRate["allowHalf"];
         "readonly"?: DjRate["readonly"];
         "name"?: DjRate["name"];
+        "label"?: DjRate["label"];
       };
       "dj-result": DjVNodeBase & {
         "title"?: DjResult["title"];

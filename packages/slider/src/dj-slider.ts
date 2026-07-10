@@ -61,7 +61,7 @@ export class DjSlider extends FormControl(DojoElement) implements Partial<DojoFo
 						part="input" class="input" type="range"
 						min=${this.min} max=${this.max} step=${this.step} .value=${String(this.value)}
 						name=${this.name ?? nothing}
-						aria-label=${this.label && this.labelHidden ? this.label : nothing}
+						aria-label=${this.label ?? nothing}
 						?disabled=${this.isDisabled} ?required=${this.required}
 						@input=${this.onInput} @change=${() => this.emit("change")}
 					/>

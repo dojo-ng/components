@@ -32,7 +32,7 @@ export class DjDateInput extends FormControl(DojoElement) implements Partial<Doj
 	protected override firstUpdated(){ this.sync(); }
 	protected override updated(c:Map<PropertyKey,unknown>){ if(c.has("value")) this.sync(); }
 	private onInput(e:Event){ this.value=(e.target as HTMLInputElement).value; this.sync(); }
-	private onPick(e:Event){ this.value=(e.target as HTMLElement&{value:string}).value; this.open=false; this.sync(); this.emit("change"); this.field?.focus(); }
+	private onPick(e:Event){ e.stopPropagation(); this.value=(e.target as HTMLElement&{value:string}).value; this.open=false; this.sync(); this.emit("change"); this.field?.focus(); }
 	override render(){
 		return html`
 			<dj-text-input .value=${this.value} label=${this.label??nothing} placeholder="yyyy-mm-dd" ?disabled=${this.isDisabled} ?required=${this.required} @input=${this.onInput} @change=${()=>this.emit("change")}>

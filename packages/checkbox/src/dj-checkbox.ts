@@ -70,6 +70,7 @@ export class DjCheckbox extends FormControl(DojoElement) implements Partial<Dojo
 					?disabled=${this.isDisabled}
 					?required=${this.required}
 					aria-invalid=${this.valid === false ? "true" : nothing}
+					aria-label=${this.textContent?.trim() || nothing}
 					@change=${this.onChange}
 				/>
 				<span part="control" class="box" @click=${() => this.native?.click()}>

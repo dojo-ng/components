@@ -46,7 +46,7 @@ A low-level primitive; most apps use it through `trigger-popup`, `select`, and s
 
 **Slots:** default
 
-**Parts:** `underlay`, `wrapper`
+**Parts:** `underlay`, `wrapper`, `layer`
 
 **Events:** `dj-close`
 

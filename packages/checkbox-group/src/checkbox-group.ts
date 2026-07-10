@@ -15,14 +15,14 @@ export class DjCheckboxGroup extends FormControl(DojoElement) implements Partial
 	@property() label?: string;
 	@property({reflect:true}) orientation:"vertical"|"horizontal"="vertical";
 	@property({type:Boolean,reflect:true}) disabled=false;
-	constructor(){ super(); this.#internals=this.attachInternals(); this.addEventListener("change", this.onChange as EventListener); }
+	constructor(){ super(); this.#internals=this.attachInternals(); }
 	get validity(){ return this.#internals.validity; }
 	checkValidity(){ return this.#internals.checkValidity(); }
 	formResetCallback(){ this.value=[]; this.sync(); }
 	override restoreFormState(state: File | string | FormData | null) { const base = this.name ?? "values"; this.value = state instanceof FormData ? state.getAll(base).map(String) : []; }
 	private sync(){ const fd=new FormData(); const base=this.name??"values"; for(const v of this.value) fd.append(base,v); this.#internals.setFormValue(fd); }
-	protected override firstUpdated(){ this.sync(); }
-	private onChange=(e:Event)=>{ const t=e.target as Element|null; if(!t||t.localName!=="dj-checkbox") return; const cb=t as HTMLElement&{value:string;checked:boolean};
+	protected override firstUpdated(){ this.sync(); this.renderRoot.addEventListener("change", this.onChange as EventListener); }
+	private onChange=(e:Event)=>{ const cb=e.composedPath().find((n)=>(n as Element).localName==="dj-checkbox") as (HTMLElement&{value:string;checked:boolean})|undefined; if(!cb) return; e.stopPropagation();
 		const set=new Set(this.value); if(cb.checked) set.add(cb.value); else set.delete(cb.value); this.value=[...set]; this.sync(); this.emit("change",{detail:this.value} as CustomEventInit); };
 	override render(){
 		return html`<fieldset class="group" role="group" aria-labelledby=${this.label?"lg":nothing}>

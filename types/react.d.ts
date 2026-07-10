@@ -398,6 +398,7 @@ declare module "react" {
         "allow-half"?: DjRate["allowHalf"];
         "readonly"?: DjRate["readonly"];
         "name"?: DjRate["name"];
+        "label"?: DjRate["label"];
       };
       "dj-result": DjProps<DjResult> & {
         "title"?: DjResult["title"];

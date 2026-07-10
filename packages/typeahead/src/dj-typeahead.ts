@@ -68,6 +68,7 @@ export class DjTypeahead extends FormControl(DojoElement) implements Partial<Doj
 		if (!this.strict) { this.value = this.query; this.sync(); }
 	}
 	private onSelect(e: Event) {
+		e.stopPropagation();
 		const list = e.target as HTMLElement & { value: string };
 		this.value = list.value;
 		this.query = this.labelFor(this.value);

@@ -101,7 +101,7 @@ export class DjChipTypeahead extends FormControl(DojoElement) implements Partial
 		}
 		else if (e.key === "Escape") { this.open = false; }
 	}
-	private onSelect(e: Event) { this.add((e.target as HTMLElement & { value: string }).value); this.input?.focus(); }
+	private onSelect(e: Event) { e.stopPropagation(); this.add((e.target as HTMLElement & { value: string }).value); this.input?.focus(); }
 
 	override render() {
 		return html`
@@ -109,7 +109,7 @@ export class DjChipTypeahead extends FormControl(DojoElement) implements Partial
 			<div part="box" class="box ${this.focused ? "box--focused" : ""}" @click=${() => this.input?.focus()}>
 				${this.value.map((v) => html`<dj-chip closeable @dj-close=${() => this.removeValue(v)}>${this.labelFor(v)}</dj-chip>`)}
 				<input class="input" .value=${this.query} placeholder=${this.value.length ? nothing : (this.placeholder ?? nothing)}
-					?disabled=${this.isDisabled} role="combobox" aria-expanded=${this.open ? "true" : "false"}
+					?disabled=${this.isDisabled} role="combobox" aria-label=${this.label ?? nothing} aria-expanded=${this.open ? "true" : "false"}
 					@input=${this.onInput} @keydown=${this.onKey}
 					@focus=${() => { this.focused = true; if (this.available.length) this.open = true; }}
 					@blur=${() => { this.focused = false; }} />

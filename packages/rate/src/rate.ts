@@ -17,6 +17,7 @@ export class DjRate extends FormControl(DojoElement) implements Partial<DojoForm
 	@property({type:Boolean}) allowHalf=false;
 	@property({type:Boolean,reflect:true}) readonly=false;
 	@property({ reflect: true }) name?: string;
+	@property() label?: string;
 	constructor(){ super(); this.#internals=this.attachInternals(); }
 	get validity(){ return this.#internals.validity; }
 	checkValidity(){ return this.#internals.checkValidity(); }
@@ -27,8 +28,8 @@ export class DjRate extends FormControl(DojoElement) implements Partial<DojoForm
 	protected override updated(c:Map<PropertyKey,unknown>){ if(c.has("value")) this.sync(); }
 	private set(n:number){ if(this.readonly) return; this.value=this.value===n?0:n; this.sync(); this.emit("change"); }
 	override render(){
-		return html`<span class="stars" role="slider" aria-valuemin="0" aria-valuemax=${this.max} aria-valuenow=${this.value}>
-			${Array.from({length:this.max},(_,i)=>i+1).map(n=>html`<button type="button" class="star ${n<=this.value?"star--on":""}" aria-label=${`${n} of ${this.max}`} @click=${()=>this.set(n)} ?disabled=${this.readonly}>
+		return html`<span class="stars" role="group" aria-label=${this.label ?? "Rating"}>
+			${Array.from({length:this.max},(_,i)=>i+1).map(n=>html`<button type="button" class="star ${n<=this.value?"star--on":""}" aria-label=${`${n} of ${this.max}`} aria-pressed=${n<=this.value?"true":"false"} @click=${()=>this.set(n)} ?disabled=${this.readonly}>
 				<dj-icon><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 6.5 7 .7-5.2 4.7L18 21l-6-3.5L6 21l1.2-7.1L2 9.2l7-.7z" fill="currentColor"/></svg></dj-icon></button>`)}
 		</span>`;
 	}

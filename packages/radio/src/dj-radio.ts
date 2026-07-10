@@ -64,7 +64,7 @@ export class DjRadio extends FormControl(DojoElement) implements Partial<DojoFor
 				<input
 					class="native"
 					type="radio"
-					tabindex=${this.tabbable ? "0" : "-1"}
+					tabindex=${this.tabbable ? "0" : "-1"} aria-label=${this.textContent?.trim() || nothing}
 					.checked=${this.checked}
 					name=${this.name ?? nothing}
 					?disabled=${this.isDisabled}

@@ -394,6 +394,7 @@ declare module "solid-js" {
         "allow-half"?: DjRate["allowHalf"];
         "readonly"?: DjRate["readonly"];
         "name"?: DjRate["name"];
+        "label"?: DjRate["label"];
       };
       "dj-result": JSX.HTMLAttributes<DjResult> & {
         "title"?: DjResult["title"];

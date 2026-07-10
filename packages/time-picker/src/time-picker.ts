@@ -38,7 +38,7 @@ export class DjTimePicker extends FormControl(DojoElement) implements Partial<Do
 		return dateTimeFormat(this.#i18n.locale, { hour: this.format==="12"?"numeric":"2-digit", minute:"2-digit", hour12: this.format==="12" }).format(d); }
 	private get options(){ const start=toMin(this.min), end=toMin(this.max), st=Math.max(1,Math.round(this.step/60)); const out=[]; for(let t=start;t<=end;t+=st) out.push({value:`${pad(Math.floor(t/60))}:${pad(t%60)}`, label:this.fmt(t)}); return out; }
 	private onInput(e:Event){ this.value=(e.target as HTMLInputElement).value; this.open=true; this.sync(); }
-	private onPick(e:Event){ this.value=(e.target as HTMLElement&{value:string}).value; this.open=false; this.sync(); this.emit("change"); this.#reopenGuard=true; this.field?.focus(); }
+	private onPick(e:Event){ e.stopPropagation(); this.value=(e.target as HTMLElement&{value:string}).value; this.open=false; this.sync(); this.emit("change"); this.#reopenGuard=true; this.field?.focus(); }
 	override render(){
 		return html`
 			<dj-text-input .value=${this.value} label=${this.label??nothing} placeholder=${this.format==="12"?"hh:mm AM":"HH:MM"} ?disabled=${this.isDisabled} ?required=${this.required} @input=${this.onInput} @focus=${()=>{ if(this.#reopenGuard){ this.#reopenGuard=false; return; } this.open=true; }}>

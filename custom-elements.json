@@ -5473,6 +5473,10 @@
             {
               "name": "wrapper",
               "description": ""
+            },
+            {
+              "name": "layer",
+              "description": ""
             }
           ],
           "cssProperties": [
@@ -6416,6 +6420,14 @@
               "reflects": true
             },
             {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            },
+            {
               "kind": "method",
               "name": "checkValidity"
             },
@@ -6467,6 +6479,13 @@
                 "text": "string"
               },
               "fieldName": "name"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
             }
           ],
           "events": [

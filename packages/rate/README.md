@@ -33,6 +33,7 @@ Import the package to register the custom element, then use the tag.
 | `allowHalf` | allow-half | `boolean` | `false` |
 | `readonly` | readonly | `boolean` | `false` |
 | `name` | name ↻ | `string` | — |
+| `label` | label | `string` | — |
 
 **Events:** `change`
 

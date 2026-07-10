@@ -55,7 +55,7 @@ export class DjSwitch extends FormControl(DojoElement) implements Partial<DojoFo
 					type="checkbox"
 					role="switch"
 					.checked=${this.checked}
-					aria-checked=${this.checked ? "true" : "false"}
+					aria-checked=${this.checked ? "true" : "false"} aria-label=${this.textContent?.trim() || nothing}
 					name=${this.name ?? nothing}
 					?disabled=${this.isDisabled}
 					@change=${this.onChange}

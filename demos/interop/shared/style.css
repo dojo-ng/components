@@ -1,0 +1,72 @@
+/* shared/style.css — layout shared by all four interop hosts. Every color and
+   font comes from the Dojo NG theme tokens (packages/theme/theme.css, linked by
+   each page), so the data-dj-theme toggle drives the page chrome and the
+   components together. No colors are defined here. */
+
+body {
+	margin: 0;
+	font-family: var(--dj-font-family, system-ui, sans-serif);
+	background: var(--dj-color-background);
+	color: var(--dj-color-text);
+	transition: background 150ms, color 150ms;
+}
+
+.host {
+	max-width: 26rem;
+	margin: 0 auto;
+	padding: 0.75rem;
+}
+
+.toolbar {
+	display: flex;
+	gap: 0.6rem;
+	align-items: center;
+	flex-wrap: wrap;
+	margin-bottom: 0.75rem;
+}
+
+.toolbar .state {
+	color: var(--dj-color-text-muted);
+	font-size: 0.85rem;
+}
+
+.locale-select {
+	font: inherit;
+	color: inherit;
+	background: var(--dj-color-background);
+	border: 1px solid var(--dj-color-border);
+	border-radius: 0.25rem;
+	padding: 0.25rem 0.35rem;
+}
+
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1rem;
+	border: 1px solid var(--dj-color-border);
+	border-radius: 0.5rem;
+	background: var(--dj-color-background);
+}
+
+.card h1 {
+	font-size: 1.05rem;
+	margin: 0;
+}
+
+pre.output {
+	background: var(--dj-color-neutral-100);
+	padding: 0.6rem;
+	border-radius: 0.375rem;
+	min-height: 3.2rem;
+	margin: 0;
+	white-space: pre-wrap;
+	font-size: 0.85rem;
+}
+
+p.sample,
+p.event {
+	margin: 0;
+	color: var(--dj-color-text-muted);
+	font-size: 0.85rem;
+}

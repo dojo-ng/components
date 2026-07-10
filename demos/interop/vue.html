@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-US" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Interop — Vue 3 host</title>
+		<link rel="stylesheet" href="../../packages/theme/theme.css" />
+		<link rel="stylesheet" href="shared/style.css" />
+		<!-- Vue esm-browser build from esm.sh — needs network; templates compile
+		     in the browser, no CLI build. -->
+		<script type="importmap">
+			{
+				"imports": {
+					"vue": "https://esm.sh/vue@3.5.17/dist/vue.esm-browser.prod.js",
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"@dojo-ng/dojo-element": "../../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/i18n": "../../packages/i18n/dist/index.js",
+					"@dojo-ng/icon": "../../packages/icon/dist/index.js",
+					"@dojo-ng/label": "../../packages/label/dist/index.js",
+					"@dojo-ng/helper-text": "../../packages/helper-text/dist/index.js",
+					"@dojo-ng/loading-indicator": "../../packages/loading-indicator/dist/index.js",
+					"@dojo-ng/popup": "../../packages/popup/dist/index.js",
+					"@dojo-ng/list": "../../packages/list/dist/index.js",
+					"@dojo-ng/dnd": "../../packages/dnd/dist/index.js",
+					"@dojo-ng/button": "../../packages/button/dist/index.js",
+					"@dojo-ng/text-input": "../../packages/text-input/dist/index.js",
+					"@dojo-ng/select": "../../packages/select/dist/index.js",
+					"@dojo-ng/switch": "../../packages/switch/dist/index.js"
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<div id="app" class="host"></div>
+		<script type="module" src="./vue.mjs"></script>
+	</body>
+</html>

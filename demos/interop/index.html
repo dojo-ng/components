@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en-US" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — framework interop matrix</title>
+		<link rel="stylesheet" href="../../packages/theme/theme.css" />
+		<style>
+			body { margin: 0; font-family: var(--dj-font-family, system-ui, sans-serif); background: var(--dj-color-background); color: var(--dj-color-text); }
+			header { padding: 1rem 1.25rem 0.5rem; }
+			h1 { font-size: 1.15rem; margin: 0 0 0.5rem; }
+			p { max-width: 70ch; margin: 0 0 0.5rem; line-height: 1.45; }
+			.note { color: var(--dj-color-text-muted); font-size: 0.85rem; }
+			.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr)); gap: 0.75rem; padding: 0.75rem 1.25rem 1.25rem; }
+			section { border: 1px solid var(--dj-color-border); border-radius: 0.5rem; overflow: hidden; display: flex; flex-direction: column; }
+			h2 { font-size: 0.85rem; margin: 0; padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--dj-color-border); background: var(--dj-color-neutral-100); font-weight: 600; }
+			iframe { width: 100%; height: 34rem; border: none; display: block; background: var(--dj-color-background); }
+		</style>
+	</head>
+	<body>
+		<header>
+			<h1>The same app, four hosts</h1>
+			<p>
+				Nobody expects MUI to run in Angular, or Ant Design in Vue. Component
+				kits are married to their framework. Dojo NG components are custom
+				elements, so the member-signup card below runs identically in plain
+				HTML/JS, the @dojo-ng/framework renderer, React 19, and Vue 3. Each
+				host passes the role options as an array property, hears the
+				components' bubbling CustomEvents, submits through the native form,
+				and shares one theme and one locale mechanism. Submit the form in any
+				frame; the printed FormData is the same in all four.
+			</p>
+			<p class="note">
+				The React and Vue frames load their runtimes from esm.sh and need
+				network access. Serve from the components root (npm run serve), then
+				open /demos/interop/.
+			</p>
+		</header>
+		<div class="grid">
+			<section>
+				<h2>plain.html — vanilla JS</h2>
+				<iframe src="plain.html" title="Plain HTML/JS host"></iframe>
+			</section>
+			<section>
+				<h2>framework.html — @dojo-ng/framework renderer</h2>
+				<iframe src="framework.html" title="@dojo-ng/framework host"></iframe>
+			</section>
+			<section>
+				<h2>react.html — React 19 + htm, no JSX build</h2>
+				<iframe src="react.html" title="React 19 host"></iframe>
+			</section>
+			<section>
+				<h2>vue.html — Vue 3 esm-browser, in-browser templates</h2>
+				<iframe src="vue.html" title="Vue 3 host"></iframe>
+			</section>
+		</div>
+	</body>
+</html>

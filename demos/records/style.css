@@ -1,0 +1,81 @@
+/* style.css — layout for the records-manager demo. Every color and font comes
+   from the Dojo NG theme tokens (packages/theme/theme.css, linked by the page),
+   so the data-dj-theme toggle drives the page chrome and the components together.
+   No colors are hard-coded here. */
+
+body {
+	margin: 0;
+	font-family: var(--dj-font-family, system-ui, sans-serif);
+	background: var(--dj-color-background);
+	color: var(--dj-color-text);
+	transition: background 150ms, color 150ms;
+}
+
+.app-title {
+	font-size: 1.1rem;
+	margin: 0;
+}
+
+.header-actions {
+	display: flex;
+	gap: 0.6rem;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.locale-label {
+	font-size: 0.9rem;
+	color: var(--dj-color-text-muted);
+}
+
+.locale-select {
+	font: inherit;
+	color: inherit;
+	background: var(--dj-color-background);
+	border: 1px solid var(--dj-color-border);
+	border-radius: 0.25rem;
+	padding: 0.25rem 0.35rem;
+}
+
+.page {
+	max-width: 64rem;
+	margin: 0 auto;
+	padding: 1rem 1.25rem 2rem;
+}
+
+.note {
+	max-width: 70ch;
+	line-height: 1.45;
+	color: var(--dj-color-text-muted);
+	font-size: 0.9rem;
+	margin: 0 0 1rem;
+}
+
+dj-data-grid {
+	display: block;
+	width: 100%;
+}
+
+#loading {
+	display: block;
+	margin-bottom: 0.5rem;
+}
+
+.selection {
+	margin: 0.75rem 0 0;
+	font-size: 0.9rem;
+	color: var(--dj-color-text-muted);
+}
+
+.record-form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+	min-width: 18rem;
+}
+
+.dialog-actions {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: flex-end;
+}

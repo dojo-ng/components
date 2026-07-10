@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en-US" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — records manager demo</title>
+		<link rel="stylesheet" href="../../packages/theme/theme.css" />
+		<link rel="stylesheet" href="style.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"@tanstack/table-core": "https://esm.sh/@tanstack/table-core@8",
+					"@tanstack/virtual-core": "https://esm.sh/@tanstack/virtual-core@3",
+					"@dojo-ng/dojo-element": "../../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/i18n": "../../packages/i18n/dist/index.js",
+					"@dojo-ng/icon": "../../packages/icon/dist/index.js",
+					"@dojo-ng/label": "../../packages/label/dist/index.js",
+					"@dojo-ng/helper-text": "../../packages/helper-text/dist/index.js",
+					"@dojo-ng/button": "../../packages/button/dist/index.js",
+					"@dojo-ng/text-input": "../../packages/text-input/dist/index.js",
+					"@dojo-ng/email-input": "../../packages/email-input/dist/index.js",
+					"@dojo-ng/native-select": "../../packages/native-select/dist/index.js",
+					"@dojo-ng/popup": "../../packages/popup/dist/index.js",
+					"@dojo-ng/pagination": "../../packages/pagination/dist/index.js",
+					"@dojo-ng/dialog": "../../packages/dialog/dist/index.js",
+					"@dojo-ng/popup-confirmation": "../../packages/popup-confirmation/dist/index.js",
+					"@dojo-ng/snackbar": "../../packages/snackbar/dist/index.js",
+					"@dojo-ng/header": "../../packages/header/dist/index.js",
+					"@dojo-ng/loading-indicator": "../../packages/loading-indicator/dist/index.js",
+					"@dojo-ng/data-grid": "../../packages/data-grid/dist/index.js",
+					"@dojo-ng/data-grid-formats": "../../packages/data-grid-formats/dist/index.js",
+					"@dojo-ng/data-grid-cell-components": "../../packages/data-grid-cell-components/dist/index.js",
+					"@dojo-ng/data-grid-filter": "../../packages/data-grid-filter/dist/index.js",
+					"@dojo-ng/data-grid-pagination": "../../packages/data-grid-pagination/dist/index.js"
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<dj-header sticky>
+			<h1 id="title" slot="leading" class="app-title">Members</h1>
+			<div slot="trailing" class="header-actions">
+				<dj-button id="add" kind="contained">Add member</dj-button>
+				<!-- Delete confirms through dj-popup-confirmation. It lives in the sticky
+				     header (no transformed ancestor), so the popup positions correctly —
+				     unlike a popup inside the dialog or a transformed grid row. -->
+				<dj-popup-confirmation id="delete-confirm" confirm-label="Delete" cancel-label="Cancel">
+					<dj-button id="delete-selected" kind="outlined" disabled>Delete selected</dj-button>
+					<span slot="content" id="delete-content">Delete the selected rows?</span>
+				</dj-popup-confirmation>
+				<dj-button id="theme" kind="outlined">Toggle theme</dj-button>
+				<label id="locale-label" for="locale" class="locale-label">Locale</label>
+				<select id="locale" class="locale-select">
+					<option value="en-US">English</option>
+					<option value="de-DE">Deutsch</option>
+				</select>
+			</div>
+		</dj-header>
+
+		<main class="page">
+			<p class="note">
+				A member directory over 500 deterministically generated rows: sort a
+				column, filter (quick box above the grid, per-column boxes under the
+				header), page through the set, and select rows. Edit and Add open a
+				validated dialog; Delete asks for confirmation. The locale switch
+				reformats the Joined and Balance columns; the theme toggle recolors
+				everything through the shared tokens. Serve from the components root
+				(npm run serve), then open /demos/records/.
+			</p>
+
+			<!-- Loading is simulated (600 ms) behind the loading indicator; the
+			     dj-skeleton candidate does not exist yet (see wa-candidates-spec.md),
+			     so this demo uses dj-loading-indicator per the spec's fallback. -->
+			<dj-loading-indicator id="loading" type="linear" aria-label="Loading members"></dj-loading-indicator>
+
+			<dj-data-grid id="grid" height="26rem" selection-mode="multiple"></dj-data-grid>
+			<p id="selection" class="selection" aria-live="polite">No rows selected.</p>
+		</main>
+
+		<!-- Add / Edit dialog. One dialog serves both; the script sets the mode. -->
+		<dj-dialog id="dialog" role="alertdialog">
+			<span slot="title" id="dialog-title">Edit member</span>
+			<form id="record-form" class="record-form">
+				<dj-text-input id="f-name" name="name" label="Name" required autocomplete="off"></dj-text-input>
+				<dj-email-input id="f-email" name="email" label="Email" required autocomplete="off"></dj-email-input>
+				<!-- Native selects: no dj-popup, so they work inside the transformed dialog. -->
+				<dj-native-select id="f-role" name="role" label="Role"></dj-native-select>
+				<dj-native-select id="f-status" name="status" label="Status"></dj-native-select>
+			</form>
+			<div slot="actions" class="dialog-actions">
+				<dj-button id="dialog-cancel" kind="text">Cancel</dj-button>
+				<dj-button id="dialog-save" kind="contained">Save</dj-button>
+			</div>
+		</dj-dialog>
+
+		<dj-snackbar id="snackbar"></dj-snackbar>
+
+		<script type="module" src="./records.mjs"></script>
+	</body>
+</html>

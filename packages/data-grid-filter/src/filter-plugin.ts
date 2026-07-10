@@ -59,11 +59,17 @@ export function filterPlugin({ quick = true }: FilterOptions = {}): DataGridPlug
 			if (!anyFilter) return undefined;
 
 			return cols.map((leaf): TemplateResult | null => {
-				const kind = ctx.host.columns.find((c) => c.id === leaf.id)?.filter;
+				const col = ctx.host.columns.find((c) => c.id === leaf.id);
+				const kind = col?.filter;
+				// The column header names the control, so the user sees what it filters without
+				// clicking: a placeholder on text filters, the "all" option label on selects.
+				const name = col?.header ?? leaf.id;
 				if (kind === "text") {
 					return html`<dj-text-input
-						label=${`Filter ${leaf.id}`}
+						style="width:100%"
+						label=${`Filter ${name}`}
 						label-hidden
+						placeholder=${name}
 						@input=${(e: Event) => { const v = valueOf(e); debounce(leaf.id, () => leaf.setFilterValue(v || undefined)); }}
 					></dj-text-input>`;
 				}
@@ -73,10 +79,11 @@ export function filterPlugin({ quick = true }: FilterOptions = {}): DataGridPlug
 						.map(String)
 						.sort();
 					return html`<select
-						aria-label=${`Filter ${leaf.id}`}
+						style="width:100%; min-width:0"
+						aria-label=${`Filter ${name}`}
 						@change=${(e: Event) => { const v = valueOf(e); leaf.setFilterValue(v || undefined); }}
 					>
-						<option value="">All</option>
+						<option value="">All ${name}</option>
 						${uniques.map((u) => html`<option value=${u}>${u}</option>`)}
 					</select>`;
 				}

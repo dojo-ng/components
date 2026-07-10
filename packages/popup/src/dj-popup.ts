@@ -191,9 +191,27 @@ export class DjPopup extends DojoElement {
 		}
 	}
 
+	/** Promote the popup into the browser top layer so ancestor transforms, clipping,
+	 *  overflow, and z-index contexts don't affect it. No-op where the Popover API is
+	 *  absent (e.g. the headless test DOM) or already shown; on an unexpected failure it
+	 *  drops the attribute so the container still renders in place. */
+	private promoteTopLayer() {
+		const layer = this.renderRoot?.querySelector<HTMLElement>(".layer");
+		if (!layer || typeof (layer as { showPopover?: unknown }).showPopover !== "function") return;
+		if (layer.matches(":popover-open")) return;
+		try {
+			(layer as unknown as { showPopover(): void }).showPopover();
+		} catch {
+			layer.removeAttribute("popover");
+		}
+	}
+
 	protected override updated(changed: Map<PropertyKey, unknown>) {
 		if (changed.has("open")) {
 			if (this.open) {
+				// Enter the top layer BEFORE reposition() measures the wrapper — a popover is
+				// display:none until shown, which would yield a zero-size rect.
+				this.promoteTopLayer();
 				if (this.scrollLock) this.lockScroll();
 			} else {
 				this.unlockScroll();
@@ -209,14 +227,20 @@ export class DjPopup extends DojoElement {
 
 	override render() {
 		if (!this.open) return nothing;
+		// The underlay and wrapper live inside a top-layer container. `popover="manual"`
+		// promotes it out of any transformed/clipping ancestor once #promoteTopLayer()
+		// calls showPopover(); browsers without the Popover API ignore the attribute and
+		// render it in place (the prior in-shadow behavior).
 		return html`
-			<div
-				part="underlay"
-				class="underlay ${this.underlayVisible ? "underlay--visible" : ""}"
-				@click=${this.close}
-			></div>
-			<div part="wrapper" class="wrapper">
-				<slot></slot>
+			<div part="layer" class="layer" popover="manual">
+				<div
+					part="underlay"
+					class="underlay ${this.underlayVisible ? "underlay--visible" : ""}"
+					@click=${this.close}
+				></div>
+				<div part="wrapper" class="wrapper">
+					<slot></slot>
+				</div>
 			</div>
 		`;
 	}

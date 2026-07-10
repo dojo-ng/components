@@ -269,7 +269,12 @@ export class DjDataGrid extends DojoElement {
 	}
 
 	override render() {
-		const template = this.#computeColumns().map((c) => c.width ?? "1fr").join(" ");
+		// `minmax(0, 1fr)`, not `1fr` (= `minmax(auto, 1fr)`): the header, each subheader,
+		// and each body row are separate grid containers, so an `auto` minimum would let a
+		// row with wide content (e.g. a native <select> filter) grow its tracks independently
+		// and drift out of alignment with the header. A 0 minimum makes every row resolve the
+		// same track widths; cells ellipsize.
+		const template = this.#computeColumns().map((c) => c.width ?? "minmax(0, 1fr)").join(" ");
 		const headers = this.#table?.getHeaderGroups()[0]?.headers ?? [];
 		this.#virtualizer?._willUpdate();
 		const items = this.#virtualizer?.getVirtualItems() ?? [];

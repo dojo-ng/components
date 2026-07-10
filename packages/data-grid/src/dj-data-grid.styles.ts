@@ -8,8 +8,10 @@ export default css`
 	.row { display: grid; align-items: center; }
 	.head { position: sticky; top: 0; z-index: 1; background: var(--dj-color-neutral-50, #f9fafb); border-bottom: 1px solid var(--dj-color-border, #d1d5db); }
 	.subhead { background: var(--dj-color-neutral-50, #f9fafb); border-bottom: 1px solid var(--dj-color-border, #d1d5db); }
-	.subcell { padding: var(--dj-spacing-3x-small, .25rem) var(--dj-spacing-small, .75rem); }
-	.hcell { display: flex; align-items: center; gap: .25rem; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); font-weight: var(--dj-font-weight-semibold, 600); color: var(--dj-color-text-muted, #6b7280); user-select: none; }
+	/* min-width:0 on grid-item cells so they shrink to their track (paired with the
+	   minmax(0,1fr) template) instead of forcing the track wider and breaking alignment. */
+	.subcell { min-width: 0; padding: var(--dj-spacing-3x-small, .25rem) var(--dj-spacing-small, .75rem); }
+	.hcell { min-width: 0; overflow: hidden; display: flex; align-items: center; gap: .25rem; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); font-weight: var(--dj-font-weight-semibold, 600); color: var(--dj-color-text-muted, #6b7280); user-select: none; }
 	.hcell.sortable { cursor: pointer; } .hcell.sortable:hover { color: var(--dj-color-text, #1f2937); }
 	.sortind { display: inline-flex; opacity: .7; width: 1em; }
 	.scroll { overflow: auto; outline: none; }

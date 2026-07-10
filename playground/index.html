@@ -68,6 +68,7 @@
 					"@dojo-ng/chip-typeahead": "../packages/chip-typeahead/dist/index.js",
 					"@dojo-ng/text": "../packages/text/dist/index.js",
 					"@dojo-ng/stack": "../packages/stack/dist/index.js",
+					"@dojo-ng/split-panel": "../packages/split-panel/dist/index.js",
 					"@dojo-ng/two-column-layout": "../packages/two-column-layout/dist/index.js",
 					"@dojo-ng/three-column-layout": "../packages/three-column-layout/dist/index.js",
 					"@dojo-ng/header": "../packages/header/dist/index.js",
@@ -278,8 +279,20 @@
 			<dj-title-pane name="Section two"><p>Second.</p></dj-title-pane>
 		</dj-accordion>
 		<div class="row" style="align-items: stretch; gap: 1.5rem;">
-			<dj-tree id="tree" style="min-width: 12rem"></dj-tree>
 			<dj-grid id="grid" style="flex: 1 1 18rem"></dj-grid>
+		</div>
+
+		<h2>Tree (folders + MIME structure)</h2>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Icons + unread counts, controlled <code>expanded</code>, and the APG roving-tabindex keyboard: click a row to focus it, then arrows move focus (Right/Left expand/collapse or step in/out), Home/End jump, Enter selects. Switch the Locale to <code>ar-EG</code> to check RTL (indentation and chevrons flip).
+		</p>
+		<div class="row" style="align-items: stretch; gap: 1.5rem;">
+			<dj-tree id="tree-folders" value="inbox" style="min-width: 14rem"></dj-tree>
+			<dj-tree id="tree-mime" style="min-width: 16rem"></dj-tree>
+		</div>
+		<div class="row" style="gap: var(--dj-spacing-small); margin-block-start: 0.5rem">
+			<span id="tree-select" style="color: var(--dj-color-text-muted)">selected: inbox</span>
+			<span id="tree-expanded" style="color: var(--dj-color-text-muted)">expanded: archive</span>
 		</div>
 
 		<h2>Context menu, confirm popup, speed dial, snackbar</h2>
@@ -360,6 +373,21 @@
 			</dj-carousel>
 		</div>
 
+		<h2>Split panel</h2>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Drag the divider, or focus it and use the arrow keys (Shift for a larger step, Home/End for the extremes). Min pane sizes are the <code>--dj-split-panel-min-*</code> tokens. Switch the Locale to <code>ar-EG</code> to check RTL (drag and ArrowLeft/Right mirror). The right pane nests a vertical split.
+		</p>
+		<span id="split-state" style="color: var(--dj-color-text-muted)">position 30%</span>
+		<div style="height: 260px; border: 1px solid var(--dj-color-border); border-radius: 8px; overflow: hidden; margin-block-start: 0.5rem">
+			<dj-split-panel id="split-demo" position="30" style="height: 100%; --dj-split-panel-min-start: 120px; --dj-split-panel-min-end: 200px">
+				<div slot="start" style="padding: 0.75rem">Sidebar</div>
+				<dj-split-panel slot="end" orientation="vertical" position="65" style="height: 100%; --dj-split-panel-min-start: 80px; --dj-split-panel-min-end: 60px">
+					<div slot="start" style="padding: 0.75rem">Editor</div>
+					<div slot="end" style="padding: 0.75rem">Terminal</div>
+				</dj-split-panel>
+			</dj-split-panel>
+		</div>
+
 		<h2>Scoped theme island (always dark)</h2>
 		<dj-theme theme="dark"><div class="island"><div class="row"><dj-button kind="contained">Inside dark island</dj-button><dj-loading-indicator type="circular-small"></dj-loading-indicator></div></div></dj-theme>
 
@@ -404,6 +432,7 @@
 			import "@dojo-ng/button";
 			import "@dojo-ng/action-button";
 			import "@dojo-ng/icon";
+			import { registerIcons } from "@dojo-ng/icon";
 			import "@dojo-ng/label";
 			import "@dojo-ng/helper-text";
 			import "@dojo-ng/loading-indicator";
@@ -440,7 +469,7 @@
 			import "@dojo-ng/select";
 			import "@dojo-ng/typeahead";
 			import "@dojo-ng/chip-typeahead";
-			import "@dojo-ng/text"; import "@dojo-ng/stack"; import "@dojo-ng/two-column-layout"; import "@dojo-ng/three-column-layout";
+			import "@dojo-ng/text"; import "@dojo-ng/stack"; import "@dojo-ng/split-panel"; import "@dojo-ng/two-column-layout"; import "@dojo-ng/three-column-layout";
 			import "@dojo-ng/header"; import "@dojo-ng/progress"; import "@dojo-ng/breadcrumb-group"; import "@dojo-ng/snackbar";
 			import "@dojo-ng/global-event"; import "@dojo-ng/accordion"; import "@dojo-ng/checkbox-group"; import "@dojo-ng/rate";
 			import "@dojo-ng/form"; import "@dojo-ng/date-input"; import "@dojo-ng/time-picker"; import "@dojo-ng/popup-confirmation";
@@ -590,6 +619,12 @@
 				document.getElementById("carousel-state").textContent = `slide ${e.detail.index + 1}`;
 			});
 
+			// split-panel: show the settled position of the outer (horizontal) splitter
+			document.getElementById("split-demo").addEventListener("dj-reposition", (e) => {
+				if (e.target.id !== "split-demo") return; // ignore the nested splitter's events
+				document.getElementById("split-state").textContent = `position ${Math.round(e.detail.position)}%`;
+			});
+
 			// constrained-input validator (function property)
 			document.getElementById("username").validator = (v) => v.length < 3 ? "Must be at least 3 characters." : undefined;
 
@@ -667,10 +702,38 @@
 			document.getElementById("crumbs").items = [
 				{ label: "Home", href: "#" }, { label: "Library", href: "#" }, { label: "Components", current: true },
 			];
-			document.getElementById("tree").nodes = [
-				{ id: "src", label: "src", children: [{ id: "comp", label: "components", children: [{ id: "btn", label: "button" }] }, { id: "idx", label: "index.ts" }] },
-				{ id: "pkg", label: "package.json" },
+			registerIcons({
+				inbox: '<svg viewBox="0 0 24 24"><path d="M4 13h4l2 3h4l2-3h4M4 13V5h16v8M4 13v6h16v-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+				folder: '<svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+				mail: '<svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z M3 6l9 7 9-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+				doc: '<svg viewBox="0 0 24 24"><path d="M6 2h9l3 3v17H6z M15 2v4h4" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+			});
+			const folders = document.getElementById("tree-folders");
+			folders.expanded = ["archive"];
+			folders.nodes = [
+				{ id: "inbox", label: "Inbox", icon: "inbox", count: 12 },
+				{ id: "sent", label: "Sent", icon: "mail" },
+				{ id: "archive", label: "Archive", icon: "folder", children: [
+					{ id: "y2025", label: "2025", icon: "folder", count: 4 },
+					{ id: "y2024", label: "2024", icon: "folder" },
+				] },
+				{ id: "trash", label: "Trash", icon: "folder" },
 			];
+			const mime = document.getElementById("tree-mime");
+			mime.expanded = ["mixed", "alt"];
+			mime.nodes = [
+				{ id: "mixed", label: "multipart/mixed", icon: "doc", children: [
+					{ id: "alt", label: "multipart/alternative", icon: "doc", children: [
+						{ id: "text", label: "text/plain — 1.2 KB", icon: "doc" },
+						{ id: "html", label: "text/html — 4.8 KB", icon: "doc" },
+					] },
+					{ id: "pdf", label: "application/pdf — 82 KB", icon: "doc" },
+				] },
+			];
+			const treeSelect = document.getElementById("tree-select");
+			const treeExpanded = document.getElementById("tree-expanded");
+			folders.addEventListener("dj-select", (e) => { treeSelect.textContent = `selected: ${e.detail.id}`; });
+			folders.addEventListener("dj-expand-change", (e) => { treeExpanded.textContent = `expanded: ${e.detail.expandedIds.join(", ") || "(none)"}`; });
 			const grid = document.getElementById("grid");
 			grid.columns = [{ id: "name", title: "Name", sortable: true }, { id: "role", title: "Role", sortable: true }, { id: "age", title: "Age", sortable: true }];
 			grid.rows = [{ name: "Ada", role: "Engineer", age: 36 }, { name: "Bo", role: "Designer", age: 29 }, { name: "Cy", role: "PM", age: 42 }];

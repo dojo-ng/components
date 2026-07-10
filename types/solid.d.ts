@@ -56,6 +56,7 @@ import type { DjSlidePane } from "@dojo-ng/slide-pane";
 import type { DjSlider } from "@dojo-ng/slider";
 import type { DjSnackbar } from "@dojo-ng/snackbar";
 import type { DjSpeedDial } from "@dojo-ng/speed-dial";
+import type { DjSplitPanel } from "@dojo-ng/split-panel";
 import type { DjStack } from "@dojo-ng/stack";
 import type { DjSwitch } from "@dojo-ng/switch";
 import type { DjTabContainer } from "@dojo-ng/tab-container";
@@ -451,6 +452,11 @@ declare module "solid-js" {
         "open"?: DjSpeedDial["open"];
         "direction"?: DjSpeedDial["direction"];
       };
+      "dj-split-panel": JSX.HTMLAttributes<DjSplitPanel> & {
+        "orientation"?: DjSplitPanel["orientation"];
+        "position"?: DjSplitPanel["position"];
+        "disabled"?: DjSplitPanel["disabled"];
+      };
       "dj-stack": JSX.HTMLAttributes<DjStack> & {
         "direction"?: DjStack["direction"];
         "align"?: DjStack["align"];
@@ -556,6 +562,7 @@ declare module "solid-js" {
       "dj-tree": JSX.HTMLAttributes<DjTree> & {
         "nodes"?: DjTree["nodes"];
         "value"?: DjTree["value"];
+        "expanded"?: DjTree["expanded"];
       };
       "dj-trigger-popup": JSX.HTMLAttributes<DjTriggerPopup> & {
         "open"?: DjTriggerPopup["open"];
@@ -619,10 +626,12 @@ declare module "solid-js" {
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;
       "dj-toggle": CustomEvent;
+      "dj-reposition": CustomEvent;
       "dj-tab-close": CustomEvent;
       "dj-action": CustomEvent;
       "dj-after-enter": CustomEvent;
       "dj-after-leave": CustomEvent;
+      "dj-expand-change": CustomEvent;
       "dj-step": CustomEvent;
     }
     interface CustomCaptureEvents {
@@ -649,10 +658,12 @@ declare module "solid-js" {
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;
       "dj-toggle": CustomEvent;
+      "dj-reposition": CustomEvent;
       "dj-tab-close": CustomEvent;
       "dj-action": CustomEvent;
       "dj-after-enter": CustomEvent;
       "dj-after-leave": CustomEvent;
+      "dj-expand-change": CustomEvent;
       "dj-step": CustomEvent;
     }
   }

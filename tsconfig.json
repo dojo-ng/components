@@ -146,6 +146,9 @@
       "path": "packages/stack"
     },
     {
+      "path": "packages/split-panel"
+    },
+    {
       "path": "packages/two-column-layout"
     },
     {

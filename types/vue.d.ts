@@ -58,6 +58,7 @@ import type { DjSlidePane } from "@dojo-ng/slide-pane";
 import type { DjSlider } from "@dojo-ng/slider";
 import type { DjSnackbar } from "@dojo-ng/snackbar";
 import type { DjSpeedDial } from "@dojo-ng/speed-dial";
+import type { DjSplitPanel } from "@dojo-ng/split-panel";
 import type { DjStack } from "@dojo-ng/stack";
 import type { DjSwitch } from "@dojo-ng/switch";
 import type { DjTabContainer } from "@dojo-ng/tab-container";
@@ -134,6 +135,7 @@ declare module "@vue/runtime-core" {
     "dj-slider": DefineComponent<{ min?: DjSlider["min"]; max?: DjSlider["max"]; step?: DjSlider["step"]; value?: DjSlider["value"]; name?: DjSlider["name"]; label?: DjSlider["label"]; showOutput?: DjSlider["showOutput"]; disabled?: DjSlider["disabled"]; readonly?: DjSlider["readonly"]; required?: DjSlider["required"]; labelHidden?: DjSlider["labelHidden"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
     "dj-snackbar": DefineComponent<{ open?: DjSnackbar["open"]; type?: DjSnackbar["type"]; leading?: DjSnackbar["leading"]; stacked?: DjSnackbar["stacked"] }, {}, {}, {}, {}, {}, {}>;
     "dj-speed-dial": DefineComponent<{ open?: DjSpeedDial["open"]; direction?: DjSpeedDial["direction"] }, {}, {}, {}, {}, {}, { "dj-toggle": (e: CustomEvent) => void }>;
+    "dj-split-panel": DefineComponent<{ orientation?: DjSplitPanel["orientation"]; position?: DjSplitPanel["position"]; disabled?: DjSplitPanel["disabled"] }, {}, {}, {}, {}, {}, { "dj-reposition": (e: CustomEvent) => void }>;
     "dj-stack": DefineComponent<{ direction?: DjStack["direction"]; align?: DjStack["align"]; spacing?: DjStack["spacing"]; padding?: DjStack["padding"]; stretch?: DjStack["stretch"] }, {}, {}, {}, {}, {}, {}>;
     "dj-switch": DefineComponent<{ checked?: DjSwitch["checked"]; value?: DjSwitch["value"]; name?: DjSwitch["name"]; disabled?: DjSwitch["disabled"]; readonly?: DjSwitch["readonly"]; labelHidden?: DjSwitch["labelHidden"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
     "dj-tab-container": DefineComponent<{ tabs?: DjTabContainer["tabs"]; activeIndex?: DjTabContainer["activeIndex"]; alignButtons?: DjTabContainer["alignButtons"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void, "dj-tab-close": (e: CustomEvent) => void }>;
@@ -148,7 +150,7 @@ declare module "@vue/runtime-core" {
     "dj-tooltip": DefineComponent<{ open?: DjTooltip["open"]; orientation?: DjTooltip["orientation"] }, {}, {}, {}, {}, {}, {}>;
     "dj-transition": DefineComponent<{ show?: DjTransition["show"]; appear?: DjTransition["appear"]; state?: DjTransition["state"] }, {}, {}, {}, {}, {}, { "dj-after-enter": (e: CustomEvent) => void, "dj-after-leave": (e: CustomEvent) => void }>;
     "dj-transition-group": DefineComponent<{ show?: DjTransitionGroup["show"]; stagger?: DjTransitionGroup["stagger"] }, {}, {}, {}, {}, {}, {}>;
-    "dj-tree": DefineComponent<{ nodes?: DjTree["nodes"]; value?: DjTree["value"] }, {}, {}, {}, {}, {}, { "dj-select": (e: CustomEvent) => void }>;
+    "dj-tree": DefineComponent<{ nodes?: DjTree["nodes"]; value?: DjTree["value"]; expanded?: DjTree["expanded"] }, {}, {}, {}, {}, {}, { "dj-expand-change": (e: CustomEvent) => void, "dj-select": (e: CustomEvent) => void }>;
     "dj-trigger-popup": DefineComponent<{ open?: DjTriggerPopup["open"]; position?: DjTriggerPopup["position"]; matchWidth?: DjTriggerPopup["matchWidth"]; underlayVisible?: DjTriggerPopup["underlayVisible"] }, {}, {}, {}, {}, {}, { "dj-open": (e: CustomEvent) => void }>;
     "dj-two-column-layout": DefineComponent<{ bias?: DjTwoColumnLayout["bias"] }, {}, {}, {}, {}, {}, {}>;
     "dj-typeahead": DefineComponent<{ options?: DjTypeahead["options"]; value?: DjTypeahead["value"]; name?: DjTypeahead["name"]; label?: DjTypeahead["label"]; placeholder?: DjTypeahead["placeholder"]; helperText?: DjTypeahead["helperText"]; disabled?: DjTypeahead["disabled"]; required?: DjTypeahead["required"]; strict?: DjTypeahead["strict"]; position?: DjTypeahead["position"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;

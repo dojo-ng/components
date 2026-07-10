@@ -7650,6 +7650,152 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/split-panel/src/dj-split-panel.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjSplitPanel",
+          "customElement": true,
+          "tagName": "dj-split-panel",
+          "description": "two resizable panes with a draggable divider between them. The `start` and `end` slots hold the panes; the divider is a shadow-side bar (put custom grip content in the optional `divider` slot). `position` is the start pane's share as a percent (0\u2013100); the layout is a CSS grid whose start/end tracks are `position`fr and `(100 \u2212 position)`fr, so the panes always divide in that ratio. Minimum pane sizes come from CSS, not props: the tracks are `minmax(var(--dj-split-panel-min-start), \u2026)` / `minmax(var(--dj-split-panel-min-end), \u2026)`, so a consumer sets a floor in any length unit and the browser clamps the drag against it. The host needs a size (for `horizontal`, a height) since the panes fill it. `orientation=\"horizontal\"` (default) puts the panes side by side with a vertical divider; `vertical` stacks them with a horizontal divider. Column order follows the host's writing direction, so in RTL the start pane sits on the right with no extra work. The divider is a `role=\"separator\"` with `aria-valuenow/valuemin/valuemax` tracking `position` and `aria-orientation` set to the divider's own visual axis (vertical for a horizontal split). Dragging uses pointer events with pointer capture, so mouse, trackpad, and touch all work; the divider position is read from the pointer's offset within the host rect (RTL-mirrored for a horizontal split \u2014 a pointer at the visual left is 100%). Because dragging is a pointer gesture, WCAG 2.5.7 needs a non-drag path: the focused divider takes Arrow keys (\u00b11, Shift = \u00b110) mapped through reading direction for horizontal and Up/Down for vertical, plus Home (0) and End (100). `dj-reposition` fires on settle: once on pointer-up for a drag, and once per keypress.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "orientation",
+              "type": {
+                "text": "\"horizontal\" | \"vertical\""
+              },
+              "default": "\"horizontal\"",
+              "description": "Layout axis. `horizontal` = panes side by side (vertical divider); `vertical` = stacked.",
+              "attribute": "orientation",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "position",
+              "type": {
+                "text": "number"
+              },
+              "default": "50",
+              "description": "The start pane's share of the host, as a percent (0\u2013100).",
+              "attribute": "position",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "When set, the divider is inert (no drag, no keyboard, not a tab stop).",
+              "attribute": "disabled",
+              "reflects": true
+            }
+          ],
+          "attributes": [
+            {
+              "name": "orientation",
+              "type": {
+                "text": "\"horizontal\" | \"vertical\""
+              },
+              "fieldName": "orientation",
+              "description": "Layout axis. `horizontal` = panes side by side (vertical divider); `vertical` = stacked."
+            },
+            {
+              "name": "position",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "position",
+              "description": "The start pane's share of the host, as a percent (0\u2013100)."
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "disabled",
+              "description": "When set, the divider is inert (no drag, no keyboard, not a tab stop)."
+            }
+          ],
+          "slots": [
+            {
+              "name": "start",
+              "description": ""
+            },
+            {
+              "name": "divider",
+              "description": ""
+            },
+            {
+              "name": "end",
+              "description": ""
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "start",
+              "description": ""
+            },
+            {
+              "name": "end",
+              "description": ""
+            },
+            {
+              "name": "divider",
+              "description": ""
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-split-panel-min-start",
+              "default": "0",
+              "description": "Minimum size of the start pane (any length)."
+            },
+            {
+              "name": "--dj-split-panel-min-end",
+              "default": "0",
+              "description": "Minimum size of the end pane (any length)."
+            },
+            {
+              "name": "--dj-split-panel-divider-width",
+              "default": "4px",
+              "description": "Thickness of the divider bar."
+            },
+            {
+              "name": "--dj-split-panel-divider-color",
+              "default": "var(--dj-color-border)",
+              "description": "Divider bar color."
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-reposition",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ position }`"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-split-panel",
+          "declaration": {
+            "name": "DjSplitPanel",
+            "module": "packages/split-panel/src/dj-split-panel.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/stack/src/stack.ts",
       "declarations": [
         {
@@ -9734,7 +9880,7 @@
           "name": "DjTree",
           "customElement": true,
           "tagName": "dj-tree",
-          "description": "a hierarchical tree from `nodes`. Click a parent's chevron to expand; click a node to select. Emits `dj-select` with the id. Functional core (no virtualization/drag/checkboxes yet).",
+          "description": "a hierarchical tree from `nodes`. Each node may carry an `icon` (a registered icon name) and a `count` (a trailing badge, e.g. an unread count). Selection is controlled by `value` (a node id) and emits `dj-select`; expansion is controlled by `expanded` (an array of node ids) and emits `dj-expand-change`. The component knows nothing about what the tree holds \u2014 a file tree, a mail folder list, or a MIME structure are all just nodes. Keyboard follows the APG tree pattern with a roving tabindex: exactly one row is tabbable (the selected row if visible, else the first visible row), and the arrow keys move focus without selecting. Down/Up walk the visible rows; Right expands a closed parent, steps into an open one, and does nothing on a leaf; Left collapses an open parent or moves to the parent row; Home/End jump to the first/last visible row; Enter or Space selects the focused row. Indentation is a logical `margin-inline-start`, so it flips in RTL, and the chevron mirrors with the reading direction. Deferred (not built): drag-drop, virtualization, checkboxes, lazy loading.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -9746,6 +9892,7 @@
                 "text": "TreeNode[]"
               },
               "default": "[]",
+              "description": "The tree data.",
               "attribute": "nodes"
             },
             {
@@ -9755,7 +9902,18 @@
                 "text": "string"
               },
               "default": "\"\"",
+              "description": "The selected node id.",
               "attribute": "value"
+            },
+            {
+              "kind": "field",
+              "name": "expanded",
+              "type": {
+                "text": "string[]"
+              },
+              "default": "[]",
+              "description": "The expanded node ids (controlled). Toggling updates this and emits `dj-expand-change`.",
+              "attribute": "expanded"
             }
           ],
           "attributes": [
@@ -9764,23 +9922,76 @@
               "type": {
                 "text": "TreeNode[]"
               },
-              "fieldName": "nodes"
+              "fieldName": "nodes",
+              "description": "The tree data."
             },
             {
               "name": "value",
               "type": {
                 "text": "string"
               },
-              "fieldName": "value"
+              "fieldName": "value",
+              "description": "The selected node id."
+            },
+            {
+              "name": "expanded",
+              "type": {
+                "text": "string[]"
+              },
+              "fieldName": "expanded",
+              "description": "The expanded node ids (controlled). Toggling updates this and emits `dj-expand-change`."
+            }
+          ],
+          "slots": [
+            {
+              "name": "none",
+              "description": "content comes from `nodes`"
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "row",
+              "description": "a node's clickable line"
+            },
+            {
+              "name": "chevron",
+              "description": ""
+            },
+            {
+              "name": "label",
+              "description": ""
+            },
+            {
+              "name": "count",
+              "description": ""
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-tree-indent",
+              "default": "1.1rem",
+              "description": "Indentation added per nesting level."
+            },
+            {
+              "name": "--dj-tree-count-color",
+              "default": "var(--dj-color-text-muted)",
+              "description": "Color of the trailing count badge."
             }
           ],
           "events": [
+            {
+              "name": "dj-expand-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ id, expanded, expandedIds }`"
+            },
             {
               "name": "dj-select",
               "type": {
                 "text": "CustomEvent"
               },
-              "description": ""
+              "description": "detail `{ id }`"
             }
           ]
         }

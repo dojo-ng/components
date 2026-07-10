@@ -30,6 +30,8 @@ NOTES = {
     "transition": "The component defines no effects itself: it reflects a `state` attribute you animate with page CSS. Enter effects must be `@keyframes` animations on `dj-transition[state=\"entering\"]`; enter-by-transition is not supported. Leave effects may be an animation on `[state=\"leaving\"]` or transitioned properties.",
     "transition-group": "Coordinates slotted `dj-transition` children only (v1 is stagger, no list-move animation). The effects live on the children; the group just drives their `show` with a delay. Set `appear` on the children directly.",
     "carousel": "Swiping is native scroll-snap, so touch and trackpad work with no drag code and no WCAG 2.5.7 concern; the prev/next buttons are the non-drag path. `loop`, autoplay, and vertical orientation are intentionally not built (autoplay is an accessibility liability). Under `prefers-reduced-motion` button navigation jumps instantly instead of smooth-scrolling. Give the carousel a `label` so the region has an accessible name.",
+    "split-panel": "The host needs a size the panes can fill: for a horizontal split give it a height (width comes from the flow). Minimum pane sizes are CSS, not props — set `--dj-split-panel-min-start` and `--dj-split-panel-min-end` to any length and the browser clamps the drag against them. Dragging is a pointer gesture, so the divider also takes the keyboard for WCAG 2.5.7: focus it and use the arrow keys (Shift for a larger step), Home, and End. For a three-pane layout, nest one `dj-split-panel` inside a slot of another.",
+    "tree": "Selection and expansion are both controlled: `value` is the selected node id (emits `dj-select`) and `expanded` is an array of open node ids (emits `dj-expand-change` with `{ id, expanded, expandedIds }`). Node `icon` names must be registered with `registerIcon`/`registerIcons` from `@dojo-ng/icon`; `count` renders as a trailing badge. Keyboard is the APG tree pattern with a roving tabindex — only one row is ever a tab stop, arrows move focus without selecting (Right/Left expand/collapse or move in/out, Home/End jump), and Enter or Space selects. Style indentation with `--dj-tree-indent` and the count with `--dj-tree-count-color`. Not built yet: drag-drop, virtualization, checkboxes, lazy loading.",
 }
 
 # Worked examples per package: list of (title, description, code). The first is used as the
@@ -202,8 +204,8 @@ EXAMPLES = {
    '<dj-speed-dial id="sd"></dj-speed-dial>\n<script type="module">\n  import "@dojo-ng/speed-dial";\n  document.getElementById("sd").actions = [{ label: "Copy" }, { label: "Share" }];\n</script>'),
  ],
  "tree": [
-  ("Hierarchy", "Provide `nodes`; `value` is the selected node id.",
-   '<dj-tree id="tr" value="src"></dj-tree>\n<script type="module">\n  import "@dojo-ng/tree";\n  document.getElementById("tr").nodes = [\n    { id: "src", label: "src", children: [{ id: "index", label: "index.ts" }] },\n  ];\n</script>'),
+  ("Mail folder tree", "Each node can carry an `icon` (a registered icon name) and a `count` (a trailing badge, e.g. unread mail). `value` is the selected node id and `expanded` is the controlled array of open node ids; the tree emits `dj-select` and `dj-expand-change`. Keyboard is the APG tree pattern with a roving tabindex — arrows move focus (Right/Left expand/collapse), Enter selects.",
+   '<dj-tree id="folders" value="inbox"></dj-tree>\n<script type="module">\n  import "@dojo-ng/tree";\n  import { registerIcons } from "@dojo-ng/icon";\n  registerIcons({\n    inbox: \'<svg viewBox="0 0 24 24"><path d="M4 13h4l2 3h4l2-3h4M4 13V5h16v8M4 13v6h16v-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>\',\n    folder: \'<svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z" fill="none" stroke="currentColor" stroke-width="2"/></svg>\',\n  });\n  const t = document.getElementById("folders");\n  t.expanded = ["archive"];\n  t.nodes = [\n    { id: "inbox", label: "Inbox", icon: "inbox", count: 12 },\n    { id: "archive", label: "Archive", icon: "folder", children: [\n      { id: "y2025", label: "2025", icon: "folder" },\n      { id: "y2024", label: "2024", icon: "folder" },\n    ] },\n    { id: "trash", label: "Trash", icon: "folder" },\n  ];\n  t.addEventListener("dj-select", (e) => console.log("select", e.detail.id));\n  t.addEventListener("dj-expand-change", (e) => console.log("expanded", e.detail.expandedIds));\n</script>'),
  ],
  "list": [
   ("Selectable list", "Provide `options`; read `value` from the `change` event.",
@@ -264,6 +266,12 @@ EXAMPLES = {
  "carousel": [
   ("Swipeable carousel", "Each top-level slotted element is one item. `per-view` shows N at once (gap-adjusted), `dots` adds a dot per navigable page (pages = items − per-view + 1), and `nav` (default) shows prev/next buttons that disable at the ends. Swiping is native scroll-snap. `dj-slide-change` fires with the settled `{ index }`. Give it a `label` for the region.",
    '<dj-carousel label="Featured" per-view="2" dots>\n  <dj-card>One</dj-card>\n  <dj-card>Two</dj-card>\n  <dj-card>Three</dj-card>\n</dj-carousel>\n<script type="module">\n  import "@dojo-ng/carousel";\n  import "@dojo-ng/card";\n  const c = document.querySelector("dj-carousel");\n  c.addEventListener("dj-slide-change", (e) => console.log("slide", e.detail.index));\n</script>'),
+ ],
+ "split-panel": [
+  ("Resizable split", "Slot `start` and `end` panes; drag the divider or focus it and use the arrow keys. `position` is the start pane's percent share. `dj-reposition` fires with the settled `{ position }`. Min pane sizes come from the `--dj-split-panel-min-*` tokens, not props.",
+   '<dj-split-panel position="40"\n  style="height: 300px; --dj-split-panel-min-start: 120px; --dj-split-panel-min-end: 160px">\n  <div slot="start">Sidebar</div>\n  <div slot="end">Content</div>\n</dj-split-panel>\n<script type="module">\n  import "@dojo-ng/split-panel";\n  const sp = document.querySelector("dj-split-panel");\n  sp.addEventListener("dj-reposition", (e) => console.log("position", e.detail.position));\n</script>'),
+  ("Three panes (nested)", "Nest a splitter in a slot for a third pane. Here the end pane is itself a vertical split.",
+   '<dj-split-panel style="height: 400px" position="30">\n  <nav slot="start">Files</nav>\n  <dj-split-panel slot="end" orientation="vertical" position="70">\n    <main slot="start">Editor</main>\n    <div slot="end">Terminal</div>\n  </dj-split-panel>\n</dj-split-panel>'),
  ],
  "two-column-layout": [
   ("Two columns", "Slot `leading` and `trailing` content.",

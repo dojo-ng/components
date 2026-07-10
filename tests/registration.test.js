@@ -60,6 +60,7 @@ const ELEMENT_PACKAGES = [
 	"slider",
 	"snackbar",
 	"speed-dial",
+	"split-panel",
 	"stack",
 	"switch",
 	"tab-container",

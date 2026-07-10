@@ -62,6 +62,7 @@ import type { DjSlidePane } from "@dojo-ng/slide-pane";
 import type { DjSlider } from "@dojo-ng/slider";
 import type { DjSnackbar } from "@dojo-ng/snackbar";
 import type { DjSpeedDial } from "@dojo-ng/speed-dial";
+import type { DjSplitPanel } from "@dojo-ng/split-panel";
 import type { DjStack } from "@dojo-ng/stack";
 import type { DjSwitch } from "@dojo-ng/switch";
 import type { DjTabContainer } from "@dojo-ng/tab-container";
@@ -457,6 +458,11 @@ declare module "@dojo-ng/framework" {
         "open"?: DjSpeedDial["open"];
         "direction"?: DjSpeedDial["direction"];
       };
+      "dj-split-panel": DjVNodeBase & {
+        "orientation"?: DjSplitPanel["orientation"];
+        "position"?: DjSplitPanel["position"];
+        "disabled"?: DjSplitPanel["disabled"];
+      };
       "dj-stack": DjVNodeBase & {
         "direction"?: DjStack["direction"];
         "align"?: DjStack["align"];
@@ -562,6 +568,7 @@ declare module "@dojo-ng/framework" {
       "dj-tree": DjVNodeBase & {
         "nodes"?: DjTree["nodes"];
         "value"?: DjTree["value"];
+        "expanded"?: DjTree["expanded"];
       };
       "dj-trigger-popup": DjVNodeBase & {
         "open"?: DjTriggerPopup["open"];

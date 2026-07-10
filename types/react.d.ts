@@ -58,6 +58,7 @@ import type { DjSlidePane } from "@dojo-ng/slide-pane";
 import type { DjSlider } from "@dojo-ng/slider";
 import type { DjSnackbar } from "@dojo-ng/snackbar";
 import type { DjSpeedDial } from "@dojo-ng/speed-dial";
+import type { DjSplitPanel } from "@dojo-ng/split-panel";
 import type { DjStack } from "@dojo-ng/stack";
 import type { DjSwitch } from "@dojo-ng/switch";
 import type { DjTabContainer } from "@dojo-ng/tab-container";
@@ -455,6 +456,11 @@ declare module "react" {
         "open"?: DjSpeedDial["open"];
         "direction"?: DjSpeedDial["direction"];
       };
+      "dj-split-panel": DjProps<DjSplitPanel> & {
+        "orientation"?: DjSplitPanel["orientation"];
+        "position"?: DjSplitPanel["position"];
+        "disabled"?: DjSplitPanel["disabled"];
+      };
       "dj-stack": DjProps<DjStack> & {
         "direction"?: DjStack["direction"];
         "align"?: DjStack["align"];
@@ -560,6 +566,7 @@ declare module "react" {
       "dj-tree": DjProps<DjTree> & {
         "nodes"?: DjTree["nodes"];
         "value"?: DjTree["value"];
+        "expanded"?: DjTree["expanded"];
       };
       "dj-trigger-popup": DjProps<DjTriggerPopup> & {
         "open"?: DjTriggerPopup["open"];

@@ -2378,7 +2378,7 @@
           "name": "DjChipTypeahead",
           "customElement": true,
           "tagName": "dj-chip-typeahead",
-          "description": "multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>`, selections render as removable `<dj-chip>`s. Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values).",
+          "description": "multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>`, selections render as removable `<dj-chip>`s. Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values). With `allow-new`, Enter on non-empty input text creates a chip from the literal trimmed value (a free-text tag), unless the popup has an active (highlighted) option \u2014 that keeps picking. New values respect `duplicates`, clear the input, and join the form value like picked ones. Only Enter commits; comma is left alone (it is a valid character in many locales).",
           "superclass": {
             "name": "DojoElement"
           },
@@ -2444,6 +2444,17 @@
               },
               "default": "false",
               "attribute": "duplicates"
+            },
+            {
+              "kind": "field",
+              "name": "allowNew",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Allow Enter to create a chip from free-typed text that matches no option.",
+              "attribute": "allow-new",
+              "reflects": true
             },
             {
               "kind": "field",
@@ -2538,6 +2549,14 @@
                 "text": "boolean"
               },
               "fieldName": "duplicates"
+            },
+            {
+              "name": "allow-new",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "allowNew",
+              "description": "Allow Enter to create a chip from free-typed text that matches no option."
             },
             {
               "name": "position",

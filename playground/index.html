@@ -202,6 +202,7 @@
 			<dj-select id="select" label="Fruit" placeholder="Pick one…"></dj-select>
 			<dj-typeahead id="typeahead" label="Search fruit"></dj-typeahead>
 			<dj-chip-typeahead id="chip-typeahead" label="Pick several"></dj-chip-typeahead>
+			<dj-chip-typeahead id="chip-typeahead-new" allow-new label="Tags (type a new one + Enter)"></dj-chip-typeahead>
 		</div>
 
 		<h2>List</h2>
@@ -754,6 +755,9 @@
 			document.getElementById("select").options = fruit;
 			document.getElementById("typeahead").options = fruit;
 			document.getElementById("chip-typeahead").options = fruit;
+			document.getElementById("chip-typeahead-new").options = [
+				{ value: "urgent", label: "urgent" }, { value: "later", label: "later" }, { value: "waiting", label: "waiting" },
+			];
 
 			// List options + readout
 			const list = document.getElementById("list");

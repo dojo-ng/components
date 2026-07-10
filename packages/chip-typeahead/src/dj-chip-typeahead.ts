@@ -5,7 +5,7 @@ import "@dojo-ng/chip";
 import "@dojo-ng/popup";
 import "@dojo-ng/list";
 import "@dojo-ng/label";
-import type { ListOption } from "@dojo-ng/list";
+import type { ListOption, DjList } from "@dojo-ng/list";
 import type { PopupPosition } from "@dojo-ng/popup";
 import styles from "./dj-chip-typeahead.styles.js";
 
@@ -14,6 +14,11 @@ import styles from "./dj-chip-typeahead.styles.js";
  * popup `<dj-list>`, selections render as removable `<dj-chip>`s. Backspace on an empty
  * input removes the last chip. Form-associated (submits each value under `name`). Composes
  * chip, list, popup, label. Event: `change` (detail: selected values).
+ *
+ * With `allow-new`, Enter on non-empty input text creates a chip from the literal trimmed value
+ * (a free-text tag), unless the popup has an active (highlighted) option — that keeps picking.
+ * New values respect `duplicates`, clear the input, and join the form value like picked ones.
+ * Only Enter commits; comma is left alone (it is a valid character in many locales).
  */
 export class DjChipTypeahead extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = styles;
@@ -31,6 +36,8 @@ export class DjChipTypeahead extends FormControl(DojoElement) implements Partial
 	@property() placeholder?: string;
 	@property({ type: Boolean, reflect: true }) disabled = false;
 	@property({ type: Boolean }) duplicates = false;
+	/** Allow Enter to create a chip from free-typed text that matches no option. */
+	@property({ type: Boolean, reflect: true, attribute: "allow-new" }) allowNew = false;
 	@property({ reflect: true }) position: PopupPosition = "below";
 	@state() private open = false;
 	@state() private query = "";
@@ -83,6 +90,15 @@ export class DjChipTypeahead extends FormControl(DojoElement) implements Partial
 	private onKey(e: KeyboardEvent) {
 		if (e.key === "Backspace" && this.query === "" && this.value.length) { this.removeValue(this.value[this.value.length - 1]); }
 		else if (e.key === "ArrowDown") { e.preventDefault(); this.open = true; void this.updateComplete.then(() => this.renderRoot.querySelector<HTMLElement & { focus(): void }>("dj-list")?.focus()); }
+		else if (e.key === "Enter" && this.allowNew) {
+			const text = this.query.trim();
+			if (!text) return;
+			// A highlighted popup option keeps its pick behavior; otherwise create a literal chip.
+			const list = this.renderRoot.querySelector<DjList>("dj-list");
+			if (list?.chooseActive()) { e.preventDefault(); return; }
+			e.preventDefault();
+			this.add(text);
+		}
 		else if (e.key === "Escape") { this.open = false; }
 	}
 	private onSelect(e: Event) { this.add((e.target as HTMLElement & { value: string }).value); this.input?.focus(); }

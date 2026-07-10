@@ -200,6 +200,7 @@ declare module "solid-js" {
         "placeholder"?: DjChipTypeahead["placeholder"];
         "disabled"?: DjChipTypeahead["disabled"];
         "duplicates"?: DjChipTypeahead["duplicates"];
+        "allow-new"?: DjChipTypeahead["allowNew"];
         "position"?: DjChipTypeahead["position"];
       };
       "dj-color-picker": JSX.HTMLAttributes<DjColorPicker> & {

@@ -204,6 +204,7 @@ declare module "react" {
         "placeholder"?: DjChipTypeahead["placeholder"];
         "disabled"?: DjChipTypeahead["disabled"];
         "duplicates"?: DjChipTypeahead["duplicates"];
+        "allow-new"?: DjChipTypeahead["allowNew"];
         "position"?: DjChipTypeahead["position"];
       };
       "dj-color-picker": DjProps<DjColorPicker> & {

@@ -12,6 +12,7 @@ const EN: Record<string, string> = {
 	chooseFile: "Choose file",
 	chooseFiles: "Choose files",
 	dropHint: "or drop files here",
+	dropzone: "Drop or paste files here",
 	removeFile: "Remove {name}",
 	fileTooLarge: "{name} exceeds the maximum size",
 };
@@ -20,11 +21,13 @@ registerDefaults("dj", EN);
 const CLOSE_ICON = html`<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
 
 /**
- * `<dj-file-input>` — a form-associated file selector with a button (opens the OS picker) and a drop
- * zone. Selected files are copied into component state, shown as a removable list; the element only
- * SELECTS files (no upload/preview). Form value: a single `File` normally, or a `FormData` with one
- * entry per file (under `name`) when `multiple`. Parts: `button`, `dropzone`, `list`, `item`,
- * `remove`. Event: `dj-change` (`{ files }`) on add and remove.
+ * `<dj-file-input>` — a form-associated file selector with a button (opens the OS picker) and a
+ * focusable drop zone. Files arrive by picker, drop, paste (a screenshot pasted while the drop zone
+ * has focus), or the public `addFiles` method; all four route through one intake that applies
+ * `accept` + `multiple` + max-size. Selected files are copied into component state, shown as a
+ * removable list; the element only SELECTS files (no upload/preview). Form value: a single `File`
+ * normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`,
+ * `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.
  */
 export class DjFileInput extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles: CSSResultGroup = styles;
@@ -49,6 +52,7 @@ export class DjFileInput extends FormControl(DojoElement) implements Partial<Doj
 	constructor() {
 		super();
 		this.#internals = this.attachInternals();
+		this.addEventListener("paste", this.#onPaste);
 	}
 
 	/** The currently selected files (read-only). */
@@ -60,7 +64,8 @@ export class DjFileInput extends FormControl(DojoElement) implements Partial<Doj
 	reportValidity(): boolean { return this.#internals.reportValidity(); }
 
 	override focus(options?: FocusOptions) {
-		this.shadowRoot?.querySelector<HTMLElement>("[part=button]")?.focus(options);
+		// Focus the dropzone: it is the drop/paste surface, so a keyboard user landing here can paste.
+		this.shadowRoot?.querySelector<HTMLElement>("[part=dropzone]")?.focus(options);
 	}
 
 	/** Remove all selected files (no `dj-change`). */
@@ -101,9 +106,14 @@ export class DjFileInput extends FormControl(DojoElement) implements Partial<Doj
 		}
 	}
 
-	/** Add files from a picker or drop, applying accept + multiple + max-size. Emits `dj-change`. */
-	#add(incoming: File[]) {
-		const accepted = incoming.filter((f) => matchesAccept(f, this.accept));
+	/**
+	 * Add files from any source, applying `accept` + `multiple` + `max-size`; appends, or replaces when
+	 * not `multiple`. Emits `dj-change`. This is the single intake path — the picker, drop, and paste all
+	 * route through it, and the app can call it to forward files captured elsewhere (e.g. a paste into the
+	 * compose body or a drop on the whole pane).
+	 */
+	addFiles(incoming: File[] | FileList) {
+		const accepted = Array.from(incoming).filter((f) => matchesAccept(f, this.accept));
 		const candidates = this.multiple ? accepted : accepted.slice(0, 1);
 		let sizeError: string | undefined;
 		const withinSize = candidates.filter((f) => {
@@ -128,7 +138,7 @@ export class DjFileInput extends FormControl(DojoElement) implements Partial<Doj
 	#openPicker = () => { if (!this.isDisabled) this.native.click(); };
 	#onNativeChange = (e: Event) => {
 		const input = e.target as HTMLInputElement;
-		this.#add(Array.from(input.files ?? []));
+		this.addFiles(input.files ?? []);
 		input.value = ""; // allow re-selecting the same file
 	};
 	#onDragOver = (e: DragEvent) => { if (this.isDisabled) return; e.preventDefault(); this.dragging = true; };
@@ -137,8 +147,22 @@ export class DjFileInput extends FormControl(DojoElement) implements Partial<Doj
 		if (this.isDisabled) return;
 		e.preventDefault();
 		this.dragging = false;
-		this.#add(Array.from(e.dataTransfer?.files ?? []));
+		this.addFiles(e.dataTransfer?.files ?? []);
 	};
+	// Paste of a file (e.g. a screenshot) while the control has focus routes through the same intake.
+	#onPaste = (e: ClipboardEvent) => {
+		if (this.isDisabled || !this.#hasFocus()) return;
+		const files = e.clipboardData?.files;
+		if (files && files.length) {
+			e.preventDefault();
+			this.addFiles(files);
+		}
+	};
+
+	/** Whether focus is inside the control (the delegated button, or the host itself). */
+	#hasFocus(): boolean {
+		return this.shadowRoot?.activeElement != null || (this.getRootNode() as Document | ShadowRoot).activeElement === this;
+	}
 
 	#formatSize(bytes: number): string {
 		const locale = this.#i18n.locale;
@@ -163,6 +187,9 @@ export class DjFileInput extends FormControl(DojoElement) implements Partial<Doj
 			<div
 				class="dropzone ${this.dragging ? "is-drag" : ""}"
 				part="dropzone"
+				role="group"
+				aria-label=${this.#msg("dropzone")}
+				tabindex=${disabled ? -1 : 0}
 				@dragover=${this.#onDragOver}
 				@dragleave=${this.#onDragLeave}
 				@drop=${this.#onDrop}

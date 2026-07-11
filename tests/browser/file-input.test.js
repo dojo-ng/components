@@ -12,14 +12,39 @@ function drop(dropzone, files) {
 	dropzone.dispatchEvent(ev);
 }
 
+function paste(el, files) {
+	const ev = new Event("paste", { bubbles: true, composed: true, cancelable: true });
+	Object.defineProperty(ev, "clipboardData", { value: { files } });
+	el.dispatchEvent(ev);
+}
+
 describe("dj-file-input", () => {
 	afterEach(cleanup);
 
-	it("exposes a focusable choose button", async () => {
+	it("focuses the drop zone and exposes a focusable choose button", async () => {
 		const el = await mount(make("dj-file-input", { label: "Attachment" }));
 		await el.updateComplete;
+		const zone = el.shadowRoot.querySelector("[part=dropzone]");
+		assertEqual(zone.getAttribute("tabindex"), "0", "the drop zone is tabbable");
 		el.focus();
-		assert(el.shadowRoot.activeElement === el.shadowRoot.querySelector("[part=button]"), "focus lands on the choose button");
+		assert(el.shadowRoot.activeElement === zone, "focus lands on the drop zone (the paste surface)");
+		// the choose button is still reachable and opens the picker
+		const button = el.shadowRoot.querySelector("[part=button]");
+		button.focus();
+		assert(el.shadowRoot.activeElement === button, "the choose button is focusable");
+	});
+
+	it("pastes a file onto the focused drop zone", async () => {
+		const el = await mount(make("dj-file-input", { name: "doc", label: "Attachment", multiple: true }));
+		await el.updateComplete;
+		el.focus(); // the drop zone
+		let events = 0;
+		el.addEventListener("dj-change", () => events++);
+		paste(el, [new File(["img"], "shot.png", { type: "image/png" })]);
+		await el.updateComplete;
+		assertEqual(el.files.length, 1, "the pasted file is added");
+		assertEqual(el.files[0].name, "shot.png", "the pasted file is the one on the clipboard");
+		assertEqual(events, 1, "paste emits one dj-change");
 	});
 
 	it("dropping a file selects it, emits dj-change, and submits it", async () => {

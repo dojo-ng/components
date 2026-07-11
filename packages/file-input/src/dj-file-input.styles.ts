@@ -18,6 +18,11 @@ export default css`
 		border-color: var(--dj-color-primary-600, #2563eb);
 		background: var(--dj-color-primary-50, #eff6ff);
 	}
+	.dropzone:focus { outline: none; }
+	.dropzone:focus-visible {
+		outline: var(--dj-focus-ring, 2px solid currentColor);
+		outline-offset: var(--dj-focus-ring-offset, 2px);
+	}
 	.hint { color: var(--dj-color-text-muted, #6b7280); font-size: var(--dj-font-size-small, 0.875rem); }
 	.native { display: none; }
 

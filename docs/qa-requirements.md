@@ -24,18 +24,18 @@ Five layers, fastest first. The two automated test tiers reflect the decision to
 in Node and component behavior in real browsers.
 
 Static analysis. TypeScript type-checking through the workspace build (`tsc -b`), and ESLint for
-code-quality and correctness rules. (ESLint config: not yet set up.)
+code-quality and correctness rules. (ESLint: `npm run lint`.)
 
 Logic unit tests (Vitest, Node). For the framework-agnostic logic that does not need a real DOM:
 the `i18n` formatters, resolver, and locale chain; the `store` controller; `pubsub`; the focus
 helpers (`isFocusWithin`, `trapTabKey`); the `context` registry. Fast, run on every change.
-(Vitest: not yet set up; supersedes the interim ad-hoc happy-dom smoke scripts.)
+(Vitest: `npm run test:unit`; supersedes the interim ad-hoc happy-dom smoke scripts.)
 
 Component and accessibility tests (@web/test-runner + Playwright). Real Chromium, Firefox, and
 WebKit. This is where shadow DOM, focus, `:focus-visible`, forced-colors, `contenteditable` (rich
 text), virtualization layout (data grid), and CSS media features are exercised faithfully. Each
-component has behavior tests and an axe-core accessibility check. (WTR + Playwright + axe: not yet
-set up.)
+component has behavior tests and an axe-core accessibility check. (WTR + Playwright + axe:
+`npm run test:browser`; the relative performance gate is `npm run bench:components`.)
 
 Build and package sanity. The workspace builds clean with `tsc -b`, and each package's published
 entry imports without error.
@@ -110,7 +110,10 @@ branches.
 
 ## Tooling status
 
-The requirements above are the target. The runners and configs (ESLint, Vitest, @web/test-runner +
-Playwright, axe-core) and the per-component test suites are not yet built; that work is tracked
-separately, and the CI wiring waits on the repository going live on Heptapod. Until then, changes
-are validated by the workspace build plus targeted logic checks and manual browser confirmation.
+The runners, configs, and per-component suites are in place. Type-check and build: `npm run build`
+(`tsc -b`). Lint: `npm run lint`. Logic unit tests: `npm run test:unit` (Vitest). Component and
+accessibility tests: `npm run test:browser` (@web/test-runner + Playwright + axe, on Chromium,
+Firefox, and WebKit). Relative performance gate: `npm run bench:components`. A local pre-commit gate
+(`scripts/precommit.sh` — type-check + lint + unit tests) is available to wire per clone; see the
+components README. The CI wiring that runs these gates on every merge request still waits on the
+repository going live on Heptapod.

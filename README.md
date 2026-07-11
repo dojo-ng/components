@@ -140,6 +140,30 @@ Each package has its own README with properties, slots, parts, events, and worke
 
 Live, interactive examples are in `playground/index.html`.
 
+## Testing
+
+| Command | What it runs |
+|---|---|
+| `npm run build` | Type-check + build the workspace (`tsc -b`) |
+| `npm run lint` | ESLint (flat config, correctness rules only) |
+| `npm run test:unit` | Vitest logic unit tests (Node) |
+| `npm run test:browser` | Component + axe accessibility suites on Chromium, Firefox, and WebKit |
+| `npm run bench:components` | Relative performance gate (data-grid + chart), 2× tolerance |
+
+See [docs/qa-requirements.md](docs/qa-requirements.md) for the full policy and pass/fail gates.
+
+### Pre-commit hook
+
+`scripts/precommit.sh` runs the fast gate (type-check + lint + unit tests) before a commit.
+Mercurial hooks are per-clone, so wire it into your clone's `.hg/hgrc`:
+
+```ini
+[hooks]
+precommit.qa = bash scripts/precommit.sh
+```
+
+The browser and bench suites are not in the hook (they need a browser); CI runs the full matrix.
+
 ## License
 
 BSD-3-Clause. See [LICENSE](LICENSE).

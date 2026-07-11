@@ -5,8 +5,10 @@ import "@dojo-ng/icon";
 import styles from "./dj-chip.styles.js";
 /**
  * `<dj-chip>` — compact label/tag. Label in the default slot, optional icon in the `icon`
- * slot. `clickable` makes it a button (Enter/Space), `closeable` shows a close affordance
- * that emits `dj-close`. Parts: `root`, `close`.
+ * slot. `clickable` wraps the body in a real `<button>` (native Enter/Space; the click bubbles
+ * from the host); `closeable` shows a separate close `<button>` that emits `dj-close`. The two
+ * are siblings, never nested, so a clickable + closeable chip stays valid ARIA. Parts: `root`,
+ * `action`, `close`.
  */
 export class DjChip extends DojoElement {
 	static override styles = styles;
@@ -17,16 +19,16 @@ export class DjChip extends DojoElement {
 	@property({ type: Boolean }) clickable = false;
 	@property({ type: Boolean }) closeable = false;
 
-	private activate() { if (this.clickable && !this.disabled) this.click(); }
-	private onKey(e: KeyboardEvent) { if (this.clickable && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); this.activate(); } }
-
 	override render() {
-		const clickable = this.clickable && !this.disabled;
-		return html`<div part="root" class="root ${clickable ? "clickable" : ""}"
-			role=${clickable ? "button" : nothing} tabindex=${clickable ? 0 : nothing}
-			@keydown=${(e: KeyboardEvent) => this.onKey(e)}>
-			<span class="icon"><slot name="icon"></slot></span>
-			<span class="label"><slot></slot></span>
+		const interactive = this.clickable && !this.disabled;
+		// The body: a real <button> when interactive (native keyboard, click bubbles to the host),
+		// a plain <span> otherwise. The close button is a SIBLING — never nested inside the body —
+		// so a clickable + closeable chip has two adjacent controls, not one inside another.
+		const body = html`<span class="icon"><slot name="icon"></slot></span><span class="label"><slot></slot></span>`;
+		return html`<div part="root" class="root">
+			${interactive
+				? html`<button part="action" class="action" type="button">${body}</button>`
+				: html`<span part="action" class="action">${body}</span>`}
 			${this.closeable ? html`<button part="close" class="close" type="button" aria-label="Remove" @click=${(e: Event) => { e.stopPropagation(); this.emit("dj-close"); }}>
 				<dj-icon size="small"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none"/></svg></dj-icon></button>` : nothing}
 		</div>`;

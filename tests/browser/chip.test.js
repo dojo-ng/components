@@ -22,15 +22,11 @@ describe("dj-chip", () => {
 		await el.updateComplete;
 		let clicks = 0;
 		el.addEventListener("click", () => clicks++);
-		el.shadowRoot.querySelector('[part="root"]').focus();
+		el.shadowRoot.querySelector('[part="action"]').focus();
 		await sendKeys({ press: "Enter" });
-		assert(clicks >= 1, "Enter on a clickable chip fires a click");
+		assert(clicks >= 1, "Enter on a clickable chip fires a click that bubbles from the host");
 	});
 
-	// axe the two valid single-affordance configs. NOTE: a chip that is BOTH clickable and
-	// closeable nests a <button> (close) inside a role="button" (the clickable root), which axe
-	// flags as nested-interactive — a real ARIA conflict for that specific combo that needs a
-	// design decision (kept out of scope for this thin suite; flagged in the Q6 spec note).
 	it("a closeable chip has no serious/critical a11y violations", async () => {
 		const el = await mount(make("dj-chip", { closeable: true }, "Tag"));
 		await el.updateComplete;
@@ -39,6 +35,14 @@ describe("dj-chip", () => {
 
 	it("a clickable chip has no serious/critical a11y violations", async () => {
 		const el = await mount(make("dj-chip", { clickable: true }, "Filter"));
+		await el.updateComplete;
+		await assertNoViolations(el);
+	});
+
+	// The clickable + closeable combo: the body <button> and close <button> are siblings (not
+	// nested), so this now passes axe (previously it tripped nested-interactive).
+	it("a clickable + closeable chip has no serious/critical a11y violations", async () => {
+		const el = await mount(make("dj-chip", { clickable: true, closeable: true }, "Filter"));
 		await el.updateComplete;
 		await assertNoViolations(el);
 	});

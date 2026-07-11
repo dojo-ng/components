@@ -243,8 +243,9 @@
 		</div>
 
 		<h2>File input</h2>
-		<div class="col">
+		<div class="col" id="file-pane">
 			<dj-file-input id="file-input" label="Attachments" accept="image/*" multiple max-size="5000000"></dj-file-input>
+			<span style="color: var(--dj-color-text-muted); font-size: 0.875rem">Tab to the drop zone (it shows a focus ring), then paste an image from the clipboard. A paste anywhere in this pane is forwarded to the control via <code>addFiles</code>.</span>
 			<span id="file-value" style="color: var(--dj-color-text-muted)">files: (none)</span>
 		</div>
 
@@ -805,6 +806,10 @@
 			fileInput.addEventListener("dj-change", (e) => {
 				const names = e.detail.files.map((f) => f.name);
 				fileValue.textContent = names.length ? `files: ${names.join(", ")}` : "files: (none)";
+			});
+			// addFiles seam: a paste anywhere in the pane forwards its files to the control.
+			document.getElementById("file-pane").addEventListener("paste", (e) => {
+				if (e.clipboardData?.files.length) fileInput.addFiles(e.clipboardData.files);
 			});
 		</script>
 	</body>

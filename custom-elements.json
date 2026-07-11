@@ -3553,7 +3553,7 @@
           "name": "DjFileInput",
           "customElement": true,
           "tagName": "dj-file-input",
-          "description": "a form-associated file selector with a button (opens the OS picker) and a drop zone. Selected files are copied into component state, shown as a removable list; the element only SELECTS files (no upload/preview). Form value: a single `File` normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`, `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.",
+          "description": "a form-associated file selector with a button (opens the OS picker) and a focusable drop zone. Files arrive by picker, drop, paste (a screenshot pasted while the drop zone has focus), or the public `addFiles` method; all four route through one intake that applies `accept` + `multiple` + max-size. Selected files are copied into component state, shown as a removable list; the element only SELECTS files (no upload/preview). Form value: a single `File` normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`, `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -3654,6 +3654,19 @@
               "kind": "method",
               "name": "clear",
               "description": "Remove all selected files (no `dj-change`)."
+            },
+            {
+              "kind": "method",
+              "name": "addFiles",
+              "description": "Add files from any source, applying `accept` + `multiple` + `max-size`; appends, or replaces when not `multiple`. Emits `dj-change`. This is the single intake path \u2014 the picker, drop, and paste all route through it, and the app can call it to forward files captured elsewhere (e.g. a paste into the compose body or a drop on the whole pane).",
+              "parameters": [
+                {
+                  "name": "incoming",
+                  "type": {
+                    "text": "File[] | FileList"
+                  }
+                }
+              ]
             }
           ],
           "attributes": [

@@ -32,6 +32,7 @@ Import the package to register the custom element, then use the tag.
 | `max` | max | `number` | `100` |
 | `value` | value | `number` | `0` |
 | `showOutput` | show-output | `boolean` | `false` |
+| `label` | label | `string` | — |
 
 **Parts:** `bar`
 

@@ -317,6 +317,7 @@ declare module "react" {
       "dj-loading-indicator": DjProps<DjLoadingIndicator> & {
         "active"?: DjLoadingIndicator["active"];
         "type"?: DjLoadingIndicator["type"];
+        "label"?: DjLoadingIndicator["label"];
       };
       "dj-native-select": DjProps<DjNativeSelect> & {
         "value"?: DjNativeSelect["value"];
@@ -361,6 +362,7 @@ declare module "react" {
         "max"?: DjProgress["max"];
         "value"?: DjProgress["value"];
         "show-output"?: DjProgress["showOutput"];
+        "label"?: DjProgress["label"];
       };
       "dj-radio": DjProps<DjRadio> & {
         "checked"?: DjRadio["checked"];

@@ -4820,6 +4820,14 @@
               "default": "\"linear\"",
               "attribute": "type",
               "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
             }
           ],
           "attributes": [
@@ -4836,6 +4844,13 @@
                 "text": "LoadingType"
               },
               "fieldName": "type"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
             }
           ],
           "cssParts": [
@@ -5664,6 +5679,14 @@
               },
               "default": "false",
               "attribute": "show-output"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
             }
           ],
           "attributes": [
@@ -5694,6 +5717,13 @@
                 "text": "boolean"
               },
               "fieldName": "showOutput"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
             }
           ],
           "cssParts": [

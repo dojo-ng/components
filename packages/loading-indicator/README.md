@@ -30,6 +30,7 @@ Pick a `type` (e.g. circular).
 |---|---|---|---|
 | `active` | active ↻ | `boolean` | `true` |
 | `type` | type ↻ | `LoadingType` | `"linear"` |
+| `label` | label | `string` | — |
 
 **Parts:** `base`
 

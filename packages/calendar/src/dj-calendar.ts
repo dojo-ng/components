@@ -144,8 +144,8 @@ export class DjCalendar extends FormControl(DojoElement) implements Partial<Dojo
 				</button>
 			</div>
 			<div part="grid" class="grid" role="grid" @keydown=${this.onGridKeyDown}>
-				${this.weekdayNames().map((w) => html`<div class="weekday" role="columnheader">${w}</div>`)}
-				${days.map((d) => {
+				<div role="row" class="dj-cal-row">${this.weekdayNames().map((w) => html`<div class="weekday" role="columnheader">${w}</div>`)}</div>
+				${[0, 1, 2, 3, 4, 5].map((wk) => html`<div role="row" class="dj-cal-row">${days.slice(wk * 7, wk * 7 + 7).map((d) => {
 					const outside = d.getMonth() !== this.viewMonth;
 					const isSel = selected ? sameDay(d, selected) : false;
 					const isToday = sameDay(d, today);
@@ -160,8 +160,7 @@ export class DjCalendar extends FormControl(DojoElement) implements Partial<Dojo
 						tabindex=${isFocused ? 0 : -1}
 						?disabled=${disabled}
 						@click=${() => this.select(d)}
-					>${d.getDate()}</button>`;
-				})}
+					>${d.getDate()}</button>`;})}</div>`)}
 			</div>
 		`;
 	}

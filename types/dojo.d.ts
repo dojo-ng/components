@@ -319,6 +319,7 @@ declare module "@dojo-ng/framework" {
       "dj-loading-indicator": DjVNodeBase & {
         "active"?: DjLoadingIndicator["active"];
         "type"?: DjLoadingIndicator["type"];
+        "label"?: DjLoadingIndicator["label"];
       };
       "dj-native-select": DjVNodeBase & {
         "value"?: DjNativeSelect["value"];
@@ -363,6 +364,7 @@ declare module "@dojo-ng/framework" {
         "max"?: DjProgress["max"];
         "value"?: DjProgress["value"];
         "show-output"?: DjProgress["showOutput"];
+        "label"?: DjProgress["label"];
       };
       "dj-radio": DjVNodeBase & {
         "checked"?: DjRadio["checked"];

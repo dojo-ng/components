@@ -17,9 +17,10 @@ export class DjProgress extends DojoElement {
 	@property({type:Number}) max=100;
 	@property({type:Number}) value=0;
 	@property({attribute:"show-output",type:Boolean}) showOutput=false;
+	@property() label?: string;
 	override render(){
 		const pct=Math.max(0,Math.min(100,((this.value-this.min)/(this.max-this.min))*100));
-		return html`<div class="row"><div class="track" role="progressbar" aria-valuemin=${this.min} aria-valuemax=${this.max} aria-valuenow=${this.value}><div part="bar" class="bar" style=${`width:${pct}%`}></div></div>${this.showOutput?html`<span class="out">${formatNumber(Math.round(pct)/100, this.#i18n.locale, {style:"percent"})}</span>`:nothing}</div>`;
+		return html`<div class="row"><div class="track" role="progressbar" aria-label=${this.label ?? nothing} aria-valuemin=${this.min} aria-valuemax=${this.max} aria-valuenow=${this.value}><div part="bar" class="bar" style=${`width:${pct}%`}></div></div>${this.showOutput?html`<span class="out">${formatNumber(Math.round(pct)/100, this.#i18n.locale, {style:"percent"})}</span>`:nothing}</div>`;
 	}
 }
 export default DjProgress;

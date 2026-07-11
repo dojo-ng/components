@@ -313,6 +313,7 @@ declare module "solid-js" {
       "dj-loading-indicator": JSX.HTMLAttributes<DjLoadingIndicator> & {
         "active"?: DjLoadingIndicator["active"];
         "type"?: DjLoadingIndicator["type"];
+        "label"?: DjLoadingIndicator["label"];
       };
       "dj-native-select": JSX.HTMLAttributes<DjNativeSelect> & {
         "value"?: DjNativeSelect["value"];
@@ -357,6 +358,7 @@ declare module "solid-js" {
         "max"?: DjProgress["max"];
         "value"?: DjProgress["value"];
         "show-output"?: DjProgress["showOutput"];
+        "label"?: DjProgress["label"];
       };
       "dj-radio": JSX.HTMLAttributes<DjRadio> & {
         "checked"?: DjRadio["checked"];

@@ -306,6 +306,9 @@
     },
     {
       "path": "packages/video"
+    },
+    {
+      "path": "packages/search-box"
     }
   ]
 }

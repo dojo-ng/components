@@ -63,6 +63,9 @@
       "@dojo-ng/file-input": [
         "./packages/file-input/dist/index.d.ts"
       ],
+      "@dojo-ng/search-box": [
+        "./packages/search-box/dist/index.d.ts"
+      ],
       "@dojo-ng/dojo-element": [
         "./packages/dojo-element/dist/index.d.ts"
       ],

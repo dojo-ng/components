@@ -310,6 +310,27 @@ Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>
 **Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
 
 
+### `<dj-search-box>` · `@dojo-ng/search-box`
+
+A search field: free text plus typed `key:value` filters. Typing a configured `key:` enters token mode; keys with `options` open a suggestion popup (pick to commit), keys without take a free-typed value committed by Enter or the terminating space (values may be `"quoted"` to hold spaces). A committed filter becomes a closeable `<dj-chip>` before the input; an unconfigured `word:` stays plain text. Backspace with the caret at the start removes the last chip. Read-only `query` = `{ text, tokens }`; set it with `setQuery`. Not form-associated.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `keys` | keys | `SearchKey[]` | `[]` |
+| `label` | label | `string` | — |
+| `placeholder` | placeholder | `string` | — |
+| `position` | position ↻ | `PopupPosition` | `"below"` |
+| `disabled` | disabled ↻ | `boolean` | `false` |
+
+**Parts:** `box`, `input`, `chip`, `clear`, `label`
+
+**Events:** `dj-query-change` (`{ query }`), `dj-search` (`{ query }`)
+
+**Methods:** `setQuery(q: SearchQuery)` (Set the query programmatically, rendering its chips and text. Does not emit.), `clear()` (Clear all text and filters, emitting `dj-query-change`.), `focus(options: FocusOptions)`
+
+**CSS properties:** `--dj-focus-ring` (Focus ring for the clear button (inherited token).)
+
+
 ### `<dj-checkbox>` · `@dojo-ng/checkbox`
 
 A form-associated checkbox composing `<dj-label>`. Submits `value` (default "on") when checked, nothing when not. Mirrors required-validity to the host.

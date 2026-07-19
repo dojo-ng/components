@@ -94,6 +94,68 @@ test("Backspace on empty input removes last chip", async () => {
 	el.onKey(backspaceKey());
 	await settled(el); await tick();
 	assert.equal(el.tokens.length, 1, "one chip removed");
+	assert.equal(count, 1, "removal emitted one dj-query-change");
+});
+
+test("picking a suggestion commits a chip and emits one dj-query-change", async () => {
+	const el = make();
+	await settled(el); await tick();
+	el.onInput({ target: { value: "status:ur" } });
+	await settled(el); await tick();
+	assert.equal(el.open, true, "token mode with options opens the popup");
+	let count = 0;
+	let last;
+	el.addEventListener("dj-query-change", (e) => { count++; last = e.detail.query; });
+	// Drive the selection handler the way dj-list's change would (house pattern: happy-dom
+	// cannot deliver events through Lit bindings; the real pick is SB5's browser check).
+	el.onSelect({ stopPropagation() {}, target: { value: "urgent" } });
+	await settled(el); await tick();
+	assert.equal(count, 1, "one dj-query-change");
+	assert.deepEqual(last.tokens, [{ key: "status", value: "urgent" }], "token in query.tokens");
+	assert.equal(el.tokens.length, 1, "chip committed");
+	assert.equal(el.open, false, "popup closed after pick");
+	assert.equal(el.text, "", "in-progress token text consumed");
+});
+
+test("an unconfigured key never chips", async () => {
+	const el = make();
+	await settled(el); await tick();
+	el.onInput({ target: { value: "note:hi" } });
+	await settled(el); await tick();
+	assert.equal(el.open, false, "no popup for an unconfigured key");
+	let search;
+	el.addEventListener("dj-search", (e) => { search = e.detail.query; });
+	el.onKey(enterKey());
+	assert.equal(el.tokens.length, 0, "no chip");
+	assert.deepEqual(search, { text: "note:hi", tokens: [] }, "stays plain text in the query");
+});
+
+test("Enter with free text emits dj-search with { text, tokens }", async () => {
+	const el = make();
+	await settled(el); await tick();
+	el.setQuery({ text: "hello", tokens: [{ key: "status", value: "urgent" }] });
+	await settled(el); await tick();
+	let search;
+	el.addEventListener("dj-search", (e) => { search = e.detail.query; });
+	el.onKey(enterKey());
+	assert.equal(search.text, "hello");
+	assert.deepEqual(search.tokens, [{ key: "status", value: "urgent" }]);
+});
+
+test("closing a chip removes its token and emits", async () => {
+	const el = make();
+	await settled(el); await tick();
+	el.setQuery({ text: "", tokens: [{ key: "status", value: "urgent" }, { key: "status", value: "normal" }] });
+	await settled(el); await tick();
+	let count = 0;
+	el.addEventListener("dj-query-change", () => count++);
+	const chips = el.renderRoot.querySelectorAll("dj-chip");
+	assert.equal(chips.length, 2, "two chips rendered");
+	chips[0].dispatchEvent(new CustomEvent("dj-close"));
+	await settled(el); await tick();
+	assert.equal(el.tokens.length, 1, "closed chip's token removed");
+	assert.equal(el.tokens[0].value, "normal", "the right token remains");
+	assert.equal(count, 1, "removal emitted one dj-query-change");
 });
 
 test("Escape suppresses the popup", async () => {
@@ -104,6 +166,7 @@ test("Escape suppresses the popup", async () => {
 	assert.equal(el.open, true, "popup is open");
 	el.onKey({ key: "Escape" });
 	assert.equal(el.open, false, "escape suppresses popup");
+	assert.equal(el.tokens.length, 0, "nothing was committed");
 });
 
 test("Enter with dropdown open → picks active via dj-list", async () => {

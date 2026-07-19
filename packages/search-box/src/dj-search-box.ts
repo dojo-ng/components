@@ -32,7 +32,7 @@ const TOKEN_TAIL = /(^|\s)([^\s:"]+):("(?:[^"]*)"?|[^\s]*)$/;
  * an unconfigured `word:` stays plain text. Backspace with the caret at the start removes the last
  * chip. Read-only `query` = `{ text, tokens }`; set it with `setQuery`. Not form-associated.
  *
- * Slots: none. Parts: `box`, `input`, `chip`, `clear`, `label`.
+ * Parts: `box`, `input`, `chip`, `clear`, `label`. (No slots — content comes from `keys`/`query`.)
  * Events: `dj-query-change` (`{ query }`) on any token or committed-text change;
  * `dj-search` (`{ query }`) on Enter outside token mode.
  *

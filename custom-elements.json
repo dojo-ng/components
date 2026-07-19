@@ -7490,12 +7490,6 @@
               "fieldName": "disabled"
             }
           ],
-          "slots": [
-            {
-              "name": "none",
-              "description": ""
-            }
-          ],
           "cssParts": [
             {
               "name": "box",

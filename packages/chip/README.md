@@ -32,6 +32,7 @@ Import the package to register the custom element, then use the tag.
 | `checked` | checked ↻ | `boolean` | `false` |
 | `clickable` | clickable | `boolean` | `false` |
 | `closeable` | closeable | `boolean` | `false` |
+| `closeLabel` | close-label | `string` | — |
 
 **Slots:** `icon`, default
 

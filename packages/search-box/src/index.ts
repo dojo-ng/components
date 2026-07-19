@@ -1,2 +1,6 @@
-// Package entry. SB1 exports the pure grammar; the dj-search-box component is added in SB2.
+import { DjSearchBox } from "./dj-search-box.js";
 export * from "./query.js";
+export * from "./dj-search-box.js";
+export default DjSearchBox;
+DjSearchBox.define("dj-search-box", DjSearchBox);
+declare global { interface HTMLElementTagNameMap { "dj-search-box": DjSearchBox; } }

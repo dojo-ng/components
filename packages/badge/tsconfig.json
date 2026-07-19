@@ -3,10 +3,6 @@
   "compilerOptions": { "rootDir": "src", "outDir": "dist" },
   "include": ["src"],
   "references": [
-    { "path": "../dojo-element" },
-    { "path": "../i18n" },
-    { "path": "../chip" },
-    { "path": "../popup" },
-    { "path": "../list" }
+    { "path": "../dojo-element" }
   ]
 }

@@ -374,6 +374,108 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/badge/src/dj-badge.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjBadge",
+          "customElement": true,
+          "tagName": "dj-badge",
+          "description": "a small count or status label that decorates other content. Presentational: it carries no ARIA role. When a badge shows a count for a control (e.g. an unread count on a button), put the accessible name on the CONTROL \u2014 `aria-label=\"Notifications, 4 unread\"` \u2014 not on the badge, so assistive tech reads the meaning rather than a bare number. Content is the default slot.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "variant",
+              "type": {
+                "text": "BadgeVariant"
+              },
+              "default": "\"neutral\"",
+              "description": "Semantic color. Reflected so `:host([variant=\"\u2026\"])` and page CSS can target it.",
+              "attribute": "variant",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "pill",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Fully rounded (pill) shape instead of the default small radius.",
+              "attribute": "pill",
+              "reflects": true
+            }
+          ],
+          "attributes": [
+            {
+              "name": "variant",
+              "type": {
+                "text": "BadgeVariant"
+              },
+              "fieldName": "variant",
+              "description": "Semantic color. Reflected so `:host([variant=\"\u2026\"])` and page CSS can target it."
+            },
+            {
+              "name": "pill",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "pill",
+              "description": "Fully rounded (pill) shape instead of the default small radius."
+            }
+          ],
+          "slots": [
+            {
+              "name": "",
+              "description": ""
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "base",
+              "description": "the badge box"
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-badge-background",
+              "default": "per-variant semantic color",
+              "description": "Background fill; defaults to the variant's `--dj-color-*-600` scale."
+            },
+            {
+              "name": "--dj-badge-color",
+              "default": "var(--dj-color-neutral-0)",
+              "description": "Text color."
+            },
+            {
+              "name": "--dj-badge-radius",
+              "default": "var(--dj-input-border-radius-small)",
+              "description": "Corner radius (ignored when `pill` is set)."
+            },
+            {
+              "name": "--dj-badge-font-size",
+              "default": "0.75rem",
+              "description": "Badge text size."
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-badge",
+          "declaration": {
+            "name": "DjBadge",
+            "module": "packages/badge/src/dj-badge.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/board/src/dj-board.ts",
       "declarations": [
         {
@@ -2295,6 +2397,15 @@
               },
               "default": "false",
               "attribute": "closeable"
+            },
+            {
+              "kind": "field",
+              "name": "closeLabel",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name for the close button (defaults to \"Remove\"); set it to name what is being removed.",
+              "attribute": "close-label"
             }
           ],
           "attributes": [
@@ -2325,6 +2436,14 @@
                 "text": "boolean"
               },
               "fieldName": "closeable"
+            },
+            {
+              "name": "close-label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "closeLabel",
+              "description": "Accessible name for the close button (defaults to \"Remove\"); set it to name what is being removed."
             }
           ],
           "slots": [
@@ -6859,6 +6978,198 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/search-box/src/dj-search-box.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjSearchBox",
+          "customElement": true,
+          "tagName": "dj-search-box",
+          "description": "a search field: free text plus typed `key:value` filters. Typing a configured `key:` enters token mode; keys with `options` open a suggestion popup (pick to commit), keys without take a free-typed value committed by Enter or the terminating space (values may be `\"quoted\"` to hold spaces). A committed filter becomes a closeable `<dj-chip>` before the input; an unconfigured `word:` stays plain text. Backspace with the caret at the start removes the last chip. Read-only `query` = `{ text, tokens }`; set it with `setQuery`. Not form-associated.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "keys",
+              "type": {
+                "text": "SearchKey[]"
+              },
+              "default": "[]",
+              "description": "Configured filter keys. Keys with `options` get value suggestions; keys without take free text.",
+              "attribute": "keys"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "placeholder",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "placeholder"
+            },
+            {
+              "kind": "field",
+              "name": "position",
+              "type": {
+                "text": "PopupPosition"
+              },
+              "default": "\"below\"",
+              "attribute": "position",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "attribute": "disabled",
+              "reflects": true
+            },
+            {
+              "kind": "method",
+              "name": "setQuery",
+              "description": "Set the query programmatically, rendering its chips and text. Does not emit.",
+              "parameters": [
+                {
+                  "name": "q",
+                  "type": {
+                    "text": "SearchQuery"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "clear",
+              "description": "Clear all text and filters, emitting `dj-query-change`."
+            },
+            {
+              "kind": "method",
+              "name": "focus",
+              "parameters": [
+                {
+                  "name": "options",
+                  "type": {
+                    "text": "FocusOptions"
+                  }
+                }
+              ]
+            }
+          ],
+          "attributes": [
+            {
+              "name": "keys",
+              "type": {
+                "text": "SearchKey[]"
+              },
+              "fieldName": "keys",
+              "description": "Configured filter keys. Keys with `options` get value suggestions; keys without take free text."
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            },
+            {
+              "name": "placeholder",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "placeholder"
+            },
+            {
+              "name": "position",
+              "type": {
+                "text": "PopupPosition"
+              },
+              "fieldName": "position"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "disabled"
+            }
+          ],
+          "slots": [
+            {
+              "name": "none",
+              "description": ""
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "box",
+              "description": ""
+            },
+            {
+              "name": "input",
+              "description": ""
+            },
+            {
+              "name": "chip",
+              "description": ""
+            },
+            {
+              "name": "clear",
+              "description": ""
+            },
+            {
+              "name": "label",
+              "description": ""
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-focus-ring",
+              "description": "Focus ring for the clear button (inherited token)."
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-query-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "`{ query }`"
+            },
+            {
+              "name": "dj-search",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "`{ query }`"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-search-box",
+          "declaration": {
+            "name": "DjSearchBox",
+            "module": "packages/search-box/src/dj-search-box.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/select/src/dj-select.ts",
       "declarations": [
         {
@@ -7097,6 +7408,78 @@
           "declaration": {
             "name": "DjSelect",
             "module": "packages/select/src/dj-select.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "packages/skeleton/src/dj-skeleton.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjSkeleton",
+          "customElement": true,
+          "tagName": "dj-skeleton",
+          "description": "a loading placeholder that stands in for content while it loads. Shape and size come from consumer CSS on the host: it is `display: block` with a default height of `1em` and a token border-radius. Style the host to size each placeholder \u2014 a circular avatar is `border-radius: 50%`, a text line is a short height with a width. No shape prop is needed. Always `aria-hidden=\"true\"`: the placeholder itself is decorative. Mark the region that is loading with `aria-busy=\"true\"` until the real content lands, so assistive tech announces the loading state once for the whole region. `prefers-reduced-motion` disables the sheen regardless of `effect` (the shared reducedMotion snippet collapses the animation).",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "effect",
+              "type": {
+                "text": "SkeletonEffect"
+              },
+              "default": "\"sheen\"",
+              "description": "Loading animation: a sweeping `sheen`, or `none` for a static placeholder.",
+              "attribute": "effect",
+              "reflects": true
+            }
+          ],
+          "attributes": [
+            {
+              "name": "effect",
+              "type": {
+                "text": "SkeletonEffect"
+              },
+              "fieldName": "effect",
+              "description": "Loading animation: a sweeping `sheen`, or `none` for a static placeholder."
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "base",
+              "description": "the placeholder surface"
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-skeleton-color",
+              "default": "var(--dj-color-neutral-200)",
+              "description": "Placeholder fill."
+            },
+            {
+              "name": "--dj-skeleton-sheen-color",
+              "default": "rgb(255 255 255 / 0.55)",
+              "description": "Color of the sweeping sheen band."
+            },
+            {
+              "name": "--dj-skeleton-radius",
+              "default": "var(--dj-input-border-radius-small)",
+              "description": "Corner radius."
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-skeleton",
+          "declaration": {
+            "name": "DjSkeleton",
+            "module": "packages/skeleton/src/dj-skeleton.ts"
           }
         }
       ]

@@ -272,7 +272,7 @@ An editable combobox: type to filter `options`, pick from a popup `<dj-list>`. `
 
 ### `<dj-chip-typeahead>` · `@dojo-ng/chip-typeahead`
 
-Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>`, selections render as removable `<dj-chip>`s. Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values).
+Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>`, selections render as removable `<dj-chip>`s. Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values). With `allow-new`, Enter on non-empty input text creates a chip from the literal trimmed value (a free-text tag), unless the popup has an active (highlighted) option — that keeps picking. New values respect `duplicates`, clear the input, and join the form value like picked ones. Only Enter commits; comma is left alone (it is a valid character in many locales).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -283,6 +283,7 @@ Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>
 | `placeholder` | placeholder | `string` | — |
 | `disabled` | disabled ↻ | `boolean` | `false` |
 | `duplicates` | duplicates | `boolean` | `false` |
+| `allowNew` | allow-new ↻ | `boolean` | `false` |
 | `position` | position ↻ | `PopupPosition` | `"below"` |
 
 **Parts:** `label`, `box`
@@ -461,6 +462,7 @@ Star rating (0..max). Form-associated. (Half-step `allowHalf` accepted; full-sta
 | `allowHalf` | allow-half | `boolean` | `false` |
 | `readonly` | readonly | `boolean` | `false` |
 | `name` | name ↻ | `string` | — |
+| `label` | label | `string` | — |
 
 **Events:** `change`
 
@@ -507,6 +509,50 @@ A `HH:MM` time field with a popup list of options generated from `min`/`max`/`st
 **Methods:** `checkValidity()`
 
 
+### `<dj-color-picker>` · `@dojo-ng/color-picker`
+
+An inline color picker with a 2D saturation/brightness area, a hue slider, an optional opacity slider, a text field, and optional swatches. Form-associated: it submits the formatted color string under `name`. There is no built-in trigger or popup — compose `dj-popup` to make it a dropdown. The internal model is HSV + alpha; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`). Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `format` | format | `ColorFormat` | `"hex"` |
+| `alpha` | alpha ↻ | `boolean` | `false` |
+| `swatches` | — | `Swatch[]` | `[]` |
+| `label` | label | `string` | — |
+| `name` | name ↻ | `string` | — |
+| `disabled` | disabled ↻ | `boolean` | `false` |
+| `get` | get | `string` | — |
+
+**Parts:** `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`, `picker`, `label`
+
+**Events:** `dj-change` (`{ value }`)
+
+**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`
+
+**CSS properties:** `--dj-color-picker-width` (default `240px`; Overall width of the inline panel.)
+
+
+### `<dj-file-input>` · `@dojo-ng/file-input`
+
+A form-associated file selector with a button (opens the OS picker) and a focusable drop zone. Files arrive by picker, drop, paste (a screenshot pasted while the drop zone has focus), or the public `addFiles` method; all four route through one intake that applies `accept` + `multiple` + max-size. Selected files are copied into component state, shown as a removable list; the element only SELECTS files (no upload/preview). Form value: a single `File` normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`, `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `accept` | accept | `string` | — |
+| `multiple` | multiple | `boolean` | `false` |
+| `required` | required ↻ | `boolean` | `false` |
+| `maxSize` | max-size | `number` | — |
+| `label` | label | `string` | — |
+| `name` | name ↻ | `string` | — |
+| `disabled` | disabled ↻ | `boolean` | `false` |
+
+**Parts:** `button`, `dropzone`, `list`, `item`, `remove`, `label`
+
+**Events:** `dj-change` (`{ files }`)
+
+**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `clear()` (Remove all selected files (no `dj-change`).), `addFiles(incoming: File[] | FileList)` (Add files from any source, applying `accept` + `multiple` + `max-size`; appends, or replaces when not `multiple`. Emits `dj-change`. This is the single intake path — the picker, drop, and paste all route through it, and the app can call it to forward files captured elsewhere (e.g. a paste into the compose body or a drop on the whole pane).)
+
+
 ### `<dj-form>` · `@dojo-ng/form`
 
 A layout wrapper that gathers values from its named child controls and emits `dj-submit` with a `{ name: value }` object. `column` stacks fields. Because slotted fields live in light DOM (outside any shadow `<form>`), values are read from each named child's `value`. For full native form semantics, the controls are form-associated, so wrapping them in a real `<form>` also works.
@@ -542,7 +588,7 @@ Positions slotted content as an overlay, flipping to the opposite side when ther
 
 **Slots:** default
 
-**Parts:** `underlay`, `wrapper`
+**Parts:** `underlay`, `wrapper`, `layer`
 
 **Events:** `dj-close`
 
@@ -737,6 +783,25 @@ Flex layout. direction/align/spacing/padding/stretch.
 **Slots:** default
 
 
+### `<dj-split-panel>` · `@dojo-ng/split-panel`
+
+Two resizable panes with a draggable divider between them. The `start` and `end` slots hold the panes; the divider is a shadow-side bar (put custom grip content in the optional `divider` slot). `position` is the start pane's share as a percent (0–100); the layout is a CSS grid whose start/end tracks are `position`fr and `(100 − position)`fr, so the panes always divide in that ratio. Minimum pane sizes come from CSS, not props: the tracks are `minmax(var(--dj-split-panel-min-start), …)` / `minmax(var(--dj-split-panel-min-end), …)`, so a consumer sets a floor in any length unit and the browser clamps the drag against it. The host needs a size (for `horizontal`, a height) since the panes fill it. `orientation="horizontal"` (default) puts the panes side by side with a vertical divider; `vertical` stacks them with a horizontal divider. Column order follows the host's writing direction, so in RTL the start pane sits on the right with no extra work. The divider is a `role="separator"` with `aria-valuenow/valuemin/valuemax` tracking `position` and `aria-orientation` set to the divider's own visual axis (vertical for a horizontal split). Dragging uses pointer events with pointer capture, so mouse, trackpad, and touch all work; the divider position is read from the pointer's offset within the host rect (RTL-mirrored for a horizontal split — a pointer at the visual left is 100%). Because dragging is a pointer gesture, WCAG 2.5.7 needs a non-drag path: the focused divider takes Arrow keys (±1, Shift = ±10) mapped through reading direction for horizontal and Up/Down for vertical, plus Home (0) and End (100). `dj-reposition` fires on settle: once on pointer-up for a drag, and once per keypress.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `orientation` | orientation ↻ | `"horizontal" \| "vertical"` | `"horizontal"` |
+| `position` | position ↻ | `number` | `50` |
+| `disabled` | disabled ↻ | `boolean` | `false` |
+
+**Slots:** `start`, `divider`, `end`
+
+**Parts:** `start`, `end`, `divider`
+
+**Events:** `dj-reposition` (detail `{ position }`)
+
+**CSS properties:** `--dj-split-panel-min-start` (default `0`; Minimum size of the start pane (any length).), `--dj-split-panel-min-end` (default `0`; Minimum size of the end pane (any length).), `--dj-split-panel-divider-width` (default `4px`; Thickness of the divider bar.), `--dj-split-panel-divider-color` (default `var(--dj-color-border)`; Divider bar color.)
+
+
 ### `<dj-two-column-layout>` · `@dojo-ng/two-column-layout`
 
 Leading + trailing slots; collapses to one column on narrow containers (container query).
@@ -921,14 +986,21 @@ A FAB that reveals slotted action buttons (`actions` slot) when open. Toggles on
 
 ### `<dj-tree>` · `@dojo-ng/tree`
 
-A hierarchical tree from `nodes`. Click a parent's chevron to expand; click a node to select. Emits `dj-select` with the id. Functional core (no virtualization/drag/checkboxes yet).
+A hierarchical tree from `nodes`. Each node may carry an `icon` (a registered icon name) and a `count` (a trailing badge, e.g. an unread count). Selection is controlled by `value` (a node id) and emits `dj-select`; expansion is controlled by `expanded` (an array of node ids) and emits `dj-expand-change`. The component knows nothing about what the tree holds — a file tree, a mail folder list, or a MIME structure are all just nodes. Keyboard follows the APG tree pattern with a roving tabindex: exactly one row is tabbable (the selected row if visible, else the first visible row), and the arrow keys move focus without selecting. Down/Up walk the visible rows; Right expands a closed parent, steps into an open one, and does nothing on a leaf; Left collapses an open parent or moves to the parent row; Home/End jump to the first/last visible row; Enter or Space selects the focused row. Indentation is a logical `margin-inline-start`, so it flips in RTL, and the chevron mirrors with the reading direction. Deferred (not built): drag-drop, virtualization, checkboxes, lazy loading.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `nodes` | nodes | `TreeNode[]` | `[]` |
 | `value` | value | `string` | `""` |
+| `expanded` | expanded | `string[]` | `[]` |
 
-**Events:** `dj-select`
+**Slots:** `none` (content comes from `nodes`)
+
+**Parts:** `row` (a node's clickable line), `chevron`, `label`, `count`
+
+**Events:** `dj-expand-change` (detail `{ id, expanded, expandedIds }`), `dj-select` (detail `{ id }`)
+
+**CSS properties:** `--dj-tree-indent` (default `1.1rem`; Indentation added per nesting level.), `--dj-tree-count-color` (default `var(--dj-color-text-muted)`; Color of the trailing count badge.)
 
 
 ## Data display
@@ -970,6 +1042,7 @@ A single-select list/menu driven by `options`. Uses the active-descendant patter
 | `options` | options | `ListOption[]` | `[]` |
 | `value` | value | `string` | `""` |
 | `name` | name ↻ | `string` | — |
+| `label` | label | `string` | — |
 | `menu` | menu | `boolean` | `false` |
 | `loading` | loading | `boolean` | `false` |
 | `reorderable` | reorderable ↻ | `boolean` | `false` |
@@ -978,7 +1051,7 @@ A single-select list/menu driven by `options`. Uses the active-descendant patter
 
 **Events:** `change`, `dj-reorder`
 
-**Methods:** `checkValidity(): boolean`, `focus(options: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `focus(options: FocusOptions)`, `moveActive(delta: 1 | -1)` (Move the highlighted (active) option by one selectable step, wrapping; skips disabled items and dividers.), `activateFirst()` (Highlight the first selectable option (skipping disabled items and dividers); clears the highlight if none.), `chooseActive(): boolean` (Select the active option, firing the normal `change`. Returns false and fires nothing if none is active.)
 
 **CSS properties:** `--dj-list-max-height` (default `none`; Maximum height before the list scrolls.)
 
@@ -1055,9 +1128,25 @@ Circular/rounded/square avatar from an image `src` or slotted initials/icon. Par
 **Parts:** `base`
 
 
+### `<dj-badge>` · `@dojo-ng/badge`
+
+A small count or status label that decorates other content. Presentational: it carries no ARIA role. When a badge shows a count for a control (e.g. an unread count on a button), put the accessible name on the CONTROL — `aria-label="Notifications, 4 unread"` — not on the badge, so assistive tech reads the meaning rather than a bare number. Content is the default slot.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `variant` | variant ↻ | `BadgeVariant` | `"neutral"` |
+| `pill` | pill ↻ | `boolean` | `false` |
+
+**Slots:** default
+
+**Parts:** `base` (the badge box)
+
+**CSS properties:** `--dj-badge-background` (default `per-variant semantic color`; Background fill; defaults to the variant's `--dj-color-*-600` scale.), `--dj-badge-color` (default `var(--dj-color-neutral-0)`; Text color.), `--dj-badge-radius` (default `var(--dj-input-border-radius-small)`; Corner radius (ignored when `pill` is set).), `--dj-badge-font-size` (default `0.75rem`; Badge text size.)
+
+
 ### `<dj-chip>` · `@dojo-ng/chip`
 
-Compact label/tag. Label in the default slot, optional icon in the `icon` slot. `clickable` makes it a button (Enter/Space), `closeable` shows a close affordance that emits `dj-close`. Parts: `root`, `close`.
+Compact label/tag. Label in the default slot, optional icon in the `icon` slot. `clickable` wraps the body in a real `<button>` (native Enter/Space; the click bubbles from the host); `closeable` shows a separate close `<button>` that emits `dj-close`. The two are siblings, never nested, so a clickable + closeable chip stays valid ARIA. Parts: `root`, `action`, `close`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1065,10 +1154,11 @@ Compact label/tag. Label in the default slot, optional icon in the `icon` slot. 
 | `checked` | checked ↻ | `boolean` | `false` |
 | `clickable` | clickable | `boolean` | `false` |
 | `closeable` | closeable | `boolean` | `false` |
+| `closeLabel` | close-label | `string` | — |
 
 **Slots:** `icon`, default
 
-**Parts:** `root`, `close`
+**Parts:** `root`, `action`, `close`
 
 **Events:** `dj-close`
 
@@ -1199,6 +1289,7 @@ Determinate progress bar. value within min..max; `show-output` shows percent. Pa
 | `max` | max | `number` | `100` |
 | `value` | value | `number` | `0` |
 | `showOutput` | show-output | `boolean` | `false` |
+| `label` | label | `string` | — |
 
 **Parts:** `bar`
 
@@ -1213,10 +1304,24 @@ A linear bar or circular spinner. `active` (default true) toggles visibility whi
 |---|---|---|---|
 | `active` | active ↻ | `boolean` | `true` |
 | `type` | type ↻ | `LoadingType` | `"linear"` |
+| `label` | label | `string` | — |
 
 **Parts:** `base`
 
 **CSS properties:** `--dj-loading-linear-height` (default `4px`; Thickness of the linear (bar) indicator.)
+
+
+### `<dj-skeleton>` · `@dojo-ng/skeleton`
+
+A loading placeholder that stands in for content while it loads. Shape and size come from consumer CSS on the host: it is `display: block` with a default height of `1em` and a token border-radius. Style the host to size each placeholder — a circular avatar is `border-radius: 50%`, a text line is a short height with a width. No shape prop is needed. Always `aria-hidden="true"`: the placeholder itself is decorative. Mark the region that is loading with `aria-busy="true"` until the real content lands, so assistive tech announces the loading state once for the whole region. `prefers-reduced-motion` disables the sheen regardless of `effect` (the shared reducedMotion snippet collapses the animation).
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `effect` | effect ↻ | `SkeletonEffect` | `"sheen"` |
+
+**Parts:** `base` (the placeholder surface)
+
+**CSS properties:** `--dj-skeleton-color` (default `var(--dj-color-neutral-200)`; Placeholder fill.), `--dj-skeleton-sheen-color` (default `rgb(255 255 255 / 0.55)`; Color of the sweeping sheen band.), `--dj-skeleton-radius` (default `var(--dj-input-border-radius-small)`; Corner radius.)
 
 
 ### `<dj-global-event>` · `@dojo-ng/global-event`

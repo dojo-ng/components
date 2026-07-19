@@ -30,3 +30,6 @@ __pycache__
 # Logs and debug output
 npm-debug.log*
 *.log
+
+# other local stuff
+deploy

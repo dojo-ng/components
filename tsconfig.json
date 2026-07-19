@@ -309,6 +309,12 @@
     },
     {
       "path": "packages/search-box"
+    },
+    {
+      "path": "packages/badge"
+    },
+    {
+      "path": "packages/skeleton"
     }
   ]
 }

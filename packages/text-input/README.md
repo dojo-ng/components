@@ -71,6 +71,18 @@ Add affixes around the field.
 </dj-text-input>
 ```
 
+### Style the validation state
+
+Every form control mirrors its validity onto the host as data attributes, so you can style invalid/valid from outside the shadow root. Use the `user-` variants so a pristine field is not flagged before the user has interacted (blurred after editing, or submitted).
+
+```html
+<style>
+  dj-text-input[data-dj-user-invalid] { --dj-input-border-color: var(--dj-color-danger-600); }
+  dj-text-input[data-dj-user-valid] { --dj-input-border-color: var(--dj-color-success-600); }
+</style>
+<dj-text-input label="Email" type="email" required helper-text="We never share it"></dj-text-input>
+```
+
 ## Theming
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.

@@ -18,6 +18,8 @@ export class DjChip extends DojoElement {
 	@property({ type: Boolean, reflect: true }) checked = false;
 	@property({ type: Boolean }) clickable = false;
 	@property({ type: Boolean }) closeable = false;
+	/** Accessible name for the close button (defaults to "Remove"); set it to name what is being removed. */
+	@property({ attribute: "close-label" }) closeLabel?: string;
 
 	override render() {
 		const interactive = this.clickable && !this.disabled;
@@ -29,7 +31,7 @@ export class DjChip extends DojoElement {
 			${interactive
 				? html`<button part="action" class="action" type="button">${body}</button>`
 				: html`<span part="action" class="action">${body}</span>`}
-			${this.closeable ? html`<button part="close" class="close" type="button" aria-label="Remove" @click=${(e: Event) => { e.stopPropagation(); this.emit("dj-close"); }}>
+			${this.closeable ? html`<button part="close" class="close" type="button" aria-label=${this.closeLabel || "Remove"} @click=${(e: Event) => { e.stopPropagation(); this.emit("dj-close"); }}>
 				<dj-icon size="small"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none"/></svg></dj-icon></button>` : nothing}
 		</div>`;
 	}

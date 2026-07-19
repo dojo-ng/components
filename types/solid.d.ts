@@ -7,6 +7,7 @@ import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
 import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
+import type { DjBadge } from "@dojo-ng/badge";
 import type { DjBoard } from "@dojo-ng/board";
 import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
 import type { DjButton } from "@dojo-ng/button";
@@ -51,7 +52,9 @@ import type { DjRangeSlider } from "@dojo-ng/range-slider";
 import type { DjRate } from "@dojo-ng/rate";
 import type { DjResult } from "@dojo-ng/result";
 import type { DjRichText } from "@dojo-ng/rich-text";
+import type { DjSearchBox } from "@dojo-ng/search-box";
 import type { DjSelect } from "@dojo-ng/select";
+import type { DjSkeleton } from "@dojo-ng/skeleton";
 import type { DjSlidePane } from "@dojo-ng/slide-pane";
 import type { DjSlider } from "@dojo-ng/slider";
 import type { DjSnackbar } from "@dojo-ng/snackbar";
@@ -97,6 +100,10 @@ declare module "solid-js" {
         "alt"?: DjAvatar["alt"];
         "secondary"?: DjAvatar["secondary"];
         "outline"?: DjAvatar["outline"];
+      };
+      "dj-badge": JSX.HTMLAttributes<DjBadge> & {
+        "variant"?: DjBadge["variant"];
+        "pill"?: DjBadge["pill"];
       };
       "dj-board": JSX.HTMLAttributes<DjBoard> & {
         "data"?: DjBoard["data"];
@@ -191,6 +198,7 @@ declare module "solid-js" {
         "checked"?: DjChip["checked"];
         "clickable"?: DjChip["clickable"];
         "closeable"?: DjChip["closeable"];
+        "close-label"?: DjChip["closeLabel"];
       };
       "dj-chip-typeahead": JSX.HTMLAttributes<DjChipTypeahead> & {
         "options"?: DjChipTypeahead["options"];
@@ -414,6 +422,13 @@ declare module "solid-js" {
         "sanitizePaste"?: DjRichText["sanitizePaste"];
         "pasteSanitizer"?: DjRichText["pasteSanitizer"];
       };
+      "dj-search-box": JSX.HTMLAttributes<DjSearchBox> & {
+        "keys"?: DjSearchBox["keys"];
+        "label"?: DjSearchBox["label"];
+        "placeholder"?: DjSearchBox["placeholder"];
+        "position"?: DjSearchBox["position"];
+        "disabled"?: DjSearchBox["disabled"];
+      };
       "dj-select": JSX.HTMLAttributes<DjSelect> & {
         "options"?: DjSelect["options"];
         "value"?: DjSelect["value"];
@@ -425,6 +440,9 @@ declare module "solid-js" {
         "required"?: DjSelect["required"];
         "position"?: DjSelect["position"];
         "open"?: DjSelect["open"];
+      };
+      "dj-skeleton": JSX.HTMLAttributes<DjSkeleton> & {
+        "effect"?: DjSkeleton["effect"];
       };
       "dj-slide-pane": JSX.HTMLAttributes<DjSlidePane> & {
         "open"?: DjSlidePane["open"];
@@ -629,6 +647,8 @@ declare module "solid-js" {
       "dj-page": CustomEvent;
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;
+      "dj-query-change": CustomEvent;
+      "dj-search": CustomEvent;
       "dj-toggle": CustomEvent;
       "dj-reposition": CustomEvent;
       "dj-tab-close": CustomEvent;
@@ -661,6 +681,8 @@ declare module "solid-js" {
       "dj-page": CustomEvent;
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;
+      "dj-query-change": CustomEvent;
+      "dj-search": CustomEvent;
       "dj-toggle": CustomEvent;
       "dj-reposition": CustomEvent;
       "dj-tab-close": CustomEvent;

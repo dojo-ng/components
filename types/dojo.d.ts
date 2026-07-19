@@ -13,6 +13,7 @@ import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
 import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
+import type { DjBadge } from "@dojo-ng/badge";
 import type { DjBoard } from "@dojo-ng/board";
 import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
 import type { DjButton } from "@dojo-ng/button";
@@ -57,7 +58,9 @@ import type { DjRangeSlider } from "@dojo-ng/range-slider";
 import type { DjRate } from "@dojo-ng/rate";
 import type { DjResult } from "@dojo-ng/result";
 import type { DjRichText } from "@dojo-ng/rich-text";
+import type { DjSearchBox } from "@dojo-ng/search-box";
 import type { DjSelect } from "@dojo-ng/select";
+import type { DjSkeleton } from "@dojo-ng/skeleton";
 import type { DjSlidePane } from "@dojo-ng/slide-pane";
 import type { DjSlider } from "@dojo-ng/slider";
 import type { DjSnackbar } from "@dojo-ng/snackbar";
@@ -103,6 +106,10 @@ declare module "@dojo-ng/framework" {
         "alt"?: DjAvatar["alt"];
         "secondary"?: DjAvatar["secondary"];
         "outline"?: DjAvatar["outline"];
+      };
+      "dj-badge": DjVNodeBase & {
+        "variant"?: DjBadge["variant"];
+        "pill"?: DjBadge["pill"];
       };
       "dj-board": DjVNodeBase & {
         "data"?: DjBoard["data"];
@@ -197,6 +204,7 @@ declare module "@dojo-ng/framework" {
         "checked"?: DjChip["checked"];
         "clickable"?: DjChip["clickable"];
         "closeable"?: DjChip["closeable"];
+        "close-label"?: DjChip["closeLabel"];
       };
       "dj-chip-typeahead": DjVNodeBase & {
         "options"?: DjChipTypeahead["options"];
@@ -420,6 +428,13 @@ declare module "@dojo-ng/framework" {
         "sanitizePaste"?: DjRichText["sanitizePaste"];
         "pasteSanitizer"?: DjRichText["pasteSanitizer"];
       };
+      "dj-search-box": DjVNodeBase & {
+        "keys"?: DjSearchBox["keys"];
+        "label"?: DjSearchBox["label"];
+        "placeholder"?: DjSearchBox["placeholder"];
+        "position"?: DjSearchBox["position"];
+        "disabled"?: DjSearchBox["disabled"];
+      };
       "dj-select": DjVNodeBase & {
         "options"?: DjSelect["options"];
         "value"?: DjSelect["value"];
@@ -431,6 +446,9 @@ declare module "@dojo-ng/framework" {
         "required"?: DjSelect["required"];
         "position"?: DjSelect["position"];
         "open"?: DjSelect["open"];
+      };
+      "dj-skeleton": DjVNodeBase & {
+        "effect"?: DjSkeleton["effect"];
       };
       "dj-slide-pane": DjVNodeBase & {
         "open"?: DjSlidePane["open"];

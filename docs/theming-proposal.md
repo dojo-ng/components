@@ -71,6 +71,29 @@ exposes, components mark significant internals with `part` (`base`, `label`, `ic
 `underlay`, `wrapper`), styleable from outside with `::part()`. This is the escape hatch, to
 be used sparingly; tokens are the primary interface.
 
+### Styling validation states
+
+Form controls hide their `<input>` inside the shadow root, so `:invalid` / `:valid` are not
+reachable from page CSS. The `FormControl` mixin (in `@dojo-ng/dojo-element`) closes that gap
+by mirroring the control's current validity onto the host as data attributes, so you style
+from outside without piercing the shadow root:
+
+- `data-dj-required` — the control's `required` is set.
+- `data-dj-valid` / `data-dj-invalid` — the control's current validity.
+- `data-dj-user-valid` / `data-dj-user-invalid` — the same, but only after the user has
+  interacted (blurred the control after editing it, or submitted the form). Prefer these for
+  live feedback so a pristine field is not flagged before anyone has touched it.
+
+```css
+dj-text-input[data-dj-user-invalid] {
+  --dj-input-border-color: var(--dj-color-danger-600);
+}
+```
+
+The mixin only reads validity — each control still owns it via `ElementInternals`. Where the
+engine supports `CustomStateSet`, the same five names are also exposed as custom states
+(`:state(user-invalid)`, …); the data attributes are the portable, documented hook.
+
 ## How this compares to Dojo 2
 
 The token model is the same, but Shadow DOM plus custom properties removes Dojo's

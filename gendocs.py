@@ -15,10 +15,10 @@ GROUPS = [
  ("Overlays", ["popup","trigger-popup","context-popup","popup-confirmation","context-menu","dialog","slide-pane","tooltip","snackbar"]),
  ("Layout", ["card","header-card","stack","split-panel","two-column-layout","three-column-layout","title-pane","accordion","carousel"]),
  ("Navigation", ["breadcrumb-group","header","toolbar","pagination","tab-container","wizard","speed-dial","tree"]),
- ("Data display", ["board","list","grid","data-grid","calendar","avatar","chip","icon","result","text"]),
+ ("Data display", ["board","list","grid","data-grid","calendar","avatar","badge","chip","icon","result","text"]),
  ("Charts", ["chart"]),
  ("Editing", ["rich-text"]),
- ("Feedback", ["progress","loading-indicator","global-event"]),
+ ("Feedback", ["progress","loading-indicator","skeleton","global-event"]),
  ("Animation", ["transition","transition-group"]),
  ("Media", ["audio","video"]),
 ]

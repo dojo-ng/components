@@ -33,6 +33,8 @@ NOTES = {
     "split-panel": "The host needs a size the panes can fill: for a horizontal split give it a height (width comes from the flow). Minimum pane sizes are CSS, not props — set `--dj-split-panel-min-start` and `--dj-split-panel-min-end` to any length and the browser clamps the drag against them. Dragging is a pointer gesture, so the divider also takes the keyboard for WCAG 2.5.7: focus it and use the arrow keys (Shift for a larger step), Home, and End. For a three-pane layout, nest one `dj-split-panel` inside a slot of another.",
     "chip-typeahead": "By default only configured `options` can be chosen. Add `allow-new` for a tag editor: Enter on non-empty text that matches no option creates a chip from the literal value (respecting `duplicates`), while a highlighted popup option still picks the option. Only Enter commits — comma is left alone, since it is a valid character in many locales.",
     "tree": "Selection and expansion are both controlled: `value` is the selected node id (emits `dj-select`) and `expanded` is an array of open node ids (emits `dj-expand-change` with `{ id, expanded, expandedIds }`). Node `icon` names must be registered with `registerIcon`/`registerIcons` from `@dojo-ng/icon`; `count` renders as a trailing badge. Keyboard is the APG tree pattern with a roving tabindex — only one row is ever a tab stop, arrows move focus without selecting (Right/Left expand/collapse or move in/out, Home/End jump), and Enter or Space selects. Style indentation with `--dj-tree-indent` and the count with `--dj-tree-count-color`. Not built yet: drag-drop, virtualization, checkboxes, lazy loading.",
+    "badge": "Presentational only — a badge has no ARIA role. When it shows a count for a control (an unread count on a button, say), put the accessible name on the CONTROL (`aria-label=\"Notifications, 4 unread\"`), not on the badge, so assistive tech reads the meaning rather than a bare number. Variant colors reuse the theme's semantic `--dj-color-*-600` scales; override a single badge with `--dj-badge-background` / `--dj-badge-color`.",
+    "skeleton": "Size and shape come from your CSS on the host, not from props: give it a width/height for a text line, or a square plus `border-radius: 50%` for an avatar. The skeleton is always `aria-hidden`; mark the region that is loading with `aria-busy=\"true\"` until the real content lands so the loading state is announced once for the whole region, not per placeholder. `prefers-reduced-motion` stills the sheen automatically.",
 }
 
 # Worked examples per package: list of (title, description, code). The first is used as the
@@ -59,6 +61,8 @@ EXAMPLES = {
    '<dj-text-input label="Email" type="email" required helper-text="We never share it"></dj-text-input>\n<script type="module">\n  import "@dojo-ng/text-input";\n  document.querySelector("dj-text-input").addEventListener("input", (e) => console.log(e.target.value));\n</script>'),
   ("Leading and trailing slots", "Add affixes around the field.",
    '<dj-text-input label="Amount">\n  <span slot="leading">$</span>\n  <span slot="trailing">.00</span>\n</dj-text-input>'),
+  ("Style the validation state", "Every form control mirrors its validity onto the host as data attributes, so you can style invalid/valid from outside the shadow root. Use the `user-` variants so a pristine field is not flagged before the user has interacted (blurred after editing, or submitted).",
+   '<style>\n  dj-text-input[data-dj-user-invalid] { --dj-input-border-color: var(--dj-color-danger-600); }\n  dj-text-input[data-dj-user-valid] { --dj-input-border-color: var(--dj-color-success-600); }\n</style>\n<dj-text-input label="Email" type="email" required helper-text="We never share it"></dj-text-input>'),
  ],
  "email-input": [
   ("Required email", "Defaults to `type=\"email\"`; native email validity applies.",
@@ -233,6 +237,18 @@ EXAMPLES = {
  "chip": [
   ("Removable chip", "`closeable` adds a remove button; listen for `dj-close`.",
    '<dj-chip closeable>Design</dj-chip>'),
+ ],
+ "badge": [
+  ("Status variants", "`variant` picks a semantic color; `pill` fully rounds it.",
+   '<dj-badge>Neutral</dj-badge>\n<dj-badge variant="info">Info</dj-badge>\n<dj-badge variant="success">Success</dj-badge>\n<dj-badge variant="warning">Warning</dj-badge>\n<dj-badge variant="danger" pill>3</dj-badge>'),
+  ("Count on a control", "Put the accessible name on the control, not the badge.",
+   '<dj-button aria-label="Notifications, 4 unread">\n  Inbox <dj-badge variant="danger" pill>4</dj-badge>\n</dj-button>'),
+ ],
+ "skeleton": [
+  ("Loading card", "Size each placeholder with host CSS; mark the region `aria-busy` until content lands.",
+   '<div aria-busy="true" style="display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center;max-width:320px">\n  <dj-skeleton style="width:48px;height:48px;border-radius:50%"></dj-skeleton>\n  <div style="display:grid;gap:8px">\n    <dj-skeleton style="height:12px;width:60%"></dj-skeleton>\n    <dj-skeleton style="height:12px"></dj-skeleton>\n    <dj-skeleton style="height:12px;width:80%"></dj-skeleton>\n  </div>\n</div>'),
+  ("No animation", "`effect=\"none\"` for a static placeholder.",
+   '<dj-skeleton effect="none" style="height:16px;width:200px"></dj-skeleton>'),
  ],
  "icon": [
   ("Inline SVG icon", "Slot an SVG; it inherits `currentColor` and sizing.",

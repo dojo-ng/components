@@ -56,6 +56,7 @@ export const ELEMENT_PACKAGES = [
 	"rate",
 	"result",
 	"rich-text",
+	"search-box",
 	"select",
 	"skeleton",
 	"slide-pane",

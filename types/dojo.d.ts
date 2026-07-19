@@ -11,6 +11,7 @@
 // types/verify harness supplies a minimal stand-in.
 import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
+import type { DjAlert } from "@dojo-ng/alert";
 import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
 import type { DjBadge } from "@dojo-ng/badge";
@@ -29,9 +30,11 @@ import type { DjColorPicker } from "@dojo-ng/color-picker";
 import type { DjConstrainedInput } from "@dojo-ng/constrained-input";
 import type { DjContextMenu } from "@dojo-ng/context-menu";
 import type { DjContextPopup } from "@dojo-ng/context-popup";
+import type { DjCopyButton } from "@dojo-ng/copy-button";
 import type { DjDataGrid } from "@dojo-ng/data-grid";
 import type { DjDateInput } from "@dojo-ng/date-input";
 import type { DjDialog } from "@dojo-ng/dialog";
+import type { DjDropdown } from "@dojo-ng/dropdown";
 import type { DjEmailInput } from "@dojo-ng/email-input";
 import type { DjFileInput } from "@dojo-ng/file-input";
 import type { DjFloatingActionButton } from "@dojo-ng/floating-action-button";
@@ -94,6 +97,11 @@ declare module "@dojo-ng/framework" {
         "exclusive"?: DjAccordion["exclusive"];
       };
       "dj-action-button": DjVNodeBase;
+      "dj-alert": DjVNodeBase & {
+        "variant"?: DjAlert["variant"];
+        "closable"?: DjAlert["closable"];
+        "open"?: DjAlert["open"];
+      };
       "dj-audio": DjVNodeBase & {
         "src"?: DjAudio["src"];
         "label"?: DjAudio["label"];
@@ -235,6 +243,11 @@ declare module "@dojo-ng/framework" {
       "dj-context-popup": DjVNodeBase & {
         "open"?: DjContextPopup["open"];
       };
+      "dj-copy-button": DjVNodeBase & {
+        "value"?: DjCopyButton["value"];
+        "from"?: DjCopyButton["from"];
+        "feedback-duration"?: DjCopyButton["feedbackDuration"];
+      };
       "dj-data-grid": DjVNodeBase & {
         "columns"?: DjDataGrid["columns"];
         "data"?: DjDataGrid["data"];
@@ -259,6 +272,11 @@ declare module "@dojo-ng/framework" {
         "underlay"?: DjDialog["underlay"];
         "role"?: DjDialog["role"];
         "close-text"?: DjDialog["closeText"];
+      };
+      "dj-dropdown": DjVNodeBase & {
+        "open"?: DjDropdown["open"];
+        "position"?: DjDropdown["position"];
+        "match-width"?: DjDropdown["matchWidth"];
       };
       "dj-email-input": DjVNodeBase & {
         "type"?: DjEmailInput["type"];

@@ -5,6 +5,7 @@
 import type { JSX } from "solid-js";
 import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
+import type { DjAlert } from "@dojo-ng/alert";
 import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
 import type { DjBadge } from "@dojo-ng/badge";
@@ -23,9 +24,11 @@ import type { DjColorPicker } from "@dojo-ng/color-picker";
 import type { DjConstrainedInput } from "@dojo-ng/constrained-input";
 import type { DjContextMenu } from "@dojo-ng/context-menu";
 import type { DjContextPopup } from "@dojo-ng/context-popup";
+import type { DjCopyButton } from "@dojo-ng/copy-button";
 import type { DjDataGrid } from "@dojo-ng/data-grid";
 import type { DjDateInput } from "@dojo-ng/date-input";
 import type { DjDialog } from "@dojo-ng/dialog";
+import type { DjDropdown } from "@dojo-ng/dropdown";
 import type { DjEmailInput } from "@dojo-ng/email-input";
 import type { DjFileInput } from "@dojo-ng/file-input";
 import type { DjFloatingActionButton } from "@dojo-ng/floating-action-button";
@@ -88,6 +91,11 @@ declare module "solid-js" {
         "exclusive"?: DjAccordion["exclusive"];
       };
       "dj-action-button": JSX.HTMLAttributes<DjActionButton>;
+      "dj-alert": JSX.HTMLAttributes<DjAlert> & {
+        "variant"?: DjAlert["variant"];
+        "closable"?: DjAlert["closable"];
+        "open"?: DjAlert["open"];
+      };
       "dj-audio": JSX.HTMLAttributes<DjAudio> & {
         "src"?: DjAudio["src"];
         "label"?: DjAudio["label"];
@@ -229,6 +237,11 @@ declare module "solid-js" {
       "dj-context-popup": JSX.HTMLAttributes<DjContextPopup> & {
         "open"?: DjContextPopup["open"];
       };
+      "dj-copy-button": JSX.HTMLAttributes<DjCopyButton> & {
+        "value"?: DjCopyButton["value"];
+        "from"?: DjCopyButton["from"];
+        "feedback-duration"?: DjCopyButton["feedbackDuration"];
+      };
       "dj-data-grid": JSX.HTMLAttributes<DjDataGrid> & {
         "columns"?: DjDataGrid["columns"];
         "data"?: DjDataGrid["data"];
@@ -253,6 +266,11 @@ declare module "solid-js" {
         "underlay"?: DjDialog["underlay"];
         "role"?: DjDialog["role"];
         "close-text"?: DjDialog["closeText"];
+      };
+      "dj-dropdown": JSX.HTMLAttributes<DjDropdown> & {
+        "open"?: DjDropdown["open"];
+        "position"?: DjDropdown["position"];
+        "match-width"?: DjDropdown["matchWidth"];
       };
       "dj-email-input": JSX.HTMLAttributes<DjEmailInput> & {
         "type"?: DjEmailInput["type"];
@@ -625,6 +643,7 @@ declare module "solid-js" {
       };
     }
     interface CustomEvents {
+      "dj-close": CustomEvent;
       "dj-play": CustomEvent;
       "dj-pause": CustomEvent;
       "dj-ended": CustomEvent;
@@ -635,10 +654,11 @@ declare module "solid-js" {
       "dj-slide-change": CustomEvent;
       "dj-legend-toggle": CustomEvent;
       "dj-hover": CustomEvent;
-      "dj-close": CustomEvent;
       "dj-change": CustomEvent;
       "dj-select": CustomEvent;
       "dj-open": CustomEvent;
+      "dj-copy": CustomEvent;
+      "dj-error": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-selection-change": CustomEvent;
       "dj-submit": CustomEvent;
@@ -659,6 +679,7 @@ declare module "solid-js" {
       "dj-step": CustomEvent;
     }
     interface CustomCaptureEvents {
+      "dj-close": CustomEvent;
       "dj-play": CustomEvent;
       "dj-pause": CustomEvent;
       "dj-ended": CustomEvent;
@@ -669,10 +690,11 @@ declare module "solid-js" {
       "dj-slide-change": CustomEvent;
       "dj-legend-toggle": CustomEvent;
       "dj-hover": CustomEvent;
-      "dj-close": CustomEvent;
       "dj-change": CustomEvent;
       "dj-select": CustomEvent;
       "dj-open": CustomEvent;
+      "dj-copy": CustomEvent;
+      "dj-error": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-selection-change": CustomEvent;
       "dj-submit": CustomEvent;

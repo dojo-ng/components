@@ -7,6 +7,7 @@
 import type { DefineComponent } from "vue";
 import type { DjAccordion } from "@dojo-ng/accordion";
 import type { DjActionButton } from "@dojo-ng/action-button";
+import type { DjAlert } from "@dojo-ng/alert";
 import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
 import type { DjBadge } from "@dojo-ng/badge";
@@ -25,9 +26,11 @@ import type { DjColorPicker } from "@dojo-ng/color-picker";
 import type { DjConstrainedInput } from "@dojo-ng/constrained-input";
 import type { DjContextMenu } from "@dojo-ng/context-menu";
 import type { DjContextPopup } from "@dojo-ng/context-popup";
+import type { DjCopyButton } from "@dojo-ng/copy-button";
 import type { DjDataGrid } from "@dojo-ng/data-grid";
 import type { DjDateInput } from "@dojo-ng/date-input";
 import type { DjDialog } from "@dojo-ng/dialog";
+import type { DjDropdown } from "@dojo-ng/dropdown";
 import type { DjEmailInput } from "@dojo-ng/email-input";
 import type { DjFileInput } from "@dojo-ng/file-input";
 import type { DjFloatingActionButton } from "@dojo-ng/floating-action-button";
@@ -87,6 +90,7 @@ declare module "@vue/runtime-core" {
   interface GlobalComponents {
     "dj-accordion": DefineComponent<{ exclusive?: DjAccordion["exclusive"] }, {}, {}, {}, {}, {}, {}>;
     "dj-action-button": DefineComponent<{  }, {}, {}, {}, {}, {}, {}>;
+    "dj-alert": DefineComponent<{ variant?: DjAlert["variant"]; closable?: DjAlert["closable"]; open?: DjAlert["open"] }, {}, {}, {}, {}, {}, { "dj-close": (e: CustomEvent) => void }>;
     "dj-audio": DefineComponent<{ src?: DjAudio["src"]; label?: DjAudio["label"]; preload?: DjAudio["preload"] }, {}, {}, {}, {}, {}, { "dj-play": (e: CustomEvent) => void, "dj-pause": (e: CustomEvent) => void, "dj-ended": (e: CustomEvent) => void, "dj-time": (e: CustomEvent) => void }>;
     "dj-avatar": DefineComponent<{ type?: DjAvatar["type"]; size?: DjAvatar["size"]; src?: DjAvatar["src"]; alt?: DjAvatar["alt"]; secondary?: DjAvatar["secondary"]; outline?: DjAvatar["outline"] }, {}, {}, {}, {}, {}, {}>;
     "dj-badge": DefineComponent<{ variant?: DjBadge["variant"]; pill?: DjBadge["pill"] }, {}, {}, {}, {}, {}, {}>;
@@ -105,9 +109,11 @@ declare module "@vue/runtime-core" {
     "dj-constrained-input": DefineComponent<{ validator?: DjConstrainedInput["validator"] }, {}, {}, {}, {}, {}, {}>;
     "dj-context-menu": DefineComponent<{ options?: DjContextMenu["options"] }, {}, {}, {}, {}, {}, { "dj-select": (e: CustomEvent) => void }>;
     "dj-context-popup": DefineComponent<{ open?: DjContextPopup["open"] }, {}, {}, {}, {}, {}, { "dj-open": (e: CustomEvent) => void }>;
+    "dj-copy-button": DefineComponent<{ value?: DjCopyButton["value"]; from?: DjCopyButton["from"]; feedbackDuration?: DjCopyButton["feedbackDuration"] }, {}, {}, {}, {}, {}, { "dj-copy": (e: CustomEvent) => void, "dj-error": (e: CustomEvent) => void }>;
     "dj-data-grid": DefineComponent<{ columns?: DjDataGrid["columns"]; data?: DjDataGrid["data"]; selectionMode?: DjDataGrid["selectionMode"]; rowHeight?: DjDataGrid["rowHeight"]; height?: DjDataGrid["height"]; plugins?: DjDataGrid["plugins"] }, {}, {}, {}, {}, {}, { "dj-sort": (e: CustomEvent) => void, "dj-selection-change": (e: CustomEvent) => void }>;
     "dj-date-input": DefineComponent<{ value?: DjDateInput["value"]; name?: DjDateInput["name"]; label?: DjDateInput["label"]; min?: DjDateInput["min"]; max?: DjDateInput["max"]; disabled?: DjDateInput["disabled"]; required?: DjDateInput["required"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
     "dj-dialog": DefineComponent<{ open?: DjDialog["open"]; closeable?: DjDialog["closeable"]; modal?: DjDialog["modal"]; underlay?: DjDialog["underlay"]; role?: DjDialog["role"]; closeText?: DjDialog["closeText"] }, {}, {}, {}, {}, {}, { "dj-close": (e: CustomEvent) => void }>;
+    "dj-dropdown": DefineComponent<{ open?: DjDropdown["open"]; position?: DjDropdown["position"]; matchWidth?: DjDropdown["matchWidth"] }, {}, {}, {}, {}, {}, { "dj-open": (e: CustomEvent) => void, "dj-close": (e: CustomEvent) => void }>;
     "dj-email-input": DefineComponent<{ type?: DjEmailInput["type"] }, {}, {}, {}, {}, {}, {}>;
     "dj-file-input": DefineComponent<{ accept?: DjFileInput["accept"]; multiple?: DjFileInput["multiple"]; required?: DjFileInput["required"]; maxSize?: DjFileInput["maxSize"]; label?: DjFileInput["label"]; name?: DjFileInput["name"]; disabled?: DjFileInput["disabled"] }, {}, {}, {}, {}, {}, { "dj-change": (e: CustomEvent) => void }>;
     "dj-floating-action-button": DefineComponent<{ size?: DjFloatingActionButton["size"]; position?: DjFloatingActionButton["position"] }, {}, {}, {}, {}, {}, {}>;

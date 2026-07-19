@@ -71,6 +71,9 @@
 					"@dojo-ng/split-panel": "../packages/split-panel/dist/index.js",
 					"@dojo-ng/badge": "../packages/badge/dist/index.js",
 					"@dojo-ng/skeleton": "../packages/skeleton/dist/index.js",
+					"@dojo-ng/alert": "../packages/alert/dist/index.js",
+					"@dojo-ng/copy-button": "../packages/copy-button/dist/index.js",
+					"@dojo-ng/dropdown": "../packages/dropdown/dist/index.js",
 					"@dojo-ng/two-column-layout": "../packages/two-column-layout/dist/index.js",
 					"@dojo-ng/three-column-layout": "../packages/three-column-layout/dist/index.js",
 					"@dojo-ng/header": "../packages/header/dist/index.js",
@@ -437,6 +440,50 @@
 		</style>
 		<dj-text-input id="vh-field" label="Email" type="email" required helper-text="Blur while empty to see the invalid style" style="max-width: 20rem"></dj-text-input>
 
+		<h2>Alert</h2>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Inline status banners. Info/success use <code>role="status"</code>, warning/danger <code>role="alert"</code>. The last one is closable; the success one uses a custom icon. Click "Insert danger alert" to test that a dynamically-added alert is announced.
+		</p>
+		<div class="col" style="gap: 0.5rem; max-width: 32rem">
+			<dj-alert variant="info">Heads up — a new version is available.</dj-alert>
+			<dj-alert variant="success">
+				<svg slot="icon" viewBox="0 0 24 24" width="20" height="20"><path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+				Your changes were saved.
+			</dj-alert>
+			<dj-alert variant="warning">Your trial ends in 3 days.</dj-alert>
+			<dj-alert variant="danger" closable>Payment failed. Update your card.</dj-alert>
+			<div id="alert-live" class="col" style="gap: 0.5rem"></div>
+			<div class="row"><dj-button id="alert-insert" kind="outlined">Insert danger alert</dj-button></div>
+		</div>
+
+		<h2>Copy button</h2>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Copies to the clipboard (needs a secure context — https or localhost). The icon flashes copy → check → error and the accessible name changes with it. On plain http it shows the error state.
+		</p>
+		<div class="row" style="align-items: center; gap: 0.75rem">
+			<code id="copy-src" style="padding: 2px 6px; background: var(--dj-color-neutral-100, #f3f4f6); border-radius: 4px">npm install @dojo-ng/button</code>
+			<dj-copy-button from="copy-src"></dj-copy-button>
+			<span style="color: var(--dj-color-text-muted)">copy from a value:</span>
+			<dj-copy-button value="sk_live_demo_123"></dj-copy-button>
+			<span id="copy-log" style="color: var(--dj-color-text-muted)">(no copy yet)</span>
+		</div>
+
+		<h2>Dropdown (menu button)</h2>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Open with the mouse or ArrowDown/Enter/Space; arrows move the active item, Enter chooses and closes, Escape closes, focus returns to the trigger. Switch the Locale to <code>ar-EG</code> for an RTL sanity check.
+		</p>
+		<div class="row" style="gap: 1rem; align-items: flex-start">
+			<dj-dropdown id="dd-menu">
+				<dj-button slot="trigger" kind="outlined">Actions ▾</dj-button>
+				<dj-list id="dd-list" style="min-width: 12rem"></dj-list>
+			</dj-dropdown>
+			<dj-dropdown id="dd-panel">
+				<dj-button slot="trigger" kind="outlined">Filters ▾</dj-button>
+				<div style="padding: 12px; min-width: 12rem">Any panel content here.</div>
+			</dj-dropdown>
+			<span id="dd-log" style="color: var(--dj-color-text-muted)">(no choice yet)</span>
+		</div>
+
 		<h2>Scoped theme island (always dark)</h2>
 		<dj-theme theme="dark"><div class="island"><div class="row"><dj-button kind="contained">Inside dark island</dj-button><dj-loading-indicator type="circular-small"></dj-loading-indicator></div></div></dj-theme>
 
@@ -518,7 +565,7 @@
 			import "@dojo-ng/select";
 			import "@dojo-ng/typeahead";
 			import "@dojo-ng/chip-typeahead";
-			import "@dojo-ng/text"; import "@dojo-ng/stack"; import "@dojo-ng/split-panel"; import "@dojo-ng/badge"; import "@dojo-ng/skeleton"; import "@dojo-ng/two-column-layout"; import "@dojo-ng/three-column-layout";
+			import "@dojo-ng/text"; import "@dojo-ng/stack"; import "@dojo-ng/split-panel"; import "@dojo-ng/badge"; import "@dojo-ng/skeleton"; import "@dojo-ng/alert"; import "@dojo-ng/copy-button"; import "@dojo-ng/dropdown"; import "@dojo-ng/two-column-layout"; import "@dojo-ng/three-column-layout";
 			import "@dojo-ng/header"; import "@dojo-ng/progress"; import "@dojo-ng/breadcrumb-group"; import "@dojo-ng/snackbar";
 			import "@dojo-ng/global-event"; import "@dojo-ng/accordion"; import "@dojo-ng/checkbox-group"; import "@dojo-ng/rate";
 			import "@dojo-ng/form"; import "@dojo-ng/date-input"; import "@dojo-ng/time-picker"; import "@dojo-ng/popup-confirmation";
@@ -688,6 +735,32 @@
 					'<div style="width:48px;height:48px;border-radius:50%;background:var(--dj-color-primary-600);color:#fff;display:grid;place-items:center;font-weight:600">AL</div>' +
 					'<div style="display:grid;gap:4px"><strong>Ada Lovelace</strong><span style="color:var(--dj-color-text-muted)">Enchantress of Numbers</span></div>';
 				document.getElementById("skeleton-toggle").textContent = "Reload to reset";
+			});
+
+			// alert: insert a danger alert dynamically (screen-reader announcement check)
+			document.getElementById("alert-insert").addEventListener("click", () => {
+				const a = document.createElement("dj-alert");
+				a.variant = "danger";
+				a.closable = true;
+				a.textContent = "Danger alert inserted at " + new Date().toLocaleTimeString();
+				document.getElementById("alert-live").appendChild(a);
+			});
+
+			// copy-button: log dj-copy / dj-error
+			const copyLog = document.getElementById("copy-log");
+			document.querySelectorAll("dj-copy-button").forEach((cb) => {
+				cb.addEventListener("dj-copy", (e) => { copyLog.textContent = "copied: " + e.detail.value; });
+				cb.addEventListener("dj-error", () => { copyLog.textContent = "copy failed (needs https/localhost)"; });
+			});
+
+			// dropdown: fill the menu list and log the chosen item
+			document.getElementById("dd-list").options = [
+				{ value: "rename", label: "Rename" },
+				{ value: "duplicate", label: "Duplicate" },
+				{ value: "delete", label: "Delete" },
+			];
+			document.getElementById("dd-menu").addEventListener("change", (e) => {
+				document.getElementById("dd-log").textContent = "chose: " + e.target.value;
 			});
 
 			// constrained-input validator (function property)

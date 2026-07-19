@@ -315,6 +315,15 @@
     },
     {
       "path": "packages/skeleton"
+    },
+    {
+      "path": "packages/alert"
+    },
+    {
+      "path": "packages/copy-button"
+    },
+    {
+      "path": "packages/dropdown"
     }
   ]
 }

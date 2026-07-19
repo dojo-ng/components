@@ -84,6 +84,156 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/alert/src/dj-alert.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjAlert",
+          "customElement": true,
+          "tagName": "dj-alert",
+          "description": "an inline status banner. It sits in the page flow (unlike the transient, floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a persistent state next to the content it concerns. An alert written in markup shows by default (`open`); closing it sets `open` false and it takes no space. Info/success announce politely (`role=\"status\"`); warning/danger announce assertively (`role=\"alert\"`).",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "variant",
+              "type": {
+                "text": "AlertVariant"
+              },
+              "default": "\"info\"",
+              "description": "Semantic variant. Reflected so `:host([variant=\"\u2026\"])` and page CSS can target it.",
+              "attribute": "variant",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "closable",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Show a close button.",
+              "attribute": "closable"
+            },
+            {
+              "kind": "field",
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "true",
+              "description": "Whether the alert is shown. Reflected; defaults true so markup alerts appear.",
+              "attribute": "open",
+              "reflects": true
+            },
+            {
+              "kind": "method",
+              "name": "close",
+              "description": "Close the alert: hides it and emits `dj-close` once. No-op if already closed."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "variant",
+              "type": {
+                "text": "AlertVariant"
+              },
+              "fieldName": "variant",
+              "description": "Semantic variant. Reflected so `:host([variant=\"\u2026\"])` and page CSS can target it."
+            },
+            {
+              "name": "closable",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "closable",
+              "description": "Show a close button."
+            },
+            {
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "open",
+              "description": "Whether the alert is shown. Reflected; defaults true so markup alerts appear."
+            }
+          ],
+          "slots": [
+            {
+              "name": "",
+              "description": "the message"
+            },
+            {
+              "name": "icon",
+              "description": "replaces the default variant glyph"
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "base",
+              "description": ""
+            },
+            {
+              "name": "icon",
+              "description": ""
+            },
+            {
+              "name": "message",
+              "description": ""
+            },
+            {
+              "name": "close",
+              "description": ""
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-alert-background",
+              "default": "per-variant tint",
+              "description": "Banner background; defaults to the variant's `--dj-color-*-100`."
+            },
+            {
+              "name": "--dj-alert-color",
+              "default": "per-variant ink",
+              "description": "Text color; defaults to the variant's `--dj-color-*-700`."
+            },
+            {
+              "name": "--dj-alert-accent-color",
+              "default": "per-variant accent",
+              "description": "Icon + leading-border color; defaults to the variant's `--dj-color-*-600`."
+            },
+            {
+              "name": "--dj-alert-radius",
+              "default": "var(--dj-input-border-radius-medium)",
+              "description": "Corner radius."
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-close",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "after the alert closes"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-alert",
+          "declaration": {
+            "name": "DjAlert",
+            "module": "packages/alert/src/dj-alert.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/audio/src/dj-audio.ts",
       "declarations": [
         {
@@ -3093,6 +3243,123 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/copy-button/src/dj-copy-button.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjCopyButton",
+          "customElement": true,
+          "tagName": "dj-copy-button",
+          "description": "an icon-only button that copies text to the clipboard and flashes feedback. It composes `<dj-button>`, so focus, keyboard, and button ARIA come for free. Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form controls) or `textContent` (`value` wins when both are set). Copying uses `navigator.clipboard.writeText`, which requires a secure context (https or localhost); there is no legacy `execCommand` fallback. If the clipboard is unavailable or the write is rejected, the button shows an error state and emits `dj-error`. The icon swaps copy \u2192 check (success) \u2192 error for `feedback-duration` ms, then reverts, and the button's accessible name changes with it (Copy / Copied / Copy failed) so assistive tech hears the result.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string"
+              },
+              "default": "\"\"",
+              "description": "The literal text to copy. Wins over `from` when both are set.",
+              "attribute": "value"
+            },
+            {
+              "kind": "field",
+              "name": "from",
+              "type": {
+                "text": "string"
+              },
+              "description": "Id of an element in the same root to copy from (its `value` ?? `textContent`).",
+              "attribute": "from"
+            },
+            {
+              "kind": "field",
+              "name": "feedbackDuration",
+              "type": {
+                "text": "number"
+              },
+              "default": "2000",
+              "description": "How long (ms) the success/error state shows before reverting to the copy icon.",
+              "attribute": "feedback-duration"
+            },
+            {
+              "kind": "method",
+              "name": "focus",
+              "parameters": [
+                {
+                  "name": "options",
+                  "type": {
+                    "text": "FocusOptions"
+                  }
+                }
+              ]
+            }
+          ],
+          "attributes": [
+            {
+              "name": "value",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "value",
+              "description": "The literal text to copy. Wins over `from` when both are set."
+            },
+            {
+              "name": "from",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "from",
+              "description": "Id of an element in the same root to copy from (its `value` ?? `textContent`)."
+            },
+            {
+              "name": "feedback-duration",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "feedbackDuration",
+              "description": "How long (ms) the success/error state shows before reverting to the copy icon."
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "button",
+              "description": "the composed `<dj-button>`"
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-copy",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ value }`"
+            },
+            {
+              "name": "dj-error",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-copy-button",
+          "declaration": {
+            "name": "DjCopyButton",
+            "module": "packages/copy-button/src/dj-copy-button.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/data-grid/src/dj-data-grid.ts",
       "declarations": [
         {
@@ -3613,6 +3880,124 @@
           "declaration": {
             "name": "DjDialog",
             "module": "packages/dialog/src/dj-dialog.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "packages/dropdown/src/dj-dropdown.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjDropdown",
+          "customElement": true,
+          "tagName": "dj-dropdown",
+          "description": "the APG menu-button glue over the existing `<dj-popup>` and `<dj-list>`. Put the trigger (usually a `<dj-button>`) in the `trigger` slot and the content \u2014 typically one `<dj-list>` \u2014 in the default slot; the content renders in a `<dj-popup>` anchored to the trigger. Behavior: clicking the trigger toggles it. ArrowDown / Enter / Space open it; on open, if the content is a `<dj-list>`, its `menu` mode is switched on, it is focused, and its first item is activated. Escape closes and returns focus to the trigger; choosing an item (the list's `change` event) closes and refocuses too \u2014 the `change` event still reaches the consumer untouched. Non-list content is allowed as an arbitrary panel: then dj-dropdown only does open/close/Escape/focus-return, with no list steering.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the menu is open. Reflected so page CSS can target `:host([open])`.",
+              "attribute": "open",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "position",
+              "type": {
+                "text": "PopupPosition"
+              },
+              "default": "\"below\"",
+              "description": "Popup placement (pass-through to `<dj-popup>`).",
+              "attribute": "position",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "matchWidth",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Size the panel to the trigger's width. Off by default \u2014 menus are content-sized.",
+              "attribute": "match-width"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "open",
+              "description": "Whether the menu is open. Reflected so page CSS can target `:host([open])`."
+            },
+            {
+              "name": "position",
+              "type": {
+                "text": "PopupPosition"
+              },
+              "fieldName": "position",
+              "description": "Popup placement (pass-through to `<dj-popup>`)."
+            },
+            {
+              "name": "match-width",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "matchWidth",
+              "description": "Size the panel to the trigger's width. Off by default \u2014 menus are content-sized."
+            }
+          ],
+          "slots": [
+            {
+              "name": "trigger",
+              "description": "the button"
+            },
+            {
+              "name": "",
+              "description": "the menu list or panel"
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "panel",
+              "description": "the content wrapper inside the popup"
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-open",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            },
+            {
+              "name": "dj-close",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-dropdown",
+          "declaration": {
+            "name": "DjDropdown",
+            "module": "packages/dropdown/src/dj-dropdown.ts"
           }
         }
       ]

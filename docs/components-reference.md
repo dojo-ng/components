@@ -60,6 +60,23 @@ A circular (or extended/pill) action button, optionally fixed to a screen positi
 **CSS properties:** `--dj-fab-z-index` (default `800`; Stacking order of the floating action button.)
 
 
+### `<dj-copy-button>` · `@dojo-ng/copy-button`
+
+An icon-only button that copies text to the clipboard and flashes feedback. It composes `<dj-button>`, so focus, keyboard, and button ARIA come for free. Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form controls) or `textContent` (`value` wins when both are set). Copying uses `navigator.clipboard.writeText`, which requires a secure context (https or localhost); there is no legacy `execCommand` fallback. If the clipboard is unavailable or the write is rejected, the button shows an error state and emits `dj-error`. The icon swaps copy → check (success) → error for `feedback-duration` ms, then reverts, and the button's accessible name changes with it (Copy / Copied / Copy failed) so assistive tech hears the result.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `value` | value | `string` | `""` |
+| `from` | from | `string` | — |
+| `feedbackDuration` | feedback-duration | `number` | `2000` |
+
+**Parts:** `button` (the composed `<dj-button>`)
+
+**Events:** `dj-copy` (detail `{ value }`), `dj-error`
+
+**Methods:** `focus(options: FocusOptions)`
+
+
 ### `<dj-label>` · `@dojo-ng/label`
 
 A form label. Content goes in the default slot. Note: native `for`/`id` association does not cross shadow boundaries, so associate by wrapping the control in the label's light DOM, or rely on the consuming field component to wire ARIA. `for-id` is still reflected for same-root cases. Deviates from the Dojo widget in one name: the visually-hidden flag is `visually-hidden` (not `hidden`) to avoid clobbering the native `hidden` attribute.
@@ -624,6 +641,23 @@ Right-click (contextmenu) on the trigger (default slot) opens a `<dj-popup>` at 
 **Slots:** default, `content`
 
 **Events:** `dj-open`
+
+
+### `<dj-dropdown>` · `@dojo-ng/dropdown`
+
+The APG menu-button glue over the existing `<dj-popup>` and `<dj-list>`. Put the trigger (usually a `<dj-button>`) in the `trigger` slot and the content — typically one `<dj-list>` — in the default slot; the content renders in a `<dj-popup>` anchored to the trigger. Behavior: clicking the trigger toggles it. ArrowDown / Enter / Space open it; on open, if the content is a `<dj-list>`, its `menu` mode is switched on, it is focused, and its first item is activated. Escape closes and returns focus to the trigger; choosing an item (the list's `change` event) closes and refocuses too — the `change` event still reaches the consumer untouched. Non-list content is allowed as an arbitrary panel: then dj-dropdown only does open/close/Escape/focus-return, with no list steering.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `open` | open ↻ | `boolean` | `false` |
+| `position` | position ↻ | `PopupPosition` | `"below"` |
+| `matchWidth` | match-width | `boolean` | `false` |
+
+**Slots:** `trigger` (the button), default (the menu list or panel)
+
+**Parts:** `panel` (the content wrapper inside the popup)
+
+**Events:** `dj-open`, `dj-close`
 
 
 ### `<dj-popup-confirmation>` · `@dojo-ng/popup-confirmation`
@@ -1277,6 +1311,27 @@ A form-associated WYSIWYG editor built on the Lexical core. The editable region 
 
 
 ## Feedback
+
+
+### `<dj-alert>` · `@dojo-ng/alert`
+
+An inline status banner. It sits in the page flow (unlike the transient, floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a persistent state next to the content it concerns. An alert written in markup shows by default (`open`); closing it sets `open` false and it takes no space. Info/success announce politely (`role="status"`); warning/danger announce assertively (`role="alert"`).
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `variant` | variant ↻ | `AlertVariant` | `"info"` |
+| `closable` | closable | `boolean` | `false` |
+| `open` | open ↻ | `boolean` | `true` |
+
+**Slots:** default (the message), `icon` (replaces the default variant glyph)
+
+**Parts:** `base`, `icon`, `message`, `close`
+
+**Events:** `dj-close` (after the alert closes)
+
+**Methods:** `close()` (Close the alert: hides it and emits `dj-close` once. No-op if already closed.)
+
+**CSS properties:** `--dj-alert-background` (default `per-variant tint`; Banner background; defaults to the variant's `--dj-color-*-100`.), `--dj-alert-color` (default `per-variant ink`; Text color; defaults to the variant's `--dj-color-*-700`.), `--dj-alert-accent-color` (default `per-variant accent`; Icon + leading-border color; defaults to the variant's `--dj-color-*-600`.), `--dj-alert-radius` (default `var(--dj-input-border-radius-medium)`; Corner radius.)
 
 
 ### `<dj-progress>` · `@dojo-ng/progress`

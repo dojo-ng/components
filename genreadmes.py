@@ -35,6 +35,9 @@ NOTES = {
     "tree": "Selection and expansion are both controlled: `value` is the selected node id (emits `dj-select`) and `expanded` is an array of open node ids (emits `dj-expand-change` with `{ id, expanded, expandedIds }`). Node `icon` names must be registered with `registerIcon`/`registerIcons` from `@dojo-ng/icon`; `count` renders as a trailing badge. Keyboard is the APG tree pattern with a roving tabindex — only one row is ever a tab stop, arrows move focus without selecting (Right/Left expand/collapse or move in/out, Home/End jump), and Enter or Space selects. Style indentation with `--dj-tree-indent` and the count with `--dj-tree-count-color`. Not built yet: drag-drop, virtualization, checkboxes, lazy loading.",
     "badge": "Presentational only — a badge has no ARIA role. When it shows a count for a control (an unread count on a button, say), put the accessible name on the CONTROL (`aria-label=\"Notifications, 4 unread\"`), not on the badge, so assistive tech reads the meaning rather than a bare number. Variant colors reuse the theme's semantic `--dj-color-*-600` scales; override a single badge with `--dj-badge-background` / `--dj-badge-color`.",
     "skeleton": "Size and shape come from your CSS on the host, not from props: give it a width/height for a text line, or a square plus `border-radius: 50%` for an avatar. The skeleton is always `aria-hidden`; mark the region that is loading with `aria-busy=\"true\"` until the real content lands so the loading state is announced once for the whole region, not per placeholder. `prefers-reduced-motion` stills the sheen automatically.",
+    "alert": "An inline status banner that sits in the page flow — distinct from `dj-snackbar` (transient, floating) and `dj-result` (full-page). It shows by default (`open`); `close()` hides it and emits `dj-close`. info/success announce politely (`role=\"status\"`), warning/danger assertively (`role=\"alert\"`). Each variant has a default glyph; override it via the `icon` slot. Add `closable` for a dismiss button (its label is the localized `close` key). Variant colors reuse the theme's semantic tint/ink scales; override one alert with `--dj-alert-background` / `--dj-alert-color` / `--dj-alert-accent-color`.",
+    "copy-button": "Copies to the clipboard via `navigator.clipboard.writeText`, which requires a secure context (https or localhost) — there is no legacy fallback, so on plain http nothing is copied and the button shows its error state. Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form fields) or `textContent`; `value` wins when both are set. The icon flashes copy → check → error for `feedback-duration` ms and the accessible name changes with it (Copy / Copied / Copy failed). Listen for `dj-copy` (detail `{ value }`) and `dj-error`.",
+    "dropdown": "The APG menu-button glue over `dj-popup` + `dj-list`: the trigger goes in the `trigger` slot, the menu (usually one `dj-list`) in the default slot. Click or ArrowDown/Enter/Space opens it and moves into the list; Enter chooses and closes; Escape closes; focus returns to the trigger each time. It sets `aria-haspopup`/`aria-expanded` on your trigger for you. Non-list content is allowed as a plain anchored panel (then it only does open/close/Escape/focus-return) — for a generic anchored panel with no menu semantics use `dj-trigger-popup`, and for right-click use `dj-context-menu`.",
 }
 
 # Worked examples per package: list of (title, description, code). The first is used as the
@@ -249,6 +252,24 @@ EXAMPLES = {
    '<div aria-busy="true" style="display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:center;max-width:320px">\n  <dj-skeleton style="width:48px;height:48px;border-radius:50%"></dj-skeleton>\n  <div style="display:grid;gap:8px">\n    <dj-skeleton style="height:12px;width:60%"></dj-skeleton>\n    <dj-skeleton style="height:12px"></dj-skeleton>\n    <dj-skeleton style="height:12px;width:80%"></dj-skeleton>\n  </div>\n</div>'),
   ("No animation", "`effect=\"none\"` for a static placeholder.",
    '<dj-skeleton effect="none" style="height:16px;width:200px"></dj-skeleton>'),
+ ],
+ "alert": [
+  ("Variants", "Each variant has a default glyph and live-region role.",
+   '<dj-alert variant="info">Heads up — a new version is available.</dj-alert>\n<dj-alert variant="success">Your changes were saved.</dj-alert>\n<dj-alert variant="warning">Your trial ends in 3 days.</dj-alert>\n<dj-alert variant="danger">Payment failed. Update your card.</dj-alert>'),
+  ("Closable, with a custom icon", "`closable` adds a dismiss button; the `icon` slot replaces the glyph. Listen for `dj-close`.",
+   '<dj-alert variant="success" closable>\n  <svg slot="icon" viewBox="0 0 24 24" width="20" height="20"><path d="M20 6L9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2"/></svg>\n  Deploy finished.\n</dj-alert>'),
+ ],
+ "copy-button": [
+  ("Copy a literal value", "Flashes feedback; listen for `dj-copy`.",
+   '<dj-copy-button value="npm install @dojo-ng/button"></dj-copy-button>'),
+  ("Copy from another element", "`from` points at an element id in the same root.",
+   '<code id="token">sk_live_abc123</code>\n<dj-copy-button from="token"></dj-copy-button>'),
+ ],
+ "dropdown": [
+  ("Actions menu", "A button trigger plus a dj-list menu. Enter/Arrow keys drive it; choosing an item closes it.",
+   '<dj-dropdown>\n  <dj-button slot="trigger">Actions</dj-button>\n  <dj-list id="menu"></dj-list>\n</dj-dropdown>\n<script type="module">\n  import "@dojo-ng/dropdown";\n  import "@dojo-ng/button";\n  import "@dojo-ng/list";\n  document.getElementById("menu").options = [\n    { value: "rename", label: "Rename" },\n    { value: "duplicate", label: "Duplicate" },\n    { value: "delete", label: "Delete" },\n  ];\n</script>'),
+  ("Free panel", "Non-list content is a plain anchored panel — open/close/Escape only.",
+   '<dj-dropdown>\n  <dj-button slot="trigger">Filters</dj-button>\n  <div style="padding:12px">Any panel content here.</div>\n</dj-dropdown>'),
  ],
  "icon": [
   ("Inline SVG icon", "Slot an SVG; it inherits `currentColor` and sizing.",

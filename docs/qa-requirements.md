@@ -107,6 +107,16 @@ branches.
   axe checks catch structural and rule violations but not the lived experience.
 - Older-Safari quirks are confirmed on a real device when a change is risky there, since WebKit in
   CI is not identical to a specific shipped Safari version.
+- **Safari skips buttons in the tab order by default.** macOS Safari puts only form fields and
+  links in sequential tab navigation unless "Press Tab to highlight each item on a webpage"
+  (Safari → Settings → Advanced) or System Settings → Keyboard → Keyboard navigation is enabled.
+  So a manual keyboard walkthrough in a default Safari will appear to skip every `<button>` —
+  close buttons, icon buttons, menu triggers — and jump field to field. Before filing that as a
+  component bug, enable the setting or repeat the walkthrough in Chrome/Firefox; a control being
+  unreachable in *default* Safari is a browser policy, not a WCAG failure on our side. (Found
+  2026-07-19 during the dj-search-box chip keyboard check.) What IS on us: any focusable control
+  must show a visible focus indicator once it does receive focus — the same check surfaced a real
+  missing `:focus-visible` ring on dj-chip's close button.
 
 ## Tooling status
 

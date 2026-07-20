@@ -19,6 +19,9 @@ export default css`
 	.close { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border: none; background: transparent; color: inherit; padding: 0; width: 1.5rem; height: 1.5rem; border-radius: 50%; }
 	.close .icon, .close svg { width: 1rem; height: 1rem; }
 	.close:hover { background: rgb(0 0 0 / 0.1); }
+	/* The close button is a real <button> and therefore a tab stop; without this it took focus
+	   invisibly (WCAG 2.4.7). Matches the ring on button.action. */
+	.close:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: var(--dj-focus-ring-offset, 2px); }
 	.icon { display: inline-flex; }
 	/* Forced colors: the chip's fill is forced flat, so add a border for shape and use the
 	   system selected pair when checked. */

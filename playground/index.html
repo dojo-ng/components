@@ -443,10 +443,10 @@
 
 		<h2>Search box (tokenized filters)</h2>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
-			Free text plus typed <code>key:value</code> filters. Configured keys: <code>from</code>, <code>to</code>, <code>tag</code>, and <code>has</code> (which has options, so <code>has:</code> opens suggestions). Try <code>from:ada</code>, <code>has:</code> then pick, <code>subject:"weekly report"</code> (unconfigured — stays plain text), and Backspace at the start to remove the last chip. The narrow box below shows chips wrapping at phone width.
+			Free text plus typed <code>key:value</code> filters. Two kinds of key: <strong><code>from</code> and <code>has</code> carry options</strong>, so typing <code>from:</code> or <code>has:</code> opens a suggestion popup (arrows + Enter, or click, to pick); <strong><code>to</code> and <code>tag</code> have no options</strong>, so they take a free-typed value committed by Enter or the terminating space. Try <code>from:</code> then pick a contact, <code>has:</code> then pick, <code>to:someone</code> then space, <code>tag:"needs review"</code> (quoted, to hold a space), and <code>subject:anything</code> (unconfigured — stays plain text, no popup, no chip). Backspace at the start removes the last chip. The narrow box below shows chips wrapping at phone width.
 		</p>
 		<div class="col" style="gap: 0.75rem">
-			<dj-search-box id="mail-search" label="Search mail" placeholder='Try from:ada or has:attachment' style="max-width: 34rem"></dj-search-box>
+			<dj-search-box id="mail-search" label="Search mail" placeholder='Try from: or has: (suggest) — to: or tag: (free text)' style="max-width: 34rem"></dj-search-box>
 			<pre id="search-out" style="margin: 0; padding: 0.5rem; background: var(--dj-color-neutral-100, #f3f4f6); border-radius: 4px; color: var(--dj-color-text-muted)">{ "text": "", "tokens": [] }</pre>
 			<span id="search-event" style="color: var(--dj-color-text-muted)">(no dj-search yet)</span>
 			<p style="color: var(--dj-color-text-muted); margin: 0.5rem 0 0">Narrow (phone-width) — chips wrap, close targets stay tappable:</p>
@@ -751,8 +751,15 @@
 			});
 
 			// search-box: mail filter keys (`has` carries options, so has: suggests values)
+			// `from` and `has` carry options, so typing `from:` / `has:` opens a suggestion popup.
+			// `to` and `tag` have no options — they take a free-typed value committed by Enter or
+			// the terminating space. Both paths are here on purpose.
 			const searchKeys = [
-				{ key: "from", label: "From" },
+				{ key: "from", label: "From", options: [
+					{ value: "ada@example.com", label: "Ada Lovelace" },
+					{ value: "grace@example.com", label: "Grace Hopper" },
+					{ value: "alan@example.com", label: "Alan Turing" },
+				] },
 				{ key: "to", label: "To" },
 				{ key: "tag", label: "Tag" },
 				{ key: "has", label: "Has", options: [

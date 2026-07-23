@@ -177,6 +177,32 @@
 			<dj-icon size="large" alt-text="Search"><svg viewBox="0 0 24 24"><path d="M21 21l-4.3-4.3M11 19a8 8 0 110-16 8 8 0 010 16z" fill="none" stroke="currentColor" stroke-width="2"/></svg></dj-icon>
 			<dj-button kind="contained"><dj-icon slot="icon"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="2" fill="none"/></svg></dj-icon>With icon</dj-button>
 		</div>
+		<p style="color: var(--dj-color-text-muted); margin: 0.5rem 0">
+			A registered glyph (<code>type=</code>) and an inline slotted <code>&lt;svg&gt;</code> must render identically at every size — in each group the left star is from the registry, the right one is slotted. The last group registers a glyph with NO <code>viewBox</code>: it gets a correctly-sized box but its artwork does not scale, and registering it logged one console warning (open the console to see it).
+		</p>
+		<div class="row" style="gap: 2rem; align-items: flex-end;">
+			<div style="text-align: center">
+				<div style="color: var(--dj-color-text-muted); font-size: 0.75rem">small</div>
+				<dj-icon type="star" size="small" alt-text="star (registry)"></dj-icon>
+				<dj-icon size="small" alt-text="star (slotted)"><svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" fill="currentColor"/></svg></dj-icon>
+			</div>
+			<div style="text-align: center">
+				<div style="color: var(--dj-color-text-muted); font-size: 0.75rem">medium</div>
+				<dj-icon type="star" size="medium" alt-text="star (registry)"></dj-icon>
+				<dj-icon size="medium" alt-text="star (slotted)"><svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" fill="currentColor"/></svg></dj-icon>
+			</div>
+			<div style="text-align: center">
+				<div style="color: var(--dj-color-text-muted); font-size: 0.75rem">large</div>
+				<dj-icon type="star" size="large" alt-text="star (registry)"></dj-icon>
+				<dj-icon size="large" alt-text="star (slotted)"><svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" fill="currentColor"/></svg></dj-icon>
+			</div>
+			<div style="text-align: center">
+				<div style="color: var(--dj-color-text-muted); font-size: 0.75rem">no viewBox (clipped)</div>
+				<dj-icon type="star-noviewbox" size="small" alt-text="star, no viewBox"></dj-icon>
+				<dj-icon type="star-noviewbox" size="medium" alt-text="star, no viewBox"></dj-icon>
+				<dj-icon type="star-noviewbox" size="large" alt-text="star, no viewBox"></dj-icon>
+			</div>
+		</div>
 
 		<h2>Loading indicator + a working action</h2>
 		<div class="row">
@@ -887,6 +913,11 @@
 				folder: '<svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
 				mail: '<svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z M3 6l9 7 9-7" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
 				doc: '<svg viewBox="0 0 24 24"><path d="M6 2h9l3 3v17H6z M15 2v4h4" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+				// Icon-sizing demo. "star" has a viewBox and scales; "star-noviewbox" is the
+				// deliberate trap — same artwork, no viewBox, so it renders clipped/unscaled and
+				// the registry logs one console warning on load.
+				star: '<svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" fill="currentColor"/></svg>',
+				'star-noviewbox': '<svg width="24" height="24"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" fill="currentColor"/></svg>',
 			});
 			const folders = document.getElementById("tree-folders");
 			folders.expanded = ["archive"];

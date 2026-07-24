@@ -29,6 +29,9 @@ interface VisRow {
  * node ids) and emits `dj-expand-change`. The component knows nothing about what the tree holds —
  * a file tree, a mail folder list, or a MIME structure are all just nodes.
  *
+ * A row click selects; the chevron expands. Set `expand-on-row-click` when the tree has rows that
+ * exist only to contain others, where selecting one means nothing and the click would be dead.
+ *
  * Keyboard follows the APG tree pattern with a roving tabindex: exactly one row is tabbable (the
  * selected row if visible, else the first visible row), and the arrow keys move focus without
  * selecting. Down/Up walk the visible rows; Right expands a closed parent, steps into an open one,
@@ -106,6 +109,15 @@ export class DjTree extends DojoElement {
 	@property() value = "";
 	/** The expanded node ids (controlled). Toggling updates this and emits `dj-expand-change`. */
 	@property({ type: Array }) expanded: string[] = [];
+	/**
+	 * Expand or collapse a parent when its row is clicked, not only its chevron. Off by default,
+	 * because a row click means "select" in a tree whose rows are all selectable. Turn it on when
+	 * some rows exist only to contain others — an account above its mail folders, a directory above
+	 * its files — where clicking the row would otherwise do nothing at all. Selection still happens
+	 * and `dj-select` still fires; this only adds the toggle. Leaf rows are unaffected.
+	 */
+	@property({ attribute: "expand-on-row-click", type: Boolean, reflect: true })
+	expandOnRowClick = false;
 
 	/** The row that currently holds the roving tabindex. */
 	@state() private activeId = "";
@@ -221,7 +233,11 @@ export class DjTree extends DojoElement {
 			aria-selected=${selected ? "true" : nothing}
 			tabindex=${node.id === this.activeId ? "0" : "-1"}
 			@keydown=${(e: KeyboardEvent) => this.#onKeydown(e, node.id)}
-			@click=${(e: Event) => { e.stopPropagation(); this.#select(node.id); }}
+			@click=${(e: Event) => {
+				e.stopPropagation();
+				this.#select(node.id);
+				if (this.expandOnRowClick && hasChildren) this.#toggle(node.id);
+			}}
 		>
 			<div class="row ${selected ? "row--selected" : ""}" part="row">
 				${hasChildren

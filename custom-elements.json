@@ -10727,7 +10727,7 @@
           "name": "DjTree",
           "customElement": true,
           "tagName": "dj-tree",
-          "description": "a hierarchical tree from `nodes`. Each node may carry an `icon` (a registered icon name) and a `count` (a trailing badge, e.g. an unread count). Selection is controlled by `value` (a node id) and emits `dj-select`; expansion is controlled by `expanded` (an array of node ids) and emits `dj-expand-change`. The component knows nothing about what the tree holds \u2014 a file tree, a mail folder list, or a MIME structure are all just nodes. Keyboard follows the APG tree pattern with a roving tabindex: exactly one row is tabbable (the selected row if visible, else the first visible row), and the arrow keys move focus without selecting. Down/Up walk the visible rows; Right expands a closed parent, steps into an open one, and does nothing on a leaf; Left collapses an open parent or moves to the parent row; Home/End jump to the first/last visible row; Enter or Space selects the focused row. Indentation is a logical `margin-inline-start`, so it flips in RTL, and the chevron mirrors with the reading direction. Deferred (not built): drag-drop, virtualization, checkboxes, lazy loading.",
+          "description": "a hierarchical tree from `nodes`. Each node may carry an `icon` (a registered icon name) and a `count` (a trailing badge, e.g. an unread count). Selection is controlled by `value` (a node id) and emits `dj-select`; expansion is controlled by `expanded` (an array of node ids) and emits `dj-expand-change`. The component knows nothing about what the tree holds \u2014 a file tree, a mail folder list, or a MIME structure are all just nodes. A row click selects; the chevron expands. Set `expand-on-row-click` when the tree has rows that exist only to contain others, where selecting one means nothing and the click would be dead. Keyboard follows the APG tree pattern with a roving tabindex: exactly one row is tabbable (the selected row if visible, else the first visible row), and the arrow keys move focus without selecting. Down/Up walk the visible rows; Right expands a closed parent, steps into an open one, and does nothing on a leaf; Left collapses an open parent or moves to the parent row; Home/End jump to the first/last visible row; Enter or Space selects the focused row. Indentation is a logical `margin-inline-start`, so it flips in RTL, and the chevron mirrors with the reading direction. Deferred (not built): drag-drop, virtualization, checkboxes, lazy loading.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -10761,6 +10761,17 @@
               "default": "[]",
               "description": "The expanded node ids (controlled). Toggling updates this and emits `dj-expand-change`.",
               "attribute": "expanded"
+            },
+            {
+              "kind": "field",
+              "name": "expandOnRowClick",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Expand or collapse a parent when its row is clicked, not only its chevron. Off by default, because a row click means \"select\" in a tree whose rows are all selectable. Turn it on when some rows exist only to contain others \u2014 an account above its mail folders, a directory above its files \u2014 where clicking the row would otherwise do nothing at all. Selection still happens and `dj-select` still fires; this only adds the toggle. Leaf rows are unaffected.",
+              "attribute": "expand-on-row-click",
+              "reflects": true
             }
           ],
           "attributes": [
@@ -10787,6 +10798,14 @@
               },
               "fieldName": "expanded",
               "description": "The expanded node ids (controlled). Toggling updates this and emits `dj-expand-change`."
+            },
+            {
+              "name": "expand-on-row-click",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "expandOnRowClick",
+              "description": "Expand or collapse a parent when its row is clicked, not only its chevron. Off by default, because a row click means \"select\" in a tree whose rows are all selectable. Turn it on when some rows exist only to contain others \u2014 an account above its mail folders, a directory above its files \u2014 where clicking the row would otherwise do nothing at all. Selection still happens and `dj-select` still fires; this only adds the toggle. Leaf rows are unaffected."
             }
           ],
           "slots": [

@@ -603,6 +603,7 @@ declare module "solid-js" {
         "nodes"?: DjTree["nodes"];
         "value"?: DjTree["value"];
         "expanded"?: DjTree["expanded"];
+        "expand-on-row-click"?: DjTree["expandOnRowClick"];
       };
       "dj-trigger-popup": JSX.HTMLAttributes<DjTriggerPopup> & {
         "open"?: DjTriggerPopup["open"];

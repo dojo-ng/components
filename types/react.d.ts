@@ -607,6 +607,7 @@ declare module "react" {
         "nodes"?: DjTree["nodes"];
         "value"?: DjTree["value"];
         "expanded"?: DjTree["expanded"];
+        "expand-on-row-click"?: DjTree["expandOnRowClick"];
       };
       "dj-trigger-popup": DjProps<DjTriggerPopup> & {
         "open"?: DjTriggerPopup["open"];

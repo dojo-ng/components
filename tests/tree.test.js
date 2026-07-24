@@ -133,6 +133,43 @@ test("aria-expanded on parents only; aria-selected on the selected row only", as
 	assert.equal(rowById(el, "inbox").getAttribute("aria-selected"), null);
 });
 
+test("row click selects without expanding (expand-on-row-click off by default)", async () => {
+	const el = await build();
+	const seen = [];
+	el.addEventListener("dj-expand-change", (e) => seen.push(e.detail));
+	rowById(el, "inbox").dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
+	await settled(el); await tick();
+	assert.equal(el.value, "inbox");
+	assert.deepEqual(el.expanded, [], "the default must not toggle from the row");
+	assert.deepEqual(seen, []);
+});
+
+test("expandOnRowClick: a parent row click selects AND toggles; a leaf only selects", async () => {
+	const el = await build({ expandOnRowClick: true });
+	const selected = [];
+	el.addEventListener("dj-select", (e) => selected.push(e.detail.id));
+	const click = async (id) => {
+		rowById(el, id).dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
+		await settled(el); await tick();
+	};
+	await click("inbox");
+	assert.deepEqual(el.expanded, ["inbox"], "first click expands");
+	assert.equal(el.value, "inbox", "and still selects");
+	await click("inbox");
+	assert.deepEqual(el.expanded, [], "second click collapses");
+	await click("trash");
+	assert.deepEqual(el.expanded, [], "a leaf row does not toggle anything");
+	assert.deepEqual(selected, ["inbox", "inbox", "trash"], "dj-select fires either way");
+});
+
+test("expandOnRowClick: the chevron still toggles exactly once, not twice", async () => {
+	const el = await build({ expandOnRowClick: true });
+	rowById(el, "inbox").querySelector('[part="chevron"]').dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
+	await settled(el); await tick();
+	assert.deepEqual(el.expanded, ["inbox"], "chevron stops propagation, so the row handler must not also fire");
+	assert.equal(el.value, "", "chevron click must still not select");
+});
+
 test("arrow movement never selects; Enter and Space do", async () => {
 	const el = await build();
 	const selected = [];

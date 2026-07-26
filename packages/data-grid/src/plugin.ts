@@ -1,12 +1,14 @@
 import type { TemplateResult } from "lit";
-import type { Cell, Row as TableRow, Table, TableOptionsResolved } from "@tanstack/table-core";
+import type { Cell, Header as TableHeader, Row as TableRow, Table, TableOptionsResolved } from "@tanstack/table-core";
 import type { DjDataGrid, GridColumn, Row } from "./dj-data-grid.js";
 
-/** What a plugin can see and do. Created once per table build. */
+/** What a plugin can see and do. Created once per table build, BEFORE the table itself, so the
+ *  `columns()` hook can read host state while the column list is still being decided. */
 export interface DataGridContext {
 	/** The host element (emit events, query renderRoot, requestUpdate via refresh). */
 	readonly host: DjDataGrid;
-	/** The live TanStack table. */
+	/** The live TanStack table. A getter, because the context outlives any single table instance
+	 *  and exists before the first one is created — never destructure it. */
 	readonly table: Table<Row>;
 	/** Re-render the grid. */
 	refresh(): void;
@@ -14,8 +16,11 @@ export interface DataGridContext {
 
 export interface DataGridPlugin {
 	name: string;
-	/** Transform the plain GridColumn list (insert/remove/annotate columns). Array order. */
-	columns?(cols: GridColumn[]): GridColumn[];
+	/** Transform the plain GridColumn list (insert/remove/annotate columns). Array order.
+	 *  `ctx` is optional in the signature only for backward compatibility — it is always passed,
+	 *  and it is live at first build (the context is created before the table so this hook can
+	 *  read host state such as `selectionMode`, which decides whether a column exists at all). */
+	columns?(cols: GridColumn[], ctx: DataGridContext): GridColumn[];
 	/** TanStack options merged at table creation (row models, filterFns…). Array order; later wins.
 	 *  Never return `state`/`onStateChange` — core owns those. */
 	tableOptions?(): Partial<TableOptionsResolved<Row>>;
@@ -23,6 +28,13 @@ export interface DataGridPlugin {
 	setup?(ctx: DataGridContext): (() => void) | void;
 	/** REPLACE a cell's content. First non-undefined in array order wins; else core default. */
 	renderCell?(cell: Cell<Row, unknown>, ctx: DataGridContext): TemplateResult | string | undefined;
+	/** REPLACE a column header's content. First non-undefined in array order wins; else the core
+	 *  default (the column's `header` string, falling back to its id). The mirror of `renderCell`
+	 *  for the header row, so a plugin that owns a column can also draw its header control (a
+	 *  select-all checkbox, a column menu). Sorting still belongs to the core header cell: the
+	 *  returned content renders inside it, so make a column `sortable: false` if a control in its
+	 *  header would fight the sort click. */
+	renderHeader?(header: TableHeader<Row, unknown>, ctx: DataGridContext): TemplateResult | string | undefined;
 	/** WRAP a cell's content (indent, expander, badges). Applied in array order after renderCell. */
 	decorateCell?(cell: Cell<Row, unknown>, content: unknown, ctx: DataGridContext): unknown;
 	/** Merge attributes onto each rendered row element (aria-level, aria-expanded…). Array order;

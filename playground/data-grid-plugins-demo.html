@@ -35,7 +35,8 @@
 					"@dojo-ng/data-grid-groups": "../packages/data-grid-groups/dist/index.js",
 					"@dojo-ng/data-grid-export": "../packages/data-grid-export/dist/index.js",
 					"@dojo-ng/data-grid-detail": "../packages/data-grid-detail/dist/index.js",
-					"@dojo-ng/data-grid-rowstate": "../packages/data-grid-rowstate/dist/index.js"
+					"@dojo-ng/data-grid-rowstate": "../packages/data-grid-rowstate/dist/index.js",
+					"@dojo-ng/data-grid-select": "../packages/data-grid-select/dist/index.js"
 				}
 			}
 		</script>
@@ -103,6 +104,22 @@
 		</style>
 		<dj-data-grid id="g6" height="16rem"></dj-data-grid>
 
+		<h2>7 — Master/detail: activation + selection column</h2>
+		<p class="hint">
+			The combination this exists for. A plain <strong>click opens</strong> a row into the pane below
+			(<code>dj-activate</code>) and never disturbs the selection; the <strong>checkboxes choose</strong> the set the
+			bulk toolbar acts on. Keyboard: arrows move, <strong>Enter opens</strong>, <strong>Space selects</strong>.
+			Shift-click a checkbox for a range; Ctrl/Cmd-click a row selects it without opening.
+			<em>Safari note: enable "Press Tab to highlight each item on a webpage" or Tab will skip the checkboxes.</em>
+		</p>
+		<div class="bar">
+			<button id="g7mark">Mark read</button>
+			<button id="g7del">Delete</button>
+			<span class="hint" id="g7count">0 selected</span>
+		</div>
+		<dj-data-grid id="g7" height="14rem" activation="click" selection-mode="multiple"></dj-data-grid>
+		<pre id="g7open">(click a row to open it)</pre>
+
 		<script type="module">
 			import { html } from "lit";
 			import "@dojo-ng/data-grid";
@@ -116,6 +133,7 @@
 			import { exportPlugin } from "@dojo-ng/data-grid-export";
 			import { detailPlugin } from "@dojo-ng/data-grid-detail";
 			import { rowStatePlugin } from "@dojo-ng/data-grid-rowstate";
+			import { selectColumnPlugin } from "@dojo-ng/data-grid-select";
 
 			document.getElementById("locale").addEventListener("change", (e) => {
 				document.documentElement.lang = e.target.value;
@@ -242,6 +260,40 @@
 					return undefined;
 				},
 			})];
+
+			// 7 — activation + selection column (the master/detail idiom)
+			const g7 = document.getElementById("g7");
+			g7.columns = [
+				{ id: "from", header: "From" },
+				{ id: "subject", header: "Subject" },
+				{ id: "date", header: "Date" },
+			];
+			g7.data = [
+				{ from: "Ada Lovelace", subject: "Analytical engine notes", date: "2026-07-24", read: false },
+				{ from: "Grace Hopper", subject: "Compiler review", date: "2026-07-23", read: false },
+				{ from: "Alan Turing", subject: "Re: decidability", date: "2026-07-22", read: true },
+				{ from: "Edsger Dijkstra", subject: "Shortest path draft", date: "2026-07-21", read: true },
+				{ from: "Barbara Liskov", subject: "Substitution examples", date: "2026-07-20", read: true },
+			];
+			g7.plugins = [selectColumnPlugin({ label: (m) => `Select message from ${m.from}` })];
+
+			// Opening is its own event — never inferred from what happens to be selected.
+			g7.addEventListener("dj-activate", (e) => {
+				document.getElementById("g7open").textContent =
+					`open: ${e.detail.row.subject} (row ${e.detail.index})`;
+			});
+			let g7selected = [];
+			g7.addEventListener("dj-selection-change", (e) => {
+				g7selected = e.detail.rows;
+				document.getElementById("g7count").textContent = `${g7selected.length} selected`;
+			});
+			const bulk = (verb) => () => {
+				document.getElementById("g7open").textContent = g7selected.length
+					? `${verb} ${g7selected.length}: ${g7selected.map((m) => m.subject).join(", ")}`
+					: `${verb}: nothing selected`;
+			};
+			document.getElementById("g7mark").addEventListener("click", bulk("mark read"));
+			document.getElementById("g7del").addEventListener("click", bulk("delete"));
 		</script>
 	</body>
 </html>

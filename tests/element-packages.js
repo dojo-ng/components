@@ -109,4 +109,5 @@ export const SUPPORT_PACKAGES = [
 	"data-grid-export",
 	"data-grid-detail",
 	"data-grid-rowstate",
+	"data-grid-select",
 ];

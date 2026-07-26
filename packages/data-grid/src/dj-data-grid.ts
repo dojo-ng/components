@@ -4,7 +4,7 @@ import { ref } from "lit/directives/ref.js";
 import DojoElement from "@dojo-ng/dojo-element";
 import {
 	createTable, getCoreRowModel, getSortedRowModel, functionalUpdate,
-	type Table, type TableOptionsResolved, type TableState, type ColumnDef, type Cell,
+	type Table, type TableOptionsResolved, type TableState, type ColumnDef, type Cell, type Header as TableHeader,
 	type Row as TableRow, type SortingState, type RowSelectionState, type Updater, type AggregationFnOption,
 } from "@tanstack/table-core";
 import { Virtualizer, elementScroll, observeElementOffset, observeElementRect } from "@tanstack/virtual-core";
@@ -100,14 +100,26 @@ export class DjDataGrid extends DojoElement {
 	 *  changedProperties-based guard mistakes for the initial cycle. */
 	#builtPlugins?: DataGridPlugin[];
 	#tstate!: TableState;
-	#ctx!: DataGridContext;
+	/**
+	 * The plugin context. A CLASS FIELD, so it exists before the first table does: `columns()`
+	 * runs inside `createTable` and needs host state — `selectionMode` decides whether the select
+	 * plugin contributes a column at all, and a wrong answer there desyncs the grid template (which
+	 * recomputes `columns()` at render) from the column defs (built during table creation).
+	 * `table` is a live getter, so one stable context object spans every rebuild.
+	 */
+	#ctx: DataGridContext = this.#makeContext();
+	#makeContext(): DataGridContext {
+		const ctx = { host: this, refresh: () => this.requestUpdate() } as unknown as DataGridContext;
+		Object.defineProperty(ctx, "table", { get: () => this.#table, enumerable: true });
+		return ctx;
+	}
 	#disposers: Array<() => void> = [];
 	#virtualizer?: Virtualizer<HTMLElement, Element>;
 	#cleanup?: () => void;
 
 	/** Column list after every plugin's `columns()` transform, in array order. */
 	#computeColumns(): GridColumn[] {
-		return this.plugins.reduce((cols, p) => p.columns?.(cols) ?? cols, this.columns);
+		return this.plugins.reduce((cols, p) => p.columns?.(cols, this.#ctx) ?? cols, this.columns);
 	}
 	#columnDefs(): ColumnDef<Row>[] {
 		return this.#computeColumns().map((c) => {
@@ -175,7 +187,6 @@ export class DjDataGrid extends DojoElement {
 		this.#tstate = { ...this.#table.initialState, sorting: this.sorting, rowSelection: this.rowSelection };
 		this.#table.setOptions((o) => ({ ...o, state: this.#tstate }));
 
-		this.#ctx = { host: this, table: this.#table, refresh: () => this.requestUpdate() };
 		for (const p of this.plugins) {
 			const dispose = p.setup?.(this.#ctx);
 			if (dispose) this.#disposers.push(dispose);
@@ -319,6 +330,18 @@ export class DjDataGrid extends DojoElement {
 		return content;
 	}
 
+	/** A header cell's content: the first plugin `renderHeader` returning non-undefined wins, else
+	 *  the core default (the column's `header` string, falling back to its id). Mirrors
+	 *  `#cellContent` so a plugin owning a column can also own that column's header control. */
+	#headerContent(header: TableHeader<Row, unknown>): unknown {
+		for (const p of this.plugins) {
+			const r = p.renderHeader?.(header, this.#ctx);
+			if (r !== undefined) return r;
+		}
+		const def = header.column.columnDef.header;
+		return typeof def === "string" ? def : header.column.id;
+	}
+
 	/** Detail content for a row: the first plugin `renderDetail` returning non-undefined wins. */
 	#detailContent(row: TableRow<Row>): TemplateResult | undefined {
 		for (const p of this.plugins) {
@@ -359,7 +382,7 @@ export class DjDataGrid extends DojoElement {
 						${headers.map((h) => {
 							const sortable = h.column.getCanSort();
 							const dir = h.column.getIsSorted();
-							const label = typeof h.column.columnDef.header === "string" ? h.column.columnDef.header : h.column.id;
+							const label = this.#headerContent(h);
 							return html`<div class="hcell ${sortable ? "sortable" : ""}" role="columnheader"
 								aria-sort=${dir === "asc" ? "ascending" : dir === "desc" ? "descending" : sortable ? "none" : nothing}
 								@click=${sortable ? () => h.column.toggleSorting() : nothing}>

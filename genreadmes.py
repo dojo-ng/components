@@ -39,6 +39,7 @@ NOTES = {
     "alert": "An inline status banner that sits in the page flow — distinct from `dj-snackbar` (transient, floating) and `dj-result` (full-page). It shows by default (`open`); `close()` hides it and emits `dj-close`. info/success announce politely (`role=\"status\"`), warning/danger assertively (`role=\"alert\"`). Each variant has a default glyph; override it via the `icon` slot. Add `closable` for a dismiss button (its label is the localized `close` key). Variant colors reuse the theme's semantic tint/ink scales; override one alert with `--dj-alert-background` / `--dj-alert-color` / `--dj-alert-accent-color`.",
     "copy-button": "Copies to the clipboard via `navigator.clipboard.writeText`, which requires a secure context (https or localhost) — there is no legacy fallback, so on plain http nothing is copied and the button shows its error state. Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form fields) or `textContent`; `value` wins when both are set. The icon flashes copy → check → error for `feedback-duration` ms and the accessible name changes with it (Copy / Copied / Copy failed). Listen for `dj-copy` (detail `{ value }`) and `dj-error`.",
     "search-box": "Free text plus typed `key:value` filters. Configure `keys`: a key with `options` opens a suggestion popup when you type `key:` (pick to commit), a key without takes a free-typed value committed by Enter or the terminating space, and values may be `\"quoted\"` to hold spaces. A committed filter becomes a closeable chip before the input; an unconfigured `word:` stays plain text — no popup, no chip, no error. Backspace with the caret at the start removes the last chip. Read `query` (`{ text, tokens }`) or listen for `dj-query-change`; `dj-search` fires on Enter outside token mode. `setQuery()` sets it programmatically without emitting. The tokenizer IS the exported `parseQuery`, so a backend can reuse the same grammar (`import { parseQuery, formatQuery } from \"@dojo-ng/search-box\"`). Not form-associated — search is app-driven.",
+    "data-grid-select": "It owns a COLUMN, not the selection. Checkboxes read and write TanStack's existing row selection through `row.getIsSelected()`/`toggleSelected()`, so `selection-mode`, `rowSelection`, and `dj-selection-change` remain the single source of truth — there is no second copy of the selection to keep in sync. Pair it with `activation=\"click\"` on the grid and a click OPENS a row (`dj-activate`) while the checkboxes build the set bulk actions run on; that combination is the whole point. Behavior follows `selection-mode`: `\"multiple\"` gives checkboxes plus a header select-all with a real indeterminate state, `\"single\"` gives radios and no header control (select-all is meaningless), and `\"none\"` adds no column at all. Shift-click a checkbox to select the range from the last one clicked; the range is computed over the ROW MODEL, so it covers rows the virtualizer has never rendered. Always pass `label` — a column of forty identical \"Select row\" controls is useless with a screen reader.",
     "data-grid-rowstate": "Styling contract: `row()` classifies a row into state tokens and each token `T` becomes an extra shadow part `row--T` on that row, so you style whole rows from your own CSS — `dj-data-grid::part(row--unread) { font-weight: 600 }`. `cell()` returns an inline style string for one column's content instead, for per-cell emphasis (bold the subject but not the date). Both options are optional and are pure functions of row data, so the grid core never learns your states. TWO CONSTRAINTS. (1) Only ONE plugin may own the `part` attribute: `rowAttributes` merges by key and a second row-part plugin would clobber this one. Combining with `tree`/`groups` is fine — those set `aria-level`/`aria-expanded`, different keys. (2) A part name cannot contain spaces, so state tokens must match `/^[a-z0-9-]+$/`; an invalid token is dropped with a single `console.warn` rather than emitting a broken `part`. Note that the base `row` part is always emitted alongside your tokens, so `::part(row)` rules keep working.",
     "dropdown": "The APG menu-button glue over `dj-popup` + `dj-list`: the trigger goes in the `trigger` slot, the menu (usually one `dj-list`) in the default slot. Click or ArrowDown/Enter/Space opens it and moves into the list; Enter chooses and closes; Escape closes; focus returns to the trigger each time. It sets `aria-haspopup`/`aria-expanded` on your trigger for you. Non-list content is allowed as a plain anchored panel (then it only does open/close/Escape/focus-return) — for a generic anchored panel with no menu semantics use `dj-trigger-popup`, and for right-click use `dj-context-menu`.",
 }
@@ -592,6 +593,29 @@ const onKeydown = keyboardGrabMode({
       <div>${card.assignee ?? "Unassigned"}</div>
     </dj-card>`;
 </script>"""),
+ ],
+ "data-grid-select": [
+  ("Master/detail: click opens, checkboxes select", "The intended combination. `activation=\"click\"` makes a plain click open a row; the checkbox column builds the set that bulk actions run on. Name each checkbox with `label`.",
+   """<dj-data-grid id="mail" height="320px" activation="click" selection-mode="multiple"></dj-data-grid>
+<button id="archive">Archive selected</button>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { selectColumnPlugin } from "@dojo-ng/data-grid-select";
+  const grid = document.getElementById("mail");
+  grid.columns = [{ id: "from", header: "From" }, { id: "subject", header: "Subject" }];
+  grid.data = [
+    { from: "Ada", subject: "Analytical engine" },
+    { from: "Grace", subject: "Compiler notes" },
+  ];
+  grid.plugins = [selectColumnPlugin({ label: (m) => `Select ${m.subject}` })];
+
+  let selected = [];
+  grid.addEventListener("dj-selection-change", (e) => { selected = e.detail.rows; });
+  grid.addEventListener("dj-activate", (e) => open(e.detail.row));
+  document.getElementById("archive").addEventListener("click", () => archive(selected));
+</script>"""),
+  ("Put the column on the right", 'Set `position: "end"` to append it instead of prepending; `width` sets the track.',
+   '<script type="module">\n  grid.plugins = [selectColumnPlugin({ position: "end", width: "3rem" })];\n</script>'),
  ],
  "data-grid-rowstate": [
   ("Emphasize unread rows", "`row()` returns state tokens; each becomes a `row--<token>` part you style from your own CSS. The base `row` part is always present too.",

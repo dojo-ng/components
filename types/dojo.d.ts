@@ -252,6 +252,7 @@ declare module "@dojo-ng/framework" {
         "columns"?: DjDataGrid["columns"];
         "data"?: DjDataGrid["data"];
         "selection-mode"?: DjDataGrid["selectionMode"];
+        "activation"?: DjDataGrid["activation"];
         "row-height"?: DjDataGrid["rowHeight"];
         "height"?: DjDataGrid["height"];
         "plugins"?: DjDataGrid["plugins"];

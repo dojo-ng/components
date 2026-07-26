@@ -105,6 +105,9 @@
       "@dojo-ng/data-grid-detail": [
         "./packages/data-grid-detail/dist/index.d.ts"
       ],
+      "@dojo-ng/data-grid-rowstate": [
+        "./packages/data-grid-rowstate/dist/index.d.ts"
+      ],
       "@dojo-ng/board": [
         "./packages/board/dist/index.d.ts"
       ],

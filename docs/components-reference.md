@@ -1128,22 +1128,24 @@ A data grid from `columns` + `rows`. Click a sortable header to sort (emits `dj-
 
 ### `<dj-data-grid>` · `@dojo-ng/data-grid`
 
-A virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). Core scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]` behaves exactly as before. ARIA role=grid. Events: `dj-sort`, `dj-selection-change`. Parts: `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.
+A virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). Core scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]` behaves exactly as before. ARIA role=grid. `activation` separates opening a row from selecting rows: under `"click"` or `"double"` a plain click activates and emits `dj-activate` instead of toggling selection, Enter activates while Space still selects, and modifier-clicks stay reserved for selection. The default `"none"` keeps the original behavior, so this is purely additive.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `columns` | columns | `GridColumn[]` | `[]` |
 | `data` | data | `Row[]` | `[]` |
 | `selectionMode` | selection-mode ↻ | `SelectionMode` | `"none"` |
+| `activation` | activation ↻ | `ActivationMode` | `"none"` |
 | `rowHeight` | row-height | `number` | `36` |
 | `height` | height | `string` | `"20rem"` |
 | `plugins` | — | `DataGridPlugin[]` | `[]` |
 
 **Parts:** `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`, `detail`
 
-**Events:** `dj-sort`, `dj-selection-change`
+**Events:** `dj-sort`, `dj-selection-change`, `dj-activate` (detail `{ row, index }`, where `row` is
+the original row data)
 
-**Methods:** `toggleAt(index: number)`
+**Methods:** `toggleAt(index: number)`, `activateAt(index: number)` (Emit `dj-activate` for a row-model index. Fires regardless of `selectionMode` (a read-only list with clickable rows is a real case) but never under `activation="none"`.)
 
 
 ### `<dj-calendar>` · `@dojo-ng/calendar`

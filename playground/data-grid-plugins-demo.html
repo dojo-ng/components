@@ -34,7 +34,8 @@
 					"@dojo-ng/data-grid-tree": "../packages/data-grid-tree/dist/index.js",
 					"@dojo-ng/data-grid-groups": "../packages/data-grid-groups/dist/index.js",
 					"@dojo-ng/data-grid-export": "../packages/data-grid-export/dist/index.js",
-					"@dojo-ng/data-grid-detail": "../packages/data-grid-detail/dist/index.js"
+					"@dojo-ng/data-grid-detail": "../packages/data-grid-detail/dist/index.js",
+					"@dojo-ng/data-grid-rowstate": "../packages/data-grid-rowstate/dist/index.js"
 				}
 			}
 		</script>
@@ -82,6 +83,26 @@
 		<p class="hint">Each order expands into a nested dj-data-grid of its line items — the measured variable-height virtualizer path.</p>
 		<dj-data-grid id="g5" height="16rem"></dj-data-grid>
 
+		<h2>6 — Row + cell state</h2>
+		<p class="hint">
+			Data-driven styling from OUTSIDE the shadow DOM. <code>row()</code> turns each state token into a
+			<code>::part(row--token)</code>: unread rows are bold, read rows recede, flagged rows get a warning tint.
+			<code>cell()</code> adds per-column emphasis — the Status column is color-coded, and only Subject/From are
+			bolded when unread. Check it in light, dark, and forced-colors: the row states must stay distinguishable in
+			all three (in forced colors the tint drops out, so weight and the status text carry the meaning).
+		</p>
+		<style>
+			/* The whole point: these rules live outside the grid, in page CSS. */
+			#g6::part(row--unread) { font-weight: 600; }
+			#g6::part(row--read) { color: var(--dj-color-text-muted); }
+			#g6::part(row--flagged) { background: var(--dj-color-warning-100); }
+			/* Forced colors flattens the tint; keep the flagged row marked by something structural. */
+			@media (forced-colors: active) {
+				#g6::part(row--flagged) { outline: 1px solid CanvasText; outline-offset: -1px; }
+			}
+		</style>
+		<dj-data-grid id="g6" height="16rem"></dj-data-grid>
+
 		<script type="module">
 			import { html } from "lit";
 			import "@dojo-ng/data-grid";
@@ -94,6 +115,7 @@
 			import { groupsPlugin } from "@dojo-ng/data-grid-groups";
 			import { exportPlugin } from "@dojo-ng/data-grid-export";
 			import { detailPlugin } from "@dojo-ng/data-grid-detail";
+			import { rowStatePlugin } from "@dojo-ng/data-grid-rowstate";
 
 			document.getElementById("locale").addEventListener("change", (e) => {
 				document.documentElement.lang = e.target.value;
@@ -184,6 +206,41 @@
 					height="7rem"
 					.columns=${[{ id: "sku", header: "SKU" }, { id: "qty", header: "Qty" }]}
 					.data=${row.original.items}></dj-data-grid>`,
+			})];
+
+			// 6 — row + cell state (styled from page CSS via ::part(row--token))
+			const g6 = document.getElementById("g6");
+			g6.columns = [
+				{ id: "from", header: "From" },
+				{ id: "subject", header: "Subject" },
+				{ id: "status", header: "Status" },
+				{ id: "date", header: "Date" },
+			];
+			g6.data = [
+				{ from: "Ada Lovelace", subject: "Analytical engine notes", status: "urgent", date: "2026-07-24", seen: false, flagged: true },
+				{ from: "Grace Hopper", subject: "Compiler review", status: "normal", date: "2026-07-23", seen: false, flagged: false },
+				{ from: "Alan Turing", subject: "Re: decidability", status: "normal", date: "2026-07-22", seen: true, flagged: false },
+				{ from: "Edsger Dijkstra", subject: "Shortest path draft", status: "blocked", date: "2026-07-21", seen: true, flagged: false },
+				{ from: "Barbara Liskov", subject: "Substitution examples", status: "normal", date: "2026-07-20", seen: true, flagged: false },
+			];
+			const STATUS_COLOR = {
+				urgent: "var(--dj-color-danger-600)",
+				blocked: "var(--dj-color-warning-700)",
+				normal: "var(--dj-color-text-muted)",
+			};
+			g6.plugins = [rowStatePlugin({
+				// Whole-row treatment: each token becomes a row--<token> part.
+				row: (m) => {
+					const states = [m.seen ? "read" : "unread"];
+					if (m.flagged) states.push("flagged");
+					return states;
+				},
+				// Per-column emphasis: color the status, bold the unread sender/subject only.
+				cell: (columnId, m) => {
+					if (columnId === "status") return `color: ${STATUS_COLOR[m.status] ?? "inherit"}; font-weight: 600`;
+					if (!m.seen && (columnId === "from" || columnId === "subject")) return "font-weight: 600";
+					return undefined;
+				},
 			})];
 		</script>
 	</body>

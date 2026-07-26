@@ -246,6 +246,7 @@ declare module "solid-js" {
         "columns"?: DjDataGrid["columns"];
         "data"?: DjDataGrid["data"];
         "selection-mode"?: DjDataGrid["selectionMode"];
+        "activation"?: DjDataGrid["activation"];
         "row-height"?: DjDataGrid["rowHeight"];
         "height"?: DjDataGrid["height"];
         "plugins"?: DjDataGrid["plugins"];
@@ -662,6 +663,7 @@ declare module "solid-js" {
       "dj-error": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-selection-change": CustomEvent;
+      "dj-activate": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
       "dj-reorder": CustomEvent;
@@ -698,6 +700,7 @@ declare module "solid-js" {
       "dj-error": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-selection-change": CustomEvent;
+      "dj-activate": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
       "dj-reorder": CustomEvent;

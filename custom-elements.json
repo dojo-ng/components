@@ -3367,7 +3367,7 @@
           "name": "DjDataGrid",
           "customElement": true,
           "tagName": "dj-data-grid",
-          "description": "a virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). Core scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]` behaves exactly as before. ARIA role=grid. Events: `dj-sort`, `dj-selection-change`. Parts: `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.",
+          "description": "a virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). Core scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]` behaves exactly as before. ARIA role=grid. `activation` separates opening a row from selecting rows: under `\"click\"` or `\"double\"` a plain click activates and emits `dj-activate` instead of toggling selection, Enter activates while Space still selects, and modifier-clicks stay reserved for selection. The default `\"none\"` keeps the original behavior, so this is purely additive.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -3398,6 +3398,17 @@
               },
               "default": "\"none\"",
               "attribute": "selection-mode",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "activation",
+              "type": {
+                "text": "ActivationMode"
+              },
+              "default": "\"none\"",
+              "description": "What a plain click / Enter on a row means. Default `\"none\"` = the original toggle behavior.",
+              "attribute": "activation",
               "reflects": true
             },
             {
@@ -3438,6 +3449,19 @@
                   }
                 }
               ]
+            },
+            {
+              "kind": "method",
+              "name": "activateAt",
+              "description": "Emit `dj-activate` for a row-model index. Fires regardless of `selectionMode` (a read-only list with clickable rows is a real case) but never under `activation=\"none\"`.",
+              "parameters": [
+                {
+                  "name": "index",
+                  "type": {
+                    "text": "number"
+                  }
+                }
+              ]
             }
           ],
           "attributes": [
@@ -3461,6 +3485,14 @@
                 "text": "SelectionMode"
               },
               "fieldName": "selectionMode"
+            },
+            {
+              "name": "activation",
+              "type": {
+                "text": "ActivationMode"
+              },
+              "fieldName": "activation",
+              "description": "What a plain click / Enter on a row means. Default `\"none\"` = the original toggle behavior."
             },
             {
               "name": "row-height",
@@ -3525,6 +3557,13 @@
                 "text": "CustomEvent"
               },
               "description": ""
+            },
+            {
+              "name": "dj-activate",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ row, index }`, where `row` is\nthe original row data"
             }
           ]
         }

@@ -250,6 +250,7 @@ declare module "react" {
         "columns"?: DjDataGrid["columns"];
         "data"?: DjDataGrid["data"];
         "selection-mode"?: DjDataGrid["selectionMode"];
+        "activation"?: DjDataGrid["activation"];
         "row-height"?: DjDataGrid["rowHeight"];
         "height"?: DjDataGrid["height"];
         "plugins"?: DjDataGrid["plugins"];

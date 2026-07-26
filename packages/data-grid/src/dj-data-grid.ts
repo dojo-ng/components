@@ -37,6 +37,17 @@ export interface GridColumn {
 	aggregationFn?: AggregationFnOption<Row>;
 }
 export type SelectionMode = "none" | "single" | "multiple";
+/**
+ * What a plain click / Enter on a row MEANS.
+ *  - `"none"` (default): click and Space/Enter toggle selection — exactly the original behavior.
+ *  - `"click"`: a single click activates the row (the mail/preview-pane idiom).
+ *  - `"double"`: a double click activates it (the file-manager idiom).
+ *
+ * Under any non-`"none"` mode a plain click activates and does NOT toggle selection: opening a
+ * row and selecting rows become separate gestures. Selection then comes from Space, from
+ * modifier-clicks, and from a checkbox column (`@dojo-ng/data-grid-select`).
+ */
+export type ActivationMode = "none" | "click" | "double";
 
 /**
  * `<dj-data-grid>` — a virtualized, sortable, selectable data grid built on TanStack Table
@@ -45,8 +56,15 @@ export type SelectionMode = "none" | "single" | "multiple";
  * calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows,
  * grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain
  * objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]`
- * behaves exactly as before. ARIA role=grid. Events: `dj-sort`, `dj-selection-change`. Parts:
- * `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.
+ * behaves exactly as before. ARIA role=grid.
+ *
+ * `activation` separates opening a row from selecting rows: under `"click"` or `"double"` a plain
+ * click activates and emits `dj-activate` instead of toggling selection, Enter activates while
+ * Space still selects, and modifier-clicks stay reserved for selection. The default `"none"` keeps
+ * the original behavior, so this is purely additive.
+ *
+ * Events: `dj-sort`, `dj-selection-change`, `dj-activate` (detail `{ row, index }`, where `row` is
+ * the original row data). Parts: `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.
  */
 export class DjDataGrid extends DojoElement {
 	static override styles = styles;
@@ -56,6 +74,8 @@ export class DjDataGrid extends DojoElement {
 	@property({ type: Array }) columns: GridColumn[] = [];
 	@property({ type: Array }) data: Row[] = [];
 	@property({ attribute: "selection-mode", reflect: true }) selectionMode: SelectionMode = "none";
+	/** What a plain click / Enter on a row means. Default `"none"` = the original toggle behavior. */
+	@property({ attribute: "activation", reflect: true }) activation: ActivationMode = "none";
 	@property({ attribute: "row-height", type: Number }) rowHeight = 36;
 	@property() height = "20rem";
 	/** Plugin set. Set in JavaScript (rich data). Declared up front because TanStack row models
@@ -231,12 +251,52 @@ export class DjDataGrid extends DojoElement {
 			case "ArrowUp": e.preventDefault(); this.move(-1); break;
 			case "Home": e.preventDefault(); this.activeIndex = 0; this.#virtualizer?.scrollToIndex(0); break;
 			case "End": e.preventDefault(); this.activeIndex = Math.max(0, n - 1); this.#virtualizer?.scrollToIndex(n - 1); break;
-			case " ": case "Enter": e.preventDefault(); this.toggleAt(this.activeIndex); break;
+			// Platform convention (and the ARIA grid pattern): Enter activates, Space selects.
+			// Under `activation="none"` both keep toggling, so nothing existing moves.
+			case " ": e.preventDefault(); this.toggleAt(this.activeIndex); break;
+			case "Enter":
+				e.preventDefault();
+				if (this.activation === "none") this.toggleAt(this.activeIndex);
+				else this.activateAt(this.activeIndex);
+				break;
 		}
 	}
 	toggleAt(index: number) {
 		if (this.selectionMode === "none") return;
 		this.#table.getRowModel().rows[index]?.toggleSelected();
+	}
+
+	/**
+	 * Emit `dj-activate` for a row-model index. Fires regardless of `selectionMode` (a read-only
+	 * list with clickable rows is a real case) but never under `activation="none"`.
+	 */
+	activateAt(index: number) {
+		if (this.activation === "none") return;
+		const row = this.#table.getRowModel().rows[index];
+		if (!row) return;
+		this.emit("dj-activate", { detail: { row: row.original, index } });
+	}
+
+	/**
+	 * A row's pointer gesture. Modified clicks are RESERVED for selection and never activate:
+	 * activating a row while the user is building a selection is the surprise this design removes.
+	 */
+	#onRowClick(e: MouseEvent, index: number) {
+		this.activeIndex = index;
+		if (this.activation === "none") { this.toggleAt(index); return; }
+		// Ctrl/Cmd toggles this row; Shift is the range gesture (owned by the select plugin).
+		if (e.ctrlKey || e.metaKey) { this.toggleAt(index); return; }
+		if (e.shiftKey) return;
+		if (this.activation === "click") this.activateAt(index);
+		// `"double"`: a plain click only moves the active row; `dblclick` activates.
+	}
+
+	/** `"double"` mode only. Uses the platform's own dblclick rather than a hand-rolled timer,
+	 *  so the two `click` events a double click also produces can never activate. */
+	#onRowDblClick(e: MouseEvent, index: number) {
+		if (this.activation !== "double") return;
+		if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+		this.activateAt(index);
 	}
 
 	/** A cell's content: the first plugin `renderCell` that returns non-undefined wins (else the
@@ -327,7 +387,8 @@ export class DjDataGrid extends DojoElement {
 									role="row" aria-rowindex=${vi.index + headerRows + 1} aria-selected=${this.selectionMode !== "none" ? (selected ? "true" : "false") : nothing}
 									style=${rowStyle}
 									${ref((el) => el && applyRowAttrs(el as Element, this.#rowAttributes(row)))}
-									@click=${() => { this.activeIndex = vi.index; this.toggleAt(vi.index); }}>
+									@click=${(e: MouseEvent) => this.#onRowClick(e, vi.index)}
+									@dblclick=${(e: MouseEvent) => this.#onRowDblClick(e, vi.index)}>
 									${row.getVisibleCells().map((cell) => html`<div part="cell" class="cell" role="gridcell">${this.#cellContent(cell)}</div>`)}
 								</div>`;
 								if (!hasDetail) return rowTpl;
@@ -354,5 +415,6 @@ declare global {
 	interface GlobalEventHandlersEventMap {
 		"dj-sort": CustomEvent<{ sorting: SortingState }>;
 		"dj-selection-change": CustomEvent<{ rows: Row[] }>;
+		"dj-activate": CustomEvent<{ row: Row; index: number }>;
 	}
 }

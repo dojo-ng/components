@@ -3367,7 +3367,7 @@
           "name": "DjDataGrid",
           "customElement": true,
           "tagName": "dj-data-grid",
-          "description": "a virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). Core scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]` behaves exactly as before. ARIA role=grid. `activation` separates opening a row from selecting rows: under `\"click\"` or `\"double\"` a plain click activates and emits `dj-activate` instead of toggling selection, Enter activates while Space still selects, and modifier-clicks stay reserved for selection. The default `\"none\"` keeps the original behavior, so this is purely additive.",
+          "description": "a virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). Core scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]` behaves exactly as before. ARIA role=grid. `activation` separates opening a row from selecting rows: under `\"click\"` or `\"double\"` a plain click activates and emits `dj-activate` instead of toggling selection, Enter activates while Space still selects, and modifier-clicks stay reserved for selection. The default `\"none\"` keeps the original behavior, so this is purely additive. `dj-range-change` reports which rows are rendered, so a consumer can window its data or load more at the end of the list. The range INCLUDES the 8 overscan rows, so it is wider than what the user can see \u2014 hence `rendered`, not \"visible\".",
           "superclass": {
             "name": "DojoElement"
           },
@@ -3557,6 +3557,13 @@
                 "text": "CustomEvent"
               },
               "description": ""
+            },
+            {
+              "name": "dj-range-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ start, end, count, rendered }` \u2014 inclusive\nfirst and last rendered row-model indices, the total row count, and the full index list; `start`\nand `end` are -1 when nothing is rendered"
             },
             {
               "name": "dj-activate",

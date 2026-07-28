@@ -63,8 +63,15 @@ export type ActivationMode = "none" | "click" | "double";
  * Space still selects, and modifier-clicks stay reserved for selection. The default `"none"` keeps
  * the original behavior, so this is purely additive.
  *
+ * `dj-range-change` reports which rows are rendered, so a consumer can window its data or load more
+ * at the end of the list. The range INCLUDES the 8 overscan rows, so it is wider than what the user
+ * can see — hence `rendered`, not "visible".
+ *
  * Events: `dj-sort`, `dj-selection-change`, `dj-activate` (detail `{ row, index }`, where `row` is
- * the original row data). Parts: `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.
+ * the original row data), `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
+ * first and last rendered row-model indices, the total row count, and the full index list; `start`
+ * and `end` are -1 when nothing is rendered). Parts: `grid`, `head`, `row`, `cell`, `chrome-top`,
+ * `chrome-bottom`, `subhead`.
  */
 export class DjDataGrid extends DojoElement {
 	static override styles = styles;
@@ -116,6 +123,20 @@ export class DjDataGrid extends DojoElement {
 	#disposers: Array<() => void> = [];
 	#virtualizer?: Virtualizer<HTMLElement, Element>;
 	#cleanup?: () => void;
+
+	/**
+	 * Rendered row range, captured in `render()` and emitted from `updated()`.
+	 *
+	 * `getVirtualItems()` is only callable during render, but dispatching there would fire an event
+	 * inside Lit's render cycle — a consumer that responds by setting `data` would re-enter the
+	 * render. So render only STASHES the range here; `updated()` (the safe post-render hook) does
+	 * the comparing and emitting.
+	 */
+	#range?: { start: number; end: number; count: number; rendered: number[] };
+	/** Last emitted (start, end, count). Unchanged triple = no event, so ordinary re-renders
+	 *  (a selection toggle, a flags patch) stay silent and only real scrolling or a data change
+	 *  produces one. `rendered` is not compared: it is derived from the same virtual items. */
+	#emittedRange?: { start: number; end: number; count: number };
 
 	/** Column list after every plugin's `columns()` transform, in array order. */
 	#computeColumns(): GridColumn[] {
@@ -247,6 +268,21 @@ export class DjDataGrid extends DojoElement {
 			this.#virtualizer?.measure();
 			this.requestUpdate();
 		}
+		this.#emitRangeChange();
+	}
+
+	/**
+	 * Emit `dj-range-change` when the rendered window moved. Called from `updated()`, never from
+	 * `render()` — see `#range`. The requestUpdate() calls above schedule another cycle whose own
+	 * updated() emits the settled range, so an early return here costs nothing.
+	 */
+	#emitRangeChange() {
+		const r = this.#range;
+		if (!r) return;
+		const prev = this.#emittedRange;
+		if (prev && prev.start === r.start && prev.end === r.end && prev.count === r.count) return;
+		this.#emittedRange = { start: r.start, end: r.end, count: r.count };
+		this.emit("dj-range-change", { detail: { start: r.start, end: r.end, count: r.count, rendered: r.rendered } });
 	}
 
 	private move(delta: number) {
@@ -364,6 +400,15 @@ export class DjDataGrid extends DojoElement {
 		const total = this.#virtualizer?.getTotalSize() ?? 0;
 		const rows = this.#table?.getRowModel().rows ?? [];
 		const n = rows.length;
+		// Stash the rendered range for updated() to emit. An empty window reports -1/-1 with the
+		// real count, so a consumer learns the list went empty.
+		const rendered = items.map((vi) => vi.index);
+		this.#range = {
+			start: rendered.length ? rendered[0] : -1,
+			end: rendered.length ? rendered[rendered.length - 1] : -1,
+			count: n,
+			rendered,
+		};
 		// Chrome regions (quick filter, pagination, totals) are full-width, outside the grid rows.
 		const chromeTops = this.plugins.map((p) => p.chromeTop?.(this.#ctx)).filter((x) => x !== undefined);
 		const chromeBottoms = this.plugins.map((p) => p.chromeBottom?.(this.#ctx)).filter((x) => x !== undefined);
@@ -439,5 +484,6 @@ declare global {
 		"dj-sort": CustomEvent<{ sorting: SortingState }>;
 		"dj-selection-change": CustomEvent<{ rows: Row[] }>;
 		"dj-activate": CustomEvent<{ row: Row; index: number }>;
+		"dj-range-change": CustomEvent<{ start: number; end: number; count: number; rendered: number[] }>;
 	}
 }

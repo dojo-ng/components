@@ -663,6 +663,7 @@ declare module "solid-js" {
       "dj-error": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-selection-change": CustomEvent;
+      "dj-range-change": CustomEvent;
       "dj-activate": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
@@ -700,6 +701,7 @@ declare module "solid-js" {
       "dj-error": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-selection-change": CustomEvent;
+      "dj-range-change": CustomEvent;
       "dj-activate": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;

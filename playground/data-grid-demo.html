@@ -33,7 +33,19 @@
 			<li>Scroll — the row count in the DOM stays small (open dev tools to confirm).</li>
 			<li>Sort by clicking Name / Age / City headers (toggles asc → desc → none).</li>
 			<li>Focus the grid (Tab to it), then ↑/↓ to move the active row, Space to select.</li>
+			<li>Watch the range readout below as you scroll — that is the <code>dj-range-change</code> event.</li>
 		</ol>
+
+		<h1>Viewport reporting — <code>dj-range-change</code></h1>
+		<p class="hint">
+			The grid reports the rows it has rendered, so a consumer can window its data or load more at the end.
+			The reported window INCLUDES the 8 overscan rows the virtualizer keeps beyond the viewport, so it is
+			wider than what you can see — compare "rendered" against the rows actually visible. The second grid
+			auto-loads 100 more rows whenever <code>end &gt;= count - 1</code>, which is the whole end-reached recipe.
+		</p>
+		<pre id="range">range: (scroll the grid above)</pre>
+		<dj-data-grid id="feed" height="16rem" style="max-width: 46rem; display:block"></dj-data-grid>
+		<pre id="feedout">loaded: 100 rows</pre>
 		<script type="module">
 			import "@dojo-ng/data-grid";
 			const first = ["Ada","Bo","Cy","Dee","Eli","Fay","Gus","Hana","Ivy","Jo","Kai","Lena","Mo","Nia","Omar","Pia"];
@@ -55,6 +67,32 @@
 			const out = document.getElementById("out");
 			grid.addEventListener("dj-selection-change", (e) => { out.textContent = `selected: ${e.detail.rows.length} rows`; });
 			grid.addEventListener("dj-sort", (e) => console.log("sort", e.detail.sorting));
+
+			// Viewport reporting. The first grid just reports; the second one auto-loads at the end.
+			const range = document.getElementById("range");
+			grid.addEventListener("dj-range-change", (e) => {
+				const { start, end, count, rendered } = e.detail;
+				range.textContent = `range: rows ${start}–${end} of ${count} (${rendered.length} rendered, incl. overscan)`
+					+ (end >= count - 1 ? "  ← end reached" : "");
+			});
+
+			const PAGE = 100;
+			const fetchPage = async (offset) =>
+				Array.from({ length: PAGE }, (_, i) => ({ title: `Item ${offset + i}` }));
+			const feed = document.getElementById("feed");
+			const feedout = document.getElementById("feedout");
+			feed.columns = [{ id: "title", header: "Title" }];
+			feed.data = await fetchPage(0);
+			let loading = false;
+			feed.addEventListener("dj-range-change", async (e) => {
+				const { end, count } = e.detail;
+				if (end >= count - 1 && !loading) {
+					loading = true;
+					feed.data = [...feed.data, ...(await fetchPage(feed.data.length))];
+					feedout.textContent = `loaded: ${feed.data.length} rows (auto-loaded at the end)`;
+					loading = false;
+				}
+			});
 		</script>
 	</body>
 </html>

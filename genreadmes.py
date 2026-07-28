@@ -256,6 +256,34 @@ EXAMPLES = {
   grid.addEventListener("dj-selection-change", (e) => { selected = e.detail.rows; });
   document.getElementById("archive").addEventListener("click", () => archive(selected));
 </script>"""),
+  ("Load more when the user reaches the end", "`dj-range-change` reports the rendered row window, so a consumer can load the next page or window its data. End-reached is a one-line derivation from it; there is no separate event. Mind the `rendered` caveat in the note above: the window is WIDER than what the user can see, because it includes the virtualizer's overscan rows.",
+   """<dj-data-grid id="feed" height="320px"></dj-data-grid>
+<script type="module">
+  import "@dojo-ng/data-grid";
+
+  const PAGE = 100;
+  // Stands in for your API call.
+  const fetchPage = async (offset) =>
+    Array.from({ length: PAGE }, (_, i) => ({ title: "Item " + (offset + i) }));
+
+  const grid = document.getElementById("feed");
+  grid.columns = [{ id: "title", header: "Title" }];
+  grid.data = await fetchPage(0);
+
+  let loading = false;
+  grid.addEventListener("dj-range-change", async (e) => {
+    const { start, end, count, rendered } = e.detail;
+    // End reached: the last rendered row is the last row there is. No separate event needed.
+    if (end >= count - 1 && !loading) {
+      loading = true;
+      grid.data = [...grid.data, ...(await fetchPage(grid.data.length))];
+      loading = false;
+    }
+    // For windowing, fetch around start/end and evict far from it. `rendered` is the exact
+    // index list, which is what precise eviction wants.
+    console.log(`rendered rows ${start}-${end} of ${count}`, rendered.length);
+  });
+</script>"""),
  ],
  "rich-text": [
   ("Rich text editor", "Lexical-based; set and read `value` (HTML).",
@@ -532,7 +560,7 @@ def infra_readme(pkg):
 NOTES.update({
  "board": "The board is CONTROLLED: it never changes `data`. Listen for `dj-card-move`, apply it (the exported `applyCardMove` makes that one line), and assign the new array — focus then follows the moved card and the move is announced. Explicit `lanes` are recommended over the derived fallback (they fix lane order, give labels, and include empty lanes). Set `draggable` to enable pointer and touch drag between lanes (built on `@dojo-ng/dnd`); it is progressive enhancement — the move menu and keyboard shortcuts remain the accessibility contract, so drag is never the only way to move a card.",
  "dnd": "The keyboard/menu path in a consuming component is the accessibility contract (WCAG 2.5.7); drag is enhancement layered on top. The pointer core works inside shadow roots and on touch, mouse, and pen alike, with no dependency. Drops are CONTROLLED: the zone calls `onMove` and the consumer applies the change.",
- "data-grid": "Activation — what a plain click or Enter MEANS on a row — is set by `activation`. The default `\"none\"` is the original behavior: click and Space/Enter all toggle selection, so nothing existing changes. Set `activation=\"click\"` (the mail/preview-pane idiom) or `\"double\"` (the file-manager idiom) and opening a row becomes a separate gesture from selecting rows: a plain click activates and emits `dj-activate` (detail `{ row, index }`, where `row` is the original row data) WITHOUT touching selection. Keyboard splits on the platform convention — Enter activates, Space selects. Modifier clicks are reserved for selection and never activate: Ctrl/Cmd-click toggles the clicked row, Shift-click is the range gesture. `\"double\"` uses the platform's own `dblclick`, so the two `click` events a double click also produces can never activate. Activation fires regardless of `selectionMode`, including `\"none\"` — a read-only list with clickable rows needs no selection enabled. To let a click OPEN a row while the user also picks a set for bulk actions, combine `activation=\"click\"` with `selection-mode=\"multiple\"` and the checkbox column from `@dojo-ng/data-grid-select`. Plugins: pass an array of plugin objects via the `plugins` property (JavaScript only). Recommended order: structural first (`treePlugin` OR `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, `formatsPlugin`, then chrome-only plugins (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`). A `plugins` change rebuilds the table.",
+ "data-grid": "Activation — what a plain click or Enter MEANS on a row — is set by `activation`. The default `\"none\"` is the original behavior: click and Space/Enter all toggle selection, so nothing existing changes. Set `activation=\"click\"` (the mail/preview-pane idiom) or `\"double\"` (the file-manager idiom) and opening a row becomes a separate gesture from selecting rows: a plain click activates and emits `dj-activate` (detail `{ row, index }`, where `row` is the original row data) WITHOUT touching selection. Keyboard splits on the platform convention — Enter activates, Space selects. Modifier clicks are reserved for selection and never activate: Ctrl/Cmd-click toggles the clicked row, Shift-click is the range gesture. `\"double\"` uses the platform's own `dblclick`, so the two `click` events a double click also produces can never activate. Activation fires regardless of `selectionMode`, including `\"none\"` — a read-only list with clickable rows needs no selection enabled. To let a click OPEN a row while the user also picks a set for bulk actions, combine `activation=\"click\"` with `selection-mode=\"multiple\"` and the checkbox column from `@dojo-ng/data-grid-select`. Viewport reporting: `dj-range-change` (detail `{ start, end, count, rendered }`) fires whenever the rendered row window moves, so a consumer can page data in and out or load more at the end of the list. `start` and `end` are the inclusive first and last rendered row-model indices, `count` is the total row count, and `rendered` is the full index list. THE RANGE INCLUDES THE 8 OVERSCAN ROWS the virtualizer keeps beyond the viewport, so it is wider than what the user can actually see — it is what the grid has committed to rendering (hence `rendered`, not \"visible\"), which is why a consumer that fetches this range never renders a hole. Treating it as the visible set would be wrong by up to eight rows at each end. End-reached is a one-line derivation, `if (e.detail.end >= e.detail.count - 1) loadMore()`, so there is no separate event for it. Nothing is rendered means `start` and `end` are `-1` with the real `count`, so a consumer learns the list went empty. The event fires after the render is committed and is deduplicated on an unchanged `(start, end, count)`, so ordinary re-renders (a selection toggle, a flags patch) are silent and reacting to it by setting `data` is safe. NOT YET SUPPORTED: windowing a data set LARGER than `data` — the grid sizes its scrollbar from `data.length`, so it cannot render a scrollbar for rows you have not loaded. That needs a separate total-count/sparse-data change to the `data` contract. Plugins: pass an array of plugin objects via the `plugins` property (JavaScript only). Recommended order: structural first (`treePlugin` OR `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, `formatsPlugin`, then chrome-only plugins (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`). A `plugins` change rebuilds the table.",
  "data-grid-edit": "CONTROLLED editing: the plugin never writes to `data`. Listen for `dj-cell-commit`, update your store, and assign a new `data` array. Place this plugin first in the array so its editor wins the cell.",
  "data-grid-export": "Exports RAW cell values (formatting is presentation). Default set = filtered but unpaginated rows; `all: true` exports the pre-filter set. Synthetic `__` columns (like the detail expander) are skipped.",
  "data-grid-tree": "Use `treePlugin` OR `groupsPlugin` per grid, never both (they both own expansion).",

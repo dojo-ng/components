@@ -6,8 +6,22 @@ import type { Cell, Header as TableHeader, Row as TableRow } from "@tanstack/tab
 /** The column id the plugin owns. Exported so a consumer can spot it in a `columns()` chain. */
 export const SELECT_COLUMN_ID = "dj-select";
 
+/**
+ * Default track width. The grid's own cell rule is
+ * `padding: … var(--dj-spacing-small, .75rem); overflow: hidden; text-overflow: ellipsis`,
+ * so a track sized for the control ALONE leaves it overflowing its padding box — and an
+ * overflowing inline child makes the cell paint an ellipsis next to the checkbox (visible in
+ * WebKit). Size the track as control + the cell's own horizontal padding, reading the same
+ * token the cell does so this follows a themed spacing change instead of guessing at it.
+ */
+const DEFAULT_WIDTH = "calc(1.5rem + var(--dj-spacing-small, 0.75rem) * 2)";
+
 export interface SelectColumnOptions {
-	/** Track width for the checkbox column. Any grid track value. Default `"2.5rem"`. */
+	/**
+	 * Track width for the checkbox column. Any grid track value. Defaults to the control's
+	 * width plus the grid cell's horizontal padding; a narrower value will clip the checkbox
+	 * and show the cell's ellipsis, so include the padding in anything you set here.
+	 */
 	width?: string;
 	/** Which end of the column list the checkbox sits at. Default `"start"`. */
 	position?: "start" | "end";
@@ -39,7 +53,7 @@ export interface SelectColumnOptions {
  * Shift-click a checkbox to select the range from the last one you clicked (the anchor).
  */
 export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridPlugin {
-	const width = options.width ?? "2.5rem";
+	const width = options.width ?? DEFAULT_WIDTH;
 	const position = options.position ?? "start";
 	const nameFor = (data: Row) => options.label?.(data) ?? "Select row";
 	const selectAllLabel = options.selectAllLabel ?? "Select all rows";
@@ -105,7 +119,12 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 			const single = mode === "single";
 			// stopPropagation on click: the row's own handler would otherwise activate or toggle
 			// the row underneath the checkbox. The control owns this gesture.
+			// `display:block` is load-bearing, not cosmetic: `text-overflow: ellipsis` on the grid's
+			// cell only applies to overflowing INLINE content, so a block-level control can never
+			// make the cell paint an ellipsis beside the checkbox however narrow the track gets.
+			// `margin: 0 auto` also drops the UA's own checkbox margin and centres it in the track.
 			return html`<input
+				style="display:block;margin:0 auto"
 				type=${single ? "radio" : "checkbox"}
 				class="dj-select-row"
 				part="select-row"

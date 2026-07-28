@@ -233,3 +233,27 @@ test("arrow keys still bubble from a checkbox so row navigation is not trapped",
 	await settled(el);
 	assert.equal(el.activeIndex, 1, "ArrowDown from inside the cell still moves the active row");
 });
+
+test("the control is block-level and its track allows for the cell's padding (no ellipsis)", async () => {
+	// The grid's cell rule is `overflow:hidden; text-overflow:ellipsis; white-space:nowrap` with
+	// horizontal padding of --dj-spacing-small. Two things stop a checkbox making that cell paint
+	// an ellipsis beside it (Bill hit this in Perry): the control is display:block, because
+	// text-overflow only applies to overflowing INLINE content; and the default track is sized for
+	// the control PLUS that padding rather than for the control alone.
+	const el = await grid({ selectionMode: "multiple", plugins: [selectColumnPlugin()] });
+
+	assert.match(boxes(el)[0].getAttribute("style") || "", /display:\s*block/, "control is block-level");
+
+	const rowStyle = el.renderRoot.querySelector('[part="row"]').getAttribute("style");
+	const firstTrack = rowStyle.split("grid-template-columns:")[1].trim();
+	assert.ok(
+		firstTrack.startsWith("calc(1.5rem + var(--dj-spacing-small"),
+		`the select track adds the cell padding to the control width, got: ${firstTrack}`,
+	);
+});
+
+test("an explicit width option still wins", async () => {
+	const el = await grid({ selectionMode: "multiple", plugins: [selectColumnPlugin({ width: "4rem" })] });
+	const rowStyle = el.renderRoot.querySelector('[part="row"]').getAttribute("style");
+	assert.ok(rowStyle.includes("grid-template-columns:4rem"), rowStyle);
+});

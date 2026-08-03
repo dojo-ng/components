@@ -225,7 +225,20 @@ export class DjSearchBox extends DojoElement {
 						const filter = `${this.#keyLabel(t.key)}: ${t.value}`;
 						return html`<dj-chip part="chip" closeable close-label=${this.#msg("removeFilter", { filter })} @dj-close=${() => this.#removeToken(i)}>${filter}</dj-chip>`;
 					})}
+					<!--
+						The text services must keep their hands off this field. It holds a
+						grammar, not prose: \`from:alice\` is parsed by \`key\`, and \`configured\`
+						is a case-sensitive Set, so a platform that helpfully capitalises the
+						word before a colon turns \`from:\` into \`From:\`, which stops being a
+						token and silently becomes free text — filter gone, no error, and the
+						search quietly returns the wrong thing.
+						Not hypothetical: it is exactly what macOS automatic capitalisation
+						does inside a WKWebView, where these attributes are the only defence.
+						Safari's defaults happen to hide it, which is what makes it worth
+						stating explicitly rather than trusting the platform to stay quiet.
+					-->
 					<input class="input" part="input" .value=${this.text}
+						autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false"
 						placeholder=${this.tokens.length ? nothing : (this.placeholder ?? nothing)}
 						?disabled=${this.disabled}
 						role="combobox" aria-label=${this.label ?? nothing} aria-expanded=${this.open ? "true" : "false"}

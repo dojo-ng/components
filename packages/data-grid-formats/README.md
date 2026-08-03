@@ -4,6 +4,8 @@ Value-formatting plugin for @dojo-ng/data-grid (Intl number/currency/percent/dat
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
 
+> Declarative per-column value formatting: set `format` on a `GridColumn` — a `{ kind: "number"|"currency"|"percent"|"date"|"time"|"datetime", options?, currency? }` descriptor (delegated to memoized `Intl` instances via `@dojo-ng/i18n`, never hand-rolled) or a plain `(value, row) => string` function — and `renderCell` formats only that column, returning `undefined` (so other plugins and the core default proceed) for columns without `format`. Locale-reactive: `setup()` attaches a `LocaleController` to the host, so a runtime `lang` change on the grid or an ancestor reformats every value with no plugin reconfiguration. Place this plugin AFTER structural and component plugins in the `plugins` array — it is the fallback formatter, so a plugin ordered after it that also targets the same column would only ever see the already-formatted string, not the raw value.
+
 ## Install
 
 ```bash

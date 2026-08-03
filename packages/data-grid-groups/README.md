@@ -4,6 +4,8 @@ Row grouping + aggregates for @dojo-ng/data-grid
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
 
+> Groups rows by one or more columns (`by`) with optional per-column `aggregates` (`sum`/`mean`/`min`/`max`/`count`, or a function over the group's leaf rows); grouped cells show an expander, the group value, and the leaf count, aggregated cells show the formatted aggregate, and a grand-totals row renders below the scroller whenever `aggregates` is non-empty. ONE HARD RULE, enforced in `setup()` by throwing rather than silently misbehaving: use `treePlugin` OR `groupsPlugin` on a grid, never both — they both own row expansion, and TanStack has no notion of layering two grouping strategies on the same table. Numeric aggregates format through `@dojo-ng/i18n`, so totals follow the grid's locale the same way `data-grid-formats` does.
+
 ## Install
 
 ```bash

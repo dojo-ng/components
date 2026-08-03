@@ -16,9 +16,29 @@ properties, and a minimal example.
 """
 
 import os
+import re
 import genlib as G
 from gendocs import GROUPS
-from genreadmes import EXAMPLES, NOTES, first_sentence
+from genreadmes import EXAMPLES, NOTES
+
+
+def first_sentences(text, n=2):
+    """The first `n` sentences of `text` (never new prose — just less of the existing NOTES).
+    Every rich-text plugin's NOTES opens with the same administrative sentence ("An opt-in
+    plugin for `@dojo-ng/rich-text` (not a custom element)."), which carries no differentiating
+    information — genreadmes.first_sentence() alone reproduces only that boilerplate for the
+    catalog's "one line on when to use it," which a PC4 eval caught concretely: asked about
+    headings AND blockquotes, a model found `rich-text-headings` for the heading half but missed
+    that the same plugin also covers blockquotes, because neither the boilerplate first sentence
+    nor the generic wiring example ever says "quote." The substance is reliably in the sentence
+    right after the boilerplate, so two sentences instead of one fixes it without inventing text."""
+    # Don't split after "e.g.", "i.e.", or "etc." — a bare (?<=[.])\s treats the space after
+    # any of those as a sentence boundary, which sliced data-grid-groups's second sentence in
+    # half at "(e.g." during this task's own PC5 pass. Checked for real before trusting it: only
+    # that one NOTES entry hit the bug today, but the fix belongs in the splitter, not a rewrite
+    # of the prose to dodge it.
+    parts = re.split(r"(?<!\be\.g\.)(?<!\bi\.e\.)(?<!\betc\.)(?<=[.])\s", text)
+    return " ".join(parts[:n]).strip()
 
 OUT = "../skill/dojo-ng/references/components.md"
 
@@ -133,7 +153,7 @@ def plugin_entry(pkg):
 
     note = NOTES.get(pkg, "")
     if note:
-        o.append(G.md_safe(first_sentence(note)) + "\n")
+        o.append(G.md_safe(first_sentences(note, 2)) + "\n")
 
     if factory_name:
         opts_type = G.options_type_of(factory_params)

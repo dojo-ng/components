@@ -17,6 +17,10 @@ Importing a package registers its custom element:
 <dj-button kind="outlined">Save</dj-button>
 ```
 
+Targeting Safari below 16.4 (or another engine without `ElementInternals`)? Load
+[`element-internals-polyfill`](docs/element-internals-polyfill.md) before the components,
+since the form-associated controls need it.
+
 ## Packages
 
 Each package has its own README with properties, slots, parts, events, and worked examples.

@@ -18,7 +18,7 @@ properties, and a minimal example.
 import os
 import genlib as G
 from gendocs import GROUPS
-from genreadmes import EXAMPLES
+from genreadmes import EXAMPLES, NOTES, first_sentence
 
 OUT = "../skill/dojo-ng/references/components.md"
 
@@ -111,6 +111,54 @@ def component_entry(pkg):
     return "\n".join(o)
 
 
+def plugins_for_host(host_pkg):
+    """Plugin packages that belong under `host_pkg`'s entry, in name order. Source-driven per
+    `G.plugin_host` — a package qualifies because its code calls `defineDataGridPlugin`/
+    `defineRichTextPlugin`, never because of a `data-grid-`/`rich-text-` name prefix. This is
+    also why a lookalike like `rich-text-menu` (menu plumbing, no such call) or `dnd` (a generic
+    primitive, no host at all) never shows up here — see plugin-catalog-spec.md PC1."""
+    return sorted(
+        pkg for pkg in os.listdir(G.PKGS)
+        if has_pkg(pkg) and pkg != host_pkg and G.plugin_host(pkg) == host_pkg
+    )
+
+
+def plugin_entry(pkg):
+    """A plugin's catalog entry — deliberately smaller than component_entry(): the package name,
+    the factory (or ready-made instance) and its options, a one-line "when to use it" (the first
+    sentence of its NOTES, never new prose), and its primary worked example."""
+    factory_name, factory_params, ready = G.plugin_api(pkg)
+    label = factory_name or (ready[0] if ready else pkg)
+    o = [f"#### `{label}` · `@dojo-ng/{pkg}`\n"]
+
+    note = NOTES.get(pkg, "")
+    if note:
+        o.append(G.md_safe(first_sentence(note)) + "\n")
+
+    if factory_name:
+        opts_type = G.options_type_of(factory_params)
+        fields = G.interface_fields(pkg, opts_type)
+        if fields:
+            parts = []
+            for f in fields:
+                sig = f"`{f['name']}{'?' if f['optional'] else ''}{f['params']}: {G.cell(f['type'])}`"
+                parts.append(f"{sig} ({f['description']})" if f["description"] else sig)
+            o.append(f"**Options:** {G.md_safe(', '.join(parts))}\n")
+        elif factory_params == "":
+            o.append("No options.\n")
+    if ready:
+        names = ", ".join(f"`{n}`" for n in ready)
+        if factory_name:
+            o.append(f"**Ready-made:** {names} — import directly to use with defaults; call `{factory_name}(options)` yourself to customize.\n")
+        else:
+            o.append(f"**Ready-made:** {names} — the only export; nothing to configure.\n")
+
+    code = example_code(pkg)
+    if code:
+        o.append("```html\n" + code + "\n```\n")
+    return "\n".join(o)
+
+
 def main():
     o = [HEADER]
 
@@ -123,6 +171,7 @@ def main():
     o.append("")
 
     seen = set()
+    seen_plugins = set()
     for group, names in GROUPS:
         o.append(f"\n## {group}\n")
         for pkg in names:
@@ -134,10 +183,18 @@ def main():
             seen.add(pkg)
             o.append(entry)
 
+            plugin_pkgs = plugins_for_host(pkg)
+            if plugin_pkgs:
+                tag = G.tag_of(pkg)
+                o.append(f"**Plugins for `<{tag}>`** — pushed via the `plugins` property (JavaScript only).\n")
+                for ppkg in plugin_pkgs:
+                    seen_plugins.add(ppkg)
+                    o.append(plugin_entry(ppkg))
+
     o.append(UTILITIES)
 
     open(OUT, "w").write("\n".join(o).rstrip() + "\n")
-    print(f"catalog: {len(seen)} components → {OUT}")
+    print(f"catalog: {len(seen)} components + {len(seen_plugins)} plugins → {OUT}")
 
 
 if __name__ == "__main__":

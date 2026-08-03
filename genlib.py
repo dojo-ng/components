@@ -416,6 +416,151 @@ def parse_methods(s):
 
 
 # ---------------------------------------------------------------------------
+# Plugins  (data-grid-*/rich-text-* packages that build a grid/editor plugin,
+# as opposed to a custom element). Consumed by gencatalog.py.
+# ---------------------------------------------------------------------------
+
+_PLUGIN_FACTORY_CALL = re.compile(r"(?:=\s*|return\s+)define(DataGrid|RichText)Plugin\(")
+_PLUGIN_FACTORY_FN = re.compile(
+    r"export function (\w+Plugin)\(([^)]*)\)\s*:\s*(?:DataGridPlugin|RichTextPlugin)\b"
+)
+_PLUGIN_READY_CONST = re.compile(r"export const (\w+Plugin)\s*=")
+
+
+def plugin_host(pkg):
+    """Which plugin family (if any) this package belongs to — decided by whether its source
+    actually CALLS `defineDataGridPlugin`/`defineRichTextPlugin` to build a plugin object, not by
+    a `data-grid-`/`rich-text-` name prefix. A package with an `export class Dj...` is a
+    component, never a plugin, even if a define*Plugin call appears somewhere in it (the host
+    packages themselves call it to build the plugin machinery). Returns "data-grid", "rich-text",
+    or None — this is the detection rule locked in by plugin-catalog-spec.md."""
+    found = None
+    for f in sorted(glob.glob(f"{PKGS}/{pkg}/src/*.ts")):
+        s = open(f).read()
+        if re.search(r"export class Dj\w+", s):
+            return None
+        m = _PLUGIN_FACTORY_CALL.search(s)
+        if m:
+            found = "data-grid" if m.group(1) == "DataGrid" else "rich-text"
+    return found
+
+
+def plugin_api(pkg):
+    """(factory_name, factory_params, ready_names) for a plugin package.
+    factory_name/params: the exported function whose name ends in `Plugin` and returns a
+    `DataGridPlugin`/`RichTextPlugin` (`None, None` when the package only exports ready-made
+    instances with nothing left to configure — e.g. `rich-text-headings`). ready_names: exported
+    `const xPlugin = ...` instances, in source order — 0, 1, or more (e.g. `rich-text-color`
+    exports both `colorPlugin` and `backgroundColorPlugin` off one factory)."""
+    factory_name, factory_params, ready = None, None, []
+    for f in sorted(glob.glob(f"{PKGS}/{pkg}/src/*.ts")):
+        s = open(f).read()
+        if factory_name is None:
+            fm = _PLUGIN_FACTORY_FN.search(s)
+            if fm:
+                factory_name, factory_params = fm.group(1), fm.group(2)
+        for cm in _PLUGIN_READY_CONST.finditer(s):
+            ready.append(cm.group(1))
+    return factory_name, factory_params, ready
+
+
+def options_type_of(params):
+    """The exported options interface/type name annotating a factory's parameter list, or None
+    (a bare `(): DataGridPlugin` factory has no params and so no type to find)."""
+    matches = re.findall(r":\s*(\w+)", params or "")
+    return matches[-1] if matches else None
+
+
+def _top_level_split(body):
+    """Split a TS interface/type body into member strings at top-level `;` only — depth-tracked
+    over `{}`/`()`/`<>` so a member whose own type contains a nested object/generic (e.g.
+    `source: (q: string) => Promise<Array<{ id: string }>>;`) isn't split at the inner `;`. Two
+    traps handled explicitly: the `>` in an arrow `=>` is NOT a closing angle bracket (a lone `>`
+    with no matching `<` would desync the depth count), and a `/** ... */` JSDoc comment is
+    scanned as opaque text — its own prose very often contains a bare `;` (a sentence boundary)
+    or unbalanced-looking punctuation that has nothing to do with the code around it."""
+    members, depth, cur = [], 0, ""
+    i, n = 0, len(body)
+    in_comment = False
+    while i < n:
+        if not in_comment and body[i : i + 2] == "/*":
+            in_comment = True
+            cur += body[i : i + 2]
+            i += 2
+            continue
+        if in_comment and body[i : i + 2] == "*/":
+            in_comment = False
+            cur += body[i : i + 2]
+            i += 2
+            continue
+        ch = body[i]
+        if in_comment:
+            cur += ch
+            i += 1
+            continue
+        if ch == ">" and i > 0 and body[i - 1] == "=":
+            cur += ch
+            i += 1
+            continue
+        if ch in "{(<[":
+            depth += 1
+        elif ch in "})>]":
+            depth -= 1
+        if ch == ";" and depth == 0:
+            members.append(cur)
+            cur = ""
+        else:
+            cur += ch
+        i += 1
+    if cur.strip():
+        members.append(cur)
+    return [m for m in members if m.strip()]
+
+
+_MEMBER_RE = re.compile(
+    r"^\s*(?:/\*\*(?P<doc>.*?)\*/\s*)?(?P<name>\w+)(?P<opt>\??)(?P<params>\([^)]*\))?\s*:\s*(?P<type>.*)$",
+    re.S,
+)
+
+
+def interface_fields(pkg, name):
+    """[{name, optional, type, description}] for an exported `interface <name> { ... }` found in
+    any of a package's source files, in declaration order — or None if `name` is falsy or no such
+    interface is found (a factory that takes no options has nothing to look up)."""
+    if not name:
+        return None
+    for f in sorted(glob.glob(f"{PKGS}/{pkg}/src/*.ts")):
+        s = open(f).read()
+        m = re.search(rf"export\s+interface\s+{re.escape(name)}(?:\s+extends\s+[\w,\s]+)?\s*\{{", s)
+        if not m:
+            continue
+        depth, i = 1, m.end()
+        while depth > 0 and i < len(s):
+            if s[i] == "{":
+                depth += 1
+            elif s[i] == "}":
+                depth -= 1
+            i += 1
+        body = s[m.end() : i - 1]
+        fields = []
+        for member in _top_level_split(body):
+            fm = _MEMBER_RE.match(member)
+            if not fm:
+                continue
+            fields.append(
+                dict(
+                    name=fm.group("name"),
+                    optional=bool(fm.group("opt")),
+                    params=(" ".join(fm.group("params").split()) if fm.group("params") else ""),
+                    type=" ".join(fm.group("type").split()),
+                    description=clean_jsdoc(fm.group("doc")) if fm.group("doc") else "",
+                )
+            )
+        return fields
+    return None
+
+
+# ---------------------------------------------------------------------------
 # CSS custom properties  (@cssprop / @cssproperty JSDoc tags)
 # ---------------------------------------------------------------------------
 

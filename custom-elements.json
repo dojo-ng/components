@@ -2251,6 +2251,10 @@
             {
               "name": "base",
               "description": ""
+            },
+            {
+              "name": "marker",
+              "description": ""
             }
           ],
           "cssProperties": [
@@ -2267,6 +2271,11 @@
             {
               "name": "--dj-sparkline-color",
               "description": "Line/area/bar color; defaults to dj-chart's series-1 token (`--dj-chart-1`, #2563eb)."
+            },
+            {
+              "name": "--dj-sparkline-marker-size",
+              "default": "0.25em",
+              "description": "Diameter of the last-point marker dot."
             }
           ]
         }

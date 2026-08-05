@@ -17,6 +17,8 @@ import {
 	centerSubLabelSize,
 	accessibleName,
 	sparklinePoints,
+	sparklineLinePath,
+	sparklineAreaPath,
 	sparklineBars,
 	sparklineAccessibleName,
 } from "../packages/chart/dist/core.js";
@@ -180,6 +182,27 @@ test("sparklinePoints: a flat series (no fixed domain) pads so the line centers"
 	for (const p of flat) assert.ok(Math.abs(p.y - 15) < 1e-9, "flat series centers vertically");
 	const flatZero = sparklinePoints([0, 0], 100, 30);
 	for (const p of flatZero) assert.ok(Math.abs(p.y - 15) < 1e-9, "a flat series of zero also centers");
+});
+
+// The path builders turn points into the `d` strings the element renders. happy-dom drops
+// expression-inserted SVG children (see chart-later-spec.md SL1), so the strings never reach a
+// DOM assertion in this suite — these are the only place their output is checked at all outside
+// the real-browser suite.
+test("sparklineLinePath: one moveto then a lineto per remaining point", () => {
+	assert.equal(sparklineLinePath(sparklinePoints([0, 10, 5], 100, 30)), "M0,30 L50,0 L100,15");
+});
+
+test("sparklineLinePath: empty data produces no path", () => {
+	assert.equal(sparklineLinePath([]), "");
+});
+
+test("sparklineAreaPath: closes the line down to the bottom edge and back", () => {
+	const pts = sparklinePoints([0, 10, 5], 100, 30);
+	assert.equal(sparklineAreaPath(pts, 30), "M0,30 L50,0 L100,15 L100,30 L0,30 Z");
+});
+
+test("sparklineAreaPath: empty data produces no path", () => {
+	assert.equal(sparklineAreaPath([], 30), "");
 });
 
 test("sparklineBars: zero baseline when zero is within the domain — bars grow both ways", () => {

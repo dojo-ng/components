@@ -31,11 +31,12 @@ export type SparklineType = "line" | "area" | "bar";
  * is `aria-hidden`, which is the common case when adjacent text already states the value (a KPI
  * row showing the number next to its trend).
  *
- * Parts: `base`.
+ * Parts: `base`, `marker`.
  *
  * @cssprop [--dj-sparkline-width=8em] - Host width.
  * @cssprop [--dj-sparkline-height=1.5em] - Host height.
  * @cssprop [--dj-sparkline-color] - Line/area/bar color; defaults to dj-chart's series-1 token (`--dj-chart-1`, #2563eb).
+ * @cssprop [--dj-sparkline-marker-size=0.25em] - Diameter of the last-point marker dot.
  */
 export class DjSparkline extends DojoElement {
 	static override styles = styles;
@@ -70,7 +71,7 @@ export class DjSparkline extends DojoElement {
 			role=${hasLabel ? "img" : nothing}
 			aria-hidden=${hasLabel ? nothing : "true"}
 			aria-label=${hasLabel ? accName : nothing}
-		>${this.renderMark(points)}${this.marker && this.type !== "bar" ? this.renderMarker(points) : nothing}</svg>`;
+		>${this.renderMark(points)}</svg>${this.marker && this.type !== "bar" ? this.renderMarker(points) : nothing}`;
 	}
 
 	private renderMark(points: SparklinePoint[]) {
@@ -85,10 +86,24 @@ export class DjSparkline extends DojoElement {
 		return svg`<path class="line" d=${sparklineLinePath(points)}></path>`;
 	}
 
+	// The marker is an HTML overlay, not an SVG <circle>, because `preserveAspectRatio="none"`
+	// scales the fixed 100×30 space non-uniformly: anything drawn INSIDE the SVG is stretched
+	// with it, so a circle comes out an ellipse (at the default 8em×1.5em host, about 1.6× wider
+	// than tall). `vector-effect: non-scaling-stroke` rescues the line's weight but does nothing
+	// for a filled shape's geometry. Sized in CSS units instead, the dot stays round at any host
+	// aspect. Its POSITION needs no measurement: under `preserveAspectRatio="none"` a user-space
+	// coordinate maps linearly onto the host box, so x/W and y/H are the host-relative
+	// percentages exactly. Physical `left`/`top` on purpose — the SVG content does not mirror
+	// under RTL, so a logical `inset-inline-start` would drift away from the line it marks.
 	private renderMarker(points: SparklinePoint[]) {
 		if (points.length === 0) return nothing;
 		const last = points[points.length - 1];
-		return svg`<circle class="marker" cx="${last.x}" cy="${last.y}" r="1.75"></circle>`;
+		return html`<span
+			part="marker"
+			class="marker"
+			aria-hidden="true"
+			style="left:${(last.x / W) * 100}%;top:${(last.y / H) * 100}%"
+		></span>`;
 	}
 }
 export default DjSparkline;

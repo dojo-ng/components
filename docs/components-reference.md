@@ -1325,9 +1325,9 @@ A tiny inline chart: one numeric series, no axes, grid, legend, tooltip, brush, 
 | `min` | min | `number` | — |
 | `max` | max | `number` | — |
 
-**Parts:** `base`
+**Parts:** `base`, `marker`
 
-**CSS properties:** `--dj-sparkline-width` (default `8em`; Host width.), `--dj-sparkline-height` (default `1.5em`; Host height.), `--dj-sparkline-color` (Line/area/bar color; defaults to dj-chart's series-1 token (`--dj-chart-1`, #2563eb).)
+**CSS properties:** `--dj-sparkline-width` (default `8em`; Host width.), `--dj-sparkline-height` (default `1.5em`; Host height.), `--dj-sparkline-color` (Line/area/bar color; defaults to dj-chart's series-1 token (`--dj-chart-1`, #2563eb).), `--dj-sparkline-marker-size` (default `0.25em`; Diameter of the last-point marker dot.)
 
 
 ## Editing

@@ -2,6 +2,7 @@ import { css } from "lit";
 export default css`
 	:host {
 		display: inline-block;
+		position: relative; /* containing block for the marker overlay */
 		inline-size: var(--dj-sparkline-width, 8em);
 		block-size: var(--dj-sparkline-height, 1.5em);
 		line-height: 0; /* an inline SVG otherwise leaves a baseline gap below the host box */
@@ -33,8 +34,16 @@ export default css`
 	.bar {
 		fill: var(--dj-sparkline-color, var(--dj-chart-1, #2563eb));
 	}
+	/* An HTML overlay rather than an SVG <circle>: preserveAspectRatio="none" would stretch a
+	   circle into an ellipse. See the comment on renderMarker in dj-sparkline.ts. */
 	.marker {
-		fill: var(--dj-sparkline-color, var(--dj-chart-1, #2563eb));
+		position: absolute;
+		inline-size: var(--dj-sparkline-marker-size, 0.25em);
+		block-size: var(--dj-sparkline-marker-size, 0.25em);
+		border-radius: 50%;
+		background: var(--dj-sparkline-color, var(--dj-chart-1, #2563eb));
+		transform: translate(-50%, -50%);
+		pointer-events: none;
 	}
 	@media (forced-colors: active) {
 		.line {
@@ -46,9 +55,11 @@ export default css`
 			stroke: CanvasText;
 			stroke-width: 1;
 		}
-		.bar,
-		.marker {
+		.bar {
 			fill: CanvasText;
+		}
+		.marker {
+			background: CanvasText;
 		}
 	}
 `;

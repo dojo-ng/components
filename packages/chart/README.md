@@ -237,7 +237,7 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
 
 ### Sparklines: a KPI table
 
-`<dj-sparkline>` is a separate, small element in this same package — a tiny inline chart with no axes, grid, legend, tooltip, or brush, for a trend next to a number. Set `data` (a plain array of numbers) and `type` (`line`/`area`/`bar`); `marker` dots the last point. It sizes via `--dj-sparkline-width`/`--dj-sparkline-height` (defaults `8em`/`1.5em`) and colors via `--dj-sparkline-color`, falling back to dj-chart's own `--dj-chart-1` token. Since the adjacent cell already states the value, these are left unlabeled (`aria-hidden`); set `label` on a standalone sparkline to give it its own accessible name instead.
+`<dj-sparkline>` is a separate, small element in this same package — a tiny inline chart with no axes, grid, legend, tooltip, or brush, for a trend next to a number. Set `data` (a plain array of numbers) and `type` (`line`/`area`/`bar`); `marker` dots the last point (`--dj-sparkline-marker-size`, default `0.25em`, and `::part(marker)` for anything more). It sizes via `--dj-sparkline-width`/`--dj-sparkline-height` (defaults `8em`/`1.5em`) and colors via `--dj-sparkline-color`, falling back to dj-chart's own `--dj-chart-1` token. Since the adjacent cell already states the value, these are left unlabeled (`aria-hidden`); set `label` on a standalone sparkline to give it its own accessible name instead.
 
 ```html
 <table>

@@ -445,3 +445,101 @@ export function accessibleName(
 	const base = `${label ? label + ". " : ""}${summary(chartType, series, cats)}`;
 	return centerLabel ? `${base} ${centerLabel}.` : base;
 }
+
+// ---- sparkline ----
+//
+// dj-sparkline is a tiny, axis-less inline chart: one series, no scales shared with dj-chart
+// (its data shape — a plain number[], no category/series objects — doesn't fit buildScales).
+// These are separate, small, pure functions operating on a fixed internal coordinate space
+// (see dj-sparkline.ts), so geometry is layout-independent and unit-testable in happy-dom.
+
+export interface SparklinePoint {
+	x: number;
+	y: number;
+	value: number;
+}
+
+/** The [lo, hi] domain for a sparkline: the explicit min/max when given, else the data's own
+ * range. A flat domain (lo === hi, e.g. a constant series or a single point) is padded so the
+ * line centers vertically instead of collapsing to one edge. */
+function sparklineDomain(data: number[], min?: number, max?: number): [number, number] {
+	let lo = min ?? Math.min(...data);
+	let hi = max ?? Math.max(...data);
+	if (lo === hi) {
+		const pad = lo === 0 ? 1 : Math.abs(lo) * 0.1;
+		lo -= pad;
+		hi += pad;
+	}
+	return [lo, hi];
+}
+
+/** Evenly-spaced x, linearly-scaled y (SVG-down: hi maps to y=0) for a sparkline's data, in a
+ * `w`×`h` coordinate space. `min`/`max` fix the domain; otherwise it's the data's own range. */
+export function sparklinePoints(data: number[], w: number, h: number, min?: number, max?: number): SparklinePoint[] {
+	if (data.length === 0) return [];
+	const [lo, hi] = sparklineDomain(data, min, max);
+	const n = data.length;
+	const stepX = n > 1 ? w / (n - 1) : 0;
+	return data.map((v, i) => ({
+		x: n > 1 ? i * stepX : w / 2,
+		y: h - ((v - lo) / (hi - lo)) * h,
+		value: v,
+	}));
+}
+
+/** SVG path `d` for a sparkline line, from points already computed by {@link sparklinePoints}. */
+export function sparklineLinePath(points: SparklinePoint[]): string {
+	if (points.length === 0) return "";
+	return points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+}
+
+/** SVG path `d` for a sparkline area: the line closed down to the bottom edge (`h`). */
+export function sparklineAreaPath(points: SparklinePoint[], h: number): string {
+	if (points.length === 0) return "";
+	const first = points[0];
+	const last = points[points.length - 1];
+	return `${sparklineLinePath(points)} L${last.x},${h} L${first.x},${h} Z`;
+}
+
+export interface SparklineBar {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	value: number;
+}
+
+/** Bars for a sparkline, one per data point, growing from a zero baseline — or, when zero falls
+ * outside the domain (an all-positive or all-negative series), from the domain's near edge to
+ * zero (clamped into range), matching dj-chart's own zero-anchored bar convention. */
+export function sparklineBars(data: number[], w: number, h: number, min?: number, max?: number): SparklineBar[] {
+	if (data.length === 0) return [];
+	const [lo, hi] = sparklineDomain(data, min, max);
+	const n = data.length;
+	const slot = w / n;
+	const gap = 0.15; // fraction of each slot left as a gap between bars
+	const barW = slot * (1 - gap);
+	const yOf = (v: number) => h - ((v - lo) / (hi - lo)) * h;
+	const y0 = yOf(Math.min(hi, Math.max(lo, 0)));
+	return data.map((v, i) => {
+		const y1 = yOf(v);
+		return {
+			x: i * slot + (slot - barW) / 2,
+			y: Math.min(y0, y1),
+			width: barW,
+			height: Math.abs(y1 - y0),
+			value: v,
+		};
+	});
+}
+
+/** The sparkline's accessible name: "<label>: N points, min X, max Y, last Z." `fmt` formats
+ * each number (the element passes its locale-aware formatter, mirroring dj-chart's
+ * {@link accessibleName}, so this stays a pure function with no i18n import of its own). */
+export function sparklineAccessibleName(label: string, data: number[], fmt: (v: number) => string): string {
+	if (data.length === 0) return `${label}: no data.`;
+	const min = Math.min(...data);
+	const max = Math.max(...data);
+	const last = data[data.length - 1];
+	return `${label}: ${data.length} points, min ${fmt(min)}, max ${fmt(max)}, last ${fmt(last)}.`;
+}

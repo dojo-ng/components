@@ -25,24 +25,50 @@ PKGS = "packages"
 
 
 def main_file(pkg):
-    """Return (relative-path, source) for a package's primary class file."""
+    """Return (relative-path, source) for a package's primary class file — the FIRST class file
+    in filename order. Most packages have exactly one; a package registering more than one
+    element (see `component_files`) has its primary class first alphabetically by convention
+    (`dj-chart.ts` before `dj-sparkline.ts`), so single-element callers are unaffected."""
+    files = component_files(pkg)
+    return files[0] if files else (None, "")
+
+
+def component_files(pkg):
+    """Return [(relative-path, source), ...] for every class file in a package's src dir, in
+    filename order. Almost every package has exactly one (`main_file` returns just the first);
+    `chart` has two (`dj-chart.ts` + `dj-sparkline.ts` — a second, small element sharing the
+    package's `core.ts` math rather than a package of its own)."""
+    out = []
     for f in sorted(glob.glob(f"{PKGS}/{pkg}/src/*.ts")):
         if f.endswith("index.ts") or f.endswith(".styles.ts"):
             continue
         s = open(f).read()
         if re.search(r"export class Dj", s):
-            return f, s
-    return None, ""
+            out.append((f, s))
+    return out
 
 
 def tag_of(pkg):
-    """The registered tag name, read from the package's index.ts define() call."""
+    """The package's PRIMARY registered tag: the first define() call in index.ts. For a package
+    registering more than one element, use `tag_for_class` to get a specific class's tag."""
     idx = f"{PKGS}/{pkg}/src/index.ts"
     if os.path.exists(idx):
         m = re.search(r'\.define\(\s*"([^"]+)"', open(idx).read())
         if m:
             return m.group(1)
     return "dj-" + pkg
+
+
+def tag_for_class(pkg, cls):
+    """The registered tag for a SPECIFIC class in a package, read from index.ts's
+    `<Class>.define("<tag>", ...)` call. Falls back to `tag_of(pkg)` if not found (covers the
+    single-element, single-define-call case identically to the old behavior)."""
+    idx = f"{PKGS}/{pkg}/src/index.ts"
+    if os.path.exists(idx):
+        m = re.search(rf'{re.escape(cls)}\.define\(\s*"([^"]+)"', open(idx).read())
+        if m:
+            return m.group(1)
+    return tag_of(pkg)
 
 
 def class_name(s):

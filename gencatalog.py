@@ -91,44 +91,53 @@ def example_code(pkg):
     return exs[0][2]
 
 
-def component_entry(pkg):
-    _, s = G.main_file(pkg)
-    if not s:
-        return None
-    tag = G.tag_of(pkg)
-    doc = G.classdoc(s)
-    o = [f"### `<{tag}>` · `@dojo-ng/{pkg}`\n"]
-    sup = G.superclass(s)
-    if sup != "DojoElement":
-        o.append(f"*Extends `{sup}`; inherits its properties and behavior.*\n")
-    d = G.description(doc, tag)
-    if d:
-        o.append(G.md_safe(d[0].upper() + d[1:]) + "\n")
-    ps = G.parse_props(s)
-    if ps:
-        o.append("| Property | Attribute | Type | Default |")
-        o.append("|---|---|---|---|")
-        for p in ps:
-            a = (p["attr"] or "—") + (" ↻" if p["reflects"] else "")
-            default = ("`" + G.cell(p["default"]) + "`") if p["default"] else "—"
-            o.append(f"| `{p['name']}` | {a} | `{G.cell(p['type'])}` | {default} |")
-        o.append("")
-    for label, items in (("Slots", G.parse_slots(doc, s)),
-                         ("Parts", G.parse_parts(doc, s)),
-                         ("Events", G.parse_events(doc, s))):
-        if items:
-            o.append(f"**{label}:** {G.md_safe(G.fmt_named_md(items))}\n")
-    methods = G.parse_methods(s)
-    if methods:
-        o.append(f"**Methods:** {G.md_safe(G.fmt_methods_md(methods))}\n")
-    cssprops = G.parse_cssprops(doc)
-    if cssprops:
-        o.append(f"**CSS properties:** {G.md_safe(G.fmt_cssprops_md(cssprops))}\n")
-    code = example_code(pkg)
-    if code:
-        o.append("Example:\n")
-        o.append("```html\n" + code + "\n```\n")
-    return "\n".join(o)
+def component_entries(pkg):
+    """One catalog entry per class the package registers (almost always one; `chart` has two —
+    `dj-chart` and `dj-sparkline`). The primary worked example (genreadmes' first EXAMPLES entry
+    for the package) is attached only to the FIRST entry, since it documents the package as a
+    whole and a second class would otherwise repeat it verbatim."""
+    entries = []
+    files = G.component_files(pkg)
+    for i, (_, s) in enumerate(files):
+        cls = G.class_name(s)
+        if not cls:
+            continue
+        tag = G.tag_for_class(pkg, cls)
+        doc = G.classdoc(s)
+        o = [f"### `<{tag}>` · `@dojo-ng/{pkg}`\n"]
+        sup = G.superclass(s)
+        if sup != "DojoElement":
+            o.append(f"*Extends `{sup}`; inherits its properties and behavior.*\n")
+        d = G.description(doc, tag)
+        if d:
+            o.append(G.md_safe(d[0].upper() + d[1:]) + "\n")
+        ps = G.parse_props(s)
+        if ps:
+            o.append("| Property | Attribute | Type | Default |")
+            o.append("|---|---|---|---|")
+            for p in ps:
+                a = (p["attr"] or "—") + (" ↻" if p["reflects"] else "")
+                default = ("`" + G.cell(p["default"]) + "`") if p["default"] else "—"
+                o.append(f"| `{p['name']}` | {a} | `{G.cell(p['type'])}` | {default} |")
+            o.append("")
+        for label, items in (("Slots", G.parse_slots(doc, s)),
+                             ("Parts", G.parse_parts(doc, s)),
+                             ("Events", G.parse_events(doc, s))):
+            if items:
+                o.append(f"**{label}:** {G.md_safe(G.fmt_named_md(items))}\n")
+        methods = G.parse_methods(s)
+        if methods:
+            o.append(f"**Methods:** {G.md_safe(G.fmt_methods_md(methods))}\n")
+        cssprops = G.parse_cssprops(doc)
+        if cssprops:
+            o.append(f"**CSS properties:** {G.md_safe(G.fmt_cssprops_md(cssprops))}\n")
+        if i == 0:
+            code = example_code(pkg)
+            if code:
+                o.append("Example:\n")
+                o.append("```html\n" + code + "\n```\n")
+        entries.append("\n".join(o))
+    return entries
 
 
 def plugins_for_host(host_pkg):
@@ -182,10 +191,18 @@ def plugin_entry(pkg):
 def main():
     o = [HEADER]
 
-    # Picker: one line per group, listing its tags. Kept in sync with GROUPS.
+    # Picker: one line per group, listing every tag each of its packages registers (almost
+    # always one tag; `chart` registers two). Kept in sync with GROUPS.
     o.append("## Picker by group\n")
     for group, names in GROUPS:
-        tags = [f"`<{G.tag_of(p)}>`" for p in names if has_pkg(p)]
+        tags = []
+        for p in names:
+            if not has_pkg(p):
+                continue
+            for _, s in G.component_files(p):
+                cls = G.class_name(s)
+                if cls:
+                    tags.append(f"`<{G.tag_for_class(p, cls)}>`")
         if tags:
             o.append(f"- **{group}:** {', '.join(tags)}")
     o.append("")
@@ -197,11 +214,11 @@ def main():
         for pkg in names:
             if not has_pkg(pkg):
                 continue
-            entry = component_entry(pkg)
-            if not entry:
+            entries = component_entries(pkg)
+            if not entries:
                 continue
             seen.add(pkg)
-            o.append(entry)
+            o.extend(entries)
 
             plugin_pkgs = plugins_for_host(pkg)
             if plugin_pkgs:

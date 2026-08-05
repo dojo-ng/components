@@ -84,6 +84,14 @@ export const ELEMENT_PACKAGES = [
 	"wizard",
 ];
 
+/** Packages whose index registers more than one tag. Key: package name; value: the ADDITIONAL
+ * tags beyond the default `dj-<pkg>` (which every entry in ELEMENT_PACKAGES already checks).
+ * `chart` registers `dj-sparkline` alongside `dj-chart` — a separate small element sharing the
+ * package's `core.ts` math rather than a package of its own. */
+export const EXTRA_TAGS = {
+	chart: ["dj-sparkline"],
+};
+
 /** Non-element packages: they must at least import without throwing. */
 export const SUPPORT_PACKAGES = [
 	"dojo-element",

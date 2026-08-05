@@ -25,91 +25,89 @@ def build_cem():
     modules = []
 
     for pkg in pkgs:
-        path, s = G.main_file(pkg)
-        if not path:
-            continue
-        cls = G.class_name(s)
-        if not cls:
-            continue
+        for path, s in G.component_files(pkg):
+            cls = G.class_name(s)
+            if not cls:
+                continue
 
-        tag = G.tag_of(pkg)
-        doc = G.classdoc(s)
+            tag = G.tag_for_class(pkg, cls)
+            doc = G.classdoc(s)
 
-        # Properties → members + attributes
-        members, attributes = [], []
-        for p in G.parse_props(s):
-            m_entry = {"kind": "field", "name": p["name"], "type": {"text": p["type"]}}
-            if p["default"]:
-                m_entry["default"] = p["default"]
-            if p["description"]:
-                m_entry["description"] = p["description"]
-            if p["attr"]:
-                m_entry["attribute"] = p["attr"]
-                if p["reflects"]:
-                    m_entry["reflects"] = True
-            members.append(m_entry)
-
-            if p["attr"]:
-                a_entry = {
-                    "name": p["attr"],
-                    "type": {"text": p["type"]},
-                    "fieldName": p["name"],
-                }
+            # Properties → members + attributes
+            members, attributes = [], []
+            for p in G.parse_props(s):
+                m_entry = {"kind": "field", "name": p["name"], "type": {"text": p["type"]}}
+                if p["default"]:
+                    m_entry["default"] = p["default"]
                 if p["description"]:
-                    a_entry["description"] = p["description"]
-                attributes.append(a_entry)
+                    m_entry["description"] = p["description"]
+                if p["attr"]:
+                    m_entry["attribute"] = p["attr"]
+                    if p["reflects"]:
+                        m_entry["reflects"] = True
+                members.append(m_entry)
 
-        # Public methods → method members (after the field members).
-        members.extend(G.parse_methods(s))
-
-        decl = {
-            "kind": "class",
-            "name": cls,
-            "customElement": True,
-            "tagName": tag,
-            "description": G.description(doc, tag),
-            "superclass": {"name": G.superclass(s)},
-            "members": members,
-            "attributes": attributes,
-        }
-
-        slots = G.parse_slots(doc, s)
-        if slots:
-            decl["slots"] = slots
-
-        parts = G.parse_parts(doc, s)
-        if parts:
-            decl["cssParts"] = parts
-
-        cssprops = G.parse_cssprops(doc)
-        if cssprops:
-            decl["cssProperties"] = cssprops
-
-        evts = G.parse_events(doc, s)
-        if evts:
-            decl["events"] = [
-                {
-                    "name": e["name"],
-                    "type": {"text": "CustomEvent"},
-                    "description": e["description"],
-                }
-                for e in evts
-            ]
-
-        modules.append(
-            {
-                "kind": "javascript-module",
-                "path": path,
-                "declarations": [decl],
-                "exports": [
-                    {
-                        "kind": "custom-element-definition",
-                        "name": tag,
-                        "declaration": {"name": cls, "module": path},
+                if p["attr"]:
+                    a_entry = {
+                        "name": p["attr"],
+                        "type": {"text": p["type"]},
+                        "fieldName": p["name"],
                     }
-                ],
+                    if p["description"]:
+                        a_entry["description"] = p["description"]
+                    attributes.append(a_entry)
+
+            # Public methods → method members (after the field members).
+            members.extend(G.parse_methods(s))
+
+            decl = {
+                "kind": "class",
+                "name": cls,
+                "customElement": True,
+                "tagName": tag,
+                "description": G.description(doc, tag),
+                "superclass": {"name": G.superclass(s)},
+                "members": members,
+                "attributes": attributes,
             }
-        )
+
+            slots = G.parse_slots(doc, s)
+            if slots:
+                decl["slots"] = slots
+
+            parts = G.parse_parts(doc, s)
+            if parts:
+                decl["cssParts"] = parts
+
+            cssprops = G.parse_cssprops(doc)
+            if cssprops:
+                decl["cssProperties"] = cssprops
+
+            evts = G.parse_events(doc, s)
+            if evts:
+                decl["events"] = [
+                    {
+                        "name": e["name"],
+                        "type": {"text": "CustomEvent"},
+                        "description": e["description"],
+                    }
+                    for e in evts
+                ]
+
+            modules.append(
+                {
+                    "kind": "javascript-module",
+                    "path": path,
+                    "declarations": [decl],
+                    "exports": [
+                        {
+                            "kind": "custom-element-definition",
+                            "name": tag,
+                            "declaration": {"name": cls, "module": path},
+                        }
+                    ],
+                }
+            )
 
     cem = {"schemaVersion": "2.0.0", "readme": "", "modules": modules}
     with open(OUT, "w") as f:

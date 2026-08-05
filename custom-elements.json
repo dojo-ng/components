@@ -2135,6 +2135,155 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/chart/src/dj-sparkline.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjSparkline",
+          "customElement": true,
+          "tagName": "dj-sparkline",
+          "description": "a tiny inline chart: one numeric series, no axes, grid, legend, tooltip, brush, or margins. It shares its math with `@dojo-ng/chart`'s `core.ts` but is deliberately NOT a `dj-chart` mode \u2014 a sparkline's data shape (a plain `data` array of numbers) and render path are both much smaller. For a full chart with axes and interaction, use `<dj-chart>`. Set `label` to give it an accessible name (`role=\"img\"` plus a generated \"N points, min X, max Y, last Z\" summary, localized through the ambient locale); without a label the sparkline is `aria-hidden`, which is the common case when adjacent text already states the value (a KPI row showing the number next to its trend).",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "data",
+              "type": {
+                "text": "number[]"
+              },
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "type",
+              "type": {
+                "text": "SparklineType"
+              },
+              "default": "\"line\"",
+              "description": "Mark type. `line`/`area` share one path; `bar` renders one rect per point.",
+              "attribute": "type",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name; when unset the sparkline is `aria-hidden` (see the class doc).",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "marker",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Show a dot at the last point. Ignored for `type=\"bar\"`.",
+              "attribute": "marker",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "min",
+              "type": {
+                "text": "number"
+              },
+              "description": "Fixed domain minimum; defaults to the data's own minimum.",
+              "attribute": "min"
+            },
+            {
+              "kind": "field",
+              "name": "max",
+              "type": {
+                "text": "number"
+              },
+              "description": "Fixed domain maximum; defaults to the data's own maximum.",
+              "attribute": "max"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "type",
+              "type": {
+                "text": "SparklineType"
+              },
+              "fieldName": "type",
+              "description": "Mark type. `line`/`area` share one path; `bar` renders one rect per point."
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label",
+              "description": "Accessible name; when unset the sparkline is `aria-hidden` (see the class doc)."
+            },
+            {
+              "name": "marker",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "marker",
+              "description": "Show a dot at the last point. Ignored for `type=\"bar\"`."
+            },
+            {
+              "name": "min",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "min",
+              "description": "Fixed domain minimum; defaults to the data's own minimum."
+            },
+            {
+              "name": "max",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "max",
+              "description": "Fixed domain maximum; defaults to the data's own maximum."
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "base",
+              "description": ""
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-sparkline-width",
+              "default": "8em",
+              "description": "Host width."
+            },
+            {
+              "name": "--dj-sparkline-height",
+              "default": "1.5em",
+              "description": "Host height."
+            },
+            {
+              "name": "--dj-sparkline-color",
+              "description": "Line/area/bar color; defaults to dj-chart's series-1 token (`--dj-chart-1`, #2563eb)."
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-sparkline",
+          "declaration": {
+            "name": "DjSparkline",
+            "module": "packages/chart/src/dj-sparkline.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/checkbox/src/dj-checkbox.ts",
       "declarations": [
         {

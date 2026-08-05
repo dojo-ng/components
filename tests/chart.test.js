@@ -16,6 +16,9 @@ import {
 	centerLabelSize,
 	centerSubLabelSize,
 	accessibleName,
+	sparklinePoints,
+	sparklineBars,
+	sparklineAccessibleName,
 } from "../packages/chart/dist/core.js";
 
 const DATA = [
@@ -146,6 +149,65 @@ test("accessibleName includes the lead-in label and omits center label when abse
 	assert.ok(!name.includes("72%"), "no center label when not provided");
 });
 
+// ---- sparkline math (dj-sparkline shares core.ts with dj-chart but has its own render path) ----
+
+test("sparklinePoints: x is evenly spaced across the width, y scaled to the data's own range", () => {
+	const pts = sparklinePoints([0, 5, 10], 100, 30);
+	assert.equal(pts.length, 3);
+	assert.ok(Math.abs(pts[0].x - 0) < 1e-9);
+	assert.ok(Math.abs(pts[1].x - 50) < 1e-9);
+	assert.ok(Math.abs(pts[2].x - 100) < 1e-9);
+	// SVG y grows downward: the max value maps to y=0 (top), the min to y=h (bottom).
+	assert.ok(Math.abs(pts[0].y - 30) < 1e-9, "min value sits at the bottom");
+	assert.ok(Math.abs(pts[2].y - 0) < 1e-9, "max value sits at the top");
+});
+
+test("sparklinePoints: a single point sits at mid-width", () => {
+	const pts = sparklinePoints([5], 100, 30);
+	assert.equal(pts.length, 1);
+	assert.ok(Math.abs(pts[0].x - 50) < 1e-9);
+});
+
+test("sparklinePoints: honors a fixed min/max domain over the data's own range", () => {
+	// Data [5,5,5] would be flat on its own range; the fixed [0,10] domain instead puts every
+	// point at the vertical midpoint of THAT domain (h/2), proving the fixed domain is used.
+	const pts = sparklinePoints([5, 5, 5], 100, 30, 0, 10);
+	for (const p of pts) assert.ok(Math.abs(p.y - 15) < 1e-9, "value 5 in domain [0,10] is at the midpoint");
+});
+
+test("sparklinePoints: a flat series (no fixed domain) pads so the line centers", () => {
+	const flat = sparklinePoints([7, 7, 7], 100, 30);
+	for (const p of flat) assert.ok(Math.abs(p.y - 15) < 1e-9, "flat series centers vertically");
+	const flatZero = sparklinePoints([0, 0], 100, 30);
+	for (const p of flatZero) assert.ok(Math.abs(p.y - 15) < 1e-9, "a flat series of zero also centers");
+});
+
+test("sparklineBars: zero baseline when zero is within the domain — bars grow both ways", () => {
+	const bars = sparklineBars([-4, 2, 6], 90, 30);
+	assert.equal(bars.length, 3);
+	const pos = bars.find((b) => b.value === 2);
+	const neg = bars.find((b) => b.value === -4);
+	assert.ok(neg.y > pos.y, "a negative bar sits below the zero baseline, a positive bar above it");
+	for (const b of bars) assert.ok(b.height > 0, "every bar has positive height");
+});
+
+test("sparklineBars: an all-positive series clamps the baseline to the domain's near edge", () => {
+	const bars = sparklineBars([10, 20, 30], 90, 30);
+	// Zero is outside [10,30], so the baseline clamps to the domain min (10) — every bar's
+	// bottom edge lands on the same y (the coordinate space's bottom, since 10 is the min).
+	const bottoms = bars.map((b) => b.y + b.height);
+	for (const y of bottoms) assert.ok(Math.abs(y - 30) < 1e-6, "bars share a bottom baseline at the domain min");
+});
+
+test("sparklineAccessibleName: composes label, count, min/max/last through the given formatter", () => {
+	const name = sparklineAccessibleName("Revenue", [10, 30, 20], (v) => `$${v}`);
+	assert.equal(name, "Revenue: 3 points, min $10, max $30, last $20.");
+});
+
+test("sparklineAccessibleName: empty data", () => {
+	assert.equal(sparklineAccessibleName("Revenue", [], (v) => `$${v}`), "Revenue: no data.");
+});
+
 // ---- element-level (property reflection, warn-once, accessible name) ----
 // happy-dom does no layout, so the SVG geometry is confirmed in a browser (spec G5). These
 // assert the JS-observable behavior: reflection, the warn-once side effects, and the aria name.
@@ -235,4 +297,65 @@ test("a bar chart does not append center-label to its aria-label", async () => {
 	await settled(el);
 	const aria = el.renderRoot.querySelector("[role='img']")?.getAttribute("aria-label") ?? "";
 	assert.ok(!aria.includes("72%"), "center label ignored for non-donut aria");
+});
+
+// ---- dj-sparkline (element-level) ----
+// Same happy-dom limitation as dj-chart above, confirmed directly for this template: a bare
+// `<circle>` written as static markup inside an `html`-tagged `<svg>` root renders fine, but a
+// child inserted via an expression (an `svg`-tagged sub-template, e.g. the mark path/bars/
+// marker) does not materialize in happy-dom's DOM at all — not a layout issue, a happy-dom gap
+// in Lit part handling for SVG child content. So, as with dj-chart, the marks themselves are
+// confirmed in a browser (spec SL3), not here; these assert only what survives the gap:
+// attribute-level bindings on the <svg> root itself (reflection, aria) and the pure-helper math,
+// which is unit-tested directly above.
+
+test("dj-sparkline: type and marker reflect", async () => {
+	const el = await mount("dj-sparkline", { data: [1, 2, 3], type: "area", marker: true });
+	await settled(el);
+	assert.equal(el.getAttribute("type"), "area");
+	assert.equal(el.hasAttribute("marker"), true);
+	el.type = "bar";
+	el.marker = false;
+	await settled(el);
+	assert.equal(el.getAttribute("type"), "bar");
+	assert.equal(el.hasAttribute("marker"), false);
+});
+
+test("dj-sparkline: aria-hidden when no label; role=img + aria-label when label is set", async () => {
+	const noLabel = await mount("dj-sparkline", { data: [1, 2, 3] });
+	await settled(noLabel);
+	const svgNoLabel = noLabel.renderRoot.querySelector("svg");
+	assert.equal(svgNoLabel.getAttribute("aria-hidden"), "true");
+	assert.equal(svgNoLabel.hasAttribute("role"), false, "no role attribute when aria-hidden");
+	assert.equal(svgNoLabel.hasAttribute("aria-label"), false);
+
+	const labeled = await mount("dj-sparkline", { data: [1, 2, 3], label: "Revenue" });
+	await settled(labeled);
+	const svgLabeled = labeled.renderRoot.querySelector("svg");
+	assert.equal(svgLabeled.getAttribute("role"), "img");
+	assert.equal(svgLabeled.hasAttribute("aria-hidden"), false);
+	assert.ok(svgLabeled.getAttribute("aria-label").startsWith("Revenue: 3 points"), "aria-label carries the generated summary");
+});
+
+test("dj-sparkline: aria-label composes through the ambient locale (localized number check)", async () => {
+	// Set `lang` on the element itself, BEFORE connecting, so LocaleController's hostConnected
+	// sync picks it up on first render (mount()'s props path sets the Lit property, which does
+	// not reflect to the attribute LocaleController actually reads).
+	const de = document.createElement("dj-sparkline");
+	de.setAttribute("lang", "de-DE");
+	de.data = [1000.5];
+	de.label = "Revenue";
+	document.body.appendChild(de);
+	await de.updateComplete;
+	const deAria = de.renderRoot.querySelector("svg").getAttribute("aria-label");
+	assert.ok(deAria.includes("1.000,5"), `expected de-DE grouping/decimal in: ${deAria}`);
+
+	const en = document.createElement("dj-sparkline");
+	en.setAttribute("lang", "en-US");
+	en.data = [1000.5];
+	en.label = "Revenue";
+	document.body.appendChild(en);
+	await en.updateComplete;
+	const enAria = en.renderRoot.querySelector("svg").getAttribute("aria-label");
+	assert.ok(enAria.includes("1,000.5"), `expected en-US grouping/decimal in: ${enAria}`);
 });

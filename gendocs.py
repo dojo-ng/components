@@ -37,38 +37,39 @@ def main():
         if not os.path.isdir(f"{G.PKGS}/{pkg}/src"):
             continue
         seen.add(pkg)
-        _, s = G.main_file(pkg)
-        if not s:
-            continue
-        tag = G.tag_of(pkg)
-        doc = G.classdoc(s)
-        o.append(f"\n### `<{tag}>` · `@dojo-ng/{pkg}`\n")
-        sup = G.superclass(s)
-        if sup != "DojoElement":
-            o.append(f"*Extends `{sup}`; inherits its properties and behavior.*\n")
-        d = G.description(doc, tag)
-        if d:
-            o.append(G.md_safe(d[0].upper() + d[1:]) + "\n")
-        ps = G.parse_props(s)
-        if ps:
-            o.append("| Property | Attribute | Type | Default |")
-            o.append("|---|---|---|---|")
-            for p in ps:
-                a = (p["attr"] or "—") + (" ↻" if p["reflects"] else "")
-                default = ("`" + G.cell(p["default"]) + "`") if p["default"] else "—"
-                o.append(f"| `{p['name']}` | {a} | `{G.cell(p['type'])}` | {default} |")
-            o.append("")
-        for label, items in (("Slots", G.parse_slots(doc, s)),
-                             ("Parts", G.parse_parts(doc, s)),
-                             ("Events", G.parse_events(doc, s))):
-            if items:
-                o.append(f"**{label}:** {G.md_safe(G.fmt_named_md(items))}\n")
-        methods = G.parse_methods(s)
-        if methods:
-            o.append(f"**Methods:** {G.md_safe(G.fmt_methods_md(methods))}\n")
-        cssprops = G.parse_cssprops(doc)
-        if cssprops:
-            o.append(f"**CSS properties:** {G.md_safe(G.fmt_cssprops_md(cssprops))}\n")
+        for _, s in G.component_files(pkg):
+            if not s:
+                continue
+            cls = G.class_name(s)
+            tag = G.tag_for_class(pkg, cls)
+            doc = G.classdoc(s)
+            o.append(f"\n### `<{tag}>` · `@dojo-ng/{pkg}`\n")
+            sup = G.superclass(s)
+            if sup != "DojoElement":
+                o.append(f"*Extends `{sup}`; inherits its properties and behavior.*\n")
+            d = G.description(doc, tag)
+            if d:
+                o.append(G.md_safe(d[0].upper() + d[1:]) + "\n")
+            ps = G.parse_props(s)
+            if ps:
+                o.append("| Property | Attribute | Type | Default |")
+                o.append("|---|---|---|---|")
+                for p in ps:
+                    a = (p["attr"] or "—") + (" ↻" if p["reflects"] else "")
+                    default = ("`" + G.cell(p["default"]) + "`") if p["default"] else "—"
+                    o.append(f"| `{p['name']}` | {a} | `{G.cell(p['type'])}` | {default} |")
+                o.append("")
+            for label, items in (("Slots", G.parse_slots(doc, s)),
+                                 ("Parts", G.parse_parts(doc, s)),
+                                 ("Events", G.parse_events(doc, s))):
+                if items:
+                    o.append(f"**{label}:** {G.md_safe(G.fmt_named_md(items))}\n")
+            methods = G.parse_methods(s)
+            if methods:
+                o.append(f"**Methods:** {G.md_safe(G.fmt_methods_md(methods))}\n")
+            cssprops = G.parse_cssprops(doc)
+            if cssprops:
+                o.append(f"**CSS properties:** {G.md_safe(G.fmt_cssprops_md(cssprops))}\n")
 
   o.append("\n## Utilities and infrastructure\n")
   o.append("Not custom elements (except `<dj-theme>`); these support theming and app-level state.\n")

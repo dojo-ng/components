@@ -1312,6 +1312,24 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 **CSS properties:** `--dj-chart-height` (default `18rem`; Overall chart height (width fills the container).), `--dj-chart-1` (default `#2563eb`; Categorical series color 1.), `--dj-chart-2` (default `#16a34a`; Categorical series color 2.), `--dj-chart-3` (default `#d97706`; Categorical series color 3.), `--dj-chart-4` (default `#dc2626`; Categorical series color 4.), `--dj-chart-5` (default `#7c3aed`; Categorical series color 5.), `--dj-chart-6` (default `#0891b2`; Categorical series color 6.), `--dj-chart-7` (default `#db2777`; Categorical series color 7.), `--dj-chart-8` (default `#65a30d`; Categorical series color 8.)
 
 
+### `<dj-sparkline>` · `@dojo-ng/chart`
+
+A tiny inline chart: one numeric series, no axes, grid, legend, tooltip, brush, or margins. It shares its math with `@dojo-ng/chart`'s `core.ts` but is deliberately NOT a `dj-chart` mode — a sparkline's data shape (a plain `data` array of numbers) and render path are both much smaller. For a full chart with axes and interaction, use `<dj-chart>`. Set `label` to give it an accessible name (`role="img"` plus a generated "N points, min X, max Y, last Z" summary, localized through the ambient locale); without a label the sparkline is `aria-hidden`, which is the common case when adjacent text already states the value (a KPI row showing the number next to its trend).
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `data` | — | `number[]` | `[]` |
+| `type` | type ↻ | `SparklineType` | `"line"` |
+| `label` | label | `string` | — |
+| `marker` | marker ↻ | `boolean` | `false` |
+| `min` | min | `number` | — |
+| `max` | max | `number` | — |
+
+**Parts:** `base`
+
+**CSS properties:** `--dj-sparkline-width` (default `8em`; Host width.), `--dj-sparkline-height` (default `1.5em`; Host height.), `--dj-sparkline-color` (Line/area/bar color; defaults to dj-chart's series-1 token (`--dj-chart-1`, #2563eb).)
+
+
 ## Editing
 
 

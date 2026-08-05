@@ -235,6 +235,27 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
 </script>
 ```
 
+### Sparklines: a KPI table
+
+`<dj-sparkline>` is a separate, small element in this same package — a tiny inline chart with no axes, grid, legend, tooltip, or brush, for a trend next to a number. Set `data` (a plain array of numbers) and `type` (`line`/`area`/`bar`); `marker` dots the last point. It sizes via `--dj-sparkline-width`/`--dj-sparkline-height` (defaults `8em`/`1.5em`) and colors via `--dj-sparkline-color`, falling back to dj-chart's own `--dj-chart-1` token. Since the adjacent cell already states the value, these are left unlabeled (`aria-hidden`); set `label` on a standalone sparkline to give it its own accessible name instead.
+
+```html
+<table>
+  <thead><tr><th>Metric</th><th>Trend</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Revenue</td><td><dj-sparkline id="rev" type="area" marker></dj-sparkline></td><td>$74k</td></tr>
+    <tr><td>Signups</td><td><dj-sparkline id="signups" type="bar"></dj-sparkline></td><td>1,204</td></tr>
+    <tr><td>Churn</td><td><dj-sparkline id="churn" style="--dj-sparkline-color: var(--dj-color-danger-600, #dc2626)"></dj-sparkline></td><td>2.1%</td></tr>
+  </tbody>
+</table>
+<script type="module">
+  import "@dojo-ng/chart";
+  document.getElementById("rev").data = [42, 50, 47, 61, 58, 70, 74];
+  document.getElementById("signups").data = [180, 240, 90, 310, 260, 340, 300];
+  document.getElementById("churn").data = [3.4, 3.1, 2.9, 2.6, 2.4, 2.2, 2.1];
+</script>
+```
+
 ## Theming
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.

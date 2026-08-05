@@ -394,6 +394,47 @@
 		</div>
 		<span id="chart-state" style="color: var(--dj-color-text-muted)">hover a category…</span>
 
+		<h2>Sparklines</h2>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			A tiny inline chart with no axes/legend/tooltip — a KPI row, since that's the point. The last row's aria-label is locale-aware; switch the Locale above to check it (and RTL layout in <code>ar-EG</code>).
+		</p>
+		<table style="border-collapse: collapse">
+			<thead>
+				<tr style="text-align: left">
+					<th style="padding: 0.35rem 0.75rem 0.35rem 0">Metric</th>
+					<th style="padding: 0.35rem 0.75rem">Trend</th>
+					<th style="padding: 0.35rem 0.75rem">Value</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td style="padding: 0.35rem 0.75rem 0.35rem 0">Revenue (line + marker)</td>
+					<td style="padding: 0.35rem 0.75rem"><dj-sparkline id="spark-line" type="line" marker></dj-sparkline></td>
+					<td style="padding: 0.35rem 0.75rem" id="spark-line-value"></td>
+				</tr>
+				<tr>
+					<td style="padding: 0.35rem 0.75rem 0.35rem 0">Traffic (area)</td>
+					<td style="padding: 0.35rem 0.75rem"><dj-sparkline id="spark-area" type="area"></dj-sparkline></td>
+					<td style="padding: 0.35rem 0.75rem" id="spark-area-value"></td>
+				</tr>
+				<tr>
+					<td style="padding: 0.35rem 0.75rem 0.35rem 0">Signups (bar)</td>
+					<td style="padding: 0.35rem 0.75rem"><dj-sparkline id="spark-bar" type="bar"></dj-sparkline></td>
+					<td style="padding: 0.35rem 0.75rem" id="spark-bar-value"></td>
+				</tr>
+				<tr>
+					<td style="padding: 0.35rem 0.75rem 0.35rem 0">Churn (custom color)</td>
+					<td style="padding: 0.35rem 0.75rem"><dj-sparkline id="spark-color" type="line" style="--dj-sparkline-color: var(--dj-color-danger-600, #dc2626)"></dj-sparkline></td>
+					<td style="padding: 0.35rem 0.75rem" id="spark-color-value"></td>
+				</tr>
+				<tr>
+					<td style="padding: 0.35rem 0.75rem 0.35rem 0">Latency (labeled, localized)</td>
+					<td style="padding: 0.35rem 0.75rem"><dj-sparkline id="spark-labeled" type="area" marker label="Latency, ms"></dj-sparkline></td>
+					<td style="padding: 0.35rem 0.75rem" id="spark-labeled-value"></td>
+				</tr>
+			</tbody>
+		</table>
+
 		<h2>Carousel</h2>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
 			Swipe/trackpad, prev/next, and dots. Toggle per-view; switch the Locale to <code>ar-EG</code> to check RTL (order flips, ArrowRight still means forward).
@@ -724,6 +765,26 @@
 			};
 			setDonutLabel();
 			localeSelect.addEventListener("change", setDonutLabel);
+
+			// Sparklines: unlabeled ones are aria-hidden (the adjacent Value cell already states the
+			// number); the last row sets `label` so its generated aria-label composes through the
+			// locale switcher, same as the donut center label above.
+			const sparkRevenue = [42, 50, 47, 61, 58, 70, 74];
+			const sparkTraffic = [180, 240, 90, 310, 260, 340, 300];
+			const sparkSignups = [12, 19, 8, 24, 17, 22, 20];
+			const sparkChurn = [3.4, 3.1, 2.9, 2.6, 2.4, 2.6, 3.0];
+			const sparkLatency = [220, 260, 240, 310, 280, 190, 205];
+			document.getElementById("spark-line").data = sparkRevenue;
+			document.getElementById("spark-line-value").textContent = "$74k";
+			document.getElementById("spark-area").data = sparkTraffic;
+			document.getElementById("spark-area-value").textContent = "300";
+			document.getElementById("spark-bar").data = sparkSignups;
+			document.getElementById("spark-bar-value").textContent = "20";
+			document.getElementById("spark-color").data = sparkChurn;
+			document.getElementById("spark-color-value").textContent = "3.0%";
+			document.getElementById("spark-labeled").data = sparkLatency;
+			document.getElementById("spark-labeled-value").textContent = "205 ms";
+
 			const comboChart = document.getElementById("chart-combo");
 			comboChart.series = [
 				{ key: "revenue", label: "Revenue" },

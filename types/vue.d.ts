@@ -63,6 +63,7 @@ import type { DjSkeleton } from "@dojo-ng/skeleton";
 import type { DjSlidePane } from "@dojo-ng/slide-pane";
 import type { DjSlider } from "@dojo-ng/slider";
 import type { DjSnackbar } from "@dojo-ng/snackbar";
+import type { DjSparkline } from "@dojo-ng/chart";
 import type { DjSpeedDial } from "@dojo-ng/speed-dial";
 import type { DjSplitPanel } from "@dojo-ng/split-panel";
 import type { DjStack } from "@dojo-ng/stack";
@@ -146,6 +147,7 @@ declare module "@vue/runtime-core" {
     "dj-slide-pane": DefineComponent<{ open?: DjSlidePane["open"]; align?: DjSlidePane["align"]; width?: DjSlidePane["width"]; underlay?: DjSlidePane["underlay"]; closeText?: DjSlidePane["closeText"] }, {}, {}, {}, {}, {}, { "dj-close": (e: CustomEvent) => void }>;
     "dj-slider": DefineComponent<{ min?: DjSlider["min"]; max?: DjSlider["max"]; step?: DjSlider["step"]; value?: DjSlider["value"]; name?: DjSlider["name"]; label?: DjSlider["label"]; showOutput?: DjSlider["showOutput"]; disabled?: DjSlider["disabled"]; readonly?: DjSlider["readonly"]; required?: DjSlider["required"]; labelHidden?: DjSlider["labelHidden"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
     "dj-snackbar": DefineComponent<{ open?: DjSnackbar["open"]; type?: DjSnackbar["type"]; leading?: DjSnackbar["leading"]; stacked?: DjSnackbar["stacked"] }, {}, {}, {}, {}, {}, {}>;
+    "dj-sparkline": DefineComponent<{ data?: DjSparkline["data"]; type?: DjSparkline["type"]; label?: DjSparkline["label"]; marker?: DjSparkline["marker"]; min?: DjSparkline["min"]; max?: DjSparkline["max"] }, {}, {}, {}, {}, {}, {}>;
     "dj-speed-dial": DefineComponent<{ open?: DjSpeedDial["open"]; direction?: DjSpeedDial["direction"] }, {}, {}, {}, {}, {}, { "dj-toggle": (e: CustomEvent) => void }>;
     "dj-split-panel": DefineComponent<{ orientation?: DjSplitPanel["orientation"]; position?: DjSplitPanel["position"]; disabled?: DjSplitPanel["disabled"] }, {}, {}, {}, {}, {}, { "dj-reposition": (e: CustomEvent) => void }>;
     "dj-stack": DefineComponent<{ direction?: DjStack["direction"]; align?: DjStack["align"]; spacing?: DjStack["spacing"]; padding?: DjStack["padding"]; stretch?: DjStack["stretch"] }, {}, {}, {}, {}, {}, {}>;

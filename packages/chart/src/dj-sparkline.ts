@@ -1,0 +1,94 @@
+import { html, svg, nothing } from "lit";
+import { property } from "lit/decorators.js";
+import DojoElement from "@dojo-ng/dojo-element";
+import { LocaleController, formatNumber } from "@dojo-ng/i18n";
+import styles from "./dj-sparkline.styles.js";
+import {
+	sparklinePoints,
+	sparklineLinePath,
+	sparklineAreaPath,
+	sparklineBars,
+	sparklineAccessibleName,
+	type SparklinePoint,
+} from "./core.js";
+
+// Fixed internal coordinate space. happy-dom does no layout, so a measured viewBox (dj-chart's
+// approach, via ResizeObserver) isn't testable; a fixed space with preserveAspectRatio="none"
+// makes the geometry layout-independent instead, scaling to whatever CSS size the host is given.
+const W = 100;
+const H = 30;
+
+export type SparklineType = "line" | "area" | "bar";
+
+/**
+ * `<dj-sparkline>` — a tiny inline chart: one numeric series, no axes, grid, legend, tooltip,
+ * brush, or margins. It shares its math with `@dojo-ng/chart`'s `core.ts` but is deliberately
+ * NOT a `dj-chart` mode — a sparkline's data shape (a plain `data` array of numbers) and render
+ * path are both much smaller. For a full chart with axes and interaction, use `<dj-chart>`.
+ *
+ * Set `label` to give it an accessible name (`role="img"` plus a generated "N points, min X,
+ * max Y, last Z" summary, localized through the ambient locale); without a label the sparkline
+ * is `aria-hidden`, which is the common case when adjacent text already states the value (a KPI
+ * row showing the number next to its trend).
+ *
+ * Parts: `base`.
+ *
+ * @cssprop [--dj-sparkline-width=8em] - Host width.
+ * @cssprop [--dj-sparkline-height=1.5em] - Host height.
+ * @cssprop [--dj-sparkline-color] - Line/area/bar color; defaults to dj-chart's series-1 token (`--dj-chart-1`, #2563eb).
+ */
+export class DjSparkline extends DojoElement {
+	static override styles = styles;
+	static override version = "0.1.0";
+
+	@property({ attribute: false }) data: number[] = [];
+	/** Mark type. `line`/`area` share one path; `bar` renders one rect per point. */
+	@property({ reflect: true }) type: SparklineType = "line";
+	/** Accessible name; when unset the sparkline is `aria-hidden` (see the class doc). */
+	@property() label?: string;
+	/** Show a dot at the last point. Ignored for `type="bar"`. */
+	@property({ type: Boolean, reflect: true }) marker = false;
+	/** Fixed domain minimum; defaults to the data's own minimum. */
+	@property({ type: Number }) min?: number;
+	/** Fixed domain maximum; defaults to the data's own maximum. */
+	@property({ type: Number }) max?: number;
+
+	#i18n = new LocaleController(this);
+
+	private fmt(v: number): string {
+		return formatNumber(v, this.#i18n.locale);
+	}
+
+	override render() {
+		const hasLabel = !!this.label;
+		const accName = hasLabel ? sparklineAccessibleName(this.label as string, this.data, (v) => this.fmt(v)) : "";
+		const points = sparklinePoints(this.data, W, H, this.min, this.max);
+		return html`<svg
+			part="base"
+			viewBox="0 0 ${W} ${H}"
+			preserveAspectRatio="none"
+			role=${hasLabel ? "img" : nothing}
+			aria-hidden=${hasLabel ? nothing : "true"}
+			aria-label=${hasLabel ? accName : nothing}
+		>${this.renderMark(points)}${this.marker && this.type !== "bar" ? this.renderMarker(points) : nothing}</svg>`;
+	}
+
+	private renderMark(points: SparklinePoint[]) {
+		if (points.length === 0) return nothing;
+		if (this.type === "bar") {
+			const bars = sparklineBars(this.data, W, H, this.min, this.max);
+			return svg`${bars.map((b) => svg`<rect class="bar" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}"></rect>`)}`;
+		}
+		if (this.type === "area") {
+			return svg`<path class="area" d=${sparklineAreaPath(points, H)}></path><path class="line" d=${sparklineLinePath(points)}></path>`;
+		}
+		return svg`<path class="line" d=${sparklineLinePath(points)}></path>`;
+	}
+
+	private renderMarker(points: SparklinePoint[]) {
+		if (points.length === 0) return nothing;
+		const last = points[points.length - 1];
+		return svg`<circle class="marker" cx="${last.x}" cy="${last.y}" r="1.75"></circle>`;
+	}
+}
+export default DjSparkline;

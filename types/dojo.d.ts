@@ -67,6 +67,7 @@ import type { DjSkeleton } from "@dojo-ng/skeleton";
 import type { DjSlidePane } from "@dojo-ng/slide-pane";
 import type { DjSlider } from "@dojo-ng/slider";
 import type { DjSnackbar } from "@dojo-ng/snackbar";
+import type { DjSparkline } from "@dojo-ng/chart";
 import type { DjSpeedDial } from "@dojo-ng/speed-dial";
 import type { DjSplitPanel } from "@dojo-ng/split-panel";
 import type { DjStack } from "@dojo-ng/stack";
@@ -494,6 +495,14 @@ declare module "@dojo-ng/framework" {
         "type"?: DjSnackbar["type"];
         "leading"?: DjSnackbar["leading"];
         "stacked"?: DjSnackbar["stacked"];
+      };
+      "dj-sparkline": DjVNodeBase & {
+        "data"?: DjSparkline["data"];
+        "type"?: DjSparkline["type"];
+        "label"?: DjSparkline["label"];
+        "marker"?: DjSparkline["marker"];
+        "min"?: DjSparkline["min"];
+        "max"?: DjSparkline["max"];
       };
       "dj-speed-dial": DjVNodeBase & {
         "open"?: DjSpeedDial["open"];

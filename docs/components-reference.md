@@ -1277,7 +1277,7 @@ Typographic wrapper. size/weight/uppercase/truncated/inverse. Part: `base`.
 
 ### `<dj-chart>` · `@dojo-ng/chart`
 
-A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `type` selects the mark: cartesian (`line`, `area`, `bar`) reads `category-key` for x; x/y (`scatter`, `bubble`) reads `x-key` for a numeric x (and `size-key` for bubble radius); radial (`pie`, `donut`) draws one series as slices by category. `stacked` stacks bars and areas; a series may override `type` for combos. Built on D3 math (scales, shapes) with the SVG owned here, so marks are themeable via `--dj-*` tokens (a `--dj-chart-1..8` ramp) and `::part()`, and the chart is real DOM for assistive tech. It exposes a visually-hidden data table as the accessible equivalent, carries `role="img"` with a generated summary, and honors reduced motion. Not a form control. `legend-toggle` makes legend items toggle series visibility; `brush` adds an overview strip below cartesian charts for selecting the visible category window (double-click resets).
+A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `type` selects the mark: cartesian (`line`, `area`, `bar`) reads `category-key` for x; x/y (`scatter`, `bubble`) reads `x-key` for a numeric x (and `size-key` for bubble radius); radial (`pie`, `donut`) draws one series as slices by category. `stacked` stacks bars and areas; a series may override `type` for combos. Built on D3 math (scales, shapes) with the SVG owned here, so marks are themeable via `--dj-*` tokens (a `--dj-chart-1..8` ramp) and `::part()`, and the chart is real DOM for assistive tech. It exposes a visually-hidden data table as the accessible equivalent, carries `role="img"` with a generated summary, and honors reduced motion. Not a form control. `legend-toggle` makes legend items toggle series visibility; `brush` adds an overview strip below cartesian charts for selecting the visible category window (double-click resets). {@link appendData} appends rows for cheap live updates without rebuilding the `data` array; `max-points` bounds how much history it keeps.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1304,17 +1304,20 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 | `numberFormat` | — | `Intl.NumberFormatOptions` | — |
 | `formatY` | — | `(value: number) => string` | — |
 | `formatX` | — | `(category: string) => string` | — |
+| `maxPoints` | max-points | `number` | `0` |
 
 **Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `center-label`, `center-sub-label`
 
 **Events:** `dj-legend-toggle` (detail `{ key, hidden }`), `dj-hover` (detail `{ category }` or `null`; cartesian and radial)
+
+**Methods:** `appendData(rows: ChartDatum[])` (Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).)
 
 **CSS properties:** `--dj-chart-height` (default `18rem`; Overall chart height (width fills the container).), `--dj-chart-1` (default `#2563eb`; Categorical series color 1.), `--dj-chart-2` (default `#16a34a`; Categorical series color 2.), `--dj-chart-3` (default `#d97706`; Categorical series color 3.), `--dj-chart-4` (default `#dc2626`; Categorical series color 4.), `--dj-chart-5` (default `#7c3aed`; Categorical series color 5.), `--dj-chart-6` (default `#0891b2`; Categorical series color 6.), `--dj-chart-7` (default `#db2777`; Categorical series color 7.), `--dj-chart-8` (default `#65a30d`; Categorical series color 8.)
 
 
 ### `<dj-sparkline>` · `@dojo-ng/chart`
 
-A tiny inline chart: one numeric series, no axes, grid, legend, tooltip, brush, or margins. It shares its math with `@dojo-ng/chart`'s `core.ts` but is deliberately NOT a `dj-chart` mode — a sparkline's data shape (a plain `data` array of numbers) and render path are both much smaller. For a full chart with axes and interaction, use `<dj-chart>`. Set `label` to give it an accessible name (`role="img"` plus a generated "N points, min X, max Y, last Z" summary, localized through the ambient locale); without a label the sparkline is `aria-hidden`, which is the common case when adjacent text already states the value (a KPI row showing the number next to its trend).
+A tiny inline chart: one numeric series, no axes, grid, legend, tooltip, brush, or margins. It shares its math with `@dojo-ng/chart`'s `core.ts` but is deliberately NOT a `dj-chart` mode — a sparkline's data shape (a plain `data` array of numbers) and render path are both much smaller. For a full chart with axes and interaction, use `<dj-chart>`. Set `label` to give it an accessible name (`role="img"` plus a generated "N points, min X, max Y, last Z" summary, localized through the ambient locale); without a label the sparkline is `aria-hidden`, which is the common case when adjacent text already states the value (a KPI row showing the number next to its trend). {@link push} appends one or more values for cheap live updates without rebuilding `data` yourself; `max-points` bounds how much history it keeps.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1324,8 +1327,11 @@ A tiny inline chart: one numeric series, no axes, grid, legend, tooltip, brush, 
 | `marker` | marker ↻ | `boolean` | `false` |
 | `min` | min | `number` | — |
 | `max` | max | `number` | — |
+| `maxPoints` | max-points | `number` | `0` |
 
 **Parts:** `base`, `marker`
+
+**Methods:** `push(value: number | number[])` (Append one or more values without rebuilding `data` yourself. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set. Sparklines have no transitions, so nothing else changes on append.)
 
 **CSS properties:** `--dj-sparkline-width` (default `8em`; Host width.), `--dj-sparkline-height` (default `1.5em`; Host height.), `--dj-sparkline-color` (Line/area/bar color; defaults to dj-chart's series-1 token (`--dj-chart-1`, #2563eb).), `--dj-sparkline-marker-size` (default `0.25em`; Diameter of the last-point marker dot.)
 

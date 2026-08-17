@@ -184,6 +184,7 @@ declare module "solid-js" {
         "numberFormat"?: DjChart["numberFormat"];
         "formatY"?: DjChart["formatY"];
         "formatX"?: DjChart["formatX"];
+        "max-points"?: DjChart["maxPoints"];
       };
       "dj-checkbox": JSX.HTMLAttributes<DjCheckbox> & {
         "checked"?: DjCheckbox["checked"];
@@ -497,6 +498,7 @@ declare module "solid-js" {
         "marker"?: DjSparkline["marker"];
         "min"?: DjSparkline["min"];
         "max"?: DjSparkline["max"];
+        "max-points"?: DjSparkline["maxPoints"];
       };
       "dj-speed-dial": JSX.HTMLAttributes<DjSpeedDial> & {
         "open"?: DjSpeedDial["open"];

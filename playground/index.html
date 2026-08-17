@@ -435,6 +435,19 @@
 			</tbody>
 		</table>
 
+		<h2>Streaming</h2>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			<code>appendData()</code> on the chart and <code>push()</code> on the sparkline batch multiple calls within one animation frame into a single update. <code>max-points="20"</code> slides the window as new points arrive, and the chart's bar/enter transitions are skipped for streamed updates.
+		</p>
+		<div class="row" style="gap: var(--dj-spacing-small); align-items: center; margin-block-end: 0.5rem">
+			<dj-button id="stream-toggle" kind="outlined">Start</dj-button>
+			<span id="stream-state" style="color: var(--dj-color-text-muted)">stopped</span>
+		</div>
+		<div class="row" style="align-items: center; gap: var(--dj-spacing-large)">
+			<div style="width: 420px; --dj-chart-height: 200px"><dj-chart id="stream-chart" type="line" category-key="t" label="Live requests/sec" max-points="20" show-grid y-label="req/s"></dj-chart></div>
+			<dj-sparkline id="stream-spark" max-points="20" label="Live requests/sec"></dj-sparkline>
+		</div>
+
 		<h2>Carousel</h2>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
 			Swipe/trackpad, prev/next, and dots. Toggle per-view; switch the Locale to <code>ar-EG</code> to check RTL (order flips, ArrowRight still means forward).
@@ -784,6 +797,32 @@
 			document.getElementById("spark-color-value").textContent = "3.0%";
 			document.getElementById("spark-labeled").data = sparkLatency;
 			document.getElementById("spark-labeled-value").textContent = "205 ms";
+
+			// Streaming: appendData()/push() batch per animation frame; max-points slides the window.
+			const streamChart = document.getElementById("stream-chart");
+			streamChart.series = [{ key: "value", label: "req/s" }];
+			streamChart.data = [];
+			const streamSpark = document.getElementById("stream-spark");
+			const streamToggle = document.getElementById("stream-toggle");
+			const streamState = document.getElementById("stream-state");
+			let streamTimer = null;
+			let streamT = 0;
+			streamToggle.addEventListener("click", () => {
+				if (streamTimer) {
+					clearInterval(streamTimer);
+					streamTimer = null;
+					streamToggle.textContent = "Start";
+					streamState.textContent = "stopped";
+					return;
+				}
+				streamToggle.textContent = "Stop";
+				streamState.textContent = "running";
+				streamTimer = setInterval(() => {
+					const value = 40 + Math.round(Math.random() * 20);
+					streamChart.appendData([{ t: streamT++, value }]);
+					streamSpark.push(value);
+				}, 500);
+			});
 
 			const comboChart = document.getElementById("chart-combo");
 			comboChart.series = [

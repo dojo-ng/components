@@ -31,6 +31,9 @@ export type SparklineType = "line" | "area" | "bar";
  * is `aria-hidden`, which is the common case when adjacent text already states the value (a KPI
  * row showing the number next to its trend).
  *
+ * {@link push} appends one or more values for cheap live updates without rebuilding `data`
+ * yourself; `max-points` bounds how much history it keeps.
+ *
  * Parts: `base`, `marker`.
  *
  * @cssprop [--dj-sparkline-width=8em] - Host width.
@@ -53,11 +56,48 @@ export class DjSparkline extends DojoElement {
 	@property({ type: Number }) min?: number;
 	/** Fixed domain maximum; defaults to the data's own maximum. */
 	@property({ type: Number }) max?: number;
+	/** Cap on `data` values kept after {@link push} appends; 0 (default) is unbounded. Old
+	 * values are trimmed from the front, so the sparkline shows a sliding window. */
+	@property({ attribute: "max-points", type: Number }) maxPoints = 0;
 
 	#i18n = new LocaleController(this);
+	// Values queued by push() awaiting the next scheduled flush.
+	#pendingPush: number[] = [];
+	#pushFlushScheduled = false;
 
 	private fmt(v: number): string {
 		return formatNumber(v, this.#i18n.locale);
+	}
+
+	/** Schedule `fn` for the next animation frame (a microtask when rAF is unavailable). Kept as
+	 * one small, overridable seam — tests replace this method to drive scheduling deterministically. */
+	protected scheduleFrame(fn: () => void): void {
+		if (typeof requestAnimationFrame === "function") requestAnimationFrame(fn);
+		else queueMicrotask(fn);
+	}
+
+	/** Append one or more values without rebuilding `data` yourself. Multiple calls within the
+	 * same animation frame coalesce into a single `data` assignment. Trims from the front to
+	 * `max-points` when set. Sparklines have no transitions, so nothing else changes on append. */
+	push(value: number | number[]): void {
+		const values = Array.isArray(value) ? value : [value];
+		if (!values.length) return;
+		this.#pendingPush.push(...values);
+		if (this.#pushFlushScheduled) return;
+		this.#pushFlushScheduled = true;
+		this.scheduleFrame(() => this.#flushPush());
+	}
+
+	#flushPush(): void {
+		this.#pushFlushScheduled = false;
+		const values = this.#pendingPush;
+		this.#pendingPush = [];
+		if (!values.length) return;
+		let next = this.data.concat(values);
+		if (this.maxPoints > 0 && next.length > this.maxPoints) {
+			next = next.slice(next.length - this.maxPoints);
+		}
+		this.data = next;
 	}
 
 	override render() {

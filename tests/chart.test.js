@@ -382,3 +382,79 @@ test("dj-sparkline: aria-label composes through the ambient locale (localized nu
 	const enAria = en.renderRoot.querySelector("svg").getAttribute("aria-label");
 	assert.ok(enAria.includes("1,000.5"), `expected en-US grouping/decimal in: ${enAria}`);
 });
+
+// ---- streaming (appendData / push) ----
+// `scheduleFrame` is the one small overridable seam both elements route their rAF/microtask
+// scheduling through (chart-later-spec.md ST1); replacing it with a queue lets these tests
+// drive the batching deterministically instead of waiting on real frame timing.
+
+test("dj-chart appendData: two calls within one frame coalesce into a single scheduled flush", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: DATA, series: SERIES });
+	await seed(el);
+	const scheduled = [];
+	el.scheduleFrame = (fn) => scheduled.push(fn);
+	el.appendData([{ cat: "D", u: 40, v: 16 }]);
+	el.appendData([{ cat: "E", u: 50, v: 20 }]);
+	assert.equal(scheduled.length, 1, "the second appendData call coalesces; no second frame is scheduled");
+	scheduled.shift()();
+	await settled(el);
+	assert.equal(el.data.length, DATA.length + 2, "a single flush applied both queued rows");
+	assert.deepEqual(el.data.slice(-2).map((d) => d.cat), ["D", "E"]);
+});
+
+test("dj-chart appendData: trims to max-points from the front", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: DATA, series: SERIES, maxPoints: 4 });
+	await seed(el);
+	el.scheduleFrame = (fn) => fn();
+	el.appendData([{ cat: "D", u: 40, v: 16 }, { cat: "E", u: 50, v: 20 }]);
+	await settled(el);
+	assert.equal(el.data.length, 4, "trimmed to max-points");
+	assert.deepEqual(el.data.map((d) => d.cat), ["B", "C", "D", "E"], "oldest rows trimmed from the front");
+});
+
+test("dj-chart appendData: clears an active brush selection", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: DATA, series: SERIES, brush: true });
+	await seed(el);
+	el.view = { start: 0, end: 1 };
+	await settled(el);
+	el.scheduleFrame = (fn) => fn();
+	el.appendData([{ cat: "D", u: 40, v: 16 }]);
+	await settled(el);
+	assert.equal(el.view, null, "brush selection cleared on append");
+});
+
+test("dj-chart appendData: the streamed render carries a no-transition marker; a normal data assignment does not", async () => {
+	const el = await mount("dj-chart", { type: "bar", categoryKey: "cat", data: DATA, series: SERIES });
+	await seed(el);
+	const plotSvg = () => el.renderRoot.querySelector("svg[part='plot']");
+	assert.ok(!plotSvg().classList.contains("no-transition"), "an ordinary render carries no streaming marker");
+
+	const scheduled = [];
+	el.scheduleFrame = (fn) => scheduled.push(fn);
+	el.appendData([{ cat: "D", u: 40, v: 16 }]);
+	scheduled.shift()(); // run the flush: sets #streaming and assigns data
+	await settled(el);
+	assert.ok(plotSvg().classList.contains("no-transition"), "the streamed render carries the marker");
+	assert.equal(scheduled.length, 1, "the flush also scheduled next frame's cleanup");
+
+	scheduled.shift()(); // run the cleanup: clears #streaming and requests an update
+	await settled(el);
+	assert.ok(!plotSvg().classList.contains("no-transition"), "the marker clears on the next scheduled frame");
+
+	el.data = el.data.concat([{ cat: "F", u: 5, v: 2 }]);
+	await settled(el);
+	assert.ok(!plotSvg().classList.contains("no-transition"), "a later, ordinary data assignment never carries the marker");
+});
+
+test("dj-sparkline push: scalar and array both batch via scheduleFrame and honor max-points", async () => {
+	const el = await mount("dj-sparkline", { data: [1, 2, 3], maxPoints: 4 });
+	await settled(el);
+	const scheduled = [];
+	el.scheduleFrame = (fn) => scheduled.push(fn);
+	el.push(4);
+	el.push([5, 6]);
+	assert.equal(scheduled.length, 1, "multiple push calls batch into one scheduled flush");
+	scheduled.shift()();
+	await settled(el);
+	assert.deepEqual(el.data, [3, 4, 5, 6], "a single flush trims to max-points from the front");
+});

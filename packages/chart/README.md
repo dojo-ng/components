@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `type` selects the mark: cartesian (`line`, `area`, `bar`) reads `category-key` for x; x/y (`scatter`, `bubble`) reads `x-key` for a numeric x (and `size-key` for bubble radius); radial (`pie`, `donut`) draws one series as slices by category. `stacked` stacks bars and areas; a series may override `type` for combos. Built on D3 math (scales, shapes) with the SVG owned here, so marks are themeable via `--dj-*` tokens (a `--dj-chart-1..8` ramp) and `::part()`, and the chart is real DOM for assistive tech. It exposes a visually-hidden data table as the accessible equivalent, carries `role="img"` with a generated summary, and honors reduced motion. Not a form control. `legend-toggle` makes legend items toggle series visibility; `brush` adds an overview strip below cartesian charts for selecting the visible category window (double-click resets).
+A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `type` selects the mark: cartesian (`line`, `area`, `bar`) reads `category-key` for x; x/y (`scatter`, `bubble`) reads `x-key` for a numeric x (and `size-key` for bubble radius); radial (`pie`, `donut`) draws one series as slices by category. `stacked` stacks bars and areas; a series may override `type` for combos. Built on D3 math (scales, shapes) with the SVG owned here, so marks are themeable via `--dj-*` tokens (a `--dj-chart-1..8` ramp) and `::part()`, and the chart is real DOM for assistive tech. It exposes a visually-hidden data table as the accessible equivalent, carries `role="img"` with a generated summary, and honors reduced motion. Not a form control. `legend-toggle` makes legend items toggle series visibility; `brush` adds an overview strip below cartesian charts for selecting the visible category window (double-click resets). {@link appendData} appends rows for cheap live updates without rebuilding the `data` array; `max-points` bounds how much history it keeps.
 
 > Sizing: the chart fills its width and takes its height from the `--dj-chart-height` custom property (default `18rem`). Set that property to resize it; a fixed `height` on a wrapper element will not constrain the chart, and a wrapper shorter than the chart's height will let the legend overflow. The legend sits below the plot and is included in that height.
 
@@ -66,10 +66,13 @@ Set `data` (array of rows), `series` (one entry per plotted value), and `categor
 | `numberFormat` | — | `Intl.NumberFormatOptions` | — |
 | `formatY` | — | `(value: number) => string` | — |
 | `formatX` | — | `(category: string) => string` | — |
+| `maxPoints` | max-points | `number` | `0` |
 
 **Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `center-label`, `center-sub-label`
 
 **Events:** `dj-legend-toggle` (detail `{ key, hidden }`), `dj-hover` (detail `{ category }` or `null`; cartesian and radial)
+
+**Methods:** `appendData(rows: ChartDatum[])` (Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).)
 
 **CSS properties:** `--dj-chart-height` (default `18rem`; Overall chart height (width fills the container).), `--dj-chart-1` (default `#2563eb`; Categorical series color 1.), `--dj-chart-2` (default `#16a34a`; Categorical series color 2.), `--dj-chart-3` (default `#d97706`; Categorical series color 3.), `--dj-chart-4` (default `#dc2626`; Categorical series color 4.), `--dj-chart-5` (default `#7c3aed`; Categorical series color 5.), `--dj-chart-6` (default `#0891b2`; Categorical series color 6.), `--dj-chart-7` (default `#db2777`; Categorical series color 7.), `--dj-chart-8` (default `#65a30d`; Categorical series color 8.)
 
@@ -253,6 +256,31 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
   document.getElementById("rev").data = [42, 50, 47, 61, 58, 70, 74];
   document.getElementById("signups").data = [180, 240, 90, 310, 260, 340, 300];
   document.getElementById("churn").data = [3.4, 3.1, 2.9, 2.6, 2.4, 2.2, 2.1];
+</script>
+```
+
+### Streaming: appendData and push
+
+`appendData(rows)` on `<dj-chart>` (cartesian types) and `push(value)` on `<dj-sparkline>` append without rebuilding `data` yourself. Multiple calls within the same animation frame batch into one update. Set `max-points` so old points fall off the front as new ones arrive, sliding the window. A streamed `appendData` update skips the bar/enter transitions (a live append should snap into place, not animate); `<dj-sparkline>` has no transitions to begin with, so `push` needs no equivalent.
+
+```html
+<div style="width: 480px; height: 220px">
+  <dj-chart id="live" type="line" category-key="t" label="Live requests/sec" max-points="20" show-grid y-label="req/s"></dj-chart>
+</div>
+<dj-sparkline id="spark" max-points="20" label="Live requests/sec"></dj-sparkline>
+<script type="module">
+  import "@dojo-ng/chart";
+  const live = document.getElementById("live");
+  const spark = document.getElementById("spark");
+  live.series = [{ key: "value", label: "req/s" }];
+  live.data = [];
+  let t = 0;
+  const timer = setInterval(() => {
+    const value = 40 + Math.round(Math.random() * 20);
+    live.appendData([{ t: t++, value }]);
+    spark.push(value);
+  }, 1000);
+  // clearInterval(timer) to stop.
 </script>
 ```
 

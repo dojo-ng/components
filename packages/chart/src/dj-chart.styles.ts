@@ -34,6 +34,11 @@ export default css`
 	[part="series"] { animation: dj-chart-enter var(--dj-transition-fast, 150ms) ease both; }
 	@keyframes dj-chart-enter { from { opacity: 0; } to { opacity: 1; } }
 	rect.bar { transition: y var(--dj-transition-fast, 150ms) ease, height var(--dj-transition-fast, 150ms) ease; }
+	/* Streamed appendData() updates snap into place instead of animating: a sliding max-points
+	   window reflows every bar's position on every append, and animating that every frame reads
+	   as flicker rather than motion. See dj-chart.ts's #streaming flag. */
+	svg.no-transition rect.bar { transition: none; }
+	svg.no-transition [part="series"] { animation: none; }
 	.legend { display: flex; flex-wrap: wrap; gap: var(--dj-spacing-small, 0.75rem); padding-block-start: var(--dj-spacing-x-small, 0.5rem); font-size: 0.8125rem; }
 	.legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
 	.legend-swatch { inline-size: 0.75rem; block-size: 0.75rem; border-radius: 2px; flex: 0 0 auto; }

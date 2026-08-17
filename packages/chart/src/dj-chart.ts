@@ -50,6 +50,9 @@ const RIGHT_AXIS_MARGIN = 48;
  * `legend-toggle` makes legend items toggle series visibility; `brush` adds an overview strip
  * below cartesian charts for selecting the visible category window (double-click resets).
  *
+ * {@link appendData} appends rows for cheap live updates without rebuilding the `data` array;
+ * `max-points` bounds how much history it keeps.
+ *
  * Parts: `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`,
  * `brush-handle`, `tooltip`.
  * Events: `dj-hover` (detail `{ category }` or `null`; cartesian and radial), `dj-legend-toggle`
@@ -107,6 +110,9 @@ export class DjChart extends DojoElement {
 	@property({ attribute: false }) formatY?: (value: number) => string;
 	/** Override x category-label formatting. */
 	@property({ attribute: false }) formatX?: (category: string) => string;
+	/** Cap on `data` rows kept after {@link appendData} appends; 0 (default) is unbounded. Old
+	 * rows are trimmed from the front, so the chart shows a sliding window of the most recent data. */
+	@property({ attribute: "max-points", type: Number }) maxPoints = 0;
 
 	@state() private w = 0;
 	@state() private h = 0;
@@ -123,6 +129,13 @@ export class DjChart extends DojoElement {
 	#brushDrag?: { mode: "start" | "end" | "pan"; n: number; origStart: number; origEnd: number; x0: number };
 	// Keys of already-emitted console.warn messages, so each is logged at most once per element.
 	#warned = new Set<string>();
+	// Rows queued by appendData() awaiting the next scheduled flush.
+	#pendingAppend: ChartDatum[] = [];
+	#appendFlushScheduled = false;
+	// True only for the render that commits an appendData flush, so that render can suppress
+	// the bar y/height transition and the series-enter animation (both pure CSS, driven off the
+	// "no-transition" class below) — a streamed append should snap into place, not animate.
+	#streaming = false;
 
 	/** Log a message once per element (keyed), for unsupported option combinations. */
 	private warnOnce(key: string, message: string) {
@@ -223,6 +236,48 @@ export class DjChart extends DojoElement {
 		return [start, end];
 	}
 
+	/** Schedule `fn` for the next animation frame (a microtask when rAF is unavailable, e.g. a
+	 * non-browser test runner). Kept as one small, overridable seam — tests replace this method
+	 * to drive the scheduling deterministically instead of waiting on real frame timing. */
+	protected scheduleFrame(fn: () => void): void {
+		if (typeof requestAnimationFrame === "function") requestAnimationFrame(fn);
+		else queueMicrotask(fn);
+	}
+
+	/** Append rows without rebuilding `data` yourself: cheap live updates for streaming sources.
+	 * Multiple calls within the same animation frame coalesce into a single `data` assignment.
+	 * Trims from the front to `max-points` when set, and clears an active brush selection (its
+	 * indices are into the pre-append data and would otherwise point at the wrong window). */
+	appendData(rows: ChartDatum[]): void {
+		if (!rows.length) return;
+		this.#pendingAppend.push(...rows);
+		if (this.#appendFlushScheduled) return;
+		this.#appendFlushScheduled = true;
+		this.scheduleFrame(() => this.#flushAppend());
+	}
+
+	#flushAppend(): void {
+		this.#appendFlushScheduled = false;
+		const rows = this.#pendingAppend;
+		this.#pendingAppend = [];
+		if (!rows.length) return;
+		let next = this.data.concat(rows);
+		if (this.maxPoints > 0 && next.length > this.maxPoints) {
+			next = next.slice(next.length - this.maxPoints);
+		}
+		if (this.brush && this.view) this.view = null;
+		this.#streaming = true;
+		this.data = next;
+		// The streamed render above commits with transitions suppressed; clear the marker on the
+		// next frame so it never lingers over a later, ordinary `data` assignment.
+		void this.updateComplete.then(() => {
+			this.scheduleFrame(() => {
+				this.#streaming = false;
+				this.requestUpdate();
+			});
+		});
+	}
+
 	override render() {
 		const cats = categories(this.data, this.categoryKey);
 		// Donut center label rides along in the accessible name so AT users hear the highlighted value.
@@ -282,7 +337,7 @@ export class DjChart extends DojoElement {
 			: [];
 
 		return html`
-			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot">
+			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot" class="${this.#streaming ? "no-transition" : ""}">
 				<g transform="translate(${MARGIN.left},${MARGIN.top})">
 					${this.showGrid
 						? svg`<g class="grid" part="grid">${ticks.map(
@@ -363,7 +418,7 @@ export class DjChart extends DojoElement {
 			? horizontalStackedBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys)
 			: horizontalBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys);
 		return html`
-			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot">
+			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot" class="${this.#streaming ? "no-transition" : ""}">
 				<g transform="translate(${hLeft},${MARGIN.top})">
 					${this.showGrid
 						? svg`<g class="grid" part="grid">${xticks.map(

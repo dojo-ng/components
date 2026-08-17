@@ -190,6 +190,7 @@ declare module "@dojo-ng/framework" {
         "numberFormat"?: DjChart["numberFormat"];
         "formatY"?: DjChart["formatY"];
         "formatX"?: DjChart["formatX"];
+        "max-points"?: DjChart["maxPoints"];
       };
       "dj-checkbox": DjVNodeBase & {
         "checked"?: DjCheckbox["checked"];
@@ -503,6 +504,7 @@ declare module "@dojo-ng/framework" {
         "marker"?: DjSparkline["marker"];
         "min"?: DjSparkline["min"];
         "max"?: DjSparkline["max"];
+        "max-points"?: DjSparkline["maxPoints"];
       };
       "dj-speed-dial": DjVNodeBase & {
         "open"?: DjSpeedDial["open"];

@@ -188,6 +188,7 @@ declare module "react" {
         "numberFormat"?: DjChart["numberFormat"];
         "formatY"?: DjChart["formatY"];
         "formatX"?: DjChart["formatX"];
+        "max-points"?: DjChart["maxPoints"];
       };
       "dj-checkbox": DjProps<DjCheckbox> & {
         "checked"?: DjCheckbox["checked"];
@@ -501,6 +502,7 @@ declare module "react" {
         "marker"?: DjSparkline["marker"];
         "min"?: DjSparkline["min"];
         "max"?: DjSparkline["max"];
+        "max-points"?: DjSparkline["maxPoints"];
       };
       "dj-speed-dial": DjProps<DjSpeedDial> & {
         "open"?: DjSpeedDial["open"];

@@ -191,6 +191,7 @@ declare module "@dojo-ng/framework" {
         "formatY"?: DjChart["formatY"];
         "formatX"?: DjChart["formatX"];
         "max-points"?: DjChart["maxPoints"];
+        "renderer"?: DjChart["renderer"];
       };
       "dj-checkbox": DjVNodeBase & {
         "checked"?: DjCheckbox["checked"];

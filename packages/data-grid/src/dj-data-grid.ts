@@ -72,6 +72,13 @@ export type ActivationMode = "none" | "click" | "double";
  * first and last rendered row-model indices, the total row count, and the full index list; `start`
  * and `end` are -1 when nothing is rendered). Parts: `grid`, `head`, `row`, `cell`, `chrome-top`,
  * `chrome-bottom`, `subhead`.
+ *
+ * Printing (`window.print()` / File → Print): every row materializes into a genuine `<table>` with a
+ * real `<thead>` (the plain, non-`renderDetail` row path only — see `@dojo-ng/data-grid-detail` for
+ * that limitation), which browsers repeat natively across printed pages with no extra CSS. Verified
+ * working, including cross-page header repeat, in Chromium. Known limitation, not yet worked around:
+ * Safari (confirmed on a current 26.x release) does not repeat the `<thead>` across pages — a
+ * longstanding WebKit print-engine gap with no reliable CSS-only fix.
  */
 export class DjDataGrid extends DojoElement {
 	static override styles = styles;
@@ -94,6 +101,10 @@ export class DjDataGrid extends DojoElement {
 	@state() sorting: SortingState = [];
 	@state() rowSelection: RowSelectionState = {};
 	@state() activeIndex = 0;
+	/** True between `beforeprint` and `afterprint`. Swaps the render loop from the virtualizer's
+	 *  rendered window to every row, since only the visible slice plus overscan is normally in the
+	 *  DOM and printing would otherwise yield one screenful followed by blank space. */
+	@state() private printing = false;
 
 	@query(".scroll") private scrollEl!: HTMLElement;
 
@@ -228,15 +239,22 @@ export class DjDataGrid extends DojoElement {
 		}
 	}
 
+	#onBeforePrint = () => { this.printing = true; };
+	#onAfterPrint = () => { this.printing = false; };
+
 	override connectedCallback() {
 		super.connectedCallback();
 		this.#buildTable();
+		window.addEventListener("beforeprint", this.#onBeforePrint);
+		window.addEventListener("afterprint", this.#onAfterPrint);
 	}
 	override disconnectedCallback() {
 		super.disconnectedCallback();
 		for (const d of this.#disposers) d();
 		this.#disposers = [];
 		this.#cleanup?.();
+		window.removeEventListener("beforeprint", this.#onBeforePrint);
+		window.removeEventListener("afterprint", this.#onAfterPrint);
 	}
 
 	protected override firstUpdated() {
@@ -388,27 +406,58 @@ export class DjDataGrid extends DojoElement {
 	}
 
 	override render() {
-		// `minmax(0, 1fr)`, not `1fr` (= `minmax(auto, 1fr)`): the header, each subheader,
-		// and each body row are separate grid containers, so an `auto` minimum would let a
-		// row with wide content (e.g. a native <select> filter) grow its tracks independently
-		// and drift out of alignment with the header. A 0 minimum makes every row resolve the
-		// same track widths; cells ellipsize.
-		const template = this.#computeColumns().map((c) => c.width ?? "minmax(0, 1fr)").join(" ");
 		const headers = this.#table?.getHeaderGroups()[0]?.headers ?? [];
+		const hasDetail = this.plugins.some((p) => p.renderDetail);
 		this.#virtualizer?._willUpdate();
-		const items = this.#virtualizer?.getVirtualItems() ?? [];
-		const total = this.#virtualizer?.getTotalSize() ?? 0;
+		const virtualItems = this.#virtualizer?.getVirtualItems() ?? [];
 		const rows = this.#table?.getRowModel().rows ?? [];
 		const n = rows.length;
-		// Stash the rendered range for updated() to emit. An empty window reports -1/-1 with the
-		// real count, so a consumer learns the list went empty.
-		const rendered = items.map((vi) => vi.index);
+		// Stash the rendered range for updated() to emit, from the REAL virtualizer window regardless
+		// of printing — a consumer's end-reached windowing logic (dj-range-change) must not see the
+		// whole list as "rendered" just because a print materialized it.
+		const rendered = virtualItems.map((vi) => vi.index);
 		this.#range = {
 			start: rendered.length ? rendered[0] : -1,
 			end: rendered.length ? rendered[rendered.length - 1] : -1,
 			count: n,
 			rendered,
 		};
+		// Printing (plain row path only) shows a real <table>/<thead>/<tbody> ALONGSIDE the normal
+		// grid instead of replacing it — see the `<table part="grid" class="print-table">` near the
+		// end of this template. A genuine HTML <thead> repeats across printed pages natively in every
+		// major engine; an earlier version tried to fake that with CSS (`display: table-header-group`
+		// on a div, relying on the "anonymous table" fix-up rules) and it did not reliably repeat in
+		// practice, confirmed against a real print preview (Bill, 2026-08-18). Two more real bugs
+		// shipped and got fixed the same day, both from a version that returned the print table IN
+		// PLACE OF the whole template rather than alongside it:
+		//  1. That unmounted `.scroll` — the element the TanStack virtualizer's ResizeObserver/scroll
+		//     listeners were attached to in firstUpdated() — and the grid came back permanently empty
+		//     once printing ended, because the virtualizer never recovered once its tracked element
+		//     was destroyed. Hiding `.wrap` via `display:none` instead keeps `.scroll` mounted and
+		//     observed the whole time; the observers just report a zero-size rect while hidden and a
+		//     real one again once printing ends.
+		//  2. The print table was nested inside `.wrap` (display:flex), and a flex-item table doesn't
+		//     get a browser's native repeating-thead print behavior. It has to be a sibling, not a
+		//     descendant — see the template below.
+		// The print table is also ALWAYS in the DOM (empty + hidden off-print, not conditionally
+		// added/removed) with its markup INLINED directly in this template rather than factored into
+		// a helper method returning its own separate `html` call — both of those matter only for a
+		// lit-html + happy-dom quirk in this workspace's unit-test harness (bisected against a minimal
+		// reproduction, 2026-08-18): a nested TemplateResult returned from a separate function/method
+		// call, sitting in the trailing child position of an outer template, silently fails to commit
+		// — regardless of whether it's conditional. The identical markup written inline, or toggled by
+		// CONTENT within an always-present element, does not trigger it. A real browser was unaffected
+		// either way, but this shape costs nothing extra on screen and is what the unit tests exercise.
+		const printing = this.printing && !hasDetail;
+
+		// `minmax(0, 1fr)`, not `1fr` (= `minmax(auto, 1fr)`): the header, each subheader,
+		// and each body row are separate grid containers, so an `auto` minimum would let a
+		// row with wide content (e.g. a native <select> filter) grow its tracks independently
+		// and drift out of alignment with the header. A 0 minimum makes every row resolve the
+		// same track widths; cells ellipsize.
+		const template = this.#computeColumns().map((c) => c.width ?? "minmax(0, 1fr)").join(" ");
+		const total = this.#virtualizer?.getTotalSize() ?? 0;
+		const items = virtualItems;
 		// Chrome regions (quick filter, pagination, totals) are full-width, outside the grid rows.
 		const chromeTops = this.plugins.map((p) => p.chromeTop?.(this.#ctx)).filter((x) => x !== undefined);
 		const chromeBottoms = this.plugins.map((p) => p.chromeBottom?.(this.#ctx)).filter((x) => x !== undefined);
@@ -417,10 +466,9 @@ export class DjDataGrid extends DojoElement {
 		const headerRows = 1 + subRows.length;
 		// aria-activedescendant must point at a rendered row; with virtualization the active row can
 		// be scrolled out of the rendered window, so omit it then.
-		const activeRendered = items.some((vi) => vi.index === this.activeIndex);
-		const hasDetail = this.plugins.some((p) => p.renderDetail);
+		const activeRendered = virtualItems.some((vi) => vi.index === this.activeIndex);
 		return html`
-			<div class="wrap">
+			<div class="wrap" style=${printing ? "display:none" : nothing}>
 				${chromeTops.map((c) => html`<div part="chrome-top" class="chrome">${c}</div>`)}
 				<div part="grid" class="grid" role="grid" tabindex="0" aria-rowcount=${n + headerRows} aria-multiselectable=${this.selectionMode === "multiple" ? "true" : nothing} aria-activedescendant=${n && activeRendered ? `r-${this.activeIndex}` : nothing} @keydown=${this.onKeyDown}>
 					<div part="head" class="head row" role="row" aria-rowindex="1" style=${`grid-template-columns:${template}`}>
@@ -447,6 +495,8 @@ export class DjDataGrid extends DojoElement {
 								// With a renderDetail plugin, rows have variable height: each virtual item
 								// becomes a measured wrapper (data-index + measureElement ref, the TanStack
 								// dynamic-size contract) holding the fixed-height row plus its detail panel.
+								// (Printing with a detail plugin also lands here, unmaterialized — see
+								// #renderPrintTable for why only the plain row path gets a print template.)
 								const rowStyle = hasDetail
 									? `position:static;height:${this.rowHeight}px;grid-template-columns:${template}`
 									: `transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`;
@@ -475,6 +525,14 @@ export class DjDataGrid extends DojoElement {
 				</div>
 				${chromeBottoms.map((c) => html`<div part="chrome-bottom" class="chrome">${c}</div>`)}
 			</div>
+			<table part="grid" class="print-table" style=${printing ? nothing : "display:none"}>
+				<thead>
+					<tr part="head">${printing ? headers.map((h) => html`<th part="cell">${this.#headerContent(h)}</th>`) : ""}</tr>
+				</thead>
+				<tbody>
+					${printing ? rows.map((row, index) => html`<tr part="row" id=${`r-${index}`}>${row.getVisibleCells().map((cell) => html`<td part="cell">${this.#cellContent(cell)}</td>`)}</tr>`) : ""}
+				</tbody>
+			</table>
 		`;
 	}
 }

@@ -1,7 +1,7 @@
 import { scaleLinear, scaleBand, scalePoint, scaleSqrt, type ScaleLinear, type ScaleBand, type ScalePoint } from "d3-scale";
 import { line as d3line, area as d3area, stack as d3stack, arc as d3arc, pie as d3pie } from "d3-shape";
 import { max as d3max, min as d3min, extent as d3extent } from "d3-array";
-import type { ChartDatum, ChartSeries, ChartType } from "./types.js";
+import type { ChartDatum, ChartSeries, ChartType, ChartRenderer } from "./types.js";
 
 /** Coerce an unknown cell to a finite number (NaN/undefined become 0). */
 export function num(v: unknown): number {
@@ -131,6 +131,26 @@ export function areaPath(
 		.y0(base)
 		.y1((row) => yScale(num(row[key])));
 	return gen(data) ?? "";
+}
+
+export interface CanvasPoint {
+	x: number;
+	y: number;
+	/** Radius, for a scatter mark's point (ignored by line/area). */
+	r?: number;
+}
+
+/** Point positions for a cartesian line/area series — the same x/y {@link linePath} plots, as
+ * raw points instead of an SVG path string, for the canvas renderer (`yScale` defaults to the
+ * primary axis). */
+export function seriesPoints(
+	data: ChartDatum[],
+	categoryKey: string,
+	key: string,
+	scales: Scales,
+	yScale: ScaleLinear<number, number> = scales.y,
+): CanvasPoint[] {
+	return data.map((row) => ({ x: xCenter(scales, cat(row, categoryKey)), y: yScale(num(row[key])) }));
 }
 
 export interface Bar {
@@ -382,6 +402,12 @@ export function buildXYScales(
 	return { x, y };
 }
 
+/** Point positions for an x/y (scatter) series — the canvas-renderer counterpart of the SVG
+ * `<circle>` marks in `renderXY`. `xKey` is the resolved per-series x accessor ({@link seriesX}). */
+export function xyPoints(data: ChartDatum[], xKey: string, key: string, scales: XYScales): CanvasPoint[] {
+	return data.map((row) => ({ x: scales.x(num(row[xKey])), y: scales.y(num(row[key])) }));
+}
+
 /** A radius function for bubbles (area-encoded via sqrt), or a constant when no `sizeKey`. */
 export function radiusFor(
 	data: ChartDatum[],
@@ -542,4 +568,98 @@ export function sparklineAccessibleName(label: string, data: number[], fmt: (v: 
 	const max = Math.max(...data);
 	const last = data[data.length - 1];
 	return `${label}: ${data.length} points, min ${fmt(min)}, max ${fmt(max)}, last ${fmt(last)}.`;
+}
+
+// ---- canvas escape hatch ----
+//
+// The canvas renderer draws SERIES MARKS ONLY (line/area/scatter); axes, grid, legend, tooltip,
+// brush, and hit-bands stay SVG/DOM. happy-dom has no real 2D context, so all draw logic goes
+// through this pure `drawSeries`, whose `ctx` parameter is only the 2D-context METHODS it calls —
+// tests pass a recording fake and assert call shapes, never a real canvas.
+
+/** The subset of `CanvasRenderingContext2D` {@link drawSeries} uses, so it can be driven by a
+ * plain recording fake in tests instead of a real (happy-dom-unavailable) 2D context. */
+export interface CanvasCtxLike {
+	// Typed to match CanvasRenderingContext2D's own fillStyle/strokeStyle (string | CanvasGradient
+	// | CanvasPattern) so a real 2D context satisfies this interface structurally; drawSeries only
+	// ever assigns plain strings (a subtype of that union).
+	fillStyle: string | CanvasGradient | CanvasPattern;
+	strokeStyle: string | CanvasGradient | CanvasPattern;
+	lineWidth: number;
+	globalAlpha: number;
+	clearRect(x: number, y: number, w: number, h: number): void;
+	beginPath(): void;
+	moveTo(x: number, y: number): void;
+	lineTo(x: number, y: number): void;
+	closePath(): void;
+	arc(x: number, y: number, radius: number, startAngle: number, endAngle: number): void;
+	fill(): void;
+	stroke(): void;
+}
+
+/** One series' worth of canvas draw geometry: points already in the plot's pixel space (margin
+ * offset included, matching the SVG marks they replace), color already resolved (canvas can't
+ * read `var(--dj-*)` itself), and — for `"area"` — the baseline y to close the fill down to. */
+export interface CanvasMark {
+	type: "line" | "area" | "scatter";
+	color: string;
+	points: CanvasPoint[];
+	baseline?: number;
+}
+
+// Matches `.series-area`'s CSS `opacity: 0.25` (dj-chart.styles.ts), so a canvas area fill reads
+// the same as its SVG counterpart.
+const AREA_FILL_ALPHA = 0.25;
+
+/** Draws every mark onto `ctx`, clearing the `width`×`height` canvas first. Line and area marks
+ * stroke one path (`moveTo` + a `lineTo` per remaining point); area additionally fills the path
+ * closed down to its `baseline` at `AREA_FILL_ALPHA`. Scatter marks draw one filled `arc` per
+ * point. A mark with no points draws nothing beyond the initial clear. */
+export function drawSeries(ctx: CanvasCtxLike, marks: CanvasMark[], width: number, height: number): void {
+	ctx.clearRect(0, 0, width, height);
+	for (const mark of marks) {
+		if (mark.points.length === 0) continue;
+		if (mark.type === "scatter") {
+			ctx.fillStyle = mark.color;
+			for (const p of mark.points) {
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, p.r ?? 4, 0, Math.PI * 2);
+				ctx.fill();
+			}
+			continue;
+		}
+		if (mark.type === "area") {
+			const baseline = mark.baseline ?? height;
+			ctx.beginPath();
+			ctx.moveTo(mark.points[0].x, baseline);
+			for (const p of mark.points) ctx.lineTo(p.x, p.y);
+			ctx.lineTo(mark.points[mark.points.length - 1].x, baseline);
+			ctx.closePath();
+			ctx.fillStyle = mark.color;
+			ctx.globalAlpha = AREA_FILL_ALPHA;
+			ctx.fill();
+			ctx.globalAlpha = 1;
+		}
+		ctx.beginPath();
+		ctx.moveTo(mark.points[0].x, mark.points[0].y);
+		for (let i = 1; i < mark.points.length; i++) ctx.lineTo(mark.points[i].x, mark.points[i].y);
+		ctx.strokeStyle = mark.color;
+		ctx.lineWidth = 2;
+		ctx.stroke();
+	}
+}
+
+/** The renderer `dj-chart` actually uses, given the requested `renderer`, its `type`, and
+ * whether `forced-colors: active` is in effect. `svg` always passes through unchanged. `canvas`
+ * falls back to `svg` for any type other than `line`/`area`/`scatter` (bar, stacked, pie/donut,
+ * bubble, and a combo where any series overrides to `bar` are all reported as `type="bar"` by the
+ * caller, which folds those cases in via {@link hasBars} before calling this) — the caller warns
+ * once for that fallback. `forced-colors` also falls back to `svg`, silently: a canvas can't
+ * honor `CanvasText` the way `forced-colors: active` requires, so this is a documented feature,
+ * not a caveat, and gets no warning. */
+export function effectiveRenderer(renderer: ChartRenderer, type: ChartType, forcedColors: boolean): ChartRenderer {
+	if (renderer !== "canvas") return "svg";
+	if (forcedColors) return "svg";
+	if (type !== "line" && type !== "area" && type !== "scatter") return "svg";
+	return "canvas";
 }

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — data-grid print demo</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"@tanstack/table-core": "https://esm.sh/@tanstack/table-core@8",
+					"@tanstack/virtual-core": "https://esm.sh/@tanstack/virtual-core@3",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/data-grid": "../packages/data-grid/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			/*
+			 * ONE grid, nothing else that could show up in a printed page — this page exists solely to
+			 * let File -> Print exercise E2's own @media print rules (enterprise-export-spec.md) without
+			 * needing page-level print scoping. A component's @media print CSS can only style ITS OWN
+			 * internal chrome; it has no way to hide sibling content the page also decided to print, so
+			 * data-grid-demo.html (two grids, headings, instructions) is the wrong page for this check.
+			 * The .demo-chrome rule below is the page-level half of that: a real consuming app that
+			 * embeds a grid among other content needs its OWN print stylesheet to hide everything but the
+			 * grid, the same way this page hides its instructions.
+			 */
+			@media print {
+				.demo-chrome { display: none; }
+			}
+		</style>
+	</head>
+	<body>
+		<div class="demo-chrome">
+			<h1>Data grid — print demo (200 rows)</h1>
+			<p>File &rarr; Print and check the preview: all 200 rows should appear across pages with a
+				repeating header and no chrome. This text is hidden in print (see the inline stylesheet in
+				this page's &lt;head&gt;) — it is page-level scoping, not part of E2's component CSS.</p>
+		</div>
+		<dj-data-grid id="grid" height="24rem" style="max-width: 46rem; display:block"></dj-data-grid>
+		<script type="module">
+			import "@dojo-ng/data-grid";
+			const first = ["Ada", "Bo", "Cy", "Dee", "Eli", "Fay", "Gus", "Hana", "Ivy", "Jo"];
+			const cities = ["Austin", "Boston", "Cairo", "Denver", "Edinburgh"];
+			const rows = Array.from({ length: 200 }, (_, i) => ({
+				id: i + 1,
+				name: `${first[i % first.length]} ${String.fromCharCode(65 + (i % 26))}.`,
+				age: 18 + ((i * 7) % 60),
+				city: cities[i % cities.length],
+			}));
+			const grid = document.getElementById("grid");
+			grid.columns = [
+				{ id: "id", header: "#", width: "4rem" },
+				{ id: "name", header: "Name" },
+				{ id: "age", header: "Age", width: "6rem" },
+				{ id: "city", header: "City" },
+			];
+			grid.data = rows;
+		</script>
+	</body>
+</html>

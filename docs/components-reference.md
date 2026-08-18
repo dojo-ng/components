@@ -1305,8 +1305,9 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 | `formatY` | — | `(value: number) => string` | — |
 | `formatX` | — | `(category: string) => string` | — |
 | `maxPoints` | max-points | `number` | `0` |
+| `renderer` | renderer ↻ | `ChartRenderer` | `"svg"` |
 
-**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `center-label`, `center-sub-label`
+**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`
 
 **Events:** `dj-legend-toggle` (detail `{ key, hidden }`), `dj-hover` (detail `{ category }` or `null`; cartesian and radial)
 

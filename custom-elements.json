@@ -1870,6 +1870,17 @@
               "attribute": "max-points"
             },
             {
+              "kind": "field",
+              "name": "renderer",
+              "type": {
+                "text": "ChartRenderer"
+              },
+              "default": "\"svg\"",
+              "description": "Opt-in escape hatch for very large series: `\"canvas\"` draws series marks on a `<canvas>` instead of SVG nodes (axes, grid, legend, and tooltip stay SVG/DOM either way). Honored only for `line`/`area`/`scatter` (not `bar`, `stacked`, pie/donut, `bubble`, or a combo where any series overrides to `bar`) and only outside `forced-colors: active`; unsupported combinations fall back to `svg` (a console warning for an unsupported type, none for forced-colors \u2014 see the CV decisions).",
+              "attribute": "renderer",
+              "reflects": true
+            },
+            {
               "kind": "method",
               "name": "appendData",
               "description": "Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).",
@@ -2028,6 +2039,14 @@
               },
               "fieldName": "maxPoints",
               "description": "Cap on `data` rows kept after {@link appendData} appends; 0 (default) is unbounded. Old rows are trimmed from the front, so the chart shows a sliding window of the most recent data."
+            },
+            {
+              "name": "renderer",
+              "type": {
+                "text": "ChartRenderer"
+              },
+              "fieldName": "renderer",
+              "description": "Opt-in escape hatch for very large series: `\"canvas\"` draws series marks on a `<canvas>` instead of SVG nodes (axes, grid, legend, and tooltip stay SVG/DOM either way). Honored only for `line`/`area`/`scatter` (not `bar`, `stacked`, pie/donut, `bubble`, or a combo where any series overrides to `bar`) and only outside `forced-colors: active`; unsupported combinations fall back to `svg` (a console warning for an unsupported type, none for forced-colors \u2014 see the CV decisions)."
             }
           ],
           "cssParts": [
@@ -2077,6 +2096,10 @@
             },
             {
               "name": "tooltip",
+              "description": ""
+            },
+            {
+              "name": "plot-canvas",
               "description": ""
             },
             {

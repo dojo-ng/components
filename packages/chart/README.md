@@ -67,8 +67,9 @@ Set `data` (array of rows), `series` (one entry per plotted value), and `categor
 | `formatY` | — | `(value: number) => string` | — |
 | `formatX` | — | `(category: string) => string` | — |
 | `maxPoints` | max-points | `number` | `0` |
+| `renderer` | renderer ↻ | `ChartRenderer` | `"svg"` |
 
-**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `center-label`, `center-sub-label`
+**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`
 
 **Events:** `dj-legend-toggle` (detail `{ key, hidden }`), `dj-hover` (detail `{ category }` or `null`; cartesian and radial)
 
@@ -281,6 +282,22 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
     spark.push(value);
   }, 1000);
   // clearInterval(timer) to stop.
+</script>
+```
+
+### Canvas escape hatch for very large series
+
+`renderer="canvas"` (default `svg`) draws series marks on a `<canvas>` instead of SVG nodes. Reach for it once a series runs into the thousands of points and SVG node count starts costing frame time — a guideline, not a hard threshold; try `svg` first and switch only if it's actually slow. Honored only for `line`, `area`, and `scatter`: `bar`, `stacked`, pie/donut, `bubble`, and a combo where any series overrides to `bar` all stay `svg` (one console warning if you ask for canvas on one of those). Axes, grid, legend, tooltip, and the brush strip are untouched either way — tooltips and legend-toggle keep working over a canvas chart. Under `forced-colors: active` the chart falls back to `svg` automatically (a canvas can't honor `CanvasText` on its own); that's a deliberate fallback, not a bug, so it warns nothing. Line and area get the real node-count win; scatter's hover is wired to its point marks, so canvas mode keeps those (now invisible) hit-target circles in the DOM even though canvas draws the visible dots — scatter's own node count isn't reduced yet. CAUTION: canvas only replaces the MARKS. `category-key` charts render one x-axis tick label and one invisible hit-band per UNIQUE category, unthinned, regardless of renderer — a series with tens of thousands of unique categories can make a browser tab unresponsive on that scaffolding alone, canvas or not. Keep unique-category counts in the low thousands; a numeric `x-key` chart (`scatter`) doesn't have this specific ceiling (its axis ticks are a fixed count either way), though it keeps per-point hit circles of its own.
+
+```html
+<div style="width: 480px; height: 280px">
+  <dj-chart id="cv" type="line" category-key="i" label="2,000-point line" renderer="canvas" show-grid></dj-chart>
+</div>
+<script type="module">
+  import "@dojo-ng/chart";
+  const cv = document.getElementById("cv");
+  cv.series = [{ key: "v", label: "Value" }];
+  cv.data = Array.from({ length: 2000 }, (_, i) => ({ i, v: Math.sin(i / 200) * 50 + 50 }));
 </script>
 ```
 

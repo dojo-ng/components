@@ -1,9 +1,10 @@
 import { html, svg, nothing, type TemplateResult } from "lit";
 import { property, state } from "lit/decorators.js";
+import { ref } from "lit/directives/ref.js";
 import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
 import { LocaleController, formatNumber } from "@dojo-ng/i18n";
 import styles from "./dj-chart.styles.js";
-import type { ChartDatum, ChartSeries, ChartType, ChartMargin } from "./types.js";
+import type { ChartDatum, ChartSeries, ChartType, ChartMargin, ChartRenderer } from "./types.js";
 import {
 	buildScales,
 	buildXYScales,
@@ -28,6 +29,11 @@ import {
 	summary,
 	accessibleName,
 	hasBars,
+	seriesPoints,
+	xyPoints,
+	drawSeries,
+	effectiveRenderer,
+	type CanvasMark,
 } from "./core.js";
 
 const RAMP = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
@@ -113,6 +119,13 @@ export class DjChart extends DojoElement {
 	/** Cap on `data` rows kept after {@link appendData} appends; 0 (default) is unbounded. Old
 	 * rows are trimmed from the front, so the chart shows a sliding window of the most recent data. */
 	@property({ attribute: "max-points", type: Number }) maxPoints = 0;
+	/** Opt-in escape hatch for very large series: `"canvas"` draws series marks on a `<canvas>`
+	 * instead of SVG nodes (axes, grid, legend, and tooltip stay SVG/DOM either way). Honored only
+	 * for `line`/`area`/`scatter` (not `bar`, `stacked`, pie/donut, `bubble`, or a combo where any
+	 * series overrides to `bar`) and only outside `forced-colors: active`; unsupported combinations
+	 * fall back to `svg` (a console warning for an unsupported type, none for forced-colors — see
+	 * the CV decisions). */
+	@property({ reflect: true }) renderer: ChartRenderer = "svg";
 
 	@state() private w = 0;
 	@state() private h = 0;
@@ -136,6 +149,9 @@ export class DjChart extends DojoElement {
 	// the bar y/height transition and the series-enter animation (both pure CSS, driven off the
 	// "no-transition" class below) — a streamed append should snap into place, not animate.
 	#streaming = false;
+	// The canvas element, when the canvas renderer is active; set/cleared by the `ref()` in
+	// renderCanvas() as the element mounts/unmounts.
+	#canvasEl?: HTMLCanvasElement;
 
 	/** Log a message once per element (keyed), for unsupported option combinations. */
 	private warnOnce(key: string, message: string) {
@@ -149,15 +165,19 @@ export class DjChart extends DojoElement {
 		return this.orientation === "horizontal" && this.type === "bar";
 	}
 
-	// Warn once (and ignore) for the documented horizontal-orientation limitations.
+	// Warn once (and ignore) for the documented horizontal-orientation and canvas-renderer limitations.
 	override willUpdate() {
-		if (this.orientation !== "horizontal") return;
-		if (this.type !== "bar") {
-			this.warnOnce("h-nonbar", `dj-chart: orientation="horizontal" applies only to bar charts; ignoring orientation for type="${this.type}".`);
-			return;
+		if (this.orientation === "horizontal") {
+			if (this.type !== "bar") {
+				this.warnOnce("h-nonbar", `dj-chart: orientation="horizontal" applies only to bar charts; ignoring orientation for type="${this.type}".`);
+			} else {
+				if (this.brush) this.warnOnce("h-brush", `dj-chart: brush is not supported with orientation="horizontal"; ignoring brush.`);
+				if (this.series.some((s) => s.axis === "right")) this.warnOnce("h-right-axis", `dj-chart: a secondary (right) axis is not supported with orientation="horizontal"; ignoring it.`);
+			}
 		}
-		if (this.brush) this.warnOnce("h-brush", `dj-chart: brush is not supported with orientation="horizontal"; ignoring brush.`);
-		if (this.series.some((s) => s.axis === "right")) this.warnOnce("h-right-axis", `dj-chart: a secondary (right) axis is not supported with orientation="horizontal"; ignoring it.`);
+		if (this.renderer === "canvas" && !this.canvasEligibleType) {
+			this.warnOnce("canvas-unsupported", `dj-chart: renderer="canvas" is not supported for type="${this.type}" with the current configuration (bar, stacked, pie/donut, bubble, and a series overriding to "bar" all stay svg); falling back to svg.`);
+		}
 	}
 
 	/** Format a y value for ticks and tooltips: explicit override, else locale-aware Intl. */
@@ -217,6 +237,23 @@ export class DjChart extends DojoElement {
 		if (this.type === "pie" || this.type === "donut") return "radial";
 		if (this.type === "scatter" || this.type === "bubble") return "xy";
 		return "cartesian";
+	}
+
+	/** Whether this chart's TYPE (independent of `renderer`) could ever use the canvas mark path:
+	 * `line`/`area`/`scatter` only. `stacked` and any series resolving to `bar` (a plain bar chart
+	 * or a combo where one series overrides to `bar`) are folded in here as an effective `"bar"`,
+	 * reusing {@link hasBars} rather than re-deriving series-override logic. */
+	private get canvasEligibleType(): boolean {
+		const t = this.stacked || hasBars(this.series, this.type) ? "bar" : this.type;
+		return t === "line" || t === "area" || t === "scatter";
+	}
+
+	/** The renderer actually in effect for this render: `canvas` only when requested, eligible,
+	 * and `forced-colors: active` isn't (a canvas can't honor `CanvasText` on its own). */
+	private get effectiveRendererNow(): ChartRenderer {
+		const t = this.stacked || hasBars(this.series, this.type) ? "bar" : this.type;
+		const forcedColors = typeof matchMedia === "function" && matchMedia("(forced-colors: active)").matches;
+		return effectiveRenderer(this.renderer, t, forcedColors);
 	}
 
 	/** Toggle a series' visibility from the legend (when `legend-toggle` is set). */
@@ -288,14 +325,23 @@ export class DjChart extends DojoElement {
 		// The .plot box is ALWAYS this same node (only its contents vary), so the
 		// ResizeObserver target stays stable across renders. The accessible table is always
 		// present, so content is never missing before first paint.
+		const canvasNow = ready && this.effectiveRendererNow === "canvas";
 		return html`
 			<div class="plot">
 				${ready ? this.renderPlot(cats, accName) : html`<div class="sr-only" role="img" aria-label=${accName}></div>`}
+				${canvasNow ? this.renderCanvas() : nothing}
 			</div>
 			${ready && this.brush && this.group() === "cartesian" && !this.isHBar ? this.renderBrush() : nothing}
 			${ready && showLegend ? this.renderLegend() : nothing}
 			${this.renderTable(cats)}
 		`;
+	}
+
+	/** The `<canvas>` overlay for series marks (see the CV decisions). Absolutely positioned over
+	 * the plot rect via CSS (`pointer-events: none`, so the SVG hit-bands beneath it keep handling
+	 * hover/tooltip). Sized and drawn in `#drawCanvas`, called from `updated()`. */
+	private renderCanvas(): TemplateResult {
+		return html`<canvas part="plot-canvas" class="plot-canvas" ${ref((el) => (this.#canvasEl = el as HTMLCanvasElement | undefined))}></canvas>`;
 	}
 
 	private renderPlot(cats: string[], accName: string): TemplateResult {
@@ -378,10 +424,15 @@ export class DjChart extends DojoElement {
 	private renderSeries(s: ChartSeries, i: number, scales: ReturnType<typeof buildScales>, bars: ReturnType<typeof groupedBars>, yScale: ReturnType<typeof buildScales>["y"], data: ChartDatum[]) {
 		const t = this.seriesType(s);
 		const c = this.color(s, i);
+		// The canvas renderer draws the line/area path itself (see #cartesianCanvasMarks);
+		// markers stay SVG regardless (an opt-in decoration, not the node-count-heavy default path).
+		const onCanvas = this.effectiveRendererNow === "canvas";
 		if (t === "line") {
+			if (onCanvas) return this.renderMarkers(data, s.key, c, scales, yScale);
 			return svg`<path class="series-line" part="line" d=${linePath(data, this.categoryKey, s.key, scales, yScale)} stroke=${c}></path>${this.renderMarkers(data, s.key, c, scales, yScale)}`;
 		}
 		if (t === "area") {
+			if (onCanvas) return this.renderMarkers(data, s.key, c, scales, yScale);
 			return svg`<path class="series-area" d=${areaPath(data, this.categoryKey, s.key, scales, yScale)} fill=${c}></path>
 				<path class="series-line" part="line" d=${linePath(data, this.categoryKey, s.key, scales, yScale)} stroke=${c}></path>${this.renderMarkers(data, s.key, c, scales, yScale)}`;
 		}
@@ -509,8 +560,12 @@ export class DjChart extends DojoElement {
 							if (this.hiddenKeys.has(s.key)) return nothing;
 							const c = this.color(s, si);
 							const xk = seriesX(s, this.xKey);
+							// Canvas draws the visible scatter dots (#xyCanvasMarks); these circles stay as
+							// invisible hit targets, since hover here is per-point (unlike cartesian's
+							// separate per-category hit-band rects, there's no other hit-testing layer).
+							const onCanvas = this.effectiveRendererNow === "canvas";
 							return svg`${this.data.map(
-								(row, ri) => svg`<circle class="point-mark" part="point" cx="${scales.x(num(row[xk]))}" cy="${scales.y(num(row[s.key]))}" r="${this.type === "bubble" ? r(num(row[s.sizeKey ?? this.sizeKey ?? ""])) : 4}" fill=${c}
+								(row, ri) => svg`<circle class="point-mark" part="point" cx="${scales.x(num(row[xk]))}" cy="${scales.y(num(row[s.key]))}" r="${this.type === "bubble" ? r(num(row[s.sizeKey ?? this.sizeKey ?? ""])) : 4}" fill=${onCanvas ? "transparent" : c}
 									@pointerenter=${() => (this.hoverPt = { si, ri })} @pointerleave=${() => (this.hoverPt = null)}></circle>`,
 							)}`;
 						})}
@@ -758,6 +813,85 @@ export class DjChart extends DojoElement {
 	private onHover(c: string | null) {
 		this.hovered = c;
 		this.emit("dj-hover", { detail: { category: c } });
+	}
+
+	// ---- canvas escape hatch (see the CV decisions) ----
+
+	// Redraws whenever the canvas is active and ANY property change re-renders (data, resize,
+	// legend toggle, and streamed appends all already go through a reactive property, so this
+	// alone covers those triggers). A theme swap that changes NO other property has nothing to
+	// hook here — call `requestUpdate()` (inherited from LitElement) after swapping `<dj-theme>`
+	// or CSS custom properties to force a redraw with freshly-resolved colors.
+	override updated() {
+		if (this.#canvasEl && this.effectiveRendererNow === "canvas") this.drawCanvas();
+	}
+
+	/** Resolves a series' display color to a concrete value: canvas can't read `var(--dj-*)`
+	 * itself, so this reads the same token {@link color} embeds via `getComputedStyle` on the
+	 * host, falling back to the theme ramp exactly as `color` does when the token isn't set. */
+	private resolveCanvasColor(s: ChartSeries, i: number, style: CSSStyleDeclaration): string {
+		if (s.color) return s.color;
+		const v = style.getPropertyValue(`--dj-chart-${(i % 8) + 1}`).trim();
+		return v || RAMP[i % RAMP.length];
+	}
+
+	/** Canvas marks for a cartesian (line/area) chart: mirrors `renderPlot`'s own scale-building
+	 * (brush window, secondary-axis margin) so the canvas geometry always lines up with the SVG
+	 * axes it's drawn inside. */
+	private cartesianCanvasMarks(W: number, H: number): CanvasMark[] {
+		const innerH = Math.max(0, H - MARGIN.top - MARGIN.bottom);
+		const hasRight = this.series.some((s) => s.axis === "right");
+		const innerW = Math.max(0, W - MARGIN.left - (hasRight ? RIGHT_AXIS_MARGIN : MARGIN.right));
+		const [vs, ve] = this.viewRange(this.data.length);
+		const data = this.brush && this.view ? this.data.slice(vs, ve + 1) : this.data;
+		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys);
+		const style = getComputedStyle(this);
+		const marks: CanvasMark[] = [];
+		this.series.forEach((s, i) => {
+			if (this.hiddenKeys.has(s.key)) return;
+			const t = this.seriesType(s);
+			if (t !== "line" && t !== "area") return;
+			const yScale = s.axis === "right" && scales.yRight ? scales.yRight : scales.y;
+			const points = seriesPoints(data, this.categoryKey, s.key, scales, yScale).map((p) => ({ x: p.x + MARGIN.left, y: p.y + MARGIN.top }));
+			marks.push({ type: t, color: this.resolveCanvasColor(s, i, style), points, baseline: yScale(0) + MARGIN.top });
+		});
+		return marks;
+	}
+
+	/** Canvas marks for an x/y (scatter) chart: mirrors `renderXY`'s own scale-building. */
+	private xyCanvasMarks(W: number, H: number): CanvasMark[] {
+		const innerH = Math.max(0, H - MARGIN.top - MARGIN.bottom);
+		const innerW = Math.max(0, W - MARGIN.left - MARGIN.right);
+		const vis = this.series.filter((s) => !this.hiddenKeys.has(s.key));
+		const scales = buildXYScales(this.data, vis.length ? vis : this.series, this.xKey, innerW, innerH);
+		const style = getComputedStyle(this);
+		const marks: CanvasMark[] = [];
+		this.series.forEach((s, i) => {
+			if (this.hiddenKeys.has(s.key)) return;
+			const xk = seriesX(s, this.xKey);
+			const points = xyPoints(this.data, xk, s.key, scales).map((p) => ({ x: p.x + MARGIN.left, y: p.y + MARGIN.top, r: 4 }));
+			marks.push({ type: "scatter", color: this.resolveCanvasColor(s, i, style), points });
+		});
+		return marks;
+	}
+
+	/** Sizes the canvas bitmap ×devicePixelRatio for retina crispness (unverifiable in happy-dom;
+	 * confirmed in the browser per CV3) and draws the current marks via the pure {@link drawSeries}. */
+	private drawCanvas(): void {
+		const canvas = this.#canvasEl;
+		if (!canvas || this.w <= 0 || this.h <= 0) return;
+		const W = this.w;
+		const H = this.h;
+		const dpr = typeof devicePixelRatio === "number" && devicePixelRatio > 0 ? devicePixelRatio : 1;
+		const bw = Math.round(W * dpr);
+		const bh = Math.round(H * dpr);
+		if (canvas.width !== bw) canvas.width = bw;
+		if (canvas.height !== bh) canvas.height = bh;
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		const marks = this.group() === "xy" ? this.xyCanvasMarks(W, H) : this.cartesianCanvasMarks(W, H);
+		drawSeries(ctx, marks, W, H);
 	}
 }
 export default DjChart;

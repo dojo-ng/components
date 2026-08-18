@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — rich-text print demo</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"lexical": "https://esm.sh/lexical@0.21.0",
+					"@lexical/rich-text": "https://esm.sh/@lexical/rich-text@0.21.0",
+					"@lexical/history": "https://esm.sh/@lexical/history@0.21.0",
+					"@lexical/html": "https://esm.sh/@lexical/html@0.21.0",
+					"@lexical/clipboard": "https://esm.sh/@lexical/clipboard@0.21.0",
+					"@lexical/utils": "https://esm.sh/@lexical/utils@0.21.0",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/button": "../packages/button/dist/index.js",
+					"@dojo-ng/rich-text": "../packages/rich-text/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			/* See data-grid-print-demo.html for why this page exists: a component's @media print CSS
+			   only styles its own internal chrome, so a demo page with several editors and headings
+			   (rich-text-demo.html) is the wrong page for checking E2's print rules. */
+			@media print {
+				.demo-chrome { display: none; }
+			}
+		</style>
+	</head>
+	<body>
+		<div class="demo-chrome">
+			<h1>Rich text — print demo</h1>
+			<p>File &rarr; Print and check the preview: the toolbar should be gone, the editor's border and
+				min-height should be gone, and the long document below should flow across pages. This text
+				is hidden in print — page-level scoping, not part of E2's component CSS.</p>
+		</div>
+		<dj-rich-text id="editor" label="Document"></dj-rich-text>
+		<script type="module">
+			import "@dojo-ng/rich-text";
+			const editor = document.getElementById("editor");
+			const paragraph = (n) =>
+				`<p>Paragraph ${n}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod ` +
+				`tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud ` +
+				`exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>`;
+			editor.value = "<h1>A long document</h1>" +
+				Array.from({ length: 40 }, (_, i) => paragraph(i + 1)).join("");
+		</script>
+	</body>
+</html>

@@ -21,6 +21,8 @@ import {
 	sparklineAreaPath,
 	sparklineBars,
 	sparklineAccessibleName,
+	drawSeries,
+	effectiveRenderer,
 } from "../packages/chart/dist/core.js";
 
 const DATA = [
@@ -229,6 +231,118 @@ test("sparklineAccessibleName: composes label, count, min/max/last through the g
 
 test("sparklineAccessibleName: empty data", () => {
 	assert.equal(sparklineAccessibleName("Revenue", [], (v) => `$${v}`), "Revenue: no data.");
+});
+
+// ---- canvas escape hatch (effectiveRenderer, drawSeries) ----
+// happy-dom has no real 2D context, so drawSeries is exercised with a recording fake here — the
+// only place its call shapes are asserted at all. Actual pixels are confirmed in a browser (CV3).
+
+/** A CanvasCtxLike recording fake: every method call and property assignment becomes a
+ * `[name, ...args]` tuple in `calls`, in order. */
+function makeCanvasCtx() {
+	const calls = [];
+	const rec = (name) => (...args) => calls.push([name, ...args]);
+	const ctx = {
+		calls,
+		clearRect: rec("clearRect"),
+		beginPath: rec("beginPath"),
+		moveTo: rec("moveTo"),
+		lineTo: rec("lineTo"),
+		closePath: rec("closePath"),
+		arc: rec("arc"),
+		fill: rec("fill"),
+		stroke: rec("stroke"),
+	};
+	for (const prop of ["fillStyle", "strokeStyle", "lineWidth", "globalAlpha"]) {
+		Object.defineProperty(ctx, prop, {
+			set: (v) => {
+				calls.push([prop, v]);
+			},
+		});
+	}
+	return ctx;
+}
+const callNames = (ctx, name) => ctx.calls.filter((c) => c[0] === name);
+
+test("drawSeries: clears the canvas once per draw, even with no marks", () => {
+	const ctx = makeCanvasCtx();
+	drawSeries(ctx, [], 100, 30);
+	assert.equal(callNames(ctx, "clearRect").length, 1);
+	assert.deepEqual(ctx.calls[0], ["clearRect", 0, 0, 100, 30]);
+});
+
+test("drawSeries: a line mark issues one moveTo, (n-1) lineTo, and a single stroke — counts scale with points", () => {
+	const points5 = [0, 1, 2, 3, 4].map((i) => ({ x: i * 10, y: i }));
+	const ctx = makeCanvasCtx();
+	drawSeries(ctx, [{ type: "line", color: "#123", points: points5 }], 100, 30);
+	assert.equal(callNames(ctx, "moveTo").length, 1);
+	assert.equal(callNames(ctx, "lineTo").length, 4);
+	assert.equal(callNames(ctx, "stroke").length, 1);
+	assert.equal(callNames(ctx, "fill").length, 0, "a line mark never fills");
+
+	const points20 = Array.from({ length: 20 }, (_, i) => ({ x: i, y: i }));
+	const ctx2 = makeCanvasCtx();
+	drawSeries(ctx2, [{ type: "line", color: "#123", points: points20 }], 100, 30);
+	assert.equal(callNames(ctx2, "lineTo").length, 19, "lineTo count scales with point count");
+});
+
+test("drawSeries: an area mark closes its path (closePath + one fill) in addition to the stroked line on top", () => {
+	const points = [{ x: 0, y: 10 }, { x: 10, y: 5 }, { x: 20, y: 8 }];
+	const ctx = makeCanvasCtx();
+	drawSeries(ctx, [{ type: "area", color: "#123", points, baseline: 30 }], 100, 30);
+	assert.equal(callNames(ctx, "closePath").length, 1);
+	assert.equal(callNames(ctx, "fill").length, 1);
+	assert.equal(callNames(ctx, "stroke").length, 1, "the line still strokes on top of the fill");
+	// One moveTo opens the fill path (at the baseline), one opens the stroked line (at the data).
+	const moveTo = callNames(ctx, "moveTo");
+	assert.equal(moveTo.length, 2);
+	assert.deepEqual(moveTo[0], ["moveTo", 0, 30]);
+	// Fill path: n points + one line back down to the baseline. Stroke: n-1 (a plain polyline).
+	const lineTo = callNames(ctx, "lineTo");
+	assert.equal(lineTo.length, points.length + 1 + (points.length - 1));
+	assert.ok(lineTo.some((c) => c[1] === points[points.length - 1].x && c[2] === 30), "the fill path closes down to the baseline");
+});
+
+test("drawSeries: a scatter mark issues one arc + one fill per point", () => {
+	const points = [{ x: 1, y: 1, r: 4 }, { x: 2, y: 2, r: 4 }, { x: 3, y: 3, r: 4 }, { x: 4, y: 4, r: 4 }];
+	const ctx = makeCanvasCtx();
+	drawSeries(ctx, [{ type: "scatter", color: "#123", points }], 100, 30);
+	assert.equal(callNames(ctx, "arc").length, 4, "arc count scales with point count");
+	assert.equal(callNames(ctx, "fill").length, 4);
+	assert.equal(callNames(ctx, "moveTo").length, 0, "scatter never strokes a path");
+	assert.equal(callNames(ctx, "stroke").length, 0);
+});
+
+test("drawSeries: a mark with no points draws nothing beyond the initial clear", () => {
+	const ctx = makeCanvasCtx();
+	drawSeries(ctx, [{ type: "line", color: "#123", points: [] }], 100, 30);
+	assert.equal(ctx.calls.filter((c) => c[0] !== "clearRect").length, 0);
+});
+
+test("effectiveRenderer: svg passes through regardless of type or forced-colors", () => {
+	assert.equal(effectiveRenderer("svg", "line", false), "svg");
+	assert.equal(effectiveRenderer("svg", "bar", true), "svg");
+});
+
+test("effectiveRenderer: canvas + bar falls back to svg (the unsupported-type case)", () => {
+	assert.equal(effectiveRenderer("canvas", "bar", false), "svg");
+});
+
+test("effectiveRenderer: canvas + forced-colors falls back to svg regardless of type", () => {
+	assert.equal(effectiveRenderer("canvas", "line", true), "svg");
+	assert.equal(effectiveRenderer("canvas", "scatter", true), "svg");
+});
+
+test("effectiveRenderer: canvas stays canvas for line/area/scatter with no forced-colors", () => {
+	assert.equal(effectiveRenderer("canvas", "line", false), "canvas");
+	assert.equal(effectiveRenderer("canvas", "area", false), "canvas");
+	assert.equal(effectiveRenderer("canvas", "scatter", false), "canvas");
+});
+
+test("effectiveRenderer: canvas + pie/donut/bubble falls back to svg", () => {
+	assert.equal(effectiveRenderer("canvas", "pie", false), "svg");
+	assert.equal(effectiveRenderer("canvas", "donut", false), "svg");
+	assert.equal(effectiveRenderer("canvas", "bubble", false), "svg");
 });
 
 // ---- element-level (property reflection, warn-once, accessible name) ----
@@ -457,4 +571,83 @@ test("dj-sparkline push: scalar and array both batch via scheduleFrame and honor
 	scheduled.shift()();
 	await settled(el);
 	assert.deepEqual(el.data, [3, 4, 5, 6], "a single flush trims to max-points from the front");
+});
+
+// ---- canvas escape hatch (element-level) ----
+// happy-dom has no real 2D context, so nothing here asserts drawn pixels (that's drawSeries'
+// unit tests, and CV3's browser confirmation). A <canvas> is a plain HTML element (not an
+// expression-inserted SVG child), so — unlike the marks it replaces — its presence/absence and
+// its `part` attribute DO survive happy-dom and are asserted directly here.
+
+test("dj-chart renderer reflects to an attribute", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: DATA, series: SERIES, renderer: "canvas" });
+	await seed(el);
+	assert.equal(el.getAttribute("renderer"), "canvas");
+	el.renderer = "svg";
+	await settled(el);
+	assert.equal(el.getAttribute("renderer"), "svg");
+});
+
+test("dj-chart renderer defaults to svg: no canvas overlay, no warning", async () => {
+	let el;
+	const warns = await captureWarn(async () => {
+		el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: DATA, series: SERIES });
+		await seed(el);
+	});
+	assert.equal(warns.length, 0);
+	assert.equal(el.renderRoot.querySelector('canvas[part="plot-canvas"]'), null);
+});
+
+test("dj-chart renderer=canvas on an eligible type (line) renders a canvas overlay with no warning", async () => {
+	let el;
+	const warns = await captureWarn(async () => {
+		el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: DATA, series: SERIES, renderer: "canvas" });
+		await seed(el);
+	});
+	assert.equal(warns.length, 0);
+	assert.ok(el.renderRoot.querySelector('canvas[part="plot-canvas"]'), "canvas overlay present");
+});
+
+test("dj-chart renderer=canvas on scatter renders a canvas overlay with no warning", async () => {
+	let el;
+	const warns = await captureWarn(async () => {
+		el = await mount("dj-chart", { type: "scatter", xKey: "u", data: DATA, series: [{ key: "v" }], renderer: "canvas" });
+		await seed(el);
+	});
+	assert.equal(warns.length, 0);
+	assert.ok(el.renderRoot.querySelector('canvas[part="plot-canvas"]'), "canvas overlay present");
+});
+
+test("dj-chart renderer=canvas on an unsupported type (bar) warns once and falls back to svg", async () => {
+	let el;
+	const warns = await captureWarn(async () => {
+		el = await mount("dj-chart", { type: "bar", categoryKey: "cat", data: DATA, series: SERIES, renderer: "canvas" });
+		await seed(el);
+		el.requestUpdate();
+		await settled(el); // a second update must not warn again
+	});
+	assert.equal(warns.filter((w) => w.includes("canvas")).length, 1, "canvas warning logged exactly once");
+	assert.equal(el.renderRoot.querySelector('canvas[part="plot-canvas"]'), null, "no canvas overlay when unsupported");
+	assert.ok(el.renderRoot.querySelector("svg[part='plot']"), "still renders the svg plot");
+});
+
+test("dj-chart renderer=canvas warns once for a stacked chart even though type is line/area", async () => {
+	let el;
+	const warns = await captureWarn(async () => {
+		el = await mount("dj-chart", { type: "area", categoryKey: "cat", data: DATA, series: SERIES, stacked: true, renderer: "canvas" });
+		await seed(el);
+	});
+	assert.equal(warns.filter((w) => w.includes("canvas")).length, 1);
+	assert.equal(el.renderRoot.querySelector('canvas[part="plot-canvas"]'), null);
+});
+
+test("dj-chart renderer=canvas warns once for a combo where a series overrides to bar", async () => {
+	const series = [{ key: "u" }, { key: "v", type: "bar" }];
+	let el;
+	const warns = await captureWarn(async () => {
+		el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: DATA, series, renderer: "canvas" });
+		await seed(el);
+	});
+	assert.equal(warns.filter((w) => w.includes("canvas")).length, 1);
+	assert.equal(el.renderRoot.querySelector('canvas[part="plot-canvas"]'), null);
 });

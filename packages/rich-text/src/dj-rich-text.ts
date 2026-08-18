@@ -111,6 +111,11 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 		};
 	}
 
+	/** Read-only access to the live Lexical editor, so export code outside a plugin can reach it.
+	 *  The editor is REPLACED when `plugins` changes (serialize → recreate → deserialize) — do not
+	 *  cache the returned instance across a rebuild. `undefined` until the first update completes. */
+	get editor(): LexicalEditor | undefined { return this.#editor; }
+
 	get validity(): ValidityState { return this.#internals.validity; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
 	override focus(o?: FocusOptions) { this.editable?.focus(o); }
@@ -323,6 +328,10 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 				dj-rich-text .dj-rt-editable:focus { border-color: var(--dj-color-primary-600, #2563eb); box-shadow: 0 0 0 1px var(--dj-color-primary-600, #2563eb); }
 				@media (forced-colors: active) { dj-rich-text .dj-rt-editable:focus { outline: 2px solid Highlight; outline-offset: -1px; } }
 				dj-rich-text[disabled] { opacity: .5; }
+				@media print {
+					dj-rich-text .dj-rt-toolbar { display: none; }
+					dj-rich-text .dj-rt-editable { border: none; min-height: 0; padding: 0; }
+				}
 			</style>
 			${this.label ? html`<label style="display:block;margin-bottom:.25rem;color:var(--dj-color-neutral-700,#374151)">${this.label}</label>` : ""}
 			<div class="dj-rt-toolbar" role="toolbar" aria-label="Formatting">${toolbar}</div>

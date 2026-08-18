@@ -448,6 +448,17 @@
 			<dj-sparkline id="stream-spark" max-points="20" label="Live requests/sec"></dj-sparkline>
 		</div>
 
+		<h2>Canvas escape hatch</h2>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			<code>renderer="canvas"</code> draws series marks on a <code>&lt;canvas&gt;</code> instead of SVG nodes — reach for it once a series runs into the thousands of points, not as a default. Each line here has 2,000 points. Toggle to feel the difference; axes, grid, tooltip, and the legend stay SVG/DOM either way — click a legend item below to hide/show a series and watch the canvas redraw. The real ceiling today is the x-axis, not the marks: dj-chart renders one tick label and one hit-band per UNIQUE category with no thinning, so canvas doesn't rescue a chart with tens of thousands of unique x categories even though the marks themselves would be fine at that size.
+		</p>
+		<div class="row" style="gap: var(--dj-spacing-small); align-items: center; margin-block-end: 0.5rem">
+			<dj-button id="canvas-toggle" kind="outlined">renderer: svg</dj-button>
+		</div>
+		<div style="width: 640px; --dj-chart-height: 260px">
+			<dj-chart id="canvas-demo" type="line" category-key="i" label="2,000-point line" show-grid legend-toggle></dj-chart>
+		</div>
+
 		<h2>Carousel</h2>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
 			Swipe/trackpad, prev/next, and dots. Toggle per-view; switch the Locale to <code>ar-EG</code> to check RTL (order flips, ArrowRight still means forward).
@@ -822,6 +833,20 @@
 					streamChart.appendData([{ t: streamT++, value }]);
 					streamSpark.push(value);
 				}, 500);
+			});
+
+			// Canvas escape hatch: a 20k-point line chart with an svg/canvas toggle.
+			const canvasDemo = document.getElementById("canvas-demo");
+			canvasDemo.series = [{ key: "v", label: "Sine" }, { key: "v2", label: "Cosine" }];
+			canvasDemo.data = Array.from({ length: 2000 }, (_, i) => ({
+				i,
+				v: Math.sin(i / 200) * 50 + 50,
+				v2: Math.cos(i / 200) * 40 + 55,
+			}));
+			const canvasToggle = document.getElementById("canvas-toggle");
+			canvasToggle.addEventListener("click", () => {
+				canvasDemo.renderer = canvasDemo.renderer === "canvas" ? "svg" : "canvas";
+				canvasToggle.textContent = `renderer: ${canvasDemo.renderer}`;
 			});
 
 			const comboChart = document.getElementById("chart-combo");

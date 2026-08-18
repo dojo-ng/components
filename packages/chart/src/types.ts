@@ -5,6 +5,10 @@
  */
 export type ChartType = "line" | "area" | "bar" | "scatter" | "bubble" | "pie" | "donut";
 
+/** How `dj-chart` draws series marks. `"canvas"` is an opt-in escape hatch for very large series
+ * (axes, grid, legend, and tooltip stay SVG/DOM either way). */
+export type ChartRenderer = "svg" | "canvas";
+
 /** One plotted series, reading its y value from `key` on each data row. */
 export interface ChartSeries {
 	/** Accessor key into each data row for this series' numeric value. */

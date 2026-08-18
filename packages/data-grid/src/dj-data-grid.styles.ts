@@ -31,4 +31,19 @@ export default css`
 		.vrow--active { background: Canvas; outline: 2px solid Highlight; outline-offset: -2px; }
 		.vrow--selected { background: Highlight; color: HighlightText; }
 	}
+	/* Printing (dj-data-grid.ts's #renderPrintTable, plain row path only): a genuine <table>/<thead>,
+	   not the screen template's div grid. An earlier version tried to make the SCREEN markup repeat
+	   its header via CSS alone (display:table-header-group on a div, relying on the "anonymous table"
+	   fix-up rules) — that did not reliably repeat across pages in a real print preview (confirmed
+	   2026-08-18), where a genuine HTML <thead> just does, in every major engine, unprompted. These
+	   rules are not gated behind @media print because .print-table only ever exists in the DOM while
+	   the printing state is true, which itself only happens between beforeprint/afterprint. render()
+	   places the table as a SIBLING of .wrap, not nested inside it — .wrap is display:flex, and a
+	   table that is a flex item does not get a browser's native repeating-thead behavior either
+	   (the second bug this shipped with, alongside .wrap staying mounted-but-hidden rather than
+	   unmounted while printing so the virtualizer's observers on .scroll survive the round trip). */
+	.print-table { width: 100%; border-collapse: collapse; font-size: var(--dj-font-size-medium, 1rem); color: var(--dj-color-text, #1f2937); }
+	.print-table th, .print-table td { text-align: left; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); border-bottom: 1px solid var(--dj-color-neutral-100, #f3f4f6); }
+	.print-table thead th { background: var(--dj-color-neutral-50, #f9fafb); font-weight: var(--dj-font-weight-semibold, 600); color: var(--dj-color-text-muted, #6b7280); }
+	.print-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
 `;

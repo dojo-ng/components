@@ -14,6 +14,9 @@ export default css`
 	   the chart's height or overflows into the next element). */
 	.plot { position: relative; flex: 1 1 auto; min-block-size: 0; }
 	svg { display: block; width: 100%; height: 100%; overflow: visible; }
+	/* Canvas escape hatch (renderer="canvas"): series marks only, absolutely positioned over the
+	   plot rect. pointer-events: none so the SVG hit-bands beneath it keep handling hover/tooltip. */
+	.plot-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 	.axis line, .axis path { stroke: var(--dj-color-border, #d1d5db); }
 	.axis text { fill: var(--dj-color-text-muted, #6b7280); font-size: 0.75rem; }
 	.grid line { stroke: var(--dj-color-neutral-200, #e5e7eb); }

@@ -23,7 +23,9 @@ import {
 	sparklineAccessibleName,
 	drawSeries,
 	effectiveRenderer,
+	resolveVar,
 } from "../packages/chart/dist/core.js";
+import { inlinePresentationalStyles, serializeChartSvg } from "../packages/chart/dist/export.js";
 
 const DATA = [
 	{ cat: "A", u: 10, v: 4 },
@@ -345,6 +347,124 @@ test("effectiveRenderer: canvas + pie/donut/bubble falls back to svg", () => {
 	assert.equal(effectiveRenderer("canvas", "bubble", false), "svg");
 });
 
+// ---- image export (E3: toSvg/toPng) ----
+//
+// serializeChartSvg/inlinePresentationalStyles are tested here against HAND-BUILT SVG fixtures
+// (document.createElementNS), never a live dj-chart's rendered output. That's deliberate, not an
+// oversight: happy-dom drops Lit's expression-inserted SVG child content (the SL1 harness finding),
+// which is exactly where every var(--dj-chart-N) fill/stroke and every .axis/.grid/.series-line
+// class would live on a real chart — a live-chart-based test would have nothing to find either way
+// and could pass for the wrong reason regardless of whether the serializer actually works. Building
+// the fixture by hand sidesteps the gap entirely and tests the real behavior.
+
+test("resolveVar: substitutes a var() reference from the token map", () => {
+	assert.equal(resolveVar("var(--dj-chart-1, #2563eb)", { "--dj-chart-1": "rgb(37, 99, 235)" }), "rgb(37, 99, 235)");
+});
+test("resolveVar: falls back to the var()'s own fallback when the token is missing", () => {
+	assert.equal(resolveVar("var(--dj-chart-9, #123456)", {}), "#123456");
+});
+test("resolveVar: a non-var() value passes through unchanged", () => {
+	assert.equal(resolveVar("transparent", { "--dj-chart-1": "red" }), "transparent");
+	assert.equal(resolveVar("#fff", {}), "#fff");
+});
+test("resolveVar: a var() with no fallback and a missing token resolves to empty", () => {
+	assert.equal(resolveVar("var(--dj-unknown)", {}), "");
+});
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+// Named svgEl, not el — this file uses `el` everywhere else for the mounted dj-chart INSTANCE, and
+// reusing it for an unrelated SVG-fixture builder would be a legal-but-confusing shadow of that
+// convention for anyone reading a test that forgets to locally redeclare it.
+function svgEl(tag, attrs = {}) {
+	const e = document.createElementNS(SVG_NS, tag);
+	for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+	return e;
+}
+
+/** A small fixture mirroring the shapes dj-chart's real SVG actually produces: an axis line/text
+ * pair (class-styled only, no fill/stroke attribute at all — the case that would paint solid black
+ * if the class rules aren't inlined), a series line/area pair with var()-valued attributes (the
+ * case dj-chart.ts sets via color()), a hit-band rect with no fill attribute (the "solid black
+ * rectangle over the chart" trap), and two scatter marks — one a real series color, one the
+ * canvas-mode transparent hit target that must NOT become visible. */
+function buildFixture() {
+	const svg = svgEl("svg", { viewBox: "0 0 100 50" });
+	const g = svgEl("g", { transform: "translate(10,10)" });
+	const axis = svgEl("g", { class: "axis" });
+	axis.appendChild(svgEl("line", { x1: "0", y1: "0", x2: "0", y2: "30" }));
+	axis.appendChild(svgEl("text", { x: "-8", y: "0" }));
+	g.appendChild(axis);
+	g.appendChild(svgEl("g", { class: "grid" })).appendChild(svgEl("line", { x1: "0", x2: "80", y1: "0", y2: "0" }));
+	g.appendChild(svgEl("path", { class: "series-line", part: "line", d: "M0,0L10,10", stroke: "var(--dj-chart-1, #2563eb)" }));
+	g.appendChild(svgEl("path", { class: "series-area", d: "M0,0L10,10Z", fill: "var(--dj-chart-1, #2563eb)" }));
+	g.appendChild(svgEl("rect", { class: "hit", x: "0", y: "0", width: "80", height: "30" }));
+	g.appendChild(svgEl("circle", { class: "point-mark", cx: "5", cy: "5", r: "4", fill: "var(--dj-chart-2, #16a34a)" }));
+	g.appendChild(svgEl("circle", { class: "point-mark", cx: "6", cy: "6", r: "4", fill: "transparent" }));
+	svg.appendChild(g);
+	return svg;
+}
+const TOKENS = { "--dj-chart-1": "rgb(1, 2, 3)", "--dj-chart-2": "rgb(4, 5, 6)" };
+
+test("inlinePresentationalStyles: class-only rules (no fill/stroke attribute at all) get inlined", () => {
+	const svg = buildFixture();
+	inlinePresentationalStyles(svg, TOKENS);
+	// TOKENS has no --dj-color-border/--dj-color-text-muted, so these fall back to the rule
+	// table's own hardcoded fallback (matching dj-chart.styles.ts) — pinned exactly, not "some value".
+	const line = svg.querySelector(".axis line");
+	assert.equal(line.getAttribute("style"), "stroke:#d1d5db");
+	const text = svg.querySelector(".axis text");
+	assert.equal(text.getAttribute("style"), "fill:#6b7280;font-size:0.75rem");
+});
+test("inlinePresentationalStyles: .hit gets an explicit transparent fill (else it paints solid black)", () => {
+	const svg = buildFixture();
+	inlinePresentationalStyles(svg, TOKENS);
+	assert.equal(svg.querySelector(".hit").getAttribute("style"), "fill:transparent");
+});
+test("inlinePresentationalStyles: var()-valued fill/stroke attributes resolve to the token map", () => {
+	const svg = buildFixture();
+	inlinePresentationalStyles(svg, TOKENS);
+	assert.equal(svg.querySelector(".series-line").getAttribute("stroke"), "rgb(1, 2, 3)");
+	assert.equal(svg.querySelector(".series-area").getAttribute("fill"), "rgb(1, 2, 3)");
+});
+test("inlinePresentationalStyles: no literal var(-- text survives anywhere in the fixture", () => {
+	const svg = buildFixture();
+	inlinePresentationalStyles(svg, TOKENS);
+	assert.ok(!svg.outerHTML.includes("var(--"), svg.outerHTML);
+});
+test("inlinePresentationalStyles: THE SCATTER TRAP — a transparent fill is left untouched, not resolved to a series color", () => {
+	const svg = buildFixture();
+	inlinePresentationalStyles(svg, TOKENS);
+	const marks = svg.querySelectorAll(".point-mark");
+	assert.equal(marks[0].getAttribute("fill"), "rgb(4, 5, 6)", "the real mark resolves to its series color");
+	assert.equal(marks[1].getAttribute("fill"), "transparent", "the hit-target circle stays transparent, not a visible dot");
+});
+
+test("serializeChartSvg: standalone output carries explicit width/height and xmlns", () => {
+	const out = serializeChartSvg(buildFixture(), TOKENS, { width: 640, height: 320 });
+	assert.match(out, /^<svg[^>]*width="640"/);
+	assert.ok(out.includes('height="320"'));
+	assert.ok(out.includes(`xmlns="${SVG_NS}"`));
+});
+test("serializeChartSvg: no var(-- survives in the full serialized output", () => {
+	const out = serializeChartSvg(buildFixture(), TOKENS, { width: 100, height: 50 });
+	assert.ok(!out.includes("var(--"), out);
+});
+test("serializeChartSvg: canvasImage composites an <image> as the last child (on top, matching live stacking)", () => {
+	const out = serializeChartSvg(buildFixture(), TOKENS, { width: 100, height: 50, canvasImage: "data:image/png;base64,FAKE" });
+	assert.ok(out.includes('<image x="0" y="0" width="100" height="50" href="data:image/png;base64,FAKE">'));
+	assert.ok(out.indexOf("<image") > out.lastIndexOf("</g>"), "the <image> comes after the plot content, not before");
+});
+test("serializeChartSvg: no canvasImage means no <image> element at all (svg-mode charts)", () => {
+	const out = serializeChartSvg(buildFixture(), TOKENS, { width: 100, height: 50 });
+	assert.ok(!out.includes("<image"));
+});
+test("serializeChartSvg: does not mutate the source element (callers reuse the live SVG for on-screen rendering)", () => {
+	const src = buildFixture();
+	const before = src.outerHTML;
+	serializeChartSvg(src, TOKENS, { width: 100, height: 50, canvasImage: "data:image/png;base64,FAKE" });
+	assert.equal(src.outerHTML, before, "the live SVG element is untouched — only a clone was modified");
+});
+
 // ---- element-level (property reflection, warn-once, accessible name) ----
 // happy-dom does no layout, so the SVG geometry is confirmed in a browser (spec G5). These
 // assert the JS-observable behavior: reflection, the warn-once side effects, and the aria name.
@@ -650,4 +770,40 @@ test("dj-chart renderer=canvas warns once for a combo where a series overrides t
 	});
 	assert.equal(warns.filter((w) => w.includes("canvas")).length, 1);
 	assert.equal(el.renderRoot.querySelector('canvas[part="plot-canvas"]'), null);
+});
+
+// ---- dj-chart.toSvg() (E3) ----
+//
+// The deep mark/axis content inside svg[part="plot"] does NOT render in happy-dom (the SL1 harness
+// finding), so a live chart's own svgEl clone is basically an empty <g> — no var(--) content to
+// find, no marks to check. What IS reliably testable at the element level, without depending on
+// that missing content, is toSvg()'s OWN logic: the ready gate, the explicit width/height it adds,
+// and the effectiveRendererNow branch (does it attempt to composite a canvas image or not) — none
+// of which need the mark content to actually be there.
+
+test("toSvg(): returns \"\" before the chart is ready (no data)", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: [], series: SERIES });
+	await seed(el);
+	assert.equal(el.toSvg(), "");
+});
+test("toSvg(): returns \"\" before the chart is ready (zero measured size)", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: DATA, series: SERIES });
+	await settled(el); // no seed() — w/h stay 0 in happy-dom
+	assert.equal(el.toSvg(), "");
+});
+test("toSvg(): a ready svg-mode chart returns a standalone <svg> with explicit width/height", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: DATA, series: SERIES });
+	await seed(el, 500, 260);
+	const out = el.toSvg();
+	assert.match(out, /^<svg[^>]*width="500"/);
+	assert.ok(out.includes('height="260"'));
+	assert.ok(!out.includes("<image"), "svg-mode charts never composite a canvas image");
+});
+test("toSvg(): renderer=canvas on an unsupported type (bar) takes the svg path — proves the branch reads effectiveRendererNow, not renderer", async () => {
+	const el = await mount("dj-chart", { type: "bar", categoryKey: "cat", data: DATA, series: SERIES, renderer: "canvas" });
+	await seed(el);
+	assert.equal(el.effectiveRendererNow, "svg", "sanity: the fallback is in effect");
+	const out = el.toSvg();
+	assert.ok(out.startsWith("<svg"));
+	assert.ok(!out.includes("<image"), "a chart that asked for canvas but fell back must not get a bitmap composited over it");
 });

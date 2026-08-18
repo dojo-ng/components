@@ -35,6 +35,7 @@ import {
 	effectiveRenderer,
 	type CanvasMark,
 } from "./core.js";
+import { serializeChartSvg, rasterizeSvg } from "./export.js";
 
 const RAMP = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
 const MARGIN: ChartMargin = { top: 8, right: 12, bottom: 28, left: 44 };
@@ -315,12 +316,19 @@ export class DjChart extends DojoElement {
 		});
 	}
 
+	/** Whether the chart has a measured plot box and something to draw — shared by `render()` (the
+	 *  placeholder-vs-plot choice) and `toSvg()` (its own early-return: exporting before this is
+	 *  true would just serialize the `sr-only` placeholder, or find no `svg[part="plot"]` at all). */
+	private get ready(): boolean {
+		return this.w > 0 && this.h > 0 && this.data.length > 0 && this.series.length > 0;
+	}
+
 	override render() {
 		const cats = categories(this.data, this.categoryKey);
 		// Donut center label rides along in the accessible name so AT users hear the highlighted value.
 		const centerForAria = this.type === "donut" ? this.centerLabel : undefined;
 		const accName = accessibleName(this.label, this.type, this.series, cats, centerForAria);
-		const ready = this.w > 0 && this.h > 0 && this.data.length > 0 && this.series.length > 0;
+		const ready = this.ready;
 		const showLegend = this.showLegend && this.series.length > 0;
 		// The .plot box is ALWAYS this same node (only its contents vary), so the
 		// ResizeObserver target stays stable across renders. The accessible table is always
@@ -892,6 +900,53 @@ export class DjChart extends DojoElement {
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 		const marks = this.group() === "xy" ? this.xyCanvasMarks(W, H) : this.cartesianCanvasMarks(W, H);
 		drawSeries(ctx, marks, W, H);
+	}
+
+	// ---- image export (toSvg / toPng) ----
+
+	/** The resolved-token lookup {@link toSvg} needs: every `--dj-*` custom property
+	 * `EXPORT_STYLE_RULES` (export.ts) or a series color could reference, read once via
+	 * `getComputedStyle` on the host — the same technique {@link resolveCanvasColor} already uses
+	 * for series colors, generalized to the full set the SVG export needs. */
+	private exportTokens(): Record<string, string> {
+		const style = getComputedStyle(this);
+		const names = [
+			"--dj-color-border", "--dj-color-text-muted", "--dj-color-neutral-200", "--dj-color-text", "--dj-color-background",
+			...RAMP.map((_, i) => `--dj-chart-${i + 1}`),
+		];
+		const out: Record<string, string> = {};
+		for (const name of names) {
+			const v = style.getPropertyValue(name).trim();
+			if (v) out[name] = v;
+		}
+		return out;
+	}
+
+	/**
+	 * Serializes the current plot as a standalone SVG string: presentational styles inlined (no
+	 * external stylesheet or theme tokens needed to render it correctly elsewhere) and, when the
+	 * canvas renderer is actually in effect (`effectiveRendererNow`, never the raw `renderer`
+	 * property — they differ whenever a fallback applies, and a chart that asked for canvas but
+	 * fell back must not get an empty bitmap composited over it), its drawn bitmap composited in at
+	 * the same position and stacking it renders on screen. `""` when the chart isn't {@link ready}
+	 * (no data, zero measured size) — the same gate `render()` uses for its placeholder.
+	 */
+	toSvg(): string {
+		if (!this.ready) return "";
+		const svgEl = this.renderRoot?.querySelector('svg[part="plot"]') as SVGSVGElement | null;
+		if (!svgEl) return "";
+		const canvasImage = this.effectiveRendererNow === "canvas" && this.#canvasEl
+			? this.#canvasEl.toDataURL("image/png")
+			: undefined;
+		return serializeChartSvg(svgEl, this.exportTokens(), { width: this.w, height: this.h, canvasImage });
+	}
+
+	/** Rasterizes {@link toSvg}'s output to a PNG `Blob` at `scale`× (default 2, for retina and for
+	 * print). Rejects if the chart isn't {@link ready} ({@link toSvg} would return `""`). */
+	async toPng(scale = 2): Promise<Blob> {
+		const svgString = this.toSvg();
+		if (!svgString) throw new Error("dj-chart: toPng() called before the chart is ready (no data or zero size).");
+		return rasterizeSvg(svgString, this.w, this.h, scale);
 	}
 }
 export default DjChart;

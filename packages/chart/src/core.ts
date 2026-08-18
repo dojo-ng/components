@@ -663,3 +663,17 @@ export function effectiveRenderer(renderer: ChartRenderer, type: ChartType, forc
 	if (type !== "line" && type !== "area" && type !== "scatter") return "svg";
 	return "canvas";
 }
+
+// ---- image export (toSvg / toPng) ----
+
+/** Resolves a CSS value that may be `var(--token, fallback)` against a resolved-token lookup —
+ * read once via `getComputedStyle` on the chart host, the same technique {@link resolveCanvasColor}
+ * (dj-chart.ts) already uses for series colors, generalized here to every token the SVG export
+ * needs. A value that isn't a `var()` reference passes through unchanged. A token missing from the
+ * map falls back to the `var()` expression's own fallback (or `""` if it has none). */
+export function resolveVar(value: string, tokens: Record<string, string>): string {
+	const m = /^var\(\s*(--[\w-]+)\s*(?:,\s*(.+))?\)$/.exec(value);
+	if (!m) return value;
+	const [, token, fallback] = m;
+	return tokens[token] ?? fallback?.trim() ?? "";
+}

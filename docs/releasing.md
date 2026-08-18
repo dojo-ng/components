@@ -19,8 +19,9 @@ that changed plus the packages that depend on them. Packages publish to public n
    safe to run any time; commit its diff together with the Changesets bump.
 3. Review and commit that diff with Mercurial.
 4. `npm run release` builds the workspace and runs `changeset publish`, which publishes the newly
-   bumped packages to npm. It needs an `NPM_TOKEN` with publish rights to the `dojo-ng` org,
-   exposed as a masked CI variable (or in your local npm auth for a manual release).
+   bumped packages to npm. **Run this locally, logged in with `npm login`.** It will prompt for a
+   live one-time password, and that prompt is the authorization step — see "Publishing is local"
+   below for why it cannot be automated.
 
 ## Configuration choices
 
@@ -37,5 +38,19 @@ Changesets assumes Git. We work around it: no auto-commit, and a changelog forma
 need Git. The only unsupported feature is `changeset status --since=<git-ref>`; it is not used in
 the normal flow.
 
-In CI (a `.gitlab-ci.yml` on Heptapod), the release job runs `npm ci`, then `npm run release` with
-`NPM_TOKEN` set. Wiring that pipeline is pending the repository going live on Heptapod.
+## Publishing is local, not CI
+
+CI verifies; a human publishes. This was established the hard way on `@dojo-ng/framework`, and
+components inherits the conclusion rather than rediscovering it.
+
+Two independent blockers, neither of which any configuration fixes. The packages' npm security
+setting is "require two-factor authentication and disallow bypass 2FA tokens", which rejects every
+token — including bypass-2FA-capable ones — without a live one-time password, so a CI publish fails
+with `EOTP` by design. And npm's OIDC Trusted Publishing, the obvious way around a static token,
+does not recognize self-hosted GitLab instances; `foss.heptapod.net` is self-hosted, so the handshake
+is never attempted and the job fails with `ENEEDAUTH`.
+
+So there is no `release` job. In its place CI runs a `pack` job (`npm run build && npm pack
+--dry-run`), which verifies that the tarball each package produces is what a consumer would actually
+receive. That is the one part of a release CI can still check. To cut a release, follow the loop
+above and run step 4 yourself.

@@ -33,3 +33,10 @@ npm-debug.log*
 
 # other local stuff
 deploy
+
+# The Enterprise overlay is cloned into this working tree at components/enterprise/
+# (see enterprise-repo-split.md) and must NEVER reach this public repository. Rooted
+# regexp rather than the glob syntax above: a bare `enterprise` glob is unrooted and
+# would also ignore any package that happens to contain a directory of that name.
+syntax: regexp
+^enterprise/

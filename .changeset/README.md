@@ -24,8 +24,9 @@ hg add .changeset/<name>.md && hg commit -m "Add changeset"
 1. `npm run version-packages` — applies all pending changesets: bumps versions, updates internal
    dependency ranges, writes each package's CHANGELOG, and deletes the consumed changeset files.
 2. Review the diff, then commit it with Mercurial.
-3. `npm run release` — builds, then runs `changeset publish` to publish the bumped packages to npm
-   (needs an `NPM_TOKEN` with publish rights to the `dojo-ng` org).
+3. `npm run release` — builds, then runs `changeset publish` to publish the bumped packages to npm.
+   Run it locally, logged in with `npm login`; it prompts for a live one-time password. CI cannot do
+   this step — see [docs/releasing.md](../docs/releasing.md), "Publishing is local, not CI".
 
 ## Mercurial note
 

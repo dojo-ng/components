@@ -144,6 +144,20 @@ Each package has its own README with properties, slots, parts, events, and worke
 
 Live, interactive examples are in `playground/index.html`.
 
+## Development
+
+```bash
+hg clone https://foss.heptapod.net/dojo-ng/components
+cd components
+npm install
+npm run build
+```
+
+Hosting for this repository is provided at no cost by foss.heptapod.net. Heptapod is
+published by [Orbeet](https://orbeet.io/), and the instance runs on infrastructure
+donated by [Clever Cloud](https://www.clever-cloud.com/). Our thanks to both for
+supporting free and open source projects.
+
 ## Testing
 
 | Command | What it runs |

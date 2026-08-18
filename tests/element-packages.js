@@ -119,3 +119,29 @@ export const SUPPORT_PACKAGES = [
 	"data-grid-rowstate",
 	"data-grid-select",
 ];
+
+/** Where a listed package's built entry lives, keyed by name — `packages/<name>` for every
+ * FOSS entry above, `enterprise/packages/<name>` for anything the merge below adds. The
+ * registration smokes need this because "packages/<pkg>" stops being a safe assumption the
+ * moment a package can come from the overlay. */
+export const PACKAGE_ROOT = {};
+for (const pkg of [...ELEMENT_PACKAGES, ...SUPPORT_PACKAGES]) PACKAGE_ROOT[pkg] = "packages";
+
+// Optional overlay merge: a public-only clone has no ../enterprise/tests/element-packages.js,
+// so the import rejects and the catch leaves the three lists exactly as FOSS declared them
+// above — no enterprise name ever has to appear in this file. When the overlay IS present, its
+// module is expected to export the same three names in the same shape.
+try {
+	const overlay = await import("../enterprise/tests/element-packages.js");
+	for (const pkg of overlay.ELEMENT_PACKAGES ?? []) {
+		ELEMENT_PACKAGES.push(pkg);
+		PACKAGE_ROOT[pkg] = "enterprise/packages";
+	}
+	Object.assign(EXTRA_TAGS, overlay.EXTRA_TAGS ?? {});
+	for (const pkg of overlay.SUPPORT_PACKAGES ?? []) {
+		SUPPORT_PACKAGES.push(pkg);
+		PACKAGE_ROOT[pkg] = "enterprise/packages";
+	}
+} catch {
+	// no overlay present
+}

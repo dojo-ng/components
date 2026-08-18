@@ -7,18 +7,18 @@
 import "./setup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ELEMENT_PACKAGES, EXTRA_TAGS, SUPPORT_PACKAGES } from "./element-packages.js";
+import { ELEMENT_PACKAGES, EXTRA_TAGS, SUPPORT_PACKAGES, PACKAGE_ROOT } from "./element-packages.js";
 
 for (const pkg of ELEMENT_PACKAGES) {
 	const tag = `dj-${pkg}`;
 	test(`${pkg} registers <${tag}>`, async () => {
-		await import(`../packages/${pkg}/dist/index.js`);
+		await import(`../${PACKAGE_ROOT[pkg]}/${pkg}/dist/index.js`);
 		const ctor = customElements.get(tag);
 		assert.equal(typeof ctor, "function", `${tag} was not registered`);
 	});
 	for (const extraTag of EXTRA_TAGS[pkg] ?? []) {
 		test(`${pkg} also registers <${extraTag}>`, async () => {
-			await import(`../packages/${pkg}/dist/index.js`);
+			await import(`../${PACKAGE_ROOT[pkg]}/${pkg}/dist/index.js`);
 			const ctor = customElements.get(extraTag);
 			assert.equal(typeof ctor, "function", `${extraTag} was not registered`);
 		});
@@ -27,7 +27,7 @@ for (const pkg of ELEMENT_PACKAGES) {
 
 for (const pkg of SUPPORT_PACKAGES) {
 	test(`${pkg} imports cleanly`, async () => {
-		const mod = await import(`../packages/${pkg}/dist/index.js`);
+		const mod = await import(`../${PACKAGE_ROOT[pkg]}/${pkg}/dist/index.js`);
 		assert.ok(mod, `${pkg} produced no module namespace`);
 	});
 }

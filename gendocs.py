@@ -23,6 +23,19 @@ GROUPS = [
  ("Media", ["audio","video"]),
 ]
 
+# Appends enterprise/tests/doc_groups.py's own GROUPS list when the overlay is checked out, so
+# an overlay package needs no edit to this public file to get a heading here — same "merge
+# behind an existence check" shape as tests/element-packages.js (O3). A public-only clone has
+# no such file and GROUPS is unaffected.
+#
+# NOTE this does NOT make main()'s own output overlay-aware: components-reference.md is one of
+# O6's leak-gated artifacts, so the loop below stays pinned to G.FOSS_ROOT regardless of what
+# GROUPS contains. What this buys is a single place (this list) an overlay-side doc generator
+# can import GROUPS from, complete, without this file needing to know that generator exists.
+_overlay_groups = G.load_overlay_module("enterprise/tests/doc_groups.py")
+if _overlay_groups is not None:
+    GROUPS = GROUPS + getattr(_overlay_groups, "GROUPS", [])
+
 def main():
   o = ["# Dojo NG component reference\n",
 "First-pass API reference for the Dojo NG web components, generated from source. For conventions (naming, `--dj-*` theming tokens, events, the WCAG 2.2 AA / mobile requirements) see `component-conventions.md`; for theming see `theming-proposal.md`; for state/data see `state-and-framework-analysis.md`.\n",
@@ -32,9 +45,15 @@ def main():
 
   seen = set()
   for group, names in GROUPS:
-    o.append(f"\n## {group}\n")
+    # Built into `body` first and only appended with its header if non-empty — an
+    # overlay-only group whose packages never resolve under G.FOSS_ROOT must contribute
+    # NOTHING, not even a bare "## <group>" heading with nothing under it. That heading
+    # would itself be the leak: this doc is one of O6's byte-identical artifacts.
+    body = []
     for pkg in names:
-        if not os.path.isdir(f"{G.PKGS}/{pkg}/src"):
+        # FOSS-only (see the GROUPS note above): an overlay group's package names never
+        # resolve under G.FOSS_ROOT, so they're silently skipped here.
+        if not os.path.isdir(f"{G.FOSS_ROOT}/{pkg}/src"):
             continue
         seen.add(pkg)
         for _, s in G.component_files(pkg):
@@ -43,33 +62,36 @@ def main():
             cls = G.class_name(s)
             tag = G.tag_for_class(pkg, cls)
             doc = G.classdoc(s)
-            o.append(f"\n### `<{tag}>` · `@dojo-ng/{pkg}`\n")
+            body.append(f"\n### `<{tag}>` · `@dojo-ng/{pkg}`\n")
             sup = G.superclass(s)
             if sup != "DojoElement":
-                o.append(f"*Extends `{sup}`; inherits its properties and behavior.*\n")
+                body.append(f"*Extends `{sup}`; inherits its properties and behavior.*\n")
             d = G.description(doc, tag)
             if d:
-                o.append(G.md_safe(d[0].upper() + d[1:]) + "\n")
+                body.append(G.md_safe(d[0].upper() + d[1:]) + "\n")
             ps = G.parse_props(s)
             if ps:
-                o.append("| Property | Attribute | Type | Default |")
-                o.append("|---|---|---|---|")
+                body.append("| Property | Attribute | Type | Default |")
+                body.append("|---|---|---|---|")
                 for p in ps:
                     a = (p["attr"] or "—") + (" ↻" if p["reflects"] else "")
                     default = ("`" + G.cell(p["default"]) + "`") if p["default"] else "—"
-                    o.append(f"| `{p['name']}` | {a} | `{G.cell(p['type'])}` | {default} |")
-                o.append("")
+                    body.append(f"| `{p['name']}` | {a} | `{G.cell(p['type'])}` | {default} |")
+                body.append("")
             for label, items in (("Slots", G.parse_slots(doc, s)),
                                  ("Parts", G.parse_parts(doc, s)),
                                  ("Events", G.parse_events(doc, s))):
                 if items:
-                    o.append(f"**{label}:** {G.md_safe(G.fmt_named_md(items))}\n")
+                    body.append(f"**{label}:** {G.md_safe(G.fmt_named_md(items))}\n")
             methods = G.parse_methods(s)
             if methods:
-                o.append(f"**Methods:** {G.md_safe(G.fmt_methods_md(methods))}\n")
+                body.append(f"**Methods:** {G.md_safe(G.fmt_methods_md(methods))}\n")
             cssprops = G.parse_cssprops(doc)
             if cssprops:
-                o.append(f"**CSS properties:** {G.md_safe(G.fmt_cssprops_md(cssprops))}\n")
+                body.append(f"**CSS properties:** {G.md_safe(G.fmt_cssprops_md(cssprops))}\n")
+    if body:
+        o.append(f"\n## {group}\n")
+        o.extend(body)
 
   o.append("\n## Utilities and infrastructure\n")
   o.append("Not custom elements (except `<dj-theme>`); these support theming and app-level state.\n")

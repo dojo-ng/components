@@ -6,7 +6,8 @@
   "description": "Dojo NG web components",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "enterprise/packages/*"
   ],
   "customElements": "custom-elements.json",
   "scripts": {
@@ -20,7 +21,8 @@
     "serve": "python3 -m http.server 8080 --bind 0.0.0.0",
     "start": "npm run build && npm run serve",
     "changeset": "changeset",
-    "lint": "eslint packages/*/src tests",
+    "lint": "eslint packages/*/src tests && python3 direction_lint.py",
+    "leak-gate": "python3 leak_gate.py",
     "version-packages": "changeset version && python3 genversions.py",
     "release": "npm run build && changeset publish",
     "test:generators": "python3 -m unittest discover -s tests/generators -p \"test_*.py\"",

@@ -21,16 +21,18 @@ import json
 import os
 import re
 
-from genlib import PKGS, main_file
+from genlib import FOSS_ROOT, main_file
 
 VERSION_RE = re.compile(r'(static\s+(?:override\s+)?version\s*=\s*")[^"]*(")')
 
 
 def sync():
-    """Rewrite each element's static version to its package.json version.
+    """Rewrite each element's static version to its package.json version. FOSS-only,
+    deliberately: the overlay versions independently under its own changeset config (see
+    enterprise-export-phase2-spec.md O5), so it needs its own version-sync when that exists.
     Returns the list of (path, version) actually changed."""
     changed = []
-    for pj in sorted(glob.glob(f"{PKGS}/*/package.json")):
+    for pj in sorted(glob.glob(f"{FOSS_ROOT}/*/package.json")):
         pkg = os.path.basename(os.path.dirname(pj))
         version = json.load(open(pj)).get("version")
         if not version:

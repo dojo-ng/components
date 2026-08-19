@@ -13,10 +13,45 @@ truth for what exists) unioned with any JSDoc prose descriptions.
 """
 
 import glob
+import importlib.util
 import os
 import re
 
-PKGS = "packages"
+FOSS_ROOT = "packages"
+OVERLAY_ROOT = "enterprise/packages"
+
+
+def _roots():
+    roots = [FOSS_ROOT]
+    if os.path.isdir(OVERLAY_ROOT):
+        roots.append(OVERLAY_ROOT)
+    return roots
+
+
+PKGS = _roots()
+
+
+def pkg_root(pkg):
+    """The root ('packages' or 'enterprise/packages') a package name lives under, checked in
+    PKGS order (FOSS first). Falls back to PKGS[0] for a package that exists in neither — keeps
+    a caller building a not-yet-created path predictable rather than raising."""
+    for root in PKGS:
+        if os.path.isdir(f"{root}/{pkg}"):
+            return root
+    return PKGS[0]
+
+
+def load_overlay_module(path):
+    """Load an optional overlay-supplied Python file (e.g. `enterprise/tests/doc_groups.py`) as a
+    module, or return None when it doesn't exist — the "merge behind a try/except" shape used
+    throughout Track O so a public-only clone is unaffected and no Enterprise name appears in a
+    public file. Never caches: called once per generator run, which is once per process."""
+    if not os.path.exists(path):
+        return None
+    spec = importlib.util.spec_from_file_location("_dojo_ng_overlay", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 # ---------------------------------------------------------------------------
@@ -39,7 +74,7 @@ def component_files(pkg):
     `chart` has two (`dj-chart.ts` + `dj-sparkline.ts` — a second, small element sharing the
     package's `core.ts` math rather than a package of its own)."""
     out = []
-    for f in sorted(glob.glob(f"{PKGS}/{pkg}/src/*.ts")):
+    for f in sorted(glob.glob(f"{pkg_root(pkg)}/{pkg}/src/*.ts")):
         if f.endswith("index.ts") or f.endswith(".styles.ts"):
             continue
         s = open(f).read()
@@ -51,7 +86,7 @@ def component_files(pkg):
 def tag_of(pkg):
     """The package's PRIMARY registered tag: the first define() call in index.ts. For a package
     registering more than one element, use `tag_for_class` to get a specific class's tag."""
-    idx = f"{PKGS}/{pkg}/src/index.ts"
+    idx = f"{pkg_root(pkg)}/{pkg}/src/index.ts"
     if os.path.exists(idx):
         m = re.search(r'\.define\(\s*"([^"]+)"', open(idx).read())
         if m:
@@ -63,7 +98,7 @@ def tag_for_class(pkg, cls):
     """The registered tag for a SPECIFIC class in a package, read from index.ts's
     `<Class>.define("<tag>", ...)` call. Falls back to `tag_of(pkg)` if not found (covers the
     single-element, single-define-call case identically to the old behavior)."""
-    idx = f"{PKGS}/{pkg}/src/index.ts"
+    idx = f"{pkg_root(pkg)}/{pkg}/src/index.ts"
     if os.path.exists(idx):
         m = re.search(rf'{re.escape(cls)}\.define\(\s*"([^"]+)"', open(idx).read())
         if m:
@@ -461,7 +496,7 @@ def plugin_host(pkg):
     packages themselves call it to build the plugin machinery). Returns "data-grid", "rich-text",
     or None — this is the detection rule locked in by plugin-catalog-spec.md."""
     found = None
-    for f in sorted(glob.glob(f"{PKGS}/{pkg}/src/*.ts")):
+    for f in sorted(glob.glob(f"{pkg_root(pkg)}/{pkg}/src/*.ts")):
         s = open(f).read()
         if re.search(r"export class Dj\w+", s):
             return None
@@ -479,7 +514,7 @@ def plugin_api(pkg):
     `const xPlugin = ...` instances, in source order — 0, 1, or more (e.g. `rich-text-color`
     exports both `colorPlugin` and `backgroundColorPlugin` off one factory)."""
     factory_name, factory_params, ready = None, None, []
-    for f in sorted(glob.glob(f"{PKGS}/{pkg}/src/*.ts")):
+    for f in sorted(glob.glob(f"{pkg_root(pkg)}/{pkg}/src/*.ts")):
         s = open(f).read()
         if factory_name is None:
             fm = _PLUGIN_FACTORY_FN.search(s)
@@ -555,7 +590,7 @@ def interface_fields(pkg, name):
     interface is found (a factory that takes no options has nothing to look up)."""
     if not name:
         return None
-    for f in sorted(glob.glob(f"{PKGS}/{pkg}/src/*.ts")):
+    for f in sorted(glob.glob(f"{pkg_root(pkg)}/{pkg}/src/*.ts")):
         s = open(f).read()
         m = re.search(rf"export\s+interface\s+{re.escape(name)}(?:\s+extends\s+[\w,\s]+)?\s*\{{", s)
         if not m:

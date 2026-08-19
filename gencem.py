@@ -21,7 +21,10 @@ OUT = "custom-elements.json"
 
 
 def build_cem():
-    pkgs = sorted(d for d in os.listdir(G.PKGS) if os.path.isdir(f"{G.PKGS}/{d}/src"))
+    # FOSS-only, deliberately: custom-elements.json ships in the npm package, and O6's leak
+    # gate asserts it stays byte-identical whether the enterprise overlay is checked out
+    # alongside or not.
+    pkgs = sorted(d for d in os.listdir(G.FOSS_ROOT) if os.path.isdir(f"{G.FOSS_ROOT}/{d}/src"))
     modules = []
 
     for pkg in pkgs:

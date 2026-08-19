@@ -79,7 +79,11 @@ Not custom elements (except `<dj-theme>`); these support theming and app-level s
 
 
 def has_pkg(pkg):
-    return os.path.isdir(f"{G.PKGS}/{pkg}/src")
+    # FOSS-only, deliberately: the skill catalog is one of O6's leak-gated artifacts, so this
+    # stays pinned to G.FOSS_ROOT even though GROUPS itself may carry overlay-only group
+    # entries (gendocs.py appends them when the overlay is present) — an overlay package name
+    # simply never resolves here, so it never reaches the catalog.
+    return os.path.isdir(f"{G.FOSS_ROOT}/{pkg}/src")
 
 
 def example_code(pkg):
@@ -147,7 +151,7 @@ def plugins_for_host(host_pkg):
     also why a lookalike like `rich-text-menu` (menu plumbing, no such call) or `dnd` (a generic
     primitive, no host at all) never shows up here — see plugin-catalog-spec.md PC1."""
     return sorted(
-        pkg for pkg in os.listdir(G.PKGS)
+        pkg for pkg in os.listdir(G.FOSS_ROOT)
         if has_pkg(pkg) and pkg != host_pkg and G.plugin_host(pkg) == host_pkg
     )
 
@@ -210,7 +214,11 @@ def main():
     seen = set()
     seen_plugins = set()
     for group, names in GROUPS:
-        o.append(f"\n## {group}\n")
+        # Built into `body` first and only appended with its header if non-empty — see the
+        # matching note in gendocs.py. A GROUPS entry with no package resolving under
+        # G.FOSS_ROOT (an overlay-only group, once GROUPS itself is overlay-aware) must
+        # contribute nothing at all: this catalog is one of O6's byte-identical artifacts.
+        body = []
         for pkg in names:
             if not has_pkg(pkg):
                 continue
@@ -218,15 +226,18 @@ def main():
             if not entries:
                 continue
             seen.add(pkg)
-            o.extend(entries)
+            body.extend(entries)
 
             plugin_pkgs = plugins_for_host(pkg)
             if plugin_pkgs:
                 tag = G.tag_of(pkg)
-                o.append(f"**Plugins for `<{tag}>`** — pushed via the `plugins` property (JavaScript only).\n")
+                body.append(f"**Plugins for `<{tag}>`** — pushed via the `plugins` property (JavaScript only).\n")
                 for ppkg in plugin_pkgs:
                     seen_plugins.add(ppkg)
-                    o.append(plugin_entry(ppkg))
+                    body.append(plugin_entry(ppkg))
+        if body:
+            o.append(f"\n## {group}\n")
+            o.extend(body)
 
     o.append(UTILITIES)
 

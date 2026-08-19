@@ -10,7 +10,18 @@ description with a pointer to the relevant guide.
 import re, os, json
 import genlib as G
 
-PKGS = "packages"
+FOSS_ROOT = "packages"
+OVERLAY_ROOT = "enterprise/packages"
+
+
+def _roots():
+    roots = [FOSS_ROOT]
+    if os.path.isdir(OVERLAY_ROOT):
+        roots.append(OVERLAY_ROOT)
+    return roots
+
+
+PKGS = _roots()
 
 # Infra packages: package dir -> the guide doc to point at.
 INFRA_DOC = {
@@ -455,7 +466,7 @@ EXAMPLES = {
 
 def pkg_desc(pkg):
     try:
-        return json.load(open(f"{PKGS}/{pkg}/package.json")).get("description", "")
+        return json.load(open(f"{G.pkg_root(pkg)}/{pkg}/package.json")).get("description", "")
     except Exception:
         return ""
 
@@ -1017,19 +1028,32 @@ EXAMPLES.update({
  ],
 })
 
+# Merges enterprise/tests/readme_content.py's own NOTES/EXAMPLES dicts when the overlay is
+# checked out, so an overlay package gets the same migration-note / worked-example treatment as
+# a FOSS one with no edit to this public file — same "merge behind an existence check" shape as
+# tests/element-packages.js (O3). A public-only clone has no such file and NOTES/EXAMPLES are
+# unaffected. Safe from the leak-gate's point of view: these dicts are only ever looked up by
+# package name, and every consumer that must stay FOSS-only (gencatalog.py) enumerates FOSS
+# package names only, so an overlay entry here is simply never read by it.
+_overlay_readmes = G.load_overlay_module("enterprise/tests/readme_content.py")
+if _overlay_readmes is not None:
+    NOTES.update(getattr(_overlay_readmes, "NOTES", {}))
+    EXAMPLES.update(getattr(_overlay_readmes, "EXAMPLES", {}))
+
 def main():
     count = 0
     infra = 0
-    for pkg in sorted(os.listdir(PKGS)):
-        if not os.path.isdir(f"{PKGS}/{pkg}/src"):
-            continue
-        _, s = G.main_file(pkg)
-        md = component_readme(pkg, s) if s else infra_readme(pkg)
-        open(f"{PKGS}/{pkg}/README.md", "w").write(md)
-        if s:
-            count += 1
-        else:
-            infra += 1
+    for root in PKGS:
+        for pkg in sorted(os.listdir(root)):
+            if not os.path.isdir(f"{root}/{pkg}/src"):
+                continue
+            _, s = G.main_file(pkg)
+            md = component_readme(pkg, s) if s else infra_readme(pkg)
+            open(f"{root}/{pkg}/README.md", "w").write(md)
+            if s:
+                count += 1
+            else:
+                infra += 1
     print(f"component READMEs: {count} | infra READMEs: {infra}")
 
 

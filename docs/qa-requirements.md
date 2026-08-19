@@ -51,12 +51,14 @@ motion, color, or layout.
 |---|---|---|
 | Local dev | Any layer, on demand | No |
 | Pre-commit (fast) | Type-check, lint, affected logic unit tests | Yes |
-| Merge request (CI) | Type-check, lint, all logic unit tests, component + axe tests, cross-browser matrix, build | Yes |
+| Merge request (CI) | Type-check, lint, all logic unit tests, component + axe tests on Chromium, build | Yes |
 | Pre-release | The full CI suite, then build and a published-package import smoke | Yes |
 | Default branch (post-merge) | Full suite including the cross-browser matrix; coverage report | Yes (keep the branch green) |
 
-CI is the source of truth. The same gates live in the `.gitlab-ci.yml` on Heptapod (pending the
-repo going live) and in the Changesets release script.
+CI is the source of truth. The same gates live in the `.gitlab-ci.yml` on Heptapod and in the
+Changesets release script. The cross-browser matrix (Firefox and WebKit, alongside Chromium) is
+deliberately not a merge-request gate: it runs only on `branch/default`, after merge, so a
+WebKit-only or Firefox-only break is caught there instead of blocking every merge request.
 
 ## Pass/fail criteria
 

@@ -9,14 +9,18 @@ import { playwrightLauncher } from "@web/test-runner-playwright";
 // The benchmark suite (tests/browser/bench.test.js, Q7) is a RELATIVE-timing gate with
 // its own script and is excluded from the default run so timing work never blocks a
 // behavior/a11y run.
+//
+// DJ_BROWSERS restricts which engines run, comma-separated (e.g. "chromium"); unset runs
+// all three, same as before this existed. CI uses it to give topic pipelines a fast
+// Chromium-only run and reserve the full matrix for branch/default.
+const browsers = process.env.DJ_BROWSERS
+	? process.env.DJ_BROWSERS.split(",").map((b) => b.trim())
+	: ["chromium", "firefox", "webkit"];
+
 export default {
 	files: ["tests/browser/**/*.test.js", "!tests/browser/bench.test.js"],
 	nodeResolve: true,
-	browsers: [
-		playwrightLauncher({ product: "chromium" }),
-		playwrightLauncher({ product: "firefox" }),
-		playwrightLauncher({ product: "webkit" }),
-	],
+	browsers: browsers.map((product) => playwrightLauncher({ product })),
 	testFramework: {
 		config: { ui: "bdd", timeout: 5000 },
 	},

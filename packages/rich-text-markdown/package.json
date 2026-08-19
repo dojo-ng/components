@@ -1,5 +1,4 @@
 { "name": "@dojo-ng/rich-text-markdown", "version": "0.1.0", "license": "BSD-3-Clause", "description": "Markdown input/output plugin for @dojo-ng/rich-text", "type": "module",
   "main": "./dist/index.js", "module": "./dist/index.js", "types": "./dist/index.d.ts",
   "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
-  "dependencies": { "@dojo-ng/rich-text": "^0.1.0", "lexical": "^0.21.0", "@lexical/markdown": "^0.21.0", "lit": "^3.3.0" },
-  "devDependencies": { "typescript": "^5.8.3" } }
+  "dependencies": { "@dojo-ng/rich-text": "^0.1.0", "lexical": "^0.21.0", "@lexical/markdown": "^0.21.0", "lit": "^3.3.0" } }

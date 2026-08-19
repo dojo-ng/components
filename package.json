@@ -10,6 +10,9 @@
     "enterprise/packages/*"
   ],
   "customElements": "custom-elements.json",
+  "overrides": {
+    "errorstacks": "2.4.1"
+  },
   "scripts": {
     "build": "tsc -b .",
     "clean": "tsc -b --clean .",

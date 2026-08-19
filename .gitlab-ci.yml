@@ -1,0 +1,47 @@
+stages: [test]
+
+default:
+  interruptible: true
+
+verify:
+  stage: test
+  image: node:22
+  before_script:
+    - npm ci
+  script:
+    - npm run build
+    - npm run lint
+    - npm run test:unit
+    - npm test
+    - npm run test:generators
+    - python3 license_lint.py
+
+browser:chromium:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.62.0-noble
+  variables:
+    DJ_BROWSERS: chromium
+  before_script:
+    - ARCH=$(uname -m); if [ "$ARCH" = "aarch64" ]; then NODE_ARCH=arm64; else NODE_ARCH=x64; fi
+    - curl -fsSL https://nodejs.org/dist/v22.23.2/node-v22.23.2-linux-${NODE_ARCH}.tar.gz -o /tmp/node.tar.gz
+    - mkdir -p /opt/node22 && tar -xzf /tmp/node.tar.gz -C /opt/node22 --strip-components=1
+    - export PATH=/opt/node22/bin:$PATH
+    - node -v
+    - npm ci
+    - npm run build
+  script: npm run test:browser
+
+browser:matrix:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.62.0-noble
+  rules:
+    - if: $CI_COMMIT_BRANCH == "branch/default"
+  before_script:
+    - ARCH=$(uname -m); if [ "$ARCH" = "aarch64" ]; then NODE_ARCH=arm64; else NODE_ARCH=x64; fi
+    - curl -fsSL https://nodejs.org/dist/v22.23.2/node-v22.23.2-linux-${NODE_ARCH}.tar.gz -o /tmp/node.tar.gz
+    - mkdir -p /opt/node22 && tar -xzf /tmp/node.tar.gz -C /opt/node22 --strip-components=1
+    - export PATH=/opt/node22/bin:$PATH
+    - node -v
+    - npm ci
+    - npm run build
+  script: npm run test:browser

@@ -13,8 +13,5 @@
   "dependencies": {
     "@dojo-ng/dojo-element": "^0.1.0",
     "lit": "^3.3.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.8.3"
   }
 }

@@ -1,4 +1,4 @@
 { "name": "@dojo-ng/header", "version": "0.1.0", "license": "BSD-3-Clause", "description": "Dojo NG header web component", "type": "module",
   "main": "./dist/index.js", "module": "./dist/index.js", "types": "./dist/index.d.ts",
   "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
-  "dependencies": { "@dojo-ng/dojo-element": "^0.1.0", "lit": "^3.3.0" }, "devDependencies": { "typescript": "^5.8.3" } }
+  "dependencies": { "@dojo-ng/dojo-element": "^0.1.0", "lit": "^3.3.0" } }

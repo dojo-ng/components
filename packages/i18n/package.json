@@ -7,6 +7,5 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
-  "dependencies": { "lit": "^3.3.0" },
-  "devDependencies": { "typescript": "^5.8.3" }
+  "dependencies": { "lit": "^3.3.0" }
 }

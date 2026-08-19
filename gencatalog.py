@@ -40,7 +40,7 @@ def first_sentences(text, n=2):
     parts = re.split(r"(?<!\be\.g\.)(?<!\bi\.e\.)(?<!\betc\.)(?<=[.])\s", text)
     return " ".join(parts[:n]).strip()
 
-OUT = "../skill/dojo-ng/references/components.md"
+OUT = os.environ.get("DJ_SKILL_CATALOG", "../skill/dojo-ng/references/components.md")
 
 # Stable editorial preamble (conventions the skill relies on; not derived from a component).
 HEADER = """# Component catalog and picker

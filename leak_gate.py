@@ -37,7 +37,9 @@ import direction_lint
 import license_lint
 
 COMPONENTS = os.path.dirname(os.path.abspath(__file__))
-SKILL_CATALOG = os.path.join(COMPONENTS, "..", "skill", "dojo-ng", "references", "components.md")
+SKILL_CATALOG = os.environ.get(
+    "DJ_SKILL_CATALOG", os.path.join(COMPONENTS, "..", "skill", "dojo-ng", "references", "components.md")
+)
 DOC_REFERENCE = "/tmp/components-reference.md"
 
 # (label, path) — the artifacts a "leak" would actually show up in. Paths relative to COMPONENTS

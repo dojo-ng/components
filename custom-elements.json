@@ -1892,6 +1892,31 @@
                   }
                 }
               ]
+            },
+            {
+              "kind": "method",
+              "name": "toSvg",
+              "description": "Serializes the current plot as a standalone SVG string: presentational styles inlined (no external stylesheet or theme tokens needed to render it correctly elsewhere) and, when the canvas renderer is actually in effect (`effectiveRendererNow`, never the raw `renderer` property \u2014 they differ whenever a fallback applies, and a chart that asked for canvas but fell back must not get an empty bitmap composited over it), its drawn bitmap composited in at the same position and stacking it renders on screen. `\"\"` when the chart isn't {@link ready} (no data, zero measured size) \u2014 the same gate `render()` uses for its placeholder.",
+              "return": {
+                "type": {
+                  "text": "string"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "toPng",
+              "description": "Rasterizes {@link toSvg}'s output to a PNG `Blob` at `scale`\u00d7 (default 2, for retina and for print). Rejects if the chart isn't {@link ready} ({@link toSvg} would return `\"\"`).",
+              "parameters": [
+                {
+                  "name": "scale"
+                }
+              ],
+              "return": {
+                "type": {
+                  "text": "Promise<Blob>"
+                }
+              }
             }
           ],
           "attributes": [

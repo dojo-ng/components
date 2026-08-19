@@ -15,6 +15,7 @@ verify:
     - npm test
     - npm run test:generators
     - python3 license_lint.py
+    - npm run check-drift
 
 browser:chromium:
   stage: test

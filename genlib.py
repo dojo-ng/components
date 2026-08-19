@@ -150,8 +150,18 @@ def description(doc, tag):
 
 
 def _section(doc, keyword):
-    """Raw text of a named section in the class JSDoc."""
-    m = re.search(rf"{keyword}:(.*?)(?=(?:Slots?|Parts?|Events?|Methods?):|\Z)", doc, re.S)
+    """Raw text of a named section in the class JSDoc.
+
+    Stops at the next Slots/Parts/Events/Methods heading, a paragraph break (a
+    blank JSDoc line), or the end of the doc — whichever comes first. Without
+    the paragraph-break terminator, a section with no later heading (e.g. Parts
+    as the last inline label before an unrelated trailing paragraph) swallows
+    everything after it to the end of the doc and misparses that prose as
+    entries.
+    """
+    m = re.search(
+        rf"{keyword}:(.*?)(?=(?:Slots?|Parts?|Events?|Methods?):|\n\s*\n|\Z)", doc, re.S
+    )
     return m.group(1).strip() if m else ""
 
 

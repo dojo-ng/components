@@ -22,6 +22,7 @@
     "docs": "python3 gendocs.py && python3 genreadmes.py",
     "catalog": "python3 gencatalog.py",
     "check-drift": "python3 check_drift.py",
+    "check-pack": "python3 check_pack.py",
     "serve": "python3 -m http.server 8080 --bind 0.0.0.0",
     "start": "npm run build && npm run serve",
     "changeset": "changeset",

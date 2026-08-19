@@ -32,6 +32,16 @@ browser:chromium:
     - npm run build
   script: npm run test:browser
 
+pack:
+  stage: test
+  image: node:22
+  before_script:
+    - npm ci
+  script:
+    - npm run build
+    - npm pack --dry-run --workspaces
+    - npm run check-pack
+
 browser:matrix:
   stage: test
   image: mcr.microsoft.com/playwright:v1.62.0-noble

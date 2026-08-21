@@ -101,16 +101,60 @@
 		</script>
 		<style>
 			body { font-family: var(--dj-font-family); background: var(--dj-color-background); color: var(--dj-color-text); margin: 0; padding: 2rem; transition: background 150ms, color 150ms; }
-			h2 { font-size: 0.8rem; color: var(--dj-color-text-muted); margin: 1.75rem 0 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+			h3 { font-size: 0.8rem; color: var(--dj-color-text-muted); margin: 1.75rem 0 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+			.section-purpose { margin: 0 0 0.75rem; color: var(--dj-color-text-muted); max-width: 46rem; }
 			.row { display: flex; gap: 0.75rem; align-items: center; margin: 0.5rem 0; flex-wrap: wrap; }
 			.col { display: flex; flex-direction: column; gap: 0.75rem; align-items: flex-start; max-width: 22rem; }
 			.toolbar { display: flex; gap: 0.75rem; align-items: center; padding-bottom: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--dj-color-border); }
 			.card { padding: 1rem; border: 1px solid var(--dj-color-border); border-radius: 0.5rem; background: var(--dj-color-background); color: var(--dj-color-text); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); }
 			.island { padding: 1rem; border-radius: 0.5rem; background: var(--dj-color-background); color: var(--dj-color-text); border: 1px solid var(--dj-color-border); }
 			pre { background: var(--dj-color-neutral-100); padding: 0.75rem; border-radius: 0.375rem; }
+
+			/* Page header (task 6) */
+			.page-header { max-width: 46rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--dj-color-border); }
+			.page-header h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+			.page-header p { margin: 0.35rem 0; color: var(--dj-color-text-muted); }
+			.page-header .header-stats { font-size: 0.875rem; }
+
+			/* Nav + layout (task 4) */
+			.layout { display: flex; align-items: flex-start; gap: 2rem; }
+			.nav-toggle { display: none; }
+			#playground-nav { flex: 0 0 16rem; position: sticky; top: 1rem; align-self: flex-start; max-height: calc(100vh - 2rem); overflow-y: auto; padding-right: 0.5rem; }
+			#playground-nav h2 { font-size: 0.7rem; color: var(--dj-color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.25rem 0 0.35rem; }
+			#playground-nav h2:first-child { margin-top: 0; }
+			#playground-nav ul { list-style: none; margin: 0; padding: 0; }
+			#playground-nav li { margin: 0; }
+			#playground-nav a { display: block; padding: 0.2rem 0; color: var(--dj-color-text); text-decoration: none; font-size: 0.875rem; border-left: 2px solid transparent; padding-left: 0.5rem; }
+			#playground-nav a:hover { color: var(--dj-color-primary-600, #2563eb); }
+			#playground-nav a[aria-current="true"] { border-left-color: var(--dj-color-primary-600, #2563eb); color: var(--dj-color-primary-600, #2563eb); font-weight: 600; }
+			main { min-width: 0; flex: 1 1 auto; }
+			.group-heading { font-size: 1.1rem; margin: 3rem 0 0.5rem; padding-top: 1.5rem; border-top: 2px solid var(--dj-color-border); color: var(--dj-color-text); }
+			main > .group-heading:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+
+			@media (max-width: 768px) {
+				.nav-toggle { display: inline-flex; margin-bottom: 1rem; }
+				#playground-nav { display: none; }
+				#playground-nav.open { display: block; position: fixed; inset: 0; z-index: 20; background: var(--dj-color-background); padding: 1rem; max-height: 100vh; }
+			}
+
+			/* Coverage block (task 3) */
+			.coverage { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--dj-color-border); font-size: 0.875rem; color: var(--dj-color-text-muted); }
+			.coverage summary { cursor: pointer; color: var(--dj-color-text); }
+			.coverage ul { columns: 3; column-gap: 1.5rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }
+			.coverage li { break-inside: avoid; font-family: monospace; }
+			@media (max-width: 768px) { .coverage ul { columns: 1; } }
 		</style>
 	</head>
 	<body>
+		<header class="page-header">
+			<h1>Dojo NG — component playground</h1>
+			<p>This is the components repo's development harness, not the public playground. It exists so a
+			contributor can eyeball a component while working on it; it is not tuned for a first-time visitor
+			and it stays <code>noindex</code>. The live, no-install, multi-framework playground described in the
+			site plan is a separate, not-yet-built project, and this page is not a preview of it.</p>
+			<p class="header-stats"><!-- GENERATED:HEADER-STATS BEGIN -->40 demo sections across 8 groups, covering 68 of 110 shipped packages (see the coverage list at the foot of the page). Built from Dojo NG v0.1.0.<!-- GENERATED:HEADER-STATS END --></p>
+		</header>
+
 		<div class="toolbar">
 			<strong>Dojo NG</strong>
 			<dj-button id="theme-toggle" kind="outlined">Cycle theme</dj-button>
@@ -130,7 +174,85 @@
 			</span>
 		</div>
 
-		<h2>Button</h2>
+		<dj-button id="nav-toggle" class="nav-toggle" kind="outlined" aria-expanded="false" aria-controls="playground-nav">Sections</dj-button>
+		<div class="layout">
+			<!-- GENERATED:NAV BEGIN -->
+			<nav id="playground-nav" aria-label="Playground sections">
+				<h2>Form controls</h2>
+				<ul>
+					<li><a href="#button">Button</a></li>
+					<li><a href="#form-controls">Form controls + native form participation</a></li>
+					<li><a href="#select-typeahead-family">Select / typeahead family</a></li>
+					<li><a href="#sliders">Sliders</a></li>
+					<li><a href="#color-picker">Color picker</a></li>
+					<li><a href="#file-input">File input</a></li>
+					<li><a href="#date-time">Date &amp; time</a></li>
+					<li><a href="#validation-state-styling-hook">Validation-state styling hook</a></li>
+					<li><a href="#search-box">Search box (tokenized filters)</a></li>
+					<li><a href="#copy-button">Copy button</a></li>
+				</ul>
+				<h2>Overlays</h2>
+				<ul>
+					<li><a href="#popup">Popup</a></li>
+					<li><a href="#trigger-context-popup">Trigger popup &amp; context popup</a></li>
+					<li><a href="#context-menu-confirm-speed-dial-snackbar">Context menu, confirm popup, speed dial, snackbar</a></li>
+					<li><a href="#overlays">Overlays: dialog, slide pane, tooltip</a></li>
+					<li><a href="#dropdown">Dropdown (menu button)</a></li>
+				</ul>
+				<h2>Layout</h2>
+				<ul>
+					<li><a href="#title-pane">Title pane</a></li>
+					<li><a href="#carousel">Carousel</a></li>
+					<li><a href="#split-panel">Split panel</a></li>
+				</ul>
+				<h2>Navigation</h2>
+				<ul>
+					<li><a href="#wizard">Wizard</a></li>
+					<li><a href="#tabs">Tabs</a></li>
+					<li><a href="#breadcrumb-accordion-tree-grid">Breadcrumb, accordion, tree, grid</a></li>
+					<li><a href="#tree">Tree (folders + MIME structure)</a></li>
+					<li><a href="#toolbar">Toolbar</a></li>
+				</ul>
+				<h2>Data display</h2>
+				<ul>
+					<li><a href="#icon">Icon</a></li>
+					<li><a href="#display">Display: avatar, card, header card, chip, result</a></li>
+					<li><a href="#list">List</a></li>
+					<li><a href="#calendar">Calendar</a></li>
+					<li><a href="#badge">Badge</a></li>
+				</ul>
+				<h2>Charts</h2>
+				<ul>
+					<li><a href="#charts">Charts</a></li>
+					<li><a href="#sparklines">Sparklines</a></li>
+					<li><a href="#streaming">Streaming</a></li>
+					<li><a href="#canvas-escape-hatch">Canvas escape hatch</a></li>
+				</ul>
+				<h2>Feedback</h2>
+				<ul>
+					<li><a href="#loading-indicator">Loading indicator + a working action</a></li>
+					<li><a href="#progress-pagination">Progress &amp; pagination</a></li>
+					<li><a href="#skeleton">Skeleton (loading placeholder)</a></li>
+					<li><a href="#alert">Alert</a></li>
+				</ul>
+				<h2>Animation</h2>
+				<ul>
+					<li><a href="#animation">Animation: transition &amp; transition-group</a></li>
+				</ul>
+				<h2>Framework seams</h2>
+				<ul>
+					<li><a href="#submitted-form-data">Submitted form data</a></li>
+					<li><a href="#shared-state">Shared state (external store + context)</a></li>
+					<li><a href="#scoped-theme-island">Scoped theme island (always dark)</a></li>
+				</ul>
+			</nav>
+			<!-- GENERATED:NAV END -->
+			<main>
+				<!-- GENERATED:SECTIONS BEGIN -->
+				<h2 class="group-heading">Form controls</h2>
+<section id="button" data-dj-packages="button action-button">
+		<h3>Button</h3>
+		<p class="section-purpose">Shows the three button kinds, the disabled state, and the busy state that action-button adds on top of button.</p>
 		<div class="row">
 			<dj-button kind="contained">Contained</dj-button>
 			<dj-button kind="outlined">Outlined</dj-button>
@@ -138,8 +260,10 @@
 			<dj-button kind="contained" disabled>Disabled</dj-button>
 			<dj-action-button kind="outlined">Action</dj-action-button>
 		</div>
-
-		<h2>Form controls + native form participation</h2>
+		</section>
+<section id="form-controls" data-dj-packages="text-input checkbox radio radio-group email-input password-input number-input constrained-input native-select text-area switch button">
+		<h3>Form controls + native form participation</h3>
+		<p class="section-purpose">A full form built from every text-like and choice control, wired to native submit and reset.</p>
 		<form id="signup" class="col">
 			<dj-text-input name="email" type="email" label="Email" required helper-text="We'll never share it."></dj-text-input>
 			<dj-checkbox name="newsletter" value="yes">Subscribe to the newsletter</dj-checkbox>
@@ -160,19 +284,275 @@
 				<dj-button type="reset" kind="text">Reset</dj-button>
 			</div>
 		</form>
-		<h2>Submitted form data</h2>
-		<pre id="result">(submit the form to see its FormData)</pre>
-
-		<h2>Shared state (external store + context)</h2>
-		<demo-store-provider>
-			<div class="row">
-				<demo-counter></demo-counter>
-				<demo-counter></demo-counter>
-				<span style="color: var(--dj-color-text-muted)">two views, one store — click either</span>
+		</section>
+<section id="select-typeahead-family" data-dj-packages="select typeahead chip-typeahead">
+		<h3>Select / typeahead family</h3>
+		<p class="section-purpose">The same fruit list drives four pick-one-or-many patterns: select, typeahead, and two chip-typeahead modes.</p>
+		<div class="col">
+			<dj-select id="select" label="Fruit" placeholder="Pick one…"></dj-select>
+			<dj-typeahead id="typeahead" label="Search fruit"></dj-typeahead>
+			<dj-chip-typeahead id="chip-typeahead" label="Pick several"></dj-chip-typeahead>
+			<dj-chip-typeahead id="chip-typeahead-new" allow-new label="Tags (type a new one + Enter)"></dj-chip-typeahead>
+		</div>
+		</section>
+<section id="sliders" data-dj-packages="slider range-slider">
+		<h3>Sliders</h3>
+		<p class="section-purpose">A single-value slider next to a two-handle range slider with a live output readout.</p>
+		<div class="col">
+			<dj-slider label="Volume" min="0" max="11" value="7"></dj-slider>
+			<dj-range-slider label="Price range" min="0" max="100" value-min="20" value-max="80" show-output></dj-range-slider>
+		</div>
+		</section>
+<section id="color-picker" data-dj-packages="color-picker">
+		<h3>Color picker</h3>
+		<p class="section-purpose">A swatch-driven color picker with alpha, reporting the picked value as hex.</p>
+		<div class="col">
+			<dj-color-picker id="color-picker" label="Brand color" format="hex" alpha></dj-color-picker>
+			<span id="color-value" style="color: var(--dj-color-text-muted)">value: (none)</span>
+		</div>
+		</section>
+<section id="file-input" data-dj-packages="file-input">
+		<h3>File input</h3>
+		<p class="section-purpose">Accepts a paste from the clipboard in addition to the normal file picker, and reports every accepted file.</p>
+		<div class="col" id="file-pane">
+			<dj-file-input id="file-input" label="Attachments" accept="image/*" multiple max-size="5000000"></dj-file-input>
+			<span style="color: var(--dj-color-text-muted); font-size: 0.875rem">Tab to the drop zone (it shows a focus ring), then paste an image from the clipboard. A paste anywhere in this pane is forwarded to the control via <code>addFiles</code>.</span>
+			<span id="file-value" style="color: var(--dj-color-text-muted)">files: (none)</span>
+		</div>
+		</section>
+<section id="date-time" data-dj-packages="date-input time-picker checkbox-group rate">
+		<h3>Date &amp; time</h3>
+		<p class="section-purpose">Four small, independent controls grouped by size rather than by any shared behavior: date input, time picker, checkbox group, and rating.</p>
+		<div class="col">
+			<dj-date-input label="Date" value="2026-06-15"></dj-date-input>
+			<dj-time-picker label="Time" step="1800"></dj-time-picker>
+			<dj-checkbox-group id="topics" label="Topics"></dj-checkbox-group>
+			<dj-rate value="3"></dj-rate>
+		</div>
+		</section>
+<section id="validation-state-styling-hook" data-dj-packages="text-input">
+		<h3>Validation-state styling hook</h3>
+		<p class="section-purpose">One field shows how validity state reaches page CSS through plain data attributes, with no shadow DOM piercing.</p>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Form controls mirror their validity onto the host as <code>data-dj-*</code> attributes. This field starts unstyled; blur it while empty to turn it invalid-styled, then type to fix it — no shadow piercing, just page CSS on <code>[data-dj-user-invalid]</code>/<code>[data-dj-user-valid]</code>.
+		</p>
+		<style>
+			#vh-field[data-dj-user-invalid] { --dj-input-border-color: var(--dj-color-danger-600); }
+			#vh-field[data-dj-user-valid]   { --dj-input-border-color: var(--dj-color-success-600); }
+		</style>
+		<dj-text-input id="vh-field" label="Email" type="email" required helper-text="Blur while empty to see the invalid style" style="max-width: 20rem"></dj-text-input>
+		</section>
+<section id="search-box" data-dj-packages="search-box">
+		<h3>Search box (tokenized filters)</h3>
+		<p class="section-purpose">A tokenized mail-filter search box, covering both suggested-value keys and free-typed keys.</p>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Free text plus typed <code>key:value</code> filters. Two kinds of key: <strong><code>from</code> and <code>has</code> carry options</strong>, so typing <code>from:</code> or <code>has:</code> opens a suggestion popup (arrows + Enter, or click, to pick); <strong><code>to</code> and <code>tag</code> have no options</strong>, so they take a free-typed value committed by Enter or the terminating space. Try <code>from:</code> then pick a contact, <code>has:</code> then pick, <code>to:someone</code> then space, <code>tag:"needs review"</code> (quoted, to hold a space), and <code>subject:anything</code> (unconfigured — stays plain text, no popup, no chip). Backspace at the start removes the last chip. The narrow box below shows chips wrapping at phone width.
+		</p>
+		<div class="col" style="gap: 0.75rem">
+			<dj-search-box id="mail-search" label="Search mail" placeholder='Try from: or has: (suggest) — to: or tag: (free text)' style="max-width: 34rem"></dj-search-box>
+			<pre id="search-out" style="margin: 0; padding: 0.5rem; background: var(--dj-color-neutral-100, #f3f4f6); border-radius: 4px; color: var(--dj-color-text-muted)">{ "text": "", "tokens": [] }</pre>
+			<span id="search-event" style="color: var(--dj-color-text-muted)">(no dj-search yet)</span>
+			<p style="color: var(--dj-color-text-muted); margin: 0.5rem 0 0">Narrow (phone-width) — chips wrap, close targets stay tappable:</p>
+			<dj-search-box id="mail-search-narrow" label="Narrow" style="max-width: 20rem"></dj-search-box>
+		</div>
+		</section>
+<section id="copy-button" data-dj-packages="copy-button">
+		<h3>Copy button</h3>
+		<p class="section-purpose">Copies from an element and from a plain value, and shows the icon's copy, check, and error states.</p>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Copies to the clipboard (needs a secure context — https or localhost). The icon flashes copy → check → error and the accessible name changes with it. On plain http it shows the error state.
+		</p>
+		<div class="row" style="align-items: center; gap: 0.75rem">
+			<code id="copy-src" style="padding: 2px 6px; background: var(--dj-color-neutral-100, #f3f4f6); border-radius: 4px">npm install @dojo-ng/button</code>
+			<dj-copy-button from="copy-src"></dj-copy-button>
+			<span style="color: var(--dj-color-text-muted)">copy from a value:</span>
+			<dj-copy-button value="sk_live_demo_123"></dj-copy-button>
+			<span id="copy-log" style="color: var(--dj-color-text-muted)">(no copy yet)</span>
+		</div>
+		</section>
+				<h2 class="group-heading">Overlays</h2>
+<section id="popup" data-dj-packages="popup">
+		<h3>Popup</h3>
+		<p class="section-purpose">A popup anchored to its trigger button, dismissed by Escape or a click outside it.</p>
+		<div class="row"><dj-button id="popup-trigger" kind="contained">Toggle popup</dj-button></div>
+		<dj-popup id="popup" position="below" underlay-visible><div class="card">A popup anchored to the button. Press Escape or click outside to close.</div></dj-popup>
+		</section>
+<section id="trigger-context-popup" data-dj-packages="trigger-popup context-popup floating-action-button">
+		<h3>Trigger popup &amp; context popup</h3>
+		<p class="section-purpose">Click opens a trigger-popup menu; right-click opens a context-popup at the cursor.</p>
+		<div class="row">
+			<dj-trigger-popup>
+				<dj-button kind="outlined">Open menu</dj-button>
+				<div slot="content" class="card">Popup content anchored to the trigger.</div>
+			</dj-trigger-popup>
+			<dj-context-popup>
+				<dj-button kind="text">Right-click me</dj-button>
+				<div slot="content" class="card">Context menu at the cursor.</div>
+			</dj-context-popup>
+			<dj-floating-action-button aria-label="Add"><span slot="icon">+</span></dj-floating-action-button>
+		</div>
+		</section>
+<section id="context-menu-confirm-speed-dial-snackbar" data-dj-packages="context-menu popup-confirmation speed-dial snackbar">
+		<h3>Context menu, confirm popup, speed dial, snackbar</h3>
+		<p class="section-purpose">Four short interactions grouped for space, not for any shared behavior: context menu, delete confirmation, snackbar, and speed dial.</p>
+		<div class="row">
+			<dj-context-menu id="ctxmenu"><dj-button kind="outlined">Right-click for menu</dj-button></dj-context-menu>
+			<dj-popup-confirmation confirm-label="Delete">
+				<dj-button kind="text">Delete…</dj-button>
+				<span slot="content">Are you sure?</span>
+			</dj-popup-confirmation>
+			<dj-button id="toast-btn" kind="contained">Show snackbar</dj-button>
+			<dj-speed-dial>
+				<dj-button slot="actions" kind="contained">A</dj-button>
+				<dj-button slot="actions" kind="contained">B</dj-button>
+			</dj-speed-dial>
+		</div>
+		<dj-snackbar id="toast" type="success">Saved successfully.</dj-snackbar>
+		</section>
+<section id="overlays" data-dj-packages="dialog slide-pane tooltip">
+		<h3>Overlays: dialog, slide pane, tooltip</h3>
+		<p class="section-purpose">A modal dialog, a slide-in panel, and a hover tooltip: the three ways this library covers content over the page.</p>
+		<div class="row">
+			<dj-button id="open-dialog" kind="contained">Open dialog</dj-button>
+			<dj-button id="open-pane" kind="outlined">Open slide pane</dj-button>
+			<dj-tooltip orientation="top">
+				<dj-button kind="text">Hover for tooltip</dj-button>
+				<span slot="content">A tooltip on hover or focus.</span>
+			</dj-tooltip>
+		</div>
+		<dj-dialog id="dialog">
+			<span slot="title">Confirm</span>
+			<p>This is a modal dialog. Escape, the close button, or a button below dismisses it.</p>
+			<div slot="actions">
+				<dj-button id="dialog-cancel" kind="text">Cancel</dj-button>
+				<dj-button id="dialog-ok" kind="contained">OK</dj-button>
 			</div>
-		</demo-store-provider>
-
-		<h2>Icon</h2>
+		</dj-dialog>
+		<dj-slide-pane id="pane" align="right" width="360">
+			<span slot="title">Details</span>
+			<p>A panel that slides in from the right. Escape, the close button, or the underlay closes it.</p>
+		</dj-slide-pane>
+		</section>
+<section id="dropdown" data-dj-packages="dropdown list">
+		<h3>Dropdown (menu button)</h3>
+		<p class="section-purpose">A menu-style dropdown and a panel-style dropdown sharing the same trigger pattern.</p>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Open with the mouse or ArrowDown/Enter/Space; arrows move the active item, Enter chooses and closes, Escape closes, focus returns to the trigger. Switch the Locale to <code>ar-EG</code> for an RTL sanity check.
+		</p>
+		<div class="row" style="gap: 1rem; align-items: flex-start">
+			<dj-dropdown id="dd-menu">
+				<dj-button slot="trigger" kind="outlined">Actions ▾</dj-button>
+				<dj-list id="dd-list" style="min-width: 12rem"></dj-list>
+			</dj-dropdown>
+			<dj-dropdown id="dd-panel">
+				<dj-button slot="trigger" kind="outlined">Filters ▾</dj-button>
+				<div style="padding: 12px; min-width: 12rem">Any panel content here.</div>
+			</dj-dropdown>
+			<span id="dd-log" style="color: var(--dj-color-text-muted)">(no choice yet)</span>
+		</div>
+		</section>
+				<h2 class="group-heading">Layout</h2>
+<section id="title-pane" data-dj-packages="title-pane">
+		<h3>Title pane</h3>
+		<p class="section-purpose">A single collapsible panel toggled by its own title bar.</p>
+		<dj-title-pane name="Show details" style="max-width: 28rem">
+			<p>Collapsible content. Click the title to toggle.</p>
+		</dj-title-pane>
+		</section>
+<section id="carousel" data-dj-packages="carousel">
+		<h3>Carousel</h3>
+		<p class="section-purpose">A five-item carousel with swipe, arrows, and dots, plus a control that changes how many items show per view.</p>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Swipe/trackpad, prev/next, and dots. Toggle per-view; switch the Locale to <code>ar-EG</code> to check RTL (order flips, ArrowRight still means forward).
+		</p>
+		<div class="row" style="gap: var(--dj-spacing-small); margin-block-end: 0.5rem">
+			<dj-button id="carousel-perview" kind="outlined">per-view: 1</dj-button>
+			<span id="carousel-state" style="color: var(--dj-color-text-muted)">slide 1</span>
+		</div>
+		<div style="max-width: 520px">
+			<dj-carousel id="carousel-demo" label="Featured items" dots>
+				<dj-card style="min-height: 120px">Card one</dj-card>
+				<dj-card style="min-height: 120px">Card two</dj-card>
+				<img src="https://picsum.photos/id/1015/520/160" alt="A river in the mountains" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px" />
+				<dj-card style="min-height: 120px">Card four</dj-card>
+				<dj-card style="min-height: 120px">Card five</dj-card>
+			</dj-carousel>
+		</div>
+		</section>
+<section id="split-panel" data-dj-packages="split-panel">
+		<h3>Split panel</h3>
+		<p class="section-purpose">A nested split panel, horizontal outer and vertical inner, driven by drag or by the keyboard.</p>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Drag the divider, or focus it and use the arrow keys (Shift for a larger step, Home/End for the extremes). Min pane sizes are the <code>--dj-split-panel-min-*</code> tokens. Switch the Locale to <code>ar-EG</code> to check RTL (drag and ArrowLeft/Right mirror). The right pane nests a vertical split.
+		</p>
+		<span id="split-state" style="color: var(--dj-color-text-muted)">position 30%</span>
+		<div style="height: 260px; border: 1px solid var(--dj-color-border); border-radius: 8px; overflow: hidden; margin-block-start: 0.5rem">
+			<dj-split-panel id="split-demo" position="30" style="height: 100%; --dj-split-panel-min-start: 120px; --dj-split-panel-min-end: 200px">
+				<div slot="start" style="padding: 0.75rem">Sidebar</div>
+				<dj-split-panel slot="end" orientation="vertical" position="65" style="height: 100%; --dj-split-panel-min-start: 80px; --dj-split-panel-min-end: 60px">
+					<div slot="start" style="padding: 0.75rem">Editor</div>
+					<div slot="end" style="padding: 0.75rem">Terminal</div>
+				</dj-split-panel>
+			</dj-split-panel>
+		</div>
+		</section>
+				<h2 class="group-heading">Navigation</h2>
+<section id="wizard" data-dj-packages="wizard">
+		<h3>Wizard</h3>
+		<p class="section-purpose">A three-step wizard opened on its middle step, to check step navigation from a non-zero start.</p>
+		<dj-wizard id="wizard" style="max-width: 40rem"></dj-wizard>
+		</section>
+<section id="tabs" data-dj-packages="tab-container">
+		<h3>Tabs</h3>
+		<p class="section-purpose">Three tabs with plain panel content, driven by the array-typed <code>tabs</code> property.</p>
+		<dj-tab-container id="tabs" style="max-width: 32rem">
+			<div>First panel content.</div>
+			<div>Second panel content.</div>
+			<div>Third panel content.</div>
+		</dj-tab-container>
+		</section>
+<section id="breadcrumb-accordion-tree-grid" data-dj-packages="breadcrumb-group accordion title-pane grid">
+		<h3>Breadcrumb, accordion, tree, grid</h3>
+		<p class="section-purpose">Breadcrumbs, an exclusive accordion, and a grid, grouped under one heading with no shared point beyond fitting on one screen.</p>
+		<dj-breadcrumb-group id="crumbs"></dj-breadcrumb-group>
+		<dj-accordion exclusive style="max-width: 28rem; margin: 0.75rem 0;">
+			<dj-title-pane name="Section one" open><p>First.</p></dj-title-pane>
+			<dj-title-pane name="Section two"><p>Second.</p></dj-title-pane>
+		</dj-accordion>
+		<div class="row" style="align-items: stretch; gap: 1.5rem;">
+			<dj-grid id="grid" style="flex: 1 1 18rem"></dj-grid>
+		</div>
+		</section>
+<section id="tree" data-dj-packages="tree">
+		<h3>Tree (folders + MIME structure)</h3>
+		<p class="section-purpose">Two trees, one of folders and one of MIME types, both driven by the roving-tabindex keyboard pattern and checked against RTL mirroring.</p>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Icons + unread counts, controlled <code>expanded</code>, and the APG roving-tabindex keyboard: click a row to focus it, then arrows move focus (Right/Left expand/collapse or step in/out), Home/End jump, Enter selects. Switch the Locale to <code>ar-EG</code> to check RTL (indentation and chevrons flip).
+		</p>
+		<div class="row" style="align-items: stretch; gap: 1.5rem;">
+			<dj-tree id="tree-folders" value="inbox" style="min-width: 14rem"></dj-tree>
+			<dj-tree id="tree-mime" style="min-width: 16rem"></dj-tree>
+		</div>
+		<div class="row" style="gap: var(--dj-spacing-small); margin-block-start: 0.5rem">
+			<span id="tree-select" style="color: var(--dj-color-text-muted)">selected: inbox</span>
+			<span id="tree-expanded" style="color: var(--dj-color-text-muted)">expanded: archive</span>
+		</div>
+		</section>
+<section id="toolbar" data-dj-packages="toolbar">
+		<h3>Toolbar</h3>
+		<p class="section-purpose">A toolbar with overflowed actions, reporting which overflow action was chosen.</p>
+		<dj-toolbar id="demo-toolbar" label="Records">
+			<dj-button slot="leading" kind="text">Back</dj-button>
+			Records
+			<dj-button slot="actions" kind="outlined">Filter</dj-button>
+			<dj-button slot="actions">New</dj-button>
+		</dj-toolbar>
+		<span id="toolbar-state" style="color: var(--dj-color-text-muted)">overflow action: (none)</span>
+		</section>
+				<h2 class="group-heading">Data display</h2>
+<section id="icon" data-dj-packages="icon">
+		<h3>Icon</h3>
+		<p class="section-purpose">Compares a registered glyph against an inline slotted SVG at three sizes, plus one glyph registered without a viewBox to show the failure mode.</p>
 		<div class="row">
 			<dj-icon size="large" alt-text="Search"><svg viewBox="0 0 24 24"><path d="M21 21l-4.3-4.3M11 19a8 8 0 110-16 8 8 0 010 16z" fill="none" stroke="currentColor" stroke-width="2"/></svg></dj-icon>
 			<dj-button kind="contained"><dj-icon slot="icon"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="2" fill="none"/></svg></dj-icon>With icon</dj-button>
@@ -203,18 +583,10 @@
 				<dj-icon type="star-noviewbox" size="large" alt-text="star, no viewBox"></dj-icon>
 			</div>
 		</div>
-
-		<h2>Loading indicator + a working action</h2>
-		<div class="row">
-			<dj-button id="load-btn" kind="contained">Simulate load</dj-button>
-			<div id="load-slot" class="row"></div>
-		</div>
-
-		<h2>Popup</h2>
-		<div class="row"><dj-button id="popup-trigger" kind="contained">Toggle popup</dj-button></div>
-		<dj-popup id="popup" position="below" underlay-visible><div class="card">A popup anchored to the button. Press Escape or click outside to close.</div></dj-popup>
-
-		<h2>Display: avatar, card, header card, chip, result</h2>
+		</section>
+<section id="display" data-dj-packages="avatar card header-card chip result">
+		<h3>Display: avatar, card, header card, chip, result</h3>
+		<p class="section-purpose">Card and header card compose avatar, chip, and result rather than each one standing alone.</p>
 		<div class="row">
 			<dj-avatar>BS</dj-avatar>
 			<dj-avatar type="rounded" secondary>NG</dj-avatar>
@@ -233,154 +605,39 @@
 			</dj-header-card>
 			<dj-result status="success" title="Success" subtitle="Saved." style="width: 14rem"></dj-result>
 		</div>
-
-		<h2>Select / typeahead family</h2>
-		<div class="col">
-			<dj-select id="select" label="Fruit" placeholder="Pick one…"></dj-select>
-			<dj-typeahead id="typeahead" label="Search fruit"></dj-typeahead>
-			<dj-chip-typeahead id="chip-typeahead" label="Pick several"></dj-chip-typeahead>
-			<dj-chip-typeahead id="chip-typeahead-new" allow-new label="Tags (type a new one + Enter)"></dj-chip-typeahead>
-		</div>
-
-		<h2>List</h2>
+		</section>
+<section id="list" data-dj-packages="list">
+		<h3>List</h3>
+		<p class="section-purpose">A selectable list with a divider and a disabled item, reporting the current selection below it.</p>
 		<dj-list id="list" style="max-width: 16rem; --dj-list-max-height: 12rem"></dj-list>
 		<p id="list-value" style="color: var(--dj-color-text-muted)">selected: (none)</p>
-
-		<h2>Wizard</h2>
-		<dj-wizard id="wizard" style="max-width: 40rem"></dj-wizard>
-
-		<h2>Trigger popup &amp; context popup</h2>
-		<div class="row">
-			<dj-trigger-popup>
-				<dj-button kind="outlined">Open menu</dj-button>
-				<div slot="content" class="card">Popup content anchored to the trigger.</div>
-			</dj-trigger-popup>
-			<dj-context-popup>
-				<dj-button kind="text">Right-click me</dj-button>
-				<div slot="content" class="card">Context menu at the cursor.</div>
-			</dj-context-popup>
-			<dj-floating-action-button aria-label="Add"><span slot="icon">+</span></dj-floating-action-button>
-		</div>
-
-		<h2>Sliders</h2>
-		<div class="col">
-			<dj-slider label="Volume" min="0" max="11" value="7"></dj-slider>
-			<dj-range-slider label="Price range" min="0" max="100" value-min="20" value-max="80" show-output></dj-range-slider>
-		</div>
-
-		<h2>Color picker</h2>
-		<div class="col">
-			<dj-color-picker id="color-picker" label="Brand color" format="hex" alpha></dj-color-picker>
-			<span id="color-value" style="color: var(--dj-color-text-muted)">value: (none)</span>
-		</div>
-
-		<h2>File input</h2>
-		<div class="col" id="file-pane">
-			<dj-file-input id="file-input" label="Attachments" accept="image/*" multiple max-size="5000000"></dj-file-input>
-			<span style="color: var(--dj-color-text-muted); font-size: 0.875rem">Tab to the drop zone (it shows a focus ring), then paste an image from the clipboard. A paste anywhere in this pane is forwarded to the control via <code>addFiles</code>.</span>
-			<span id="file-value" style="color: var(--dj-color-text-muted)">files: (none)</span>
-		</div>
-
-		<h2>Title pane</h2>
-		<dj-title-pane name="Show details" style="max-width: 28rem">
-			<p>Collapsible content. Click the title to toggle.</p>
-		</dj-title-pane>
-
-		<h2>Tabs</h2>
-		<dj-tab-container id="tabs" style="max-width: 32rem">
-			<div>First panel content.</div>
-			<div>Second panel content.</div>
-			<div>Third panel content.</div>
-		</dj-tab-container>
-
-		<h2>Calendar</h2>
+		</section>
+<section id="calendar" data-dj-packages="calendar">
+		<h3>Calendar</h3>
+		<p class="section-purpose">A calendar with a preset date, reporting the selected date on change.</p>
 		<dj-calendar id="cal" value="2026-06-15"></dj-calendar>
 		<p id="cal-value" style="color: var(--dj-color-text-muted)">selected: 2026-06-15</p>
-
-		<h2>Date &amp; time</h2>
-		<div class="col">
-			<dj-date-input label="Date" value="2026-06-15"></dj-date-input>
-			<dj-time-picker label="Time" step="1800"></dj-time-picker>
-			<dj-checkbox-group id="topics" label="Topics"></dj-checkbox-group>
-			<dj-rate value="3"></dj-rate>
-		</div>
-
-		<h2>Progress &amp; pagination</h2>
-		<div class="col">
-			<dj-progress value="40" show-output style="width: 18rem"></dj-progress>
-			<dj-pagination id="pager" total="12" page="3"></dj-pagination>
-		</div>
-
-		<h2>Breadcrumb, accordion, tree, grid</h2>
-		<dj-breadcrumb-group id="crumbs"></dj-breadcrumb-group>
-		<dj-accordion exclusive style="max-width: 28rem; margin: 0.75rem 0;">
-			<dj-title-pane name="Section one" open><p>First.</p></dj-title-pane>
-			<dj-title-pane name="Section two"><p>Second.</p></dj-title-pane>
-		</dj-accordion>
-		<div class="row" style="align-items: stretch; gap: 1.5rem;">
-			<dj-grid id="grid" style="flex: 1 1 18rem"></dj-grid>
-		</div>
-
-		<h2>Tree (folders + MIME structure)</h2>
+		</section>
+<section id="badge" data-dj-packages="badge">
+		<h3>Badge</h3>
+		<p class="section-purpose">Every badge variant next to a real use: a count badge riding inside a button's accessible name.</p>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
-			Icons + unread counts, controlled <code>expanded</code>, and the APG roving-tabindex keyboard: click a row to focus it, then arrows move focus (Right/Left expand/collapse or step in/out), Home/End jump, Enter selects. Switch the Locale to <code>ar-EG</code> to check RTL (indentation and chevrons flip).
+			Presentational status/count labels. The count on the button carries its meaning via the button's <code>aria-label</code>, not the badge. Check light/dark and forced-colors (high-contrast) rendering.
 		</p>
-		<div class="row" style="align-items: stretch; gap: 1.5rem;">
-			<dj-tree id="tree-folders" value="inbox" style="min-width: 14rem"></dj-tree>
-			<dj-tree id="tree-mime" style="min-width: 16rem"></dj-tree>
+		<div class="row" style="align-items: center; gap: 0.5rem">
+			<dj-badge>Neutral</dj-badge>
+			<dj-badge variant="info">Info</dj-badge>
+			<dj-badge variant="success">Success</dj-badge>
+			<dj-badge variant="warning">Warning</dj-badge>
+			<dj-badge variant="danger">Danger</dj-badge>
+			<dj-badge variant="danger" pill>3</dj-badge>
+			<dj-button kind="outlined" aria-label="Notifications, 4 unread">Inbox <dj-badge variant="danger" pill>4</dj-badge></dj-button>
 		</div>
-		<div class="row" style="gap: var(--dj-spacing-small); margin-block-start: 0.5rem">
-			<span id="tree-select" style="color: var(--dj-color-text-muted)">selected: inbox</span>
-			<span id="tree-expanded" style="color: var(--dj-color-text-muted)">expanded: archive</span>
-		</div>
-
-		<h2>Context menu, confirm popup, speed dial, snackbar</h2>
-		<div class="row">
-			<dj-context-menu id="ctxmenu"><dj-button kind="outlined">Right-click for menu</dj-button></dj-context-menu>
-			<dj-popup-confirmation confirm-label="Delete">
-				<dj-button kind="text">Delete…</dj-button>
-				<span slot="content">Are you sure?</span>
-			</dj-popup-confirmation>
-			<dj-button id="toast-btn" kind="contained">Show snackbar</dj-button>
-			<dj-speed-dial>
-				<dj-button slot="actions" kind="contained">A</dj-button>
-				<dj-button slot="actions" kind="contained">B</dj-button>
-			</dj-speed-dial>
-		</div>
-		<dj-snackbar id="toast" type="success">Saved successfully.</dj-snackbar>
-
-		<h2>Overlays: dialog, slide pane, tooltip</h2>
-		<div class="row">
-			<dj-button id="open-dialog" kind="contained">Open dialog</dj-button>
-			<dj-button id="open-pane" kind="outlined">Open slide pane</dj-button>
-			<dj-tooltip orientation="top">
-				<dj-button kind="text">Hover for tooltip</dj-button>
-				<span slot="content">A tooltip on hover or focus.</span>
-			</dj-tooltip>
-		</div>
-		<dj-dialog id="dialog">
-			<span slot="title">Confirm</span>
-			<p>This is a modal dialog. Escape, the close button, or a button below dismisses it.</p>
-			<div slot="actions">
-				<dj-button id="dialog-cancel" kind="text">Cancel</dj-button>
-				<dj-button id="dialog-ok" kind="contained">OK</dj-button>
-			</div>
-		</dj-dialog>
-		<dj-slide-pane id="pane" align="right" width="360">
-			<span slot="title">Details</span>
-			<p>A panel that slides in from the right. Escape, the close button, or the underlay closes it.</p>
-		</dj-slide-pane>
-
-		<h2>Toolbar</h2>
-		<dj-toolbar id="demo-toolbar" label="Records">
-			<dj-button slot="leading" kind="text">Back</dj-button>
-			Records
-			<dj-button slot="actions" kind="outlined">Filter</dj-button>
-			<dj-button slot="actions">New</dj-button>
-		</dj-toolbar>
-		<span id="toolbar-state" style="color: var(--dj-color-text-muted)">overflow action: (none)</span>
-
-		<h2>Charts</h2>
+		</section>
+				<h2 class="group-heading">Charts</h2>
+<section id="charts" data-dj-packages="chart">
+		<h3>Charts</h3>
+		<p class="section-purpose">Nine chart configurations share one dataset, from a plain line chart to a dual-axis combo with brushing.</p>
 		<div class="row" style="align-items: flex-start; flex-wrap: wrap; gap: var(--dj-spacing-large); --dj-chart-height: 240px">
 			<div style="width: 360px"><dj-chart id="chart-line" type="line" markers category-key="month" label="Monthly revenue" show-grid x-label="Month" y-label="USD (k)"></dj-chart></div>
 			<div style="width: 360px"><dj-chart id="chart-bar" type="bar" category-key="month" label="Revenue vs target" show-grid></dj-chart></div>
@@ -393,8 +650,10 @@
 			<div style="width: 480px; --dj-chart-height: 280px"><dj-chart id="chart-interactive" type="line" markers legend-toggle brush category-key="month" label="Interactive: toggle the legend, drag the brush" show-grid y-label="USD (k)"></dj-chart></div>
 		</div>
 		<span id="chart-state" style="color: var(--dj-color-text-muted)">hover a category…</span>
-
-		<h2>Sparklines</h2>
+		</section>
+<section id="sparklines" data-dj-packages="chart">
+		<h3>Sparklines</h3>
+		<p class="section-purpose">The same five metrics as tiny inline charts with no axes or legend, the minimal end of the chart range.</p>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
 			A tiny inline chart with no axes/legend/tooltip — a KPI row, since that's the point. The last row's aria-label is locale-aware; switch the Locale above to check it (and RTL layout in <code>ar-EG</code>).
 		</p>
@@ -434,8 +693,10 @@
 				</tr>
 			</tbody>
 		</table>
-
-		<h2>Streaming</h2>
+		</section>
+<section id="streaming" data-dj-packages="chart">
+		<h3>Streaming</h3>
+		<p class="section-purpose">Pushes a new point to a chart and a sparkline twice a second; both batch multiple pushes into one update per animation frame.</p>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
 			<code>appendData()</code> on the chart and <code>push()</code> on the sparkline batch multiple calls within one animation frame into a single update. <code>max-points="20"</code> slides the window as new points arrive, and the chart's bar/enter transitions are skipped for streamed updates.
 		</p>
@@ -447,8 +708,10 @@
 			<div style="width: 420px; --dj-chart-height: 200px"><dj-chart id="stream-chart" type="line" category-key="t" label="Live requests/sec" max-points="20" show-grid y-label="req/s"></dj-chart></div>
 			<dj-sparkline id="stream-spark" max-points="20" label="Live requests/sec"></dj-sparkline>
 		</div>
-
-		<h2>Canvas escape hatch</h2>
+		</section>
+<section id="canvas-escape-hatch" data-dj-packages="chart">
+		<h3>Canvas escape hatch</h3>
+		<p class="section-purpose">The same 2,000-point line chart rendered as SVG and as canvas, to show when the canvas escape hatch is worth reaching for.</p>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
 			<code>renderer="canvas"</code> draws series marks on a <code>&lt;canvas&gt;</code> instead of SVG nodes — reach for it once a series runs into the thousands of points, not as a default. Each line here has 2,000 points. Toggle to feel the difference; axes, grid, tooltip, and the legend stay SVG/DOM either way — click a legend item below to hide/show a series and watch the canvas redraw. The real ceiling today is the x-axis, not the marks: dj-chart renders one tick label and one hit-band per UNIQUE category with no thinning, so canvas doesn't rescue a chart with tens of thousands of unique x categories even though the marks themselves would be fine at that size.
 		</p>
@@ -458,55 +721,27 @@
 		<div style="width: 640px; --dj-chart-height: 260px">
 			<dj-chart id="canvas-demo" type="line" category-key="i" label="2,000-point line" show-grid legend-toggle></dj-chart>
 		</div>
-
-		<h2>Carousel</h2>
-		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
-			Swipe/trackpad, prev/next, and dots. Toggle per-view; switch the Locale to <code>ar-EG</code> to check RTL (order flips, ArrowRight still means forward).
-		</p>
-		<div class="row" style="gap: var(--dj-spacing-small); margin-block-end: 0.5rem">
-			<dj-button id="carousel-perview" kind="outlined">per-view: 1</dj-button>
-			<span id="carousel-state" style="color: var(--dj-color-text-muted)">slide 1</span>
+		</section>
+				<h2 class="group-heading">Feedback</h2>
+<section id="loading-indicator" data-dj-packages="loading-indicator button">
+		<h3>Loading indicator + a working action</h3>
+		<p class="section-purpose">Runs a real 1.5-second async action so the loading indicator's busy state is not just a static screenshot.</p>
+		<div class="row">
+			<dj-button id="load-btn" kind="contained">Simulate load</dj-button>
+			<div id="load-slot" class="row"></div>
 		</div>
-		<div style="max-width: 520px">
-			<dj-carousel id="carousel-demo" label="Featured items" dots>
-				<dj-card style="min-height: 120px">Card one</dj-card>
-				<dj-card style="min-height: 120px">Card two</dj-card>
-				<img src="https://picsum.photos/id/1015/520/160" alt="A river in the mountains" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px" />
-				<dj-card style="min-height: 120px">Card four</dj-card>
-				<dj-card style="min-height: 120px">Card five</dj-card>
-			</dj-carousel>
+		</section>
+<section id="progress-pagination" data-dj-packages="progress pagination">
+		<h3>Progress &amp; pagination</h3>
+		<p class="section-purpose">A determinate progress bar next to pagination, unrelated except that both report a number back to the page.</p>
+		<div class="col">
+			<dj-progress value="40" show-output style="width: 18rem"></dj-progress>
+			<dj-pagination id="pager" total="12" page="3"></dj-pagination>
 		</div>
-
-		<h2>Split panel</h2>
-		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
-			Drag the divider, or focus it and use the arrow keys (Shift for a larger step, Home/End for the extremes). Min pane sizes are the <code>--dj-split-panel-min-*</code> tokens. Switch the Locale to <code>ar-EG</code> to check RTL (drag and ArrowLeft/Right mirror). The right pane nests a vertical split.
-		</p>
-		<span id="split-state" style="color: var(--dj-color-text-muted)">position 30%</span>
-		<div style="height: 260px; border: 1px solid var(--dj-color-border); border-radius: 8px; overflow: hidden; margin-block-start: 0.5rem">
-			<dj-split-panel id="split-demo" position="30" style="height: 100%; --dj-split-panel-min-start: 120px; --dj-split-panel-min-end: 200px">
-				<div slot="start" style="padding: 0.75rem">Sidebar</div>
-				<dj-split-panel slot="end" orientation="vertical" position="65" style="height: 100%; --dj-split-panel-min-start: 80px; --dj-split-panel-min-end: 60px">
-					<div slot="start" style="padding: 0.75rem">Editor</div>
-					<div slot="end" style="padding: 0.75rem">Terminal</div>
-				</dj-split-panel>
-			</dj-split-panel>
-		</div>
-
-		<h2>Badge</h2>
-		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
-			Presentational status/count labels. The count on the button carries its meaning via the button's <code>aria-label</code>, not the badge. Check light/dark and forced-colors (high-contrast) rendering.
-		</p>
-		<div class="row" style="align-items: center; gap: 0.5rem">
-			<dj-badge>Neutral</dj-badge>
-			<dj-badge variant="info">Info</dj-badge>
-			<dj-badge variant="success">Success</dj-badge>
-			<dj-badge variant="warning">Warning</dj-badge>
-			<dj-badge variant="danger">Danger</dj-badge>
-			<dj-badge variant="danger" pill>3</dj-badge>
-			<dj-button kind="outlined" aria-label="Notifications, 4 unread">Inbox <dj-badge variant="danger" pill>4</dj-badge></dj-button>
-		</div>
-
-		<h2>Skeleton (loading placeholder)</h2>
+		</section>
+<section id="skeleton" data-dj-packages="skeleton">
+		<h3>Skeleton (loading placeholder)</h3>
+		<p class="section-purpose">A loading skeleton that swaps for real content on demand and respects reduced motion.</p>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
 			Sheen sweeps while loading; OS reduce-motion stills it. Toggle to swap in real content. Sizes/shape come from host CSS.
 		</p>
@@ -521,30 +756,10 @@
 			</div>
 			<dj-button id="skeleton-toggle" kind="outlined">Swap in content</dj-button>
 		</div>
-
-		<h2>Validation-state styling hook</h2>
-		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
-			Form controls mirror their validity onto the host as <code>data-dj-*</code> attributes. This field starts unstyled; blur it while empty to turn it invalid-styled, then type to fix it — no shadow piercing, just page CSS on <code>[data-dj-user-invalid]</code>/<code>[data-dj-user-valid]</code>.
-		</p>
-		<style>
-			#vh-field[data-dj-user-invalid] { --dj-input-border-color: var(--dj-color-danger-600); }
-			#vh-field[data-dj-user-valid]   { --dj-input-border-color: var(--dj-color-success-600); }
-		</style>
-		<dj-text-input id="vh-field" label="Email" type="email" required helper-text="Blur while empty to see the invalid style" style="max-width: 20rem"></dj-text-input>
-
-		<h2>Search box (tokenized filters)</h2>
-		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
-			Free text plus typed <code>key:value</code> filters. Two kinds of key: <strong><code>from</code> and <code>has</code> carry options</strong>, so typing <code>from:</code> or <code>has:</code> opens a suggestion popup (arrows + Enter, or click, to pick); <strong><code>to</code> and <code>tag</code> have no options</strong>, so they take a free-typed value committed by Enter or the terminating space. Try <code>from:</code> then pick a contact, <code>has:</code> then pick, <code>to:someone</code> then space, <code>tag:"needs review"</code> (quoted, to hold a space), and <code>subject:anything</code> (unconfigured — stays plain text, no popup, no chip). Backspace at the start removes the last chip. The narrow box below shows chips wrapping at phone width.
-		</p>
-		<div class="col" style="gap: 0.75rem">
-			<dj-search-box id="mail-search" label="Search mail" placeholder='Try from: or has: (suggest) — to: or tag: (free text)' style="max-width: 34rem"></dj-search-box>
-			<pre id="search-out" style="margin: 0; padding: 0.5rem; background: var(--dj-color-neutral-100, #f3f4f6); border-radius: 4px; color: var(--dj-color-text-muted)">{ "text": "", "tokens": [] }</pre>
-			<span id="search-event" style="color: var(--dj-color-text-muted)">(no dj-search yet)</span>
-			<p style="color: var(--dj-color-text-muted); margin: 0.5rem 0 0">Narrow (phone-width) — chips wrap, close targets stay tappable:</p>
-			<dj-search-box id="mail-search-narrow" label="Narrow" style="max-width: 20rem"></dj-search-box>
-		</div>
-
-		<h2>Alert</h2>
+		</section>
+<section id="alert" data-dj-packages="alert">
+		<h3>Alert</h3>
+		<p class="section-purpose">Four alert severities plus a dynamically inserted one, to check that a late-added alert is still announced.</p>
 		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
 			Inline status banners. Info/success use <code>role="status"</code>, warning/danger <code>role="alert"</code>. The last one is closable; the success one uses a custom icon. Click "Insert danger alert" to test that a dynamically-added alert is announced.
 		</p>
@@ -559,39 +774,11 @@
 			<div id="alert-live" class="col" style="gap: 0.5rem"></div>
 			<div class="row"><dj-button id="alert-insert" kind="outlined">Insert danger alert</dj-button></div>
 		</div>
-
-		<h2>Copy button</h2>
-		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
-			Copies to the clipboard (needs a secure context — https or localhost). The icon flashes copy → check → error and the accessible name changes with it. On plain http it shows the error state.
-		</p>
-		<div class="row" style="align-items: center; gap: 0.75rem">
-			<code id="copy-src" style="padding: 2px 6px; background: var(--dj-color-neutral-100, #f3f4f6); border-radius: 4px">npm install @dojo-ng/button</code>
-			<dj-copy-button from="copy-src"></dj-copy-button>
-			<span style="color: var(--dj-color-text-muted)">copy from a value:</span>
-			<dj-copy-button value="sk_live_demo_123"></dj-copy-button>
-			<span id="copy-log" style="color: var(--dj-color-text-muted)">(no copy yet)</span>
-		</div>
-
-		<h2>Dropdown (menu button)</h2>
-		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
-			Open with the mouse or ArrowDown/Enter/Space; arrows move the active item, Enter chooses and closes, Escape closes, focus returns to the trigger. Switch the Locale to <code>ar-EG</code> for an RTL sanity check.
-		</p>
-		<div class="row" style="gap: 1rem; align-items: flex-start">
-			<dj-dropdown id="dd-menu">
-				<dj-button slot="trigger" kind="outlined">Actions ▾</dj-button>
-				<dj-list id="dd-list" style="min-width: 12rem"></dj-list>
-			</dj-dropdown>
-			<dj-dropdown id="dd-panel">
-				<dj-button slot="trigger" kind="outlined">Filters ▾</dj-button>
-				<div style="padding: 12px; min-width: 12rem">Any panel content here.</div>
-			</dj-dropdown>
-			<span id="dd-log" style="color: var(--dj-color-text-muted)">(no choice yet)</span>
-		</div>
-
-		<h2>Scoped theme island (always dark)</h2>
-		<dj-theme theme="dark"><div class="island"><div class="row"><dj-button kind="contained">Inside dark island</dj-button><dj-loading-indicator type="circular-small"></dj-loading-indicator></div></div></dj-theme>
-
-		<h2>Animation: transition &amp; transition-group</h2>
+		</section>
+				<h2 class="group-heading">Animation</h2>
+<section id="animation" data-dj-packages="transition transition-group">
+		<h3>Animation: transition &amp; transition-group</h3>
+		<p class="section-purpose">A single panel fades in and out, and a list reveals its items one at a time with a stagger.</p>
 		<style>
 			/* Page CSS drives the effects; the components only reflect a state attribute. */
 			dj-transition[state="entering"] { animation: pg-fade-in 220ms both; }
@@ -625,6 +812,82 @@
 				</div>
 			</div>
 		</div>
+		</section>
+				<h2 class="group-heading">Framework seams</h2>
+<section id="submitted-form-data" data-dj-packages="">
+		<h3>Submitted form data</h3>
+		<p class="section-purpose">Reads the form above back from a plain FormData submit, not from a change listener on each control.</p>
+		<pre id="result">(submit the form to see its FormData)</pre>
+		</section>
+<section id="shared-state" data-dj-packages="store context">
+		<h3>Shared state (external store + context)</h3>
+		<p class="section-purpose">Two counter views share one Zustand store provided through context, so clicking either updates both.</p>
+		<demo-store-provider>
+			<div class="row">
+				<demo-counter></demo-counter>
+				<demo-counter></demo-counter>
+				<span style="color: var(--dj-color-text-muted)">two views, one store — click either</span>
+			</div>
+		</demo-store-provider>
+		</section>
+<section id="scoped-theme-island" data-dj-packages="theme">
+		<h3>Scoped theme island (always dark)</h3>
+		<p class="section-purpose">A <code>&lt;dj-theme&gt;</code> island forced to dark, to check that theming scopes to a subtree rather than only the document root.</p>
+		<dj-theme theme="dark"><div class="island"><div class="row"><dj-button kind="contained">Inside dark island</dj-button><dj-loading-indicator type="circular-small"></dj-loading-indicator></div></div></dj-theme>
+		</section>
+<!-- GENERATED:SECTIONS END -->
+
+				<!-- GENERATED:COVERAGE BEGIN -->
+				<details class="coverage">
+					<summary>68 of 110 shipped packages have a demo on this page (42 do not)</summary>
+					<ul>
+					<li>audio</li>
+					<li>board</li>
+					<li>data-grid</li>
+					<li>data-grid-cell-components</li>
+					<li>data-grid-detail</li>
+					<li>data-grid-edit</li>
+					<li>data-grid-export</li>
+					<li>data-grid-filter</li>
+					<li>data-grid-formats</li>
+					<li>data-grid-groups</li>
+					<li>data-grid-pagination</li>
+					<li>data-grid-rowstate</li>
+					<li>data-grid-select</li>
+					<li>data-grid-tree</li>
+					<li>dnd</li>
+					<li>dojo-element</li>
+					<li>form</li>
+					<li>global-event</li>
+					<li>header</li>
+					<li>helper-text</li>
+					<li>i18n</li>
+					<li>label</li>
+					<li>pubsub</li>
+					<li>rich-text</li>
+					<li>rich-text-autolink</li>
+					<li>rich-text-color</li>
+					<li>rich-text-embed</li>
+					<li>rich-text-emoji</li>
+					<li>rich-text-headings</li>
+					<li>rich-text-image</li>
+					<li>rich-text-links</li>
+					<li>rich-text-lists</li>
+					<li>rich-text-markdown</li>
+					<li>rich-text-mentions</li>
+					<li>rich-text-menu</li>
+					<li>rich-text-slash</li>
+					<li>rich-text-table</li>
+					<li>stack</li>
+					<li>text</li>
+					<li>three-column-layout</li>
+					<li>two-column-layout</li>
+					<li>video</li>
+					</ul>
+				</details>
+			<!-- GENERATED:COVERAGE END -->
+			</main>
+			</div>
 
 		<script type="module">
 			import { LitElement, html } from "lit";
@@ -694,6 +957,44 @@
 				prevMonth: "Voriger Monat",
 				nextMonth: "Nächster Monat",
 			});
+
+			// Sidebar nav: mobile show/hide toggle, plus current-section highlighting as the
+			// page scrolls. The nav's links and headings are generated (genplayground.py); this
+			// wiring is hand-written and untouched by the generator.
+			const nav = document.getElementById("playground-nav");
+			const navToggle = document.getElementById("nav-toggle");
+			navToggle.addEventListener("click", () => {
+				const open = nav.classList.toggle("open");
+				navToggle.setAttribute("aria-expanded", String(open));
+			});
+			nav.addEventListener("click", (e) => {
+				if (e.target.closest("a") && nav.classList.contains("open")) {
+					nav.classList.remove("open");
+					navToggle.setAttribute("aria-expanded", "false");
+				}
+			});
+			const navLinks = new Map(
+				[...nav.querySelectorAll("a")].map((a) => [a.getAttribute("href").slice(1), a])
+			);
+			let currentNavLink = null;
+			const setCurrentSection = (id) => {
+				const link = navLinks.get(id);
+				if (!link || link === currentNavLink) return;
+				currentNavLink?.removeAttribute("aria-current");
+				link.setAttribute("aria-current", "true");
+				currentNavLink = link;
+			};
+			const sectionObserver = new IntersectionObserver(
+				(entries) => {
+					const visible = entries.filter((en) => en.isIntersecting);
+					if (visible.length === 0) return;
+					// Topmost visible section — the one whose top edge is closest to the viewport top.
+					visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+					setCurrentSection(visible[0].target.id);
+				},
+				{ rootMargin: "0px 0px -70% 0px", threshold: 0 }
+			);
+			document.querySelectorAll("main section[id]").forEach((s) => sectionObserver.observe(s));
 
 			// Theme toggle
 			const root = document.documentElement;

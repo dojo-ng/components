@@ -21,6 +21,7 @@
     "manifest": "python3 gencem.py && python3 gentypes.py",
     "docs": "python3 gendocs.py && python3 genreadmes.py",
     "catalog": "python3 gencatalog.py",
+    "playground": "python3 genplayground.py",
     "check-drift": "python3 check_drift.py",
     "check-pack": "python3 check_pack.py",
     "serve": "python3 -m http.server 8080 --bind 0.0.0.0",

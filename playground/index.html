@@ -143,6 +143,11 @@
 			.coverage ul { columns: 3; column-gap: 1.5rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }
 			.coverage li { break-inside: avoid; font-family: monospace; }
 			@media (max-width: 768px) { .coverage ul { columns: 1; } }
+
+			/* More demos (task 7) */
+			.more-demos { margin-top: 3rem; padding-top: 1.5rem; border-top: 2px solid var(--dj-color-border); }
+			.more-demos ul { list-style: none; margin: 0.75rem 0 0; padding: 0; display: grid; gap: 0.6rem; max-width: 46rem; }
+			.more-demos a { font-weight: 600; }
 		</style>
 	</head>
 	<body>
@@ -836,6 +841,23 @@
 		<dj-theme theme="dark"><div class="island"><div class="row"><dj-button kind="contained">Inside dark island</dj-button><dj-loading-indicator type="circular-small"></dj-loading-indicator></div></div></dj-theme>
 		</section>
 <!-- GENERATED:SECTIONS END -->
+
+				<section class="more-demos" id="more-demos">
+					<h2 class="group-heading">More demos</h2>
+					<p class="section-purpose">Runnable pages that don't fit the section-per-component shape above:
+					feature-specific demos and full demo apps closer to something real.</p>
+					<ul>
+						<li><a href="board-demo.html">Kanban board</a>: controlled drag moves, full keyboard operation, and live-region announcements for each move.</li>
+						<li><a href="data-grid-demo.html">Data grid</a>: 1,000 rows virtualized with TanStack Table and TanStack Virtual.</li>
+						<li><a href="data-grid-plugins-demo.html">Data grid plugins</a>: formats, filtering, pagination, and export in one grid; a second grid demonstrates controlled inline editing.</li>
+						<li><a href="data-grid-print-demo.html">Data grid, print layout</a>: a 200-row grid formatted for printing.</li>
+						<li><a href="media-demo.html">Media components</a>: dj-audio wraps the native audio element, and dj-video wraps video.js in light DOM.</li>
+						<li><a href="rich-text-demo.html">Rich-text plugins</a>: the default plugin set, plus headings, lists, and a custom strikethrough plugin built against the same plugin API.</li>
+						<li><a href="rich-text-print-demo.html">Rich text, print layout</a>: a long document formatted for printing.</li>
+						<li><a href="../demos/interop/">Framework interop matrix</a>: the same member-signup card running unchanged across four hosts: plain HTML, the Dojo NG framework renderer, React, and Vue.</li>
+						<li><a href="../demos/records/">Records manager</a>: a full CRUD app over 500 members, with sort, filtering, pagination, validated add/edit, and delete confirmation.</li>
+					</ul>
+				</section>
 
 				<!-- GENERATED:COVERAGE BEGIN -->
 				<details class="coverage">

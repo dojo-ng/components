@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-US">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — playground &amp; demos</title>
+		<link rel="icon" href="favicon.ico" />
+		<style>
+			:root {
+				color-scheme: light dark;
+				--fg: #1c1d21;
+				--muted: #5a5f6b;
+				--bg: #ffffff;
+				--card: #f5f6f8;
+				--border: #e2e4e9;
+				--accent: #2f6feb;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--fg: #e7e9ee;
+					--muted: #9aa0ad;
+					--bg: #16171b;
+					--card: #1f2127;
+					--border: #2c2f37;
+					--accent: #6ea0ff;
+				}
+			}
+			* { box-sizing: border-box; }
+			body {
+				margin: 0;
+				font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+				color: var(--fg);
+				background: var(--bg);
+				display: flex;
+				justify-content: center;
+			}
+			main { width: 100%; max-width: 720px; padding: 4rem 1.5rem; }
+			h1 { font-size: 1.9rem; margin: 0 0 0.25rem; }
+			p.lede { color: var(--muted); margin: 0 0 2.5rem; }
+			a.card {
+				display: block;
+				text-decoration: none;
+				color: inherit;
+				background: var(--card);
+				border: 1px solid var(--border);
+				border-radius: 12px;
+				padding: 1.1rem 1.25rem;
+				margin-bottom: 0.9rem;
+				transition: border-color 0.15s ease, transform 0.15s ease;
+			}
+			a.card:hover { border-color: var(--accent); transform: translateY(-1px); }
+			a.card h2 { margin: 0 0 0.2rem; font-size: 1.1rem; }
+			a.card span { color: var(--muted); font-size: 0.92rem; }
+			h3.section {
+				font-size: 0.8rem;
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+				color: var(--muted);
+				margin: 2rem 0 0.9rem;
+			}
+			footer { color: var(--muted); font-size: 0.85rem; margin-top: 2.5rem; }
+		</style>
+	</head>
+	<body>
+		<main>
+			<h1>Dojo NG</h1>
+			<p class="lede">
+				A web-component library — the <code>dj-*</code> custom elements, themed with
+				<code>--dj-*</code> tokens. Playground and demos below.
+			</p>
+
+			<a class="card" href="playground/">
+				<h2>Component playground →</h2>
+				<span>Every component, live: forms, overlays, data grid, charts, rich text, layout.</span>
+			</a>
+
+			<a class="card" href="demos/interop/">
+				<h2>Interop matrix →</h2>
+				<span>The same member-signup card rendered in plain JS, the framework, React, and Vue.</span>
+			</a>
+
+			<a class="card" href="demos/records/">
+				<h2>Records manager →</h2>
+				<span>A 500-row data grid with sort, filter, pagination, selection, add/edit/delete.</span>
+			</a>
+
+			<h3 class="section">Standalone demos</h3>
+
+			<a class="card" href="playground/board-demo.html">
+				<h2>Board →</h2>
+				<span>Kanban board: drag cards between lanes, keyboard moves, WIP limits.</span>
+			</a>
+
+			<a class="card" href="playground/rich-text-demo.html">
+				<h2>Rich text editor →</h2>
+				<span>Lexical-based editor: formatting, lists, tables, mentions, slash menu, embeds.</span>
+			</a>
+
+			<a class="card" href="playground/media-demo.html">
+				<h2>Audio / video →</h2>
+				<span>Media player shells with transport controls and captions.</span>
+			</a>
+
+			<a class="card" href="playground/data-grid-plugins-demo.html">
+				<h2>Data grid plugins →</h2>
+				<span>Formats, cell components, filtering, pagination, tree, master-detail.</span>
+			</a>
+
+			<footer>
+				Static build. Third-party libraries load from esm.sh at runtime.
+			</footer>
+		</main>
+	</body>
+</html>

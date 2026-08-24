@@ -29,7 +29,6 @@ INFRA_DOC = {
     "theme": "theming-proposal.md",
     "store": "state-and-framework-analysis.md",
     "context": "state-and-framework-analysis.md",
-    "pubsub": "state-and-framework-analysis.md",
     "i18n": "i18n-guide.md",
 }
 

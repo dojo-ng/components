@@ -44,7 +44,7 @@ INDEX = "playground/index.html"
 # context, ...). A playground section may legitimately demonstrate one of these — Shared
 # state and Scoped theme island do — without that being a GROUPS omission worth failing the
 # build over.
-UTILITY_PACKAGES = {"dojo-element", "theme", "store", "context", "pubsub", "export-core", "i18n"}
+UTILITY_PACKAGES = {"dojo-element", "theme", "store", "context", "export-core", "i18n"}
 
 # Where a section's point is a seam rather than any single package (Submitted form data:
 # native form participation, not a component) — see playground-organization-spec.md task 5.

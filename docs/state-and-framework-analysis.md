@@ -140,6 +140,12 @@ and context). True fire-and-forget event traffic that should not retain a value 
 `replay: false` or a plain event. Exact signature alignment with `@holmescorp/pub-sub` can be
 tuned once we confirm its API.
 
+`@dojo-ng/pubsub` itself now lives in the `framework` repo, not here (`framework-monorepo-spec.md`
+Track C, 2026-08-23) — the integration described above is structural, not a dependency: `store` and
+`context` stay in `components`, `ReadableStore` is a shape (`getState`/`subscribe`) that both repos
+declare independently, and a `PubSub` built in `framework` satisfies `StoreController`'s parameter
+here with no adapter, no cast, and no import across the repo boundary in either direction.
+
 ## Open questions to settle
 
 - Which shared-state primitive to standardize on first: an external store now, or wait for signals to stabilize. This affects what the first stateful tier-1 components (select, typeahead, list) are built against.

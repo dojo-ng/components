@@ -98,7 +98,6 @@ export const SUPPORT_PACKAGES = [
 	"context",
 	"i18n",
 	"store",
-	"pubsub",
 	"rich-text-headings",
 	"rich-text-lists",
 	"rich-text-table",

@@ -127,7 +127,6 @@ Each package has its own README with properties, slots, parts, events, and worke
 | [`@dojo-ng/theme`](packages/theme/README.md) | Dojo NG theme tokens and scoping element |
 | [`@dojo-ng/store`](packages/store/README.md) | Dojo NG external-store controller for Lit components |
 | [`@dojo-ng/context`](packages/context/README.md) | Dojo NG context-key registry (Context Protocol) |
-| [`@dojo-ng/pubsub`](packages/pubsub/README.md) | Dojo NG publish/subscribe facade backed by an external store |
 | [`@dojo-ng/i18n`](packages/i18n/README.md) | Dojo NG internationalization: locale signal, Intl formatting, message resolver, pluggable loader |
 
 

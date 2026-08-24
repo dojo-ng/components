@@ -3,7 +3,7 @@
 // Registers a happy-dom environment on Node's globalThis so Lit web components
 // can be imported, upgraded, and exercised under `node --test`. Import this
 // FIRST — before any component or `lit` import — in any test file that mounts
-// elements. Pure-logic tests (i18n, store, pubsub) don't need it.
+// elements. Pure-logic tests (i18n, store) don't need it.
 //
 // Two things make Lit work here:
 //   1. The test script runs node with `--conditions=browser`, so Lit resolves

@@ -27,7 +27,7 @@ Static analysis. TypeScript type-checking through the workspace build (`tsc -b`)
 code-quality and correctness rules. (ESLint: `npm run lint`.)
 
 Logic unit tests (Vitest, Node). For the framework-agnostic logic that does not need a real DOM:
-the `i18n` formatters, resolver, and locale chain; the `store` controller; `pubsub`; the focus
+the `i18n` formatters, resolver, and locale chain; the `store` controller; the focus
 helpers (`isFocusWithin`, `trapTabKey`); the `context` registry. Fast, run on every change.
 (Vitest: `npm run test:unit`; supersedes the interim ad-hoc happy-dom smoke scripts.)
 

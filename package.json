@@ -49,6 +49,7 @@
     "eslint-plugin-lit": "^2.3.1",
     "eslint-plugin-wc": "^3.1.0",
     "happy-dom": "^15.11.0",
+    "rxjs": "^7.8.2",
     "solid-js": "^1.9.13",
     "typescript": "6.0.3",
     "typescript-eslint": "^8.63.0",

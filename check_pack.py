@@ -8,6 +8,10 @@ never catch that, so this parses `npm pack --json`'s per-package file list and a
 package's `main`, `module`, and `types` entries are actually present in its own tarball.
 
 Run from components/:  python3 check_pack.py
+
+DUPLICATE NOTICE: this file is also copied as-is to `framework/check_pack.py` (framework-monorepo-spec.md
+task A6). There is no shared location between the two repos today, so this is deliberate duplication,
+not drift by accident. A fix made here needs to be made in the other copy by hand.
 """
 
 import json

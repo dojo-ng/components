@@ -154,6 +154,7 @@ export class DjCalendar extends FormControl(DojoElement) implements Partial<Dojo
 					return html`<button
 						type="button"
 						role="gridcell"
+						part="day"
 						class="day ${outside ? "day--outside" : ""} ${isToday ? "day--today" : ""} ${isSel ? "day--selected" : ""} ${isFocused ? "day--focused" : ""}"
 						aria-selected=${isSel ? "true" : "false"}
 						aria-label=${dateTimeFormat(this.loc, { dateStyle: "full" }).format(d)}

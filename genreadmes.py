@@ -537,7 +537,7 @@ def component_readme(pkg, s):
     o.append("## Accessibility and i18n\n")
     o.append("Follows the project's WCAG 2.2 AA and localization conventions.\n")
     o.append("## More\n")
-    o.append("Live, interactive examples are in the playground (`playground/index.html`). For the full API reference, theming, accessibility, and localization guides, see the [Dojo NG documentation](../../README.md).\n")
+    o.append("Live, interactive examples are at [play.dojo-ng.com](https://play.dojo-ng.com). For the full API reference, theming, accessibility, and localization guides, see the [Dojo NG documentation](../../README.md).\n")
     return "\n".join(o)
 
 def infra_readme(pkg):

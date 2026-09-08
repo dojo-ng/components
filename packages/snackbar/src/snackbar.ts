@@ -3,7 +3,7 @@ import { html, css } from "lit"; import { property } from "lit/decorators.js"; i
  *
  * @cssprop [--dj-snackbar-z-index=960] - Stacking order of the snackbar. */
 export class DjSnackbar extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles = css`
 		:host{display:none;position:fixed;left:50%;bottom:1rem;transform:translateX(-50%);z-index:var(--dj-snackbar-z-index,960);}
 		:host([open]){display:block;}

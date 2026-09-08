@@ -3,7 +3,7 @@ import { html, css } from "lit"; import { property } from "lit/decorators.js"; i
  *
  * @cssprop [--dj-header-z-index=700] - Stacking order of the header. */
 export class DjHeader extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles = css`
 		:host{display:block;} :host([sticky]){position:sticky;top:0;z-index:var(--dj-header-z-index,700);}
 		.bar{display:flex;align-items:center;gap:var(--dj-spacing-small,.75rem);padding:var(--dj-spacing-small,.75rem) var(--dj-spacing-medium,1rem);

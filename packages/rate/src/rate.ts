@@ -6,7 +6,7 @@ import DojoElement, { DojoFormControl, FormControl } from "@dojo-ng/dojo-element
  * @cssprop [--dj-rate-size=1.5rem] - Size of one star.
  */
 export class DjRate extends FormControl(DojoElement) implements Partial<DojoFormControl> {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override focusable = true;
 	static formAssociated=true;
 	static override styles=css`

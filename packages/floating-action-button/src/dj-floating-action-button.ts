@@ -16,7 +16,7 @@ export type FabPosition =
  * @cssprop [--dj-fab-z-index=800] - Stacking order of the floating action button.
  */
 export class DjFloatingActionButton extends DjButton {
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override styles: CSSResultGroup = [
 		DjButton.styles,
 		css`

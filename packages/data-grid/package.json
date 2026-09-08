@@ -1,5 +1,23 @@
-{ "name": "@dojo-ng/data-grid", "version": "0.1.0", "license": "BSD-3-Clause", "description": "Dojo NG virtualized data grid on TanStack", "type": "module",
-  "main": "./dist/index.js", "module": "./dist/index.js", "types": "./dist/index.d.ts",
-  "files": ["dist"],
-  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
-  "dependencies": { "@dojo-ng/dojo-element": "^0.1.0", "@tanstack/table-core": "^8.0.0", "@tanstack/virtual-core": "^3.0.0", "lit": "^3.3.0" } }
+{
+  "name": "@dojo-ng/data-grid",
+  "version": "0.1.1",
+  "license": "BSD-3-Clause",
+  "description": "Dojo NG virtualized data grid on TanStack",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@dojo-ng/dojo-element": "^0.1.0",
+    "@tanstack/table-core": "^8.0.0",
+    "@tanstack/virtual-core": "^3.0.0",
+    "lit": "^3.3.0"
+  }
+}

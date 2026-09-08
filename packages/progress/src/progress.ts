@@ -4,7 +4,7 @@ import { LocaleController, formatNumber } from "@dojo-ng/i18n";
  *
  * @cssprop [--dj-progress-height=8px] - Thickness of the progress bar. */
 export class DjProgress extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	#i18n = new LocaleController(this);
 	static override styles = [css`
 		:host{display:block;} .track{height:var(--dj-progress-height,8px);background:var(--dj-color-neutral-200,#e5e7eb);border-radius:9999px;overflow:hidden;}

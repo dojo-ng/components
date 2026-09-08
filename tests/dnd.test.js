@@ -110,6 +110,50 @@ test("hostDisconnected unbinds the zone: no drag starts afterward", () => {
 	assert.equal(moves.length, 0, "no move after both zones disconnected");
 });
 
+// ---- click vs. drag: the real bug report this shape produced ---------------
+//
+// draggable and a card's own click handler have to coexist: a plain click
+// (pointerdown, no meaningful movement, pointerup) must reach the browser's
+// native click event exactly as it would with no drag zone installed, and
+// only real movement past DRAG_THRESHOLD may commit to a drag at all. Found
+// live in NovelMaker (Track D/W7): every pointerdown called preventDefault()
+// unconditionally, which suppresses click-event synthesis regardless of
+// whether the pointer ever moved, so a card's own dj-card-click could never
+// fire while draggable was set.
+
+test("a plain click — no movement at all — fires no onMove and never calls preventDefault", () => {
+	const { a, moves } = buildBoard();
+	const down = pointer("pointerdown", 50, 5);
+	a[0].dispatchEvent(down);
+	window.dispatchEvent(pointer("pointerup", 50, 5));
+	assert.equal(moves.length, 0);
+	assert.equal(down.defaultPrevented, false, "a plain click must reach native click synthesis");
+});
+
+test("movement under DRAG_THRESHOLD stays a click: no onMove, no preventDefault anywhere", () => {
+	const { a, moves } = buildBoard();
+	const down = pointer("pointerdown", 50, 5);
+	a[0].dispatchEvent(down);
+	const move = pointer("pointermove", 52, 6); // ~2.2px — a real hand is not perfectly still
+	window.dispatchEvent(move);
+	window.dispatchEvent(pointer("pointerup", 52, 6));
+	assert.equal(moves.length, 0);
+	assert.equal(down.defaultPrevented, false);
+	assert.equal(move.defaultPrevented, false, "sub-threshold movement is still a click, not a drag");
+});
+
+test("movement at/over DRAG_THRESHOLD commits to a real drag: onMove fires, the move IS prevented", () => {
+	const { a, moves } = buildBoard();
+	const down = pointer("pointerdown", 50, 5);
+	a[0].dispatchEvent(down);
+	const move = pointer("pointermove", 50, 45); // same real drag the earlier reorder test uses
+	window.dispatchEvent(move);
+	window.dispatchEvent(pointer("pointerup", 50, 45));
+	assert.equal(moves.length, 1);
+	assert.equal(down.defaultPrevented, false, "still not on pointerdown itself — see PendingDrag's own comment");
+	assert.equal(move.defaultPrevented, true, "a committed drag suppresses the native scroll/selection default");
+});
+
 // ============================================================ keyboard grab mode
 function buildList() {
 	const lane = stub(document.createElement("div"), { left: 0, right: 100, top: 0, bottom: 100 });

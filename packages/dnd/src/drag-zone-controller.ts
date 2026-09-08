@@ -30,6 +30,36 @@ interface ActiveDrag {
 }
 let active: ActiveDrag | null = null;
 
+/**
+ * A pointerdown on a draggable item, not yet a drag. Holds the item and the
+ * pointer's start position; promoted to `active` (`#commit` below) the first
+ * time a pointermove clears `DRAG_THRESHOLD`. Until then nothing about a drag
+ * has started — no ghost, no `preventDefault()` — specifically so a plain
+ * click (pointerdown, no meaningful movement, pointerup) synthesizes exactly
+ * as it would with no drag zone installed at all. A consumer wiring a card's
+ * own click handler alongside `draggable` (Track D's D4/W7 in NovelMaker,
+ * the first real bug report this shape ever produced) depends on that: this
+ * controller calling `preventDefault()` unconditionally on every pointerdown
+ * suppressed the browser's click-event synthesis for every card, whether or
+ * not the pointer ever moved — a real click could never fire at all.
+ */
+interface PendingDrag {
+	origin: DragZoneController;
+	key: string;
+	item: HTMLElement;
+	pointerId: number;
+	startX: number;
+	startY: number;
+}
+let pending: PendingDrag | null = null;
+
+/** px of pointer movement before a pointerdown commits to a drag rather than
+ *  staying a click. Matches the small, unnoticeable-while-dragging distance
+ *  most pointer-based drag implementations use (large enough that a hand
+ *  is not perfectly still between press and release, small enough that an
+ *  intentional drag is never mistaken for a click). */
+const DRAG_THRESHOLD = 5;
+
 const EDGE = 32; // px from a container edge that triggers auto-scroll
 const STEP = 16; // px nudged per pointermove while in the edge band
 
@@ -86,6 +116,11 @@ export class DragZoneController implements ReactiveController {
 			this.#listenEl = null;
 		}
 		if (active && (active.origin === this || active.target?.zone === this)) cancelActiveDrag();
+		// A pending (pre-threshold) gesture never registered with `active` at
+		// all, so the check above would miss it — a disconnect mid-click must
+		// still drop it, or its stale pointerId lingers until some unrelated
+		// later pointerup clears it.
+		if (pending && pending.origin === this) cancelActiveDrag();
 	}
 
 	#bind() {
@@ -105,15 +140,32 @@ export class DragZoneController implements ReactiveController {
 	}
 
 	#pointerDown(e: PointerEvent) {
-		if (active) return;
+		if (active || pending) return;
 		const items = this.#config.items();
 		const path = typeof e.composedPath === "function" ? e.composedPath() : [];
 		const item = items.find((it) => it === e.target || path.includes(it) || it.contains(e.target as Node));
 		if (!item) return;
 		const key = item.dataset.key;
 		if (key == null) return;
-		e.preventDefault();
+		// Deliberately no preventDefault() and nothing else about a drag
+		// starts here — see PendingDrag's own comment above. #commit is what
+		// turns this into a real drag, the first time onPointerMove sees the
+		// pointer actually move past DRAG_THRESHOLD.
+		pending = { origin: this, key, item, pointerId: e.pointerId ?? 0, startX: e.clientX, startY: e.clientY };
+		window.addEventListener("pointermove", onPointerMove);
+		window.addEventListener("pointerup", onPointerUp, { once: true });
+		window.addEventListener("pointercancel", onPointerCancel, { once: true });
+	}
 
+	/**
+	 * Promote a pending pointerdown into a real drag: builds the ghost,
+	 * captures the pointer, marks the source item. Called at most once per
+	 * gesture, by the module-level `onPointerMove`, on whichever zone's
+	 * pointerdown is pending — kept as a method (not free-standing) only
+	 * because `#listenEl` is private to the instance that owns the capture.
+	 */
+	commitDrag(p: PendingDrag, e: PointerEvent) {
+		const { key, item, pointerId } = p;
 		const ghost = item.cloneNode(true) as HTMLElement;
 		ghost.classList.add("dj-drag-ghost");
 		ghost.setAttribute("part", "drag-ghost");
@@ -133,12 +185,8 @@ export class DragZoneController implements ReactiveController {
 			ghost.animate([{ transform: "scale(1)" }, { transform: "scale(1.03)" }], { duration: 120, fill: "forwards" });
 		}
 		item.classList.add("dj-drag-source");
-		try { this.#listenEl?.setPointerCapture(e.pointerId); } catch { /* not supported */ }
-
-		active = { origin: this, key, item, ghost, pointerId: e.pointerId ?? 0, target: null, indicator: null };
-		window.addEventListener("pointermove", onPointerMove);
-		window.addEventListener("pointerup", onPointerUp, { once: true });
-		window.addEventListener("pointercancel", onPointerCancel, { once: true });
+		try { this.#listenEl?.setPointerCapture(pointerId); } catch { /* not supported */ }
+		active = { origin: this, key, item, ghost, pointerId, target: null, indicator: null };
 	}
 
 	/** Compute the drop index in this zone for a pointer position; also (re)draw the indicator. */
@@ -211,7 +259,20 @@ function clearIndicator() {
 }
 
 function onPointerMove(e: PointerEvent) {
+	if (!active && pending) {
+		if (Math.hypot(e.clientX - pending.startX, e.clientY - pending.startY) < DRAG_THRESHOLD) return;
+		const p = pending;
+		pending = null;
+		p.origin.commitDrag(p, e); // always sets `active`
+	}
 	if (!active) return;
+	// Deferred from pointerdown to here, on purpose: calling it any earlier
+	// is exactly what made every click a drag (see PendingDrag's own
+	// comment). Once a drag is real, every further move of it still needs
+	// this — a touch that started scrolling, or text selection extending
+	// under the pointer, is the same wrong outcome mid-drag that a
+	// suppressed click was pre-threshold.
+	e.preventDefault();
 	active.ghost.style.left = `${e.clientX}px`;
 	active.ghost.style.top = `${e.clientY}px`;
 	const zone = active.origin.peersForActive().find((z) => z.containerRectContains(e.clientX, e.clientY)) ?? null;
@@ -230,7 +291,8 @@ function finishActiveDrag(commit: boolean) {
 	if (!active) return;
 	const drag = active;
 	active = null;
-	window.removeEventListener("pointermove", onPointerMove);
+	// The pointermove listener itself is `endGesture`'s job — every caller of
+	// this function calls that first, whether or not a drag was ever active.
 	drag.ghost.remove();
 	if (drag.indicator) drag.indicator.remove();
 	drag.item.classList.remove("dj-drag-source");
@@ -243,12 +305,28 @@ function finishActiveDrag(commit: boolean) {
 	}
 }
 
-function onPointerUp() { finishActiveDrag(true); }
-function onPointerCancel() { finishActiveDrag(false); }
+/** Common teardown for both a real end-of-drag and a plain click that never
+ *  crossed DRAG_THRESHOLD: the pointermove listener `#pointerDown` added is
+ *  removed either way, and a still-pending (never promoted) gesture is
+ *  cleared so it cannot be mistaken for a stale one on the next pointerdown. */
+function endGesture() {
+	window.removeEventListener("pointermove", onPointerMove);
+	pending = null;
+}
+
+function onPointerUp() {
+	endGesture();
+	finishActiveDrag(true);
+}
+function onPointerCancel() {
+	endGesture();
+	finishActiveDrag(false);
+}
 
 /** Abort any in-flight drag (used when a participating zone's host disconnects). */
 export function cancelActiveDrag() {
 	window.removeEventListener("pointerup", onPointerUp);
 	window.removeEventListener("pointercancel", onPointerCancel);
+	endGesture();
 	finishActiveDrag(false);
 }

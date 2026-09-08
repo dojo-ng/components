@@ -111,6 +111,36 @@ def parse_sections(text):
     return sections
 
 
+ID_RE = re.compile(r'<([a-zA-Z][-\w]*)[^>]*\sid="([^"]+)"')
+
+
+def check_ids(text):
+    """Fail on any id used twice in the page, not just twice on a <section>.
+
+    A section wrapper and the demo element inside it are the collision that
+    actually happened (2026-09-03): `<section id="popup">` around
+    `<dj-popup id="popup">` makes `getElementById("popup")` return the section,
+    which is the FIRST match in document order, so every property the page's
+    script sets lands on a plain <section> and the component is never
+    configured. It fails silently — no error, nothing in the console — and it
+    hit six demos (popup, wizard, tabs, list, color-picker, file-input) before
+    anyone noticed. Section ids are the nav's anchor targets, so the element
+    inside is the one that gets renamed.
+    """
+    seen = {}
+    for tag, ident in ID_RE.findall(text):
+        seen.setdefault(ident, []).append(tag)
+    dupes = {i: tags for i, tags in seen.items() if len(tags) > 1}
+    if dupes:
+        for ident, tags in sorted(dupes.items()):
+            print(f"genplayground: id {ident!r} used {len(tags)} times: "
+                  f"{', '.join('<' + t + '>' for t in tags)}", file=sys.stderr)
+        print("genplayground: duplicate ids make getElementById() return the first "
+              "match — rename the element inside the section, not the section",
+              file=sys.stderr)
+        sys.exit(1)
+
+
 def assign_groups(sections, pkg_to_group):
     for s in sections:
         pkgs = s["pkgs"]
@@ -202,6 +232,7 @@ def render_header_stats(sections, group_order, by_group, n_covered, n_total):
 def main():
     text = open(INDEX, encoding="utf-8").read()
 
+    check_ids(text)
     sections = parse_sections(text)
     pkg_to_group = pkg_to_group_map()
     assign_groups(sections, pkg_to_group)

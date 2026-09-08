@@ -313,7 +313,7 @@
 		<h3>Color picker</h3>
 		<p class="section-purpose">A swatch-driven color picker with alpha, reporting the picked value as hex.</p>
 		<div class="col">
-			<dj-color-picker id="color-picker" label="Brand color" format="hex" alpha></dj-color-picker>
+			<dj-color-picker id="color-picker-demo" label="Brand color" format="hex" alpha></dj-color-picker>
 			<span id="color-value" style="color: var(--dj-color-text-muted)">value: (none)</span>
 		</div>
 		</section>
@@ -321,7 +321,7 @@
 		<h3>File input</h3>
 		<p class="section-purpose">Accepts a paste from the clipboard in addition to the normal file picker, and reports every accepted file.</p>
 		<div class="col" id="file-pane">
-			<dj-file-input id="file-input" label="Attachments" accept="image/*" multiple max-size="5000000"></dj-file-input>
+			<dj-file-input id="file-input-demo" label="Attachments" accept="image/*" multiple max-size="5000000"></dj-file-input>
 			<span style="color: var(--dj-color-text-muted); font-size: 0.875rem">Tab to the drop zone (it shows a focus ring), then paste an image from the clipboard. A paste anywhere in this pane is forwarded to the control via <code>addFiles</code>.</span>
 			<span id="file-value" style="color: var(--dj-color-text-muted)">files: (none)</span>
 		</div>
@@ -381,7 +381,7 @@
 		<h3>Popup</h3>
 		<p class="section-purpose">A popup anchored to its trigger button, dismissed by Escape or a click outside it.</p>
 		<div class="row"><dj-button id="popup-trigger" kind="contained">Toggle popup</dj-button></div>
-		<dj-popup id="popup" position="below" underlay-visible><div class="card">A popup anchored to the button. Press Escape or click outside to close.</div></dj-popup>
+		<dj-popup id="popup-demo" position="below" underlay-visible><div class="card">A popup anchored to the button. Press Escape or click outside to close.</div></dj-popup>
 		</section>
 <section id="trigger-context-popup" data-dj-packages="trigger-popup context-popup floating-action-button">
 		<h3>Trigger popup &amp; context popup</h3>
@@ -506,12 +506,12 @@
 <section id="wizard" data-dj-packages="wizard">
 		<h3>Wizard</h3>
 		<p class="section-purpose">A three-step wizard opened on its middle step, to check step navigation from a non-zero start.</p>
-		<dj-wizard id="wizard" style="max-width: 40rem"></dj-wizard>
+		<dj-wizard id="wizard-demo" style="max-width: 40rem"></dj-wizard>
 		</section>
 <section id="tabs" data-dj-packages="tab-container">
 		<h3>Tabs</h3>
 		<p class="section-purpose">Three tabs with plain panel content, driven by the array-typed <code>tabs</code> property.</p>
-		<dj-tab-container id="tabs" style="max-width: 32rem">
+		<dj-tab-container id="tabs-demo" style="max-width: 32rem">
 			<div>First panel content.</div>
 			<div>Second panel content.</div>
 			<div>Third panel content.</div>
@@ -615,7 +615,7 @@
 <section id="list" data-dj-packages="list">
 		<h3>List</h3>
 		<p class="section-purpose">A selectable list with a divider and a disabled item, reporting the current selection below it.</p>
-		<dj-list id="list" style="max-width: 16rem; --dj-list-max-height: 12rem"></dj-list>
+		<dj-list id="list-demo" style="max-width: 16rem; --dj-list-max-height: 12rem"></dj-list>
 		<p id="list-value" style="color: var(--dj-color-text-muted)">selected: (none)</p>
 		</section>
 <section id="calendar" data-dj-packages="calendar">
@@ -1327,7 +1327,7 @@
 			});
 
 			// Popup
-			const popup = document.getElementById("popup");
+			const popup = document.getElementById("popup-demo");
 			const trigger = document.getElementById("popup-trigger");
 			popup.anchor = trigger;
 			trigger.addEventListener("click", () => { popup.open = !popup.open; });
@@ -1341,7 +1341,7 @@
 			document.getElementById("open-pane").addEventListener("click", () => { pane.open = true; });
 
 			// Tabs need their tab descriptors set (array property)
-			document.getElementById("tabs").tabs = [{ name: "One" }, { name: "Two" }, { name: "Three" }];
+			document.getElementById("tabs-demo").tabs = [{ name: "One" }, { name: "Two" }, { name: "Three" }];
 
 			// Calendar selection readout
 			const cal = document.getElementById("cal");
@@ -1418,7 +1418,7 @@
 			];
 
 			// List options + readout
-			const list = document.getElementById("list");
+			const list = document.getElementById("list-demo");
 			list.options = [
 				{ value: "apple", label: "Apple" },
 				{ value: "banana", label: "Banana" },
@@ -1431,12 +1431,12 @@
 			list.addEventListener("change", () => { listValue.textContent = `selected: ${list.value}`; });
 
 			// Wizard steps
-			document.getElementById("wizard").steps = [
+			document.getElementById("wizard-demo").steps = [
 				{ title: "Account", subTitle: "Step 1" },
 				{ title: "Profile", subTitle: "Step 2" },
 				{ title: "Confirm", subTitle: "Step 3" },
 			];
-			document.getElementById("wizard").activeStep = 1;
+			document.getElementById("wizard-demo").activeStep = 1;
 
 			// Animation: transition panel toggle + staggered group reveal
 			const animPanel = document.getElementById("anim-panel");
@@ -1445,7 +1445,7 @@
 			document.getElementById("anim-reveal").addEventListener("click", () => { animGroup.show = !animGroup.show; });
 
 			// Color picker: swatches + a live value readout.
-			const colorPicker = document.getElementById("color-picker");
+			const colorPicker = document.getElementById("color-picker-demo");
 			const colorValue = document.getElementById("color-value");
 			colorPicker.swatches = ["#e11d48", "#ea580c", "#ca8a04", "#16a34a", "#2563eb", "#7c3aed"];
 			const showColor = () => { colorValue.textContent = `value: ${colorPicker.value}`; };
@@ -1453,7 +1453,7 @@
 			showColor();
 
 			// File input: live list readout.
-			const fileInput = document.getElementById("file-input");
+			const fileInput = document.getElementById("file-input-demo");
 			const fileValue = document.getElementById("file-value");
 			fileInput.addEventListener("dj-change", (e) => {
 				const names = e.detail.files.map((f) => f.name);

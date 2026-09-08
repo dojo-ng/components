@@ -1,6 +1,9 @@
 import { css } from "lit";
 export default css`
-	:host { display: block; }
+	/* isolation: isolate contains the sticky .head's z-index inside this shadow tree, so a
+	   consumer's own stacking (e.g. a sibling panel with no z-index of its own, which is auto
+	   and loses to any explicit value regardless of DOM order) never has to compete with it. */
+	:host { display: block; isolation: isolate; }
 	:host([hidden]) { display: none; }
 	.wrap { display: flex; flex-direction: column; }
 	.chrome { display: flex; align-items: center; gap: var(--dj-spacing-small, .75rem); padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); }

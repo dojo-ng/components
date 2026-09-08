@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-App header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`. @cssprop [--dj-header-z-index=700] - Stacking order of the header.
+App header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`.
 
 ## Install
 

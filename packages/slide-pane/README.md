@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`. @cssprop [--dj-slide-pane-size=320px] - Width (left/right) or height (top/bottom) of the pane. @cssprop [--dj-slide-pane-z-index=931] - Stacking order of the pane. @cssprop [--dj-slide-pane-underlay-z-index=930] - Stacking order of the pane underlay (scrim).
+A panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.
 
 ## Install
 

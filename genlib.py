@@ -143,8 +143,13 @@ def clean_jsdoc(raw):
 
 def description(doc, tag):
     """The lead description: class JSDoc up to the first Slots/Parts/Events/Methods
-    section, with a leading `<tag> —` prefix removed."""
-    cut = re.split(r"\n\s*(?:Slots?:|Parts?:|Events?:|Methods?:)", doc)[0]
+    section or the first JSDoc tag line, with a leading `<tag> —` prefix removed.
+
+    Cutting at a tag line matters for a component whose JSDoc has no Slots/Parts/
+    Events/Methods label: without it the whole `@cssprop [...] - ...` block was joined
+    onto the end of the prose and shipped that way into the README and the manifest.
+    Eight components read that way before this was fixed (2026-09-03)."""
+    cut = re.split(r"\n\s*(?:Slots?:|Parts?:|Events?:|Methods?:|\*?\s*@\w+)", doc)[0]
     t = " ".join(cut.split()).strip()
     return re.sub(rf"^`?<{re.escape(tag)}>`?\s*[—\-–]\s*", "", t).strip()
 

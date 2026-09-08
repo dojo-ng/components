@@ -39,6 +39,8 @@ Import the package to register the custom element, then use the tag.
 
 **Methods:** `checkValidity()`, `restoreFormState(state: File | string | FormData | null)`
 
+**CSS properties:** `--dj-rate-size` (default `1.5rem`; Size of one star.)
+
 ## Theming
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.

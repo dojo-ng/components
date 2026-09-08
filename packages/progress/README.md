@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Determinate progress bar. value within min..max; `show-output` shows percent. Part: `bar`. @cssprop [--dj-progress-height=8px] - Thickness of the progress bar.
+Determinate progress bar. value within min..max; `show-output` shows percent. Part: `bar`.
 
 ## Install
 

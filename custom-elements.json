@@ -4015,7 +4015,7 @@
           "name": "DjDialog",
           "customElement": true,
           "tagName": "dj-dialog",
-          "description": "a modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role=\"alertdialog\"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close`. Parts: `underlay`, `dialog`, `title`, `close`, `content`, `actions`. @cssprop [--dj-dialog-z-index=941] - Stacking order of the dialog. @cssprop [--dj-dialog-underlay-z-index=940] - Stacking order of the dialog underlay (scrim).",
+          "description": "a modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role=\"alertdialog\"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close`. Parts: `underlay`, `dialog`, `title`, `close`, `content`, `actions`.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -4595,7 +4595,7 @@
           "name": "DjFloatingActionButton",
           "customElement": true,
           "tagName": "dj-floating-action-button",
-          "description": "a circular (or extended/pill) action button, optionally fixed to a screen position. Subclasses `<dj-button>`; default-slot label, `icon` slot. @cssprop [--dj-fab-z-index=800] - Stacking order of the floating action button.",
+          "description": "a circular (or extended/pill) action button, optionally fixed to a screen position. Subclasses `<dj-button>`; default-slot label, `icon` slot.",
           "superclass": {
             "name": "DjButton"
           },
@@ -4863,7 +4863,7 @@
           "name": "DjHeader",
           "customElement": true,
           "tagName": "dj-header",
-          "description": "app header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`. @cssprop [--dj-header-z-index=700] - Stacking order of the header.",
+          "description": "app header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -5399,7 +5399,7 @@
           "name": "DjList",
           "customElement": true,
           "tagName": "dj-list",
-          "description": "a single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard (space to grab, arrows to move, space to drop, escape to cancel) \u2014 controlled: it emits `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`. @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.",
+          "description": "a single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard (space to grab, arrows to move, space to drop, escape to cancel) \u2014 controlled: it emits `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -6474,7 +6474,7 @@
           "name": "DjProgress",
           "customElement": true,
           "tagName": "dj-progress",
-          "description": "determinate progress bar. value within min..max; `show-output` shows percent. Part: `bar`. @cssprop [--dj-progress-height=8px] - Thickness of the progress bar.",
+          "description": "determinate progress bar. value within min..max; `show-output` shows percent. Part: `bar`.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -7353,6 +7353,13 @@
               "fieldName": "label"
             }
           ],
+          "cssProperties": [
+            {
+              "name": "--dj-rate-size",
+              "default": "1.5rem",
+              "description": "Size of one star."
+            }
+          ],
           "events": [
             {
               "name": "change",
@@ -8186,7 +8193,7 @@
           "name": "DjSlidePane",
           "customElement": true,
           "tagName": "dj-slide-pane",
-          "description": "a panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`. @cssprop [--dj-slide-pane-size=320px] - Width (left/right) or height (top/bottom) of the pane. @cssprop [--dj-slide-pane-z-index=931] - Stacking order of the pane. @cssprop [--dj-slide-pane-underlay-z-index=930] - Stacking order of the pane underlay (scrim).",
+          "description": "a panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -8631,7 +8638,7 @@
           "name": "DjSnackbar",
           "customElement": true,
           "tagName": "dj-snackbar",
-          "description": "a toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`. @cssprop [--dj-snackbar-z-index=960] - Stacking order of the snackbar.",
+          "description": "a toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`.",
           "superclass": {
             "name": "DojoElement"
           },

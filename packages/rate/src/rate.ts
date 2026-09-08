@@ -1,13 +1,22 @@
 import { html, css } from "lit"; import { property } from "lit/decorators.js";
 import DojoElement, { DojoFormControl, FormControl } from "@dojo-ng/dojo-element"; import "@dojo-ng/icon";
-/** `<dj-rate>` — star rating (0..max). Form-associated. (Half-step `allowHalf` accepted; full-star core.) */
+/**
+ * `<dj-rate>` — star rating (0..max). Form-associated. (Half-step `allowHalf` accepted; full-star core.)
+ *
+ * @cssprop [--dj-rate-size=1.5rem] - Size of one star.
+ */
 export class DjRate extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override version="0.1.0";
 	static override focusable = true;
 	static formAssociated=true;
 	static override styles=css`
 		:host{display:inline-flex;} .stars{display:inline-flex;gap:.1rem;} 
-		.star{border:none;background:transparent;cursor:pointer;padding:0;color:var(--dj-color-neutral-300,#d1d5db);width:1.5rem;height:1.5rem;}
+		/* --dj-rate-size drives the font-size as well as the box: <dj-icon> sizes itself in em,
+		   and a <button> does not inherit the page font, so without a font-size here the star
+		   fell back to the UA button default (13.33px in Chrome) inside a 24px box and rendered
+		   as a dot rather than a star. */
+		.star{border:none;background:transparent;cursor:pointer;padding:0;color:var(--dj-color-neutral-300,#d1d5db);
+			width:var(--dj-rate-size,1.5rem);height:var(--dj-rate-size,1.5rem);font-size:var(--dj-rate-size,1.5rem);line-height:1;}
 		.star--on{color:var(--dj-color-warning-500,#eab308);} :host([readonly]) .star{cursor:default;}
 		.star:focus-visible{outline:var(--dj-focus-ring,2px solid currentColor);outline-offset:2px;}
 	`;

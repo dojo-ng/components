@@ -6,7 +6,7 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 Extends `DjButton` and inherits its properties and behavior.
 
-A circular (or extended/pill) action button, optionally fixed to a screen position. Subclasses `<dj-button>`; default-slot label, `icon` slot. @cssprop [--dj-fab-z-index=800] - Stacking order of the floating action button.
+A circular (or extended/pill) action button, optionally fixed to a screen position. Subclasses `<dj-button>`; default-slot label, `icon` slot.
 
 ## Install
 

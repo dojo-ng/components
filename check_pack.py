@@ -6,6 +6,8 @@ package.json, no code) rather than failing loudly (confirmed empirically 2026-08
 @dojo-ng/button's `files` on purpose: exit code stayed 0). An exit-code-only pack check would
 never catch that, so this parses `npm pack --json`'s per-package file list and asserts each
 package's `main`, `module`, and `types` entries are actually present in its own tarball.
+It also asserts the reverse for one specific file type: that no `.map` ever ships (see the
+source-map comment below).
 
 Run from components/:  python3 check_pack.py
 
@@ -48,6 +50,22 @@ def main():
                 failures.append(f"{name}: {field} ({entry}) missing from its own tarball")
         if len(packed_paths) <= 2:  # just package.json + README, no real content
             failures.append(f"{name}: tarball has no content beyond package.json/README.md")
+        # Source maps are a coverage-build artifact: `npm run build:coverage` emits them
+        # into dist/, and a later plain `npm run build` overwrites the .js without removing
+        # the .map beside it (tsc only deletes what it emits; `tsc -b --clean` did not
+        # remove them either, checked 2026-09-09). So dist/ can hold maps indefinitely and
+        # the only thing keeping them out of the tarball is the "!dist/**/*.map" negation
+        # at the end of each package's `files`. That negation is one line in 110 nearly
+        # identical package.json files, and a new package made by copying an older one is
+        # exactly how it goes missing, so assert the result rather than the config.
+        stray_maps = sorted(p for p in packed_paths if p.endswith(".map"))
+        if stray_maps:
+            shown = ", ".join(stray_maps[:3])
+            more = f" (+{len(stray_maps) - 3} more)" if len(stray_maps) > 3 else ""
+            failures.append(
+                f"{name}: source maps in tarball: {shown}{more}. "
+                f'Add "!dist/**/*.map" to the end of its `files`.'
+            )
 
     if failures:
         print("check_pack: published tarball doesn't match what package.json promises:")

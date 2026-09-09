@@ -1,5 +1,5 @@
 { "name": "@dojo-ng/rich-text-mentions", "version": "0.1.0", "license": "BSD-3-Clause", "description": "Mentions (@name) plugin for @dojo-ng/rich-text", "type": "module",
   "main": "./dist/index.js", "module": "./dist/index.js", "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "!dist/**/*.map"],
   "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
   "dependencies": { "@dojo-ng/rich-text": "^0.1.0", "@dojo-ng/rich-text-menu": "^0.1.0", "@dojo-ng/list": "^0.1.0", "lexical": "^0.21.0", "lit": "^3.3.0" } }

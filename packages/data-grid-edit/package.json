@@ -1,5 +1,5 @@
 { "name": "@dojo-ng/data-grid-edit", "version": "0.1.0", "license": "BSD-3-Clause", "description": "Controlled inline cell editing for @dojo-ng/data-grid", "type": "module",
   "main": "./dist/index.js", "module": "./dist/index.js", "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "!dist/**/*.map"],
   "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
   "dependencies": { "@dojo-ng/data-grid": "^0.1.0", "@dojo-ng/text-input": "^0.1.0", "@dojo-ng/number-input": "^0.1.0", "@dojo-ng/native-select": "^0.1.0", "@tanstack/table-core": "^8.0.0", "lit": "^3.3.0" } }

@@ -5,6 +5,7 @@ syntax: glob
 node_modules
 dist
 *.tsbuildinfo
+coverage
 
 # macOS system files (Finder/Spotlight cruft that gets injected into the tree)
 .DS_Store

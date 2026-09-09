@@ -4,7 +4,7 @@
   "description": "Dojo NG text-area web component",
   "type": "module",
   "main": "./dist/index.js", "module": "./dist/index.js", "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "!dist/**/*.map"],
   "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
   "dependencies": { "@dojo-ng/dojo-element": "^0.1.0", "@dojo-ng/label": "^0.1.0", "@dojo-ng/helper-text": "^0.1.0", "lit": "^3.3.0" }
 }

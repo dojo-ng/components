@@ -10,7 +10,7 @@
     ".": "./dist/index.js",
     "./theme.css": "./theme.css"
   },
-  "files": ["dist", "theme.css"],
+  "files": ["dist", "theme.css", "!dist/**/*.map"],
   "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
   "dependencies": { "@dojo-ng/dojo-element": "^0.1.0", "lit": "^3.3.0" }
 }

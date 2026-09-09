@@ -1,6 +1,6 @@
 { "name": "@dojo-ng/chart", "version": "0.1.0", "license": "BSD-3-Clause", "description": "Dojo NG chart set (SVG, themeable, accessible; D3 math)", "type": "module",
   "main": "./dist/index.js", "module": "./dist/index.js", "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": ["dist", "!dist/**/*.map"],
   "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
   "dependencies": { "@dojo-ng/dojo-element": "^0.1.0", "@dojo-ng/i18n": "^0.1.0", "d3-scale": "^4.0.0", "d3-shape": "^3.2.0", "d3-array": "^3.2.0", "lit": "^3.3.0" },
   "devDependencies": { "@types/d3-scale": "^4.0.0", "@types/d3-shape": "^3.1.0", "@types/d3-array": "^3.2.0" } }

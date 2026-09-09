@@ -5965,6 +5965,200 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/nav/src/dj-nav.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjNav",
+          "customElement": true,
+          "tagName": "dj-nav",
+          "description": "a nav landmark that collapses into a trigger + panel below a threshold. The threshold is the `--dj-nav-collapsed` custom property (0 or 1), read via `TokenFlagController` rather than a `breakpoint` prop, so it lives in the existing `--dj-*` theme system and is container-aware: a nav inside a narrow sidebar on a wide screen collapses. One arrangement is ever in the DOM \u2014 never both, hidden: the plain `<nav>` when expanded, or the trigger plus (while open) a panel wrapping that same `<nav>` when collapsed. `panel` picks the collapsed presentation: `\"drawer\"` composes `<dj-slide-pane>` (its `align` follows the reading direction); `\"dropdown\"` and `\"overlay\"` are positioned in this component's own shadow DOM. This is a disclosure, not a menu button \u2014 the links are plain slotted `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree`, and the trigger carries no `aria-haspopup`.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name for the `<nav>` landmark.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the panel is showing. Only meaningful while collapsed.",
+              "attribute": "open",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "panel",
+              "type": {
+                "text": "\"drawer\" | \"dropdown\" | \"overlay\""
+              },
+              "default": "\"drawer\"",
+              "description": "`\"drawer\"` | `\"dropdown\"` | `\"overlay\"`. Presentation only; independent of the collapse policy.",
+              "attribute": "panel",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "triggerLabel",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name for the trigger button.",
+              "attribute": "trigger-label"
+            },
+            {
+              "kind": "field",
+              "name": "collapsed",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the nav is currently collapsed (trigger + panel) or inline. Managed by the component; consumers treat it as read-only. Reflected so page CSS can style either arrangement.",
+              "attribute": "collapsed",
+              "reflects": true
+            },
+            {
+              "kind": "method",
+              "name": "show"
+            },
+            {
+              "kind": "method",
+              "name": "hide"
+            },
+            {
+              "kind": "method",
+              "name": "toggle"
+            },
+            {
+              "kind": "method",
+              "name": "refresh",
+              "description": "Delegates to `TokenFlagController` \u2014 the escape hatch for a runtime pin or theme switch that `ResizeObserver` cannot see (it only sees size changes)."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label",
+              "description": "Accessible name for the `<nav>` landmark."
+            },
+            {
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "open",
+              "description": "Whether the panel is showing. Only meaningful while collapsed."
+            },
+            {
+              "name": "panel",
+              "type": {
+                "text": "\"drawer\" | \"dropdown\" | \"overlay\""
+              },
+              "fieldName": "panel",
+              "description": "`\"drawer\"` | `\"dropdown\"` | `\"overlay\"`. Presentation only; independent of the collapse policy."
+            },
+            {
+              "name": "trigger-label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "triggerLabel",
+              "description": "Accessible name for the trigger button."
+            },
+            {
+              "name": "collapsed",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "collapsed",
+              "description": "Whether the nav is currently collapsed (trigger + panel) or inline. Managed by the component; consumers treat it as read-only. Reflected so page CSS can style either arrangement."
+            }
+          ],
+          "slots": [
+            {
+              "name": "",
+              "description": "the links \u2014 plain `<a>` elements"
+            },
+            {
+              "name": "trigger",
+              "description": ""
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "trigger",
+              "description": ""
+            },
+            {
+              "name": "panel",
+              "description": ""
+            },
+            {
+              "name": "nav",
+              "description": ""
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-nav-collapsed",
+              "default": "1",
+              "description": "The threshold flag read by TokenFlagController; 0 keeps the inline arrangement, 1 collapses it. Any value a consumer sets (directly, inherited from `:root`, or from their own `@container`/`@media` rule) wins over the component's own 45rem default \u2014 set it directly for a permanent hamburger, set both branches to move the flip point, or set it to `initial` to release an inherited pin."
+            },
+            {
+              "name": "--dj-nav-gap",
+              "default": "1rem",
+              "description": "Gap between links in the inline arrangement."
+            },
+            {
+              "name": "--dj-slide-pane-size",
+              "description": "Passed through to the drawer presentation."
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-nav-collapse",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ collapsed }`"
+            },
+            {
+              "name": "dj-nav-toggle",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ open }`"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-nav",
+          "declaration": {
+            "name": "DjNav",
+            "module": "packages/nav/src/dj-nav.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/number-input/src/dj-number-input.ts",
       "declarations": [
         {

@@ -44,6 +44,7 @@ export const ELEMENT_PACKAGES = [
 	"list",
 	"loading-indicator",
 	"native-select",
+	"nav",
 	"number-input",
 	"pagination",
 	"password-input",

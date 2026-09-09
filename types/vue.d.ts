@@ -45,6 +45,7 @@ import type { DjLabel } from "@dojo-ng/label";
 import type { DjList } from "@dojo-ng/list";
 import type { DjLoadingIndicator } from "@dojo-ng/loading-indicator";
 import type { DjNativeSelect } from "@dojo-ng/native-select";
+import type { DjNav } from "@dojo-ng/nav";
 import type { DjNumberInput } from "@dojo-ng/number-input";
 import type { DjPagination } from "@dojo-ng/pagination";
 import type { DjPasswordInput } from "@dojo-ng/password-input";
@@ -129,6 +130,7 @@ declare module "@vue/runtime-core" {
     "dj-list": DefineComponent<{ options?: DjList["options"]; value?: DjList["value"]; name?: DjList["name"]; label?: DjList["label"]; menu?: DjList["menu"]; loading?: DjList["loading"]; reorderable?: DjList["reorderable"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void, "dj-reorder": (e: CustomEvent) => void }>;
     "dj-loading-indicator": DefineComponent<{ active?: DjLoadingIndicator["active"]; type?: DjLoadingIndicator["type"]; label?: DjLoadingIndicator["label"] }, {}, {}, {}, {}, {}, {}>;
     "dj-native-select": DefineComponent<{ value?: DjNativeSelect["value"]; name?: DjNativeSelect["name"]; options?: DjNativeSelect["options"]; label?: DjNativeSelect["label"]; helperText?: DjNativeSelect["helperText"]; disabled?: DjNativeSelect["disabled"]; required?: DjNativeSelect["required"]; labelHidden?: DjNativeSelect["labelHidden"]; placeholder?: DjNativeSelect["placeholder"]; size?: DjNativeSelect["size"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
+    "dj-nav": DefineComponent<{ label?: DjNav["label"]; open?: DjNav["open"]; panel?: DjNav["panel"]; triggerLabel?: DjNav["triggerLabel"]; collapsed?: DjNav["collapsed"] }, {}, {}, {}, {}, {}, { "dj-nav-collapse": (e: CustomEvent) => void, "dj-nav-toggle": (e: CustomEvent) => void }>;
     "dj-number-input": DefineComponent<{ type?: DjNumberInput["type"] }, {}, {}, {}, {}, {}, {}>;
     "dj-pagination": DefineComponent<{ total?: DjPagination["total"]; page?: DjPagination["page"]; siblingCount?: DjPagination["siblingCount"] }, {}, {}, {}, {}, {}, { "dj-page": (e: CustomEvent) => void }>;
     "dj-password-input": DefineComponent<{ type?: DjPasswordInput["type"] }, {}, {}, {}, {}, {}, {}>;

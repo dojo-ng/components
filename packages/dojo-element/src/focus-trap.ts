@@ -45,15 +45,43 @@ export function firstFocusable(root: ParentNode): HTMLElement | null {
 	return null;
 }
 
-/** Ordered focusables for an overlay: its own shadow controls first, then slotted light-DOM content. */
+/**
+ * Ordered focusables for an overlay, in COMPOSED order: the shadow tree is walked in tree
+ * order and every `<slot>` is replaced by what is actually assigned to it (flattened through
+ * nested slots, so content redistributed from an outer component's own slot is found too),
+ * or by its fallback content when nothing is. That is the order the user Tabs through, which
+ * is what a trap has to match at the wrap points. Nested shadow roots are not pierced — a
+ * `dj-*` control inside is a single stop by its `static focusable` marker.
+ *
+ * Reaching through slots is the point: an overlay's light-DOM children are often only a
+ * wrapper around ANOTHER component's `<slot>` (dj-nav puts `<nav><slot></slot></nav>` inside
+ * dj-slide-pane, and the real links are dj-nav's light DOM), and the literal `host` subtree
+ * never contains those. A shadow tree with no slot at all falls back to the host's light DOM,
+ * as before.
+ */
 export function collectFocusables(shadowRoot: ShadowRoot, host: HTMLElement): HTMLElement[] {
 	const list: HTMLElement[] = [];
-	const add = (root: ParentNode) =>
-		root.querySelectorAll<HTMLElement>("*").forEach((el) => {
+	let sawSlot = false;
+	const visit = (el: Element) => {
+		if (el instanceof HTMLSlotElement) {
+			sawSlot = true;
+			const assigned = el.assignedElements({ flatten: true });
+			if (assigned.length) assigned.forEach(visit);
+			else walk(el);
+			return;
+		}
+		if (isFocusable(el)) list.push(el as HTMLElement);
+		walk(el);
+	};
+	const walk = (node: ParentNode) => {
+		for (const child of node.children) visit(child);
+	};
+	walk(shadowRoot);
+	if (!sawSlot) {
+		host.querySelectorAll<HTMLElement>("*").forEach((el) => {
 			if (isFocusable(el)) list.push(el);
 		});
-	add(shadowRoot);
-	add(host);
+	}
 	return list;
 }
 

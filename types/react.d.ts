@@ -45,6 +45,7 @@ import type { DjLabel } from "@dojo-ng/label";
 import type { DjList } from "@dojo-ng/list";
 import type { DjLoadingIndicator } from "@dojo-ng/loading-indicator";
 import type { DjNativeSelect } from "@dojo-ng/native-select";
+import type { DjNav } from "@dojo-ng/nav";
 import type { DjNumberInput } from "@dojo-ng/number-input";
 import type { DjPagination } from "@dojo-ng/pagination";
 import type { DjPasswordInput } from "@dojo-ng/password-input";
@@ -360,6 +361,13 @@ declare module "react" {
         "label-hidden"?: DjNativeSelect["labelHidden"];
         "placeholder"?: DjNativeSelect["placeholder"];
         "size"?: DjNativeSelect["size"];
+      };
+      "dj-nav": DjProps<DjNav> & {
+        "label"?: DjNav["label"];
+        "open"?: DjNav["open"];
+        "panel"?: DjNav["panel"];
+        "trigger-label"?: DjNav["triggerLabel"];
+        "collapsed"?: DjNav["collapsed"];
       };
       "dj-number-input": DjProps<DjNumberInput> & {
         "type"?: DjNumberInput["type"];

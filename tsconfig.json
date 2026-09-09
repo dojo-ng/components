@@ -302,6 +302,9 @@
       "path": "packages/carousel"
     },
     {
+      "path": "packages/nav"
+    },
+    {
       "path": "packages/dnd"
     },
     {

@@ -43,6 +43,7 @@ import type { DjLabel } from "@dojo-ng/label";
 import type { DjList } from "@dojo-ng/list";
 import type { DjLoadingIndicator } from "@dojo-ng/loading-indicator";
 import type { DjNativeSelect } from "@dojo-ng/native-select";
+import type { DjNav } from "@dojo-ng/nav";
 import type { DjNumberInput } from "@dojo-ng/number-input";
 import type { DjPagination } from "@dojo-ng/pagination";
 import type { DjPasswordInput } from "@dojo-ng/password-input";
@@ -356,6 +357,13 @@ declare module "solid-js" {
         "label-hidden"?: DjNativeSelect["labelHidden"];
         "placeholder"?: DjNativeSelect["placeholder"];
         "size"?: DjNativeSelect["size"];
+      };
+      "dj-nav": JSX.HTMLAttributes<DjNav> & {
+        "label"?: DjNav["label"];
+        "open"?: DjNav["open"];
+        "panel"?: DjNav["panel"];
+        "trigger-label"?: DjNav["triggerLabel"];
+        "collapsed"?: DjNav["collapsed"];
       };
       "dj-number-input": JSX.HTMLAttributes<DjNumberInput> & {
         "type"?: DjNumberInput["type"];
@@ -680,6 +688,8 @@ declare module "solid-js" {
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
       "dj-reorder": CustomEvent;
+      "dj-nav-collapse": CustomEvent;
+      "dj-nav-toggle": CustomEvent;
       "dj-page": CustomEvent;
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;
@@ -718,6 +728,8 @@ declare module "solid-js" {
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
       "dj-reorder": CustomEvent;
+      "dj-nav-collapse": CustomEvent;
+      "dj-nav-toggle": CustomEvent;
       "dj-page": CustomEvent;
       "dj-confirm": CustomEvent;
       "dj-cancel": CustomEvent;

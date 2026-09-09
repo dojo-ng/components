@@ -123,6 +123,9 @@
       "@dojo-ng/carousel": [
         "./packages/carousel/dist/index.d.ts"
       ],
+      "@dojo-ng/nav": [
+        "./packages/nav/dist/index.d.ts"
+      ],
       "@dojo-ng/audio": [
         "./packages/audio/dist/index.d.ts"
       ],

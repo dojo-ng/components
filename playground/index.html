@@ -41,6 +41,7 @@
 					"@dojo-ng/tooltip": "../packages/tooltip/dist/index.js",
 					"@dojo-ng/dialog": "../packages/dialog/dist/index.js",
 					"@dojo-ng/slide-pane": "../packages/slide-pane/dist/index.js",
+					"@dojo-ng/nav": "../packages/nav/dist/index.js",
 					"@dojo-ng/title-pane": "../packages/title-pane/dist/index.js",
 					"@dojo-ng/tab-container": "../packages/tab-container/dist/index.js",
 					"@dojo-ng/slider": "../packages/slider/dist/index.js",
@@ -158,7 +159,7 @@
 			tuned for a first-time visitor and it stays <code>noindex</code>. A separate, live, no-install,
 			multi-framework playground is planned (see the site plan) but not built yet; this page is not a
 			preview of it.</p>
-			<p class="header-stats"><!-- GENERATED:HEADER-STATS BEGIN -->40 demo sections across 8 groups, covering 68 of 109 shipped packages (see the coverage list at the foot of the page). Built from Dojo NG v0.1.0.<!-- GENERATED:HEADER-STATS END --></p>
+			<p class="header-stats"><!-- GENERATED:HEADER-STATS BEGIN -->41 demo sections across 8 groups, covering 69 of 110 shipped packages (see the coverage list at the foot of the page). Built from Dojo NG v0.1.0.<!-- GENERATED:HEADER-STATS END --></p>
 		</header>
 
 		<div class="toolbar">
@@ -218,6 +219,7 @@
 					<li><a href="#breadcrumb-accordion-tree-grid">Breadcrumb, accordion, tree, grid</a></li>
 					<li><a href="#tree">Tree (folders + MIME structure)</a></li>
 					<li><a href="#toolbar">Toolbar</a></li>
+					<li><a href="#nav">Nav</a></li>
 				</ul>
 				<h2>Data display</h2>
 				<ul>
@@ -555,6 +557,33 @@
 		</dj-toolbar>
 		<span id="toolbar-state" style="color: var(--dj-color-text-muted)">overflow action: (none)</span>
 		</section>
+<section id="nav" data-dj-packages="nav">
+		<h3>Nav</h3>
+		<p class="section-purpose">A collapsing nav landmark — drag the bordered box's resize handle across the 45rem threshold to flip arrangement.</p>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			The box below is resizable (drag its bottom-right corner) so you can cross the <code>--dj-nav-collapsed</code> threshold without resizing the whole window. The pin checkbox sets the token directly, overriding the container query — the permanent-hamburger, no-JS case. Switch the Locale to <code>ar-EG</code> to check RTL (the drawer opens from the right).
+		</p>
+		<div class="row" style="gap: 1rem; align-items: center; margin: 0 0 0.5rem">
+			<label for="nav-panel-select">Panel</label>
+			<select id="nav-panel-select">
+				<option value="drawer">drawer</option>
+				<option value="dropdown">dropdown</option>
+				<option value="overlay">overlay</option>
+			</select>
+			<label style="display: inline-flex; align-items: center; gap: 0.35rem">
+				<input type="checkbox" id="nav-pin" />
+				Pin collapsed (permanent hamburger)
+			</label>
+		</div>
+		<div style="resize: horizontal; overflow: auto; border: 1px solid var(--dj-color-border); border-radius: 8px; padding: 0.75rem; inline-size: 20rem; min-inline-size: 12rem; max-inline-size: 100%">
+			<dj-nav id="nav-demo" label="Site">
+				<a href="#docs">Docs</a>
+				<a href="#blog">Blog</a>
+				<a href="#pricing">Pricing</a>
+				<a href="#about">About</a>
+			</dj-nav>
+		</div>
+		</section>
 				<h2 class="group-heading">Data display</h2>
 <section id="icon" data-dj-packages="icon">
 		<h3>Icon</h3>
@@ -862,7 +891,7 @@
 
 				<!-- GENERATED:COVERAGE BEGIN -->
 				<details class="coverage">
-					<summary>68 of 109 shipped packages have a demo on this page (41 do not)</summary>
+					<summary>69 of 110 shipped packages have a demo on this page (41 do not)</summary>
 					<ul>
 					<li>audio</li>
 					<li>board</li>
@@ -958,7 +987,7 @@
 			import "@dojo-ng/header"; import "@dojo-ng/progress"; import "@dojo-ng/breadcrumb-group"; import "@dojo-ng/snackbar";
 			import "@dojo-ng/global-event"; import "@dojo-ng/accordion"; import "@dojo-ng/checkbox-group"; import "@dojo-ng/rate";
 			import "@dojo-ng/form"; import "@dojo-ng/date-input"; import "@dojo-ng/time-picker"; import "@dojo-ng/popup-confirmation";
-			import "@dojo-ng/context-menu"; import "@dojo-ng/pagination"; import "@dojo-ng/speed-dial"; import "@dojo-ng/tree"; import "@dojo-ng/grid"; import "@dojo-ng/toolbar"; import "@dojo-ng/chart"; import "@dojo-ng/carousel";
+			import "@dojo-ng/context-menu"; import "@dojo-ng/pagination"; import "@dojo-ng/speed-dial"; import "@dojo-ng/tree"; import "@dojo-ng/grid"; import "@dojo-ng/toolbar"; import "@dojo-ng/chart"; import "@dojo-ng/carousel"; import "@dojo-ng/nav";
 				import "@dojo-ng/transition"; import "@dojo-ng/transition-group";
 			import "@dojo-ng/color-picker"; import "@dojo-ng/file-input";
 			import { createStore } from "@dojo-ng/store";
@@ -1052,6 +1081,15 @@
 			];
 			demoToolbar.addEventListener("dj-action", (e) => {
 				document.getElementById("toolbar-state").textContent = `overflow action: ${e.detail.value}`;
+			});
+
+			// nav: panel switcher + pin toggle over the resizable container
+			const navDemo = document.getElementById("nav-demo");
+			document.getElementById("nav-panel-select").addEventListener("change", (e) => {
+				navDemo.panel = e.target.value;
+			});
+			document.getElementById("nav-pin").addEventListener("change", (e) => {
+				navDemo.style.setProperty("--dj-nav-collapsed", e.target.checked ? "1" : "");
 			});
 
 			// charts

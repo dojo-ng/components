@@ -6,6 +6,7 @@ export { FOCUSABLE_SELECTOR, NATIVE_FOCUSABLE_SELECTOR, isFocusable, firstFocusa
 export { lockBodyScroll } from "./scroll-lock.js";
 export { FormControl } from "./form-control.js";
 export type { FormRestoreState, FormControlMixinInterface } from "./form-control.js";
+export { TokenFlagController } from "./token-flag-controller.js";
 
 // Match registered event types whose detail is a required, non-empty object.
 type EventTypeRequiresDetail<T> = T extends keyof GlobalEventHandlersEventMap

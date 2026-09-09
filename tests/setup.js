@@ -17,11 +17,19 @@
 //
 // Install with: npm install  (happy-dom is a root devDependency).
 
-// Load happy-dom SYNCHRONOUSLY (via its CJS build) — not `await import`. With a
-// top-level await here, statically-imported components (and Lit) could evaluate
-// before the globals are installed, and Lit's `class extends HTMLElement` would
-// throw "HTMLElement is not defined". A synchronous require guarantees this file
-// finishes before any sibling import runs.
+// Load happy-dom SYNCHRONOUSLY — not `await import`. With a top-level await here,
+// statically-imported components (and Lit) could evaluate before the globals are
+// installed, and Lit's `class extends HTMLElement` would throw "HTMLElement is not
+// defined". A synchronous require guarantees this file finishes before any sibling
+// import runs.
+//
+// This used to resolve happy-dom's CJS build. happy-dom 20 dropped it and is ESM-only,
+// so the require below now goes through Node's require(esm) support, which needs Node
+// 22.12 or newer (upgraded from 15 on 2026-09-09; the suite runs on 22.23). It would
+// break on older Node, or if happy-dom ever puts a top-level await in its entry point.
+// The replacement if either happens is a plain static `import { Window } from
+// "happy-dom"`, which holds the same ordering guarantee for the same reason: a module
+// with no top-level await evaluates fully before the next import statement does.
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 
@@ -91,7 +99,7 @@ for (const name of GLOBALS) {
 	}
 }
 
-// happy-dom 15 ships no ElementInternals / attachInternals, which every
+// happy-dom ships no ElementInternals / attachInternals (still true in 20.14), which every
 // form-associated dj- control needs. In production the app loads
 // element-internals-polyfill; for tests we install a minimal shim that is
 // enough for these smokes: it records the submitted form value on the host (as

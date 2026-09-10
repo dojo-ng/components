@@ -57,6 +57,9 @@
       "@dojo-ng/rich-text-emoji": [
         "./packages/rich-text-emoji/dist/index.d.ts"
       ],
+      "@dojo-ng/rich-text-criticmarkup": [
+        "./packages/rich-text-criticmarkup/dist/index.d.ts"
+      ],
       "@dojo-ng/color-picker": [
         "./packages/color-picker/dist/index.d.ts"
       ],
@@ -144,8 +147,14 @@
       "@dojo-ng/popup": [
         "./packages/popup/dist/index.d.ts"
       ],
+      "@dojo-ng/popup-confirmation": [
+        "./packages/popup-confirmation/dist/index.d.ts"
+      ],
       "@dojo-ng/text-input": [
         "./packages/text-input/dist/index.d.ts"
+      ],
+      "@dojo-ng/text-area": [
+        "./packages/text-area/dist/index.d.ts"
       ],
       "@dojo-ng/constrained-input": [
         "./packages/constrained-input/dist/index.d.ts"

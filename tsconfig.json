@@ -245,6 +245,9 @@
       "path": "packages/rich-text-emoji"
     },
     {
+      "path": "packages/rich-text-criticmarkup"
+    },
+    {
       "path": "packages/data-grid"
     },
     {

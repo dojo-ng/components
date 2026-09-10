@@ -107,6 +107,7 @@ export const SUPPORT_PACKAGES = [
 	"rich-text-markdown",
 	"rich-text-color",
 	"rich-text-image",
+	"rich-text-criticmarkup",
 	"data-grid-formats",
 	"data-grid-cell-components",
 	"data-grid-filter",

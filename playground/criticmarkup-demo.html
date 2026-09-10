@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — rich-text-criticmarkup demo</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"lexical": "https://esm.sh/lexical@0.21.0",
+					"@lexical/rich-text": "https://esm.sh/@lexical/rich-text@0.21.0",
+					"@lexical/history": "https://esm.sh/@lexical/history@0.21.0",
+					"@lexical/html": "https://esm.sh/@lexical/html@0.21.0",
+					"@lexical/clipboard": "https://esm.sh/@lexical/clipboard@0.21.0",
+					"@lexical/utils": "https://esm.sh/@lexical/utils@0.21.0",
+					"@lexical/list": "https://esm.sh/@lexical/list@0.21.0",
+					"@lexical/selection": "https://esm.sh/@lexical/selection@0.21.0",
+					"@lexical/markdown": "https://esm.sh/@lexical/markdown@0.21.0",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/button": "../packages/button/dist/index.js",
+					"@dojo-ng/icon": "../packages/icon/dist/index.js",
+					"@dojo-ng/label": "../packages/label/dist/index.js",
+					"@dojo-ng/helper-text": "../packages/helper-text/dist/index.js",
+					"@dojo-ng/i18n": "../packages/i18n/dist/index.js",
+					"@dojo-ng/popup": "../packages/popup/dist/index.js",
+					"@dojo-ng/popup-confirmation": "../packages/popup-confirmation/dist/index.js",
+					"@dojo-ng/text-area": "../packages/text-area/dist/index.js",
+					"@dojo-ng/rich-text": "../packages/rich-text/dist/index.js",
+					"@dojo-ng/rich-text-headings": "../packages/rich-text-headings/dist/index.js",
+					"@dojo-ng/rich-text-lists": "../packages/rich-text-lists/dist/index.js",
+					"@dojo-ng/rich-text-markdown": "../packages/rich-text-markdown/dist/index.js",
+					"@dojo-ng/rich-text-criticmarkup": "../packages/rich-text-criticmarkup/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			h1 { font-size: 1.25rem; } h2 { font-size: 1rem; margin-top: 2rem; }
+			.hint { color: var(--dj-color-text-muted); max-width: 48rem; }
+			.controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; max-width: 48rem; margin-bottom: .5rem; }
+			.grid { display: grid; gap: .5rem; max-width: 48rem; }
+			.two-up { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; max-width: 48rem; }
+			pre { background: var(--dj-color-neutral-100); padding: .75rem; border-radius: .375rem; max-width: 48rem; white-space: pre-wrap; word-break: break-word; font-size: .8rem; }
+			.dj-rt-editable h1 { font-size: 1.6em; margin: .3em 0; }
+			.dj-rt-editable h2 { font-size: 1.35em; margin: .3em 0; }
+			.dj-rt-editable ul { list-style: disc; padding-left: 1.5em; }
+			.dj-rt-editable ol { list-style: decimal; padding-left: 1.5em; }
+		</style>
+	</head>
+	<body>
+		<h1>rich-text-criticmarkup — demo</h1>
+		<p class="hint">
+			CriticMarkup tracked changes for <code>&lt;dj-rich-text&gt;</code>: <code>{++inserted++}</code>,
+			<code>{--deleted--}</code>, <code>{~~old~&gt;new~~}</code> (a substitution), <code>{&gt;&gt;comment&lt;&lt;}</code>
+			(bare or anchored), and <code>{==highlighted==}</code>. The seeded paragraph below has one of
+			each, an anchored comment, and a same-kind nested pair (detected and refused as its own node,
+			never mangled — try finding it in the raw value). Headings, lists, and Markdown are loaded
+			alongside it, so marks compose with the rest of the document.
+		</p>
+		<p class="hint">
+			Toolbar: <strong>Suggest edits</strong> toggles suggestion mode (typed/deleted text becomes a
+			mark instead of a direct edit — try it, then split or merge a paragraph with Enter/Backspace to
+			see the structural policy below in action); <strong>Accept</strong>/<strong>Reject</strong> act
+			on the mark under the caret; <strong>Accept all</strong>/<strong>Reject all</strong> resolve the
+			whole document (behind a confirm popup); <strong>Add comment</strong> inserts a bare comment at
+			a collapsed caret, or anchors one over a selection. Click the in-content comment button (or a
+			highlighted comment) to edit or delete a note — "Remove note" keeps the highlight, "Remove
+			highlight" drops both.
+		</p>
+
+		<div class="controls">
+			<label>Format:
+				<select id="format">
+					<option value="criticmarkup">criticmarkup</option>
+					<option value="markdown">markdown (composed via criticMarkupTransformers)</option>
+				</select>
+			</label>
+			<label>Structural edits:
+				<select id="structural-edits">
+					<option value="mark">mark (default — a proposed break, not a real split)</option>
+					<option value="annotate">annotate (real split, untracked, with a note at the boundary)</option>
+					<option value="block">block (refuse the split outright)</option>
+					<option value="apply">apply (real split, untracked, no note)</option>
+				</select>
+			</label>
+		</div>
+
+		<dj-rich-text id="editor" label="Draft" format="criticmarkup"></dj-rich-text>
+
+		<h2>Live <code>value</code></h2>
+		<div class="two-up">
+			<div>
+				<p class="hint">Raw (current format)</p>
+				<pre id="raw-out">(type above)</pre>
+			</div>
+			<div>
+				<p class="hint">
+					<code>toPortableCriticMarkup(value)</code> — plain CriticMarkup for a tool that does not
+					know the paragraph-break token
+				</p>
+				<pre id="portable-out">(type above)</pre>
+			</div>
+		</div>
+
+		<script type="module">
+			import "@dojo-ng/rich-text";
+			import { defaultPlugins } from "@dojo-ng/rich-text";
+			import { headingsPlugin } from "@dojo-ng/rich-text-headings";
+			import { listsPlugin } from "@dojo-ng/rich-text-lists";
+			import { createMarkdownPlugin } from "@dojo-ng/rich-text-markdown";
+			import { createCriticMarkupPlugin, criticMarkupTransformers, toPortableCriticMarkup } from "@dojo-ng/rich-text-criticmarkup";
+			import { TRANSFORMERS } from "@lexical/markdown";
+
+			const SEED =
+				"This draft has an {++inserted phrase++}, a {--deleted phrase--}, a " +
+				"{~~substituted~>replaced~~} word, an {==anchored highlight==}{>>with a note<<}, " +
+				"and a nested aside: {--outer {--inner--} deletion--}.";
+
+			const editor = document.getElementById("editor");
+			const rawOut = document.getElementById("raw-out");
+			const portableOut = document.getElementById("portable-out");
+			const formatSelect = document.getElementById("format");
+			const structuralSelect = document.getElementById("structural-edits");
+
+			// Compose criticmarkup's transformers into the general markdown format too (decision 13),
+			// so switching the `format` select to "markdown" still recognizes CriticMarkup syntax.
+			const markdownPlugin = createMarkdownPlugin({ transformers: [...TRANSFORMERS, ...criticMarkupTransformers] });
+
+			function buildPlugins() {
+				return [
+					...defaultPlugins,
+					headingsPlugin,
+					listsPlugin,
+					markdownPlugin,
+					createCriticMarkupPlugin({ structuralEdits: structuralSelect.value }),
+				];
+			}
+
+			function show() {
+				const value = editor.value || "";
+				rawOut.textContent = value || "(empty)";
+				portableOut.textContent = toPortableCriticMarkup(value) || "(empty)";
+			}
+
+			// `value` only applies through the ACTIVE format at construction time or on a genuine
+			// `plugins` change (dj-rich-text has no post-build "set value" path) — build the element
+			// itself, before it is ever connected, so `format`/`plugins`/`value` are all in place
+			// before dj-rich-text's first update ever runs.
+			editor.plugins = buildPlugins();
+			editor.value = SEED;
+
+			editor.addEventListener("dj-change", show);
+			// The initial seed load suppresses its own `dj-change` (the same echo-back guard that
+			// keeps a programmatic value-set from re-triggering itself), and building the editor —
+			// Lit's update, THEN Lexical's own non-discrete `editor.update()` inside it — is more
+			// async steps than a fixed frame count reliably covers. Poll instead of guessing one.
+			(function waitForSeed() {
+				if (editor.value) show();
+				else requestAnimationFrame(waitForSeed);
+			})();
+
+			formatSelect.addEventListener("change", () => {
+				editor.format = formatSelect.value;
+				requestAnimationFrame(show);
+			});
+
+			// structuralEdits is a plugin-creation-time option, not a live property — changing it
+			// reassigns `plugins` with a freshly-built criticmarkup plugin. dj-rich-text preserves the
+			// current content across a plugins change (it re-serializes through the OLD editor before
+			// tearing down, then re-applies that through the NEW one), so in-progress edits survive.
+			structuralSelect.addEventListener("change", () => {
+				const previousEditor = editor.editor;
+				editor.plugins = buildPlugins();
+				// Same async rebuild as the initial seed: poll for the new Lexical instance rather
+				// than guess a frame count.
+				(function waitForRebuild() {
+					if (editor.editor && editor.editor !== previousEditor) show();
+					else requestAnimationFrame(waitForRebuild);
+				})();
+			});
+		</script>
+	</body>
+</html>

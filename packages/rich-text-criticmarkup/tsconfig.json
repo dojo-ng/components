@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
+  "include": ["src"],
+  "references": [
+    { "path": "../rich-text" },
+    { "path": "../i18n" },
+    { "path": "../popup-confirmation" },
+    { "path": "../popup" },
+    { "path": "../text-area" },
+    { "path": "../button" }
+  ]
+}

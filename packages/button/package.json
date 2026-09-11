@@ -1,12 +1,16 @@
 {
   "name": "@dojo-ng/button",
-  "version": "0.1.0", "license": "BSD-3-Clause",
+  "version": "0.1.1",
+  "license": "BSD-3-Clause",
   "description": "Dojo NG button web component",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "!dist/**/*.map"],
+  "files": [
+    "dist",
+    "!dist/**/*.map"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "rm -rf dist"

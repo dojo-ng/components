@@ -41,7 +41,7 @@ const TOKEN_TAIL = /(^|\s)([^\s:"]+):("(?:[^"]*)"?|[^\s]*)$/;
  */
 export class DjSearchBox extends DojoElement {
 	static override styles: CSSResultGroup = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 
 	#i18n = new LocaleController(this);

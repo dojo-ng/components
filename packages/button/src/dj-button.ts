@@ -36,7 +36,7 @@ export type IconPosition = "before" | "after";
  */
 export class DjButton extends DojoElement {
 	static override styles: CSSResultGroup = [styles, reducedMotion];
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 
 	/** Whether the button is disabled. */

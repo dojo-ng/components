@@ -50,7 +50,7 @@ const HTML_FORMAT: RichTextFormat = {
  * selects an alternate serializer contributed by a plugin. Event: `dj-change`.
  */
 export class DjRichText extends FormControl(DojoElement) implements Partial<DojoFormControl> {
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 	static formAssociated = true;
 

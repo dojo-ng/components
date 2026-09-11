@@ -2,9 +2,11 @@
 // (ResizeObserver-driven, so happy-dom can't exercise it), interactive legend toggling,
 // keyboard operation of the brush window, and an axe pass. Not a form control.
 import { sendKeys } from "@web/test-runner-commands";
+import { html, svg } from "lit";
 import { mount, cleanup, make, assert, assertEqual, settleFrames } from "./helpers.js";
 import { assertNoViolations } from "./a11y.js";
 import "../../packages/chart/dist/index.js";
+import { defineChartPlugin } from "../../packages/chart/dist/plugin.js";
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const DATA = [
@@ -101,5 +103,79 @@ describe("dj-chart", () => {
 		const d = line.getAttribute("d") ?? "";
 		assertEqual((d.match(/M/g) ?? []).length, 2, "the non-positive value breaks the path into two subpaths, same as the unit-tested linePath string");
 		await assertNoViolations(el);
+	});
+
+	// Track P (plugin seam): the geometry a plugin actually cares about — domain merge, pane
+	// height/gap math, renderUnder/renderOver document order, and a pane sharing the plot's own
+	// xCenter — all live inside the SVG-tagged sub-templates happy-dom can't lay out (see the unit
+	// suite's own banner), so this is the one place they're confirmed for real.
+	it("plugin seam: domain merge, pane layout, under/over ordering, and shared xCenter", async () => {
+		const plugin = defineChartPlugin({
+			name: "test-plugin",
+			domain: () => [0, 500],
+			panes: () => [
+				{ id: "vol", height: 60, domain: [0, 100], label: "Volume" },
+				{ id: "zero", height: 0, domain: [0, 1], label: "Zero pane" },
+			],
+			renderUnder: () => svg`<circle class="plugin-under-mark" cx="1" cy="1" r="1"></circle>`,
+			renderOver: () => svg`<circle class="plugin-over-mark" cx="1" cy="1" r="1"></circle>`,
+			renderPane: (pane, ctx) => svg`<circle class="pane-xcenter-mark" cx="${ctx.xCenter("Feb")}" cy="10" r="3"></circle>`,
+		});
+		const el = await mount(chart({ plugins: [plugin] }));
+		await settleChart(el);
+
+		const svgEl = el.shadowRoot.querySelector('svg[part="plot"]');
+		const axisTicks = [...svgEl.querySelectorAll("g.axis text")].map((t) => t.textContent);
+		assert(axisTicks.includes("500"), `the plugin's [0,500] domain widens the y-axis ticks (got ${axisTicks.join(", ")})`);
+
+		const paneGroups = svgEl.querySelectorAll('g[part="series"][role="group"]');
+		assertEqual(paneGroups.length, 1, "the zero-height pane is ignored; only the real pane renders");
+		assertEqual(paneGroups[0].getAttribute("aria-label"), "Volume");
+
+		const seriesChildren = [...svgEl.querySelector("g").children].map((c) => c.getAttribute("class") || c.getAttribute("part") || c.tagName);
+		const underIdx = seriesChildren.findIndex((c) => c === "plugin-under-mark");
+		const seriesIdx = seriesChildren.indexOf("series");
+		const overIdx = seriesChildren.findIndex((c) => c === "plugin-over-mark");
+		assert(underIdx >= 0 && seriesIdx >= 0 && overIdx >= 0, "under mark, core series, and over mark all rendered");
+		assert(underIdx < seriesIdx, "renderUnder draws before the core series in document order");
+		assert(seriesIdx < overIdx, "renderOver draws after the core series in document order");
+
+		const linePath = svgEl.querySelector('[part="line"]').getAttribute("d");
+		const febX = linePath.split("L")[1].split(",")[0]; // second point in the path = category "Feb"
+		const paneMarkCx = el.shadowRoot.querySelector(".pane-xcenter-mark").getAttribute("cx");
+		assertEqual(paneMarkCx, febX, "a pane's xCenter(\"Feb\") matches the core series' own x for Feb — same shared scale");
+
+		await assertNoViolations(el);
+	});
+
+	// Track P (plugin seam, P4): a plugin's legend/table extra columns are real accessible content —
+	// confirmed here for both the header/cell association axe checks and, unlike unit tests, that the
+	// whole chart (plugin content included) stays clean end to end.
+	it("plugin seam: legend and table extra columns are present and axe-clean", async () => {
+		const plugin = defineChartPlugin({
+			name: "test-plugin",
+			legendItems: () => [{ label: "Signal", color: "#0a0" }],
+			tableRows: (ctx) => [{ header: "Signal", cells: ctx.data.map(() => "buy") }],
+		});
+		const el = await mount(chart({ plugins: [plugin], legendToggle: true, label: "Monthly visits" }));
+		await settleChart(el);
+
+		const legendText = el.shadowRoot.querySelector('[part="legend"]').textContent;
+		assert(legendText.includes("Signal"), "the plugin's legend entry renders");
+
+		const headerCells = [...el.shadowRoot.querySelectorAll("table.sr-only thead th")];
+		const pluginHeader = headerCells.find((th) => th.textContent === "Signal");
+		assert(pluginHeader, "the plugin's table column header renders");
+		assertEqual(pluginHeader.getAttribute("scope"), "col");
+
+		await assertNoViolations(el);
+	});
+
+	it("plugin seam: renderer=\"canvas\" with a plugin falls back to svg in a real browser too", async () => {
+		const plugin = defineChartPlugin({ name: "test-plugin" });
+		const el = await mount(chart({ plugins: [plugin], renderer: "canvas" }));
+		await settleChart(el);
+		assert(el.shadowRoot.querySelector('svg[part="plot"]'), "svg still renders");
+		assert(!el.shadowRoot.querySelector('canvas[part="plot-canvas"]'), "no canvas overlay when plugins are present");
 	});
 });

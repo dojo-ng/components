@@ -1,7 +1,7 @@
 import { scaleLinear, scaleLog, scaleBand, scalePoint, scaleSqrt, type ScaleLinear, type ScaleBand, type ScalePoint } from "d3-scale";
 import { line as d3line, area as d3area, stack as d3stack, arc as d3arc, pie as d3pie } from "d3-shape";
 import { max as d3max, extent as d3extent } from "d3-array";
-import type { ChartDatum, ChartSeries, ChartType, ChartRenderer, MissingMode, ValueScale, ScaleKind } from "./types.js";
+import type { ChartDatum, ChartSeries, ChartType, ChartRenderer, MissingMode, ValueScale, ScaleKind, Scales } from "./types.js";
 
 /** Coerce an unknown cell to a finite number, or `null` when it isn't one — a missing value stays
  * missing instead of becoming a false zero. `null`, `undefined`, and `""` are checked explicitly
@@ -38,14 +38,10 @@ export function hasBars(series: ChartSeries[], chartType: ChartType): boolean {
 	return series.some((s) => effectiveType(s, chartType) === "bar");
 }
 
-export interface Scales {
-	x: ScaleBand<string> | ScalePoint<string>;
-	xBand: ScaleBand<string>; // always a band, for tick/grid spacing and bar math
-	y: ValueScale; // primary (left) axis
-	yRight?: ValueScale; // secondary (right) axis, when any series opts in
-	cats: string[];
-	band: boolean;
-}
+// `Scales` itself moved to types.ts (Track P, decision "P1 moves the Scales interface into
+// types.ts") so a plugin package outside @dojo-ng/chart can name it; re-exported here too so every
+// existing `import type { Scales } from "./core.js"` (if any) keeps resolving.
+export type { Scales };
 
 function axisOf(s: ChartSeries): "left" | "right" {
 	return s.axis === "right" ? "right" : "left";

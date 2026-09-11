@@ -1,4 +1,4 @@
-import type { ScaleContinuousNumeric } from "d3-scale";
+import type { ScaleContinuousNumeric, ScaleBand, ScalePoint } from "d3-scale";
 
 /**
  * Chart mark type. `line`/`area`/`bar` are cartesian (category x, linear y); `scatter`/`bubble`
@@ -56,4 +56,16 @@ export interface ChartMargin {
 	right: number;
 	bottom: number;
 	left: number;
+}
+
+/** The resolved x/y scales for a cartesian plot (Track P: moved here from `core.ts`, which stays
+ * unexported, so a plugin package can name this type — everything else a plugin needs from `core.ts`
+ * arrives through `ChartContext` in `plugin.ts` instead). */
+export interface Scales {
+	x: ScaleBand<string> | ScalePoint<string>;
+	xBand: ScaleBand<string>; // always a band, for tick/grid spacing and bar math
+	y: ValueScale; // primary (left) axis
+	yRight?: ValueScale; // secondary (right) axis, when any series opts in
+	cats: string[];
+	band: boolean;
 }

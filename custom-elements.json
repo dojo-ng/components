@@ -1989,6 +1989,15 @@
               "reflects": true
             },
             {
+              "kind": "field",
+              "name": "plugins",
+              "type": {
+                "text": "ChartPlugin[]"
+              },
+              "default": "[]",
+              "description": "Plugins draw extra marks (candlesticks, volume, an indicator) without the core knowing anything about them (decision 10) \u2014 factories, not classes, no registry. Applies to the vertical cartesian family only (line/area/bar, not stacked-plus-anything-else here beyond what cartesian already means, and not xy/radial/horizontal \u2014 Track F's plugins are all cartesian). A `plugins` change disposes every previous plugin's `setup()` and runs the new array's, in an ordinary reactive update (decision 11 \u2014 there is no creation-time constraint to guard, unlike `rich-text`/`data-grid`'s plugin seams). Forces `renderer=\"svg\"` (decision 12): mixing a canvas mark layer with plugin-drawn SVG would need a second draw protocol nobody has asked for. Default `[]` \u2014 a chart with no plugins renders exactly as one with the property absent."
+            },
+            {
               "kind": "method",
               "name": "appendData",
               "description": "Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).",

@@ -1,10 +1,12 @@
 import { html, svg, nothing, type TemplateResult } from "lit";
+import { scaleLinear } from "d3-scale";
 import { property, state } from "lit/decorators.js";
 import { ref } from "lit/directives/ref.js";
 import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
 import { LocaleController, formatNumber, messages, registerDefaults } from "@dojo-ng/i18n";
 import styles from "./dj-chart.styles.js";
-import type { ChartDatum, ChartSeries, ChartType, ChartMargin, ChartRenderer, MissingMode, ScaleKind, ValueScale } from "./types.js";
+import type { ChartDatum, ChartSeries, ChartType, ChartMargin, ChartRenderer, MissingMode, ScaleKind, ValueScale, Scales } from "./types.js";
+import type { ChartPlugin, ChartContext, ChartPane } from "./plugin.js";
 import {
 	buildScales,
 	buildXYScales,
@@ -173,6 +175,16 @@ export class DjChart extends DojoElement {
 	/** Same as `yScale`, for the secondary (right) axis — so a price-on-log with volume-on-linear
 	 * combo works. */
 	@property({ attribute: "y-scale-right", reflect: true }) yScaleRight: ScaleKind = "linear";
+	/** Plugins draw extra marks (candlesticks, volume, an indicator) without the core knowing
+	 * anything about them (decision 10) — factories, not classes, no registry. Applies to the
+	 * vertical cartesian family only (line/area/bar, not stacked-plus-anything-else here beyond what
+	 * cartesian already means, and not xy/radial/horizontal — Track F's plugins are all cartesian).
+	 * A `plugins` change disposes every previous plugin's `setup()` and runs the new array's, in an
+	 * ordinary reactive update (decision 11 — there is no creation-time constraint to guard, unlike
+	 * `rich-text`/`data-grid`'s plugin seams). Forces `renderer="svg"` (decision 12): mixing a canvas
+	 * mark layer with plugin-drawn SVG would need a second draw protocol nobody has asked for.
+	 * Default `[]` — a chart with no plugins renders exactly as one with the property absent. */
+	@property({ attribute: false }) plugins: ChartPlugin[] = [];
 
 	@state() private w = 0;
 	@state() private h = 0;
@@ -189,6 +201,11 @@ export class DjChart extends DojoElement {
 	#brushDrag?: { mode: "start" | "end" | "pan"; n: number; origStart: number; origEnd: number; x0: number };
 	// Keys of already-emitted console.warn messages, so each is logged at most once per element.
 	#warned = new Set<string>();
+	// The exact `plugins` array reference setup() last ran for — compared by IDENTITY, not deep
+	// equality, so replacing the array (even with equal-looking entries) disposes and re-runs
+	// (decision 11), while an ordinary re-render with the SAME array reference does neither.
+	#pluginsSetupFor: ChartPlugin[] | null = null;
+	#pluginDisposers: Array<() => void> = [];
 	// Rows queued by appendData() awaiting the next scheduled flush.
 	#pendingAppend: ChartDatum[] = [];
 	#appendFlushScheduled = false;
@@ -247,6 +264,9 @@ export class DjChart extends DojoElement {
 		if (this.stacked && (this.yScale === "log" || this.yScaleRight === "log")) {
 			this.warnOnce("log-stacked", `dj-chart: y-scale="log" is not supported with stacked; falling back to linear.`);
 		}
+		if (this.renderer === "canvas" && this.plugins.length > 0) {
+			this.warnOnce("plugins-canvas", `dj-chart: renderer="canvas" is not supported with plugins; falling back to svg.`);
+		}
 	}
 
 	/** Format a y value for ticks and tooltips: explicit override, else locale-aware Intl. */
@@ -289,6 +309,13 @@ export class DjChart extends DojoElement {
 		super.disconnectedCallback();
 		this.#ro?.disconnect();
 		this.#ro = undefined;
+		this.#disposePlugins();
+	}
+
+	#disposePlugins(): void {
+		for (const dispose of this.#pluginDisposers) dispose();
+		this.#pluginDisposers = [];
+		this.#pluginsSetupFor = null;
 	}
 
 	private color(s: ChartSeries, i: number): string {
@@ -375,8 +402,10 @@ export class DjChart extends DojoElement {
 	}
 
 	/** The renderer actually in effect for this render: `canvas` only when requested, eligible,
-	 * and `forced-colors: active` isn't (a canvas can't honor `CanvasText` on its own). */
+	 * `forced-colors: active` isn't (a canvas can't honor `CanvasText` on its own), and there are no
+	 * plugins (decision 12 — plugin marks are SVG only). */
 	private get effectiveRendererNow(): ChartRenderer {
+		if (this.plugins.length > 0) return "svg";
 		const t = this.stacked || hasBars(this.series, this.type) ? "bar" : this.type;
 		const forcedColors = typeof matchMedia === "function" && matchMedia("(forced-colors: active)").matches;
 		return effectiveRenderer(this.renderer, t, forcedColors);
@@ -462,14 +491,19 @@ export class DjChart extends DojoElement {
 		// Computed once per render and threaded to both the SVG labels and the table below, so a
 		// formatPoint result can never independently drift between the two (decision 29, Track M).
 		const fpCache = this.formatPointCache();
+		// `renderPlot` also resolves the Track P plugin layer (panes, domain merge) when the chart
+		// is ready and cartesian-vertical; `pluginCtx` is threaded to the legend and table below so
+		// a plugin's `legendItems`/`tableRows` land in the same render, never a stale prior one.
+		const plot = ready ? this.renderPlot(cats, accName, fpCache) : null;
+		const pluginCtx = plot?.pluginCtx ?? null;
 		return html`
 			<div class="plot">
-				${ready ? this.renderPlot(cats, accName, fpCache) : html`<div class="sr-only" role="img" aria-label=${accName}></div>`}
+				${plot ? plot.template : html`<div class="sr-only" role="img" aria-label=${accName}></div>`}
 				${canvasNow ? this.renderCanvas() : nothing}
 			</div>
 			${ready && this.brush && this.group() === "cartesian" && !this.isHBar ? this.renderBrush() : nothing}
-			${ready && showLegend ? this.renderLegend() : nothing}
-			${this.renderTable(cats, fpCache)}
+			${ready && showLegend ? this.renderLegend(pluginCtx) : nothing}
+			${this.renderTable(cats, fpCache, pluginCtx)}
 		`;
 	}
 
@@ -480,16 +514,17 @@ export class DjChart extends DojoElement {
 		return html`<canvas part="plot-canvas" class="plot-canvas" ${ref((el) => (this.#canvasEl = el as HTMLCanvasElement | undefined))}></canvas>`;
 	}
 
-	private renderPlot(cats: string[], accName: string, fpCache: Map<string, Map<number, string>>): TemplateResult {
+	private renderPlot(cats: string[], accName: string, fpCache: Map<string, Map<number, string>>): { template: TemplateResult; pluginCtx: ChartContext | null } {
 		const W = this.w;
 		const H = this.h;
 		const fam = this.group();
-		if (fam === "radial") return this.renderRadial(W, H, cats, accName, fpCache);
+		if (fam === "radial") return { template: this.renderRadial(W, H, cats, accName, fpCache), pluginCtx: null };
 		const topMargin = this.topMargin;
-		const innerH = Math.max(0, H - topMargin - MARGIN.bottom);
-		if (fam === "xy") return this.renderXY(W, H, Math.max(0, W - MARGIN.left - MARGIN.right), innerH, accName, fpCache);
+		let innerH = Math.max(0, H - topMargin - MARGIN.bottom);
+		if (fam === "xy") return { template: this.renderXY(W, H, Math.max(0, W - MARGIN.left - MARGIN.right), innerH, accName, fpCache), pluginCtx: null };
 		// Horizontal bars are a separate render so the vertical path below stays byte-identical.
-		if (this.isHBar) return this.renderCartesianH(W, H, innerH, accName);
+		// (Track P's plugin seam is vertical-cartesian only — Track F's plugins are all cartesian.)
+		if (this.isHBar) return { template: this.renderCartesianH(W, H, innerH, accName), pluginCtx: null };
 		// Cartesian. A secondary axis needs extra right margin for its tick labels.
 		const hasRight = this.series.some((s) => s.axis === "right");
 		const innerW = Math.max(0, W - MARGIN.left - (hasRight ? RIGHT_AXIS_MARGIN : MARGIN.right));
@@ -498,6 +533,11 @@ export class DjChart extends DojoElement {
 		const data = this.brush && this.view ? this.data.slice(vs, ve + 1) : this.data;
 		const cats2 = categories(data, this.categoryKey);
 		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys, this.missing, this.yScale, this.yScaleRight);
+		// Plugins (Track P): resolves panes and merges domain() contributions BEFORE anything below
+		// reads scales.y or innerH, since both are mutated/reassigned here when plugins are present.
+		const pluginLayer = this.buildPluginLayer(data, scales, innerW, innerH);
+		if (pluginLayer) innerH = pluginLayer.innerH;
+		this.syncPluginSetups(pluginLayer?.ctx ?? null);
 		const yOf = (i: number) => (this.series[i]?.axis === "right" && scales.yRight ? scales.yRight : scales.y);
 		this.warnLogNonPositive(data, this.series, yOf);
 		const ticks = yTicks(scales, 5, innerH);
@@ -550,7 +590,17 @@ export class DjChart extends DojoElement {
 		});
 		const pointLabels = this.placedLabels(labelCandidates);
 
-		return html`
+		// Plugin marks (Track P): composed in array order, decision — renderUnder before the core
+		// series in document order, renderOver after. Both draw inside the SAME translated group as
+		// the series, so a plugin's own xCenter()/scales coordinates match the core's exactly.
+		// Filtered to only the plugins that actually implement the hook — a bare `.map()` would leave
+		// an `undefined` entry (its own empty comment marker in the rendered DOM) for every plugin
+		// that doesn't, so a plugin with no `renderUnder`/`renderOver` would not be a true no-op.
+		const pluginCtx = pluginLayer?.ctx ?? null;
+		const renderUnder = pluginCtx ? this.plugins.map((p) => p.renderUnder?.(pluginCtx)).filter((v) => v !== undefined) : nothing;
+		const renderOver = pluginCtx ? this.plugins.map((p) => p.renderOver?.(pluginCtx)).filter((v) => v !== undefined) : nothing;
+
+		const template = html`
 			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot" class="${this.#streaming ? "no-transition" : ""}">
 				<g transform="translate(${MARGIN.left},${topMargin})">
 					${this.showGrid
@@ -575,19 +625,27 @@ export class DjChart extends DojoElement {
 							: nothing}
 					</g>
 					${rightAxis}
+					${renderUnder}
 					<g part="series">
 						${this.series.map((s, i) => (this.hiddenKeys.has(s.key) ? nothing : this.renderSeries(s, i, scales, bars, yOf(i), data)))}
 					</g>
+					${renderOver}
 					${this.renderPointLabels(pointLabels)}
 					<g>
 						${cats2.map(
 							(c) => svg`<rect class="hit" x="${(scales.band ? (scales.xBand(c) ?? 0) : xCenter(scales, c) - 4)}" y="0" width="${scales.band ? scales.xBand.bandwidth() : 8}" height="${innerH}" @pointerenter=${() => this.onHover(c)} @pointerleave=${() => this.onHover(null)}></rect>`,
 						)}
 					</g>
+					${pluginLayer
+						? pluginLayer.panes.map(
+								({ pane, plugin, offset }) => svg`<g part="series" role="group" aria-label=${pane.label} transform="translate(0,${offset})">${plugin.renderPane?.(pane, pluginCtx!)}</g>`,
+							)
+						: nothing}
 				</g>
 			</svg>
-			${this.renderTooltip(scales)}
+			${this.renderTooltip(scales, pluginCtx)}
 		`;
+		return { template, pluginCtx };
 	}
 
 	/** Runs {@link placeLabels} and warns once (per element) when the candidate count exceeds the
@@ -608,6 +666,99 @@ export class DjChart extends DojoElement {
 		return svg`<g part="point-labels">${labels.map(
 			(l) => svg`<text class="point-label" part="point-label" x="${l.x}" y="${l.y}" text-anchor="middle" dominant-baseline="central" aria-hidden="true">${l.text}</text>`,
 		)}</g>`;
+	}
+
+	// ---- plugin seam (Track P) ----
+
+	/** Reads `--dj-chart-pane-gap`, falling back to a sane default when unset or unparseable. */
+	#paneGapPx(): number {
+		const n = parseFloat(getComputedStyle(this).getPropertyValue("--dj-chart-pane-gap"));
+		return Number.isFinite(n) ? n : 8;
+	}
+
+	/** Resolves the vertical-cartesian plugin layer for this render: panes (shrinking the plot by
+	 * their total height plus one gap each, decision 14), each plugin's `domain()` contribution
+	 * merged into the primary y-domain (decision, P2), and the `ChartContext` every hook after this
+	 * point shares. `null` when there are no plugins — the common case costs one length check and
+	 * nothing else. Mutates `scales.y` IN PLACE (`.domain()`/`.range()` update and return the SAME
+	 * d3 scale) so every existing reader — ticks, grid, series, tooltip — automatically sees the
+	 * plugin-adjusted domain and pane-reduced range without being told separately. */
+	private buildPluginLayer(
+		data: ChartDatum[],
+		scales: Scales,
+		innerW: number,
+		innerHBeforePanes: number,
+	): { ctx: ChartContext; innerH: number; panes: Array<{ pane: ChartPane; plugin: ChartPlugin; offset: number }> } | null {
+		if (!this.plugins.length) return null;
+		const paneScalesMap = new Map<string, ValueScale>();
+		// Panes are "resolved before layout" (decision 14): this ctx's `inner` is a documented
+		// placeholder (the pre-pane-reduction height) that panes()/domain() must not rely on.
+		const layoutCtx: ChartContext = {
+			host: this,
+			data,
+			series: this.series,
+			categoryKey: this.categoryKey,
+			scales,
+			inner: { width: innerW, height: innerHBeforePanes },
+			locale: this.#i18n.locale,
+			format: (v: number) => this.fmtY(v),
+			xCenter: (c: string) => xCenter(scales, c),
+			paneScale: (id: string) => paneScalesMap.get(id),
+			refresh: () => this.requestUpdate(),
+		};
+		const paneEntries: Array<{ pane: ChartPane; plugin: ChartPlugin }> = [];
+		for (const plugin of this.plugins) {
+			for (const pane of plugin.panes?.(layoutCtx) ?? []) {
+				if (pane.height <= 0) continue; // ignored, not divided-by-zero (P3)
+				paneEntries.push({ pane, plugin });
+			}
+		}
+		const gap = this.#paneGapPx();
+		const reserved = paneEntries.reduce((sum, { pane }) => sum + pane.height + gap, 0);
+		const innerH = Math.max(0, innerHBeforePanes - reserved);
+
+		// Domain contributions, merged into the primary axis domain (decision, P2). `scales.y` was
+		// already built (and .nice()'d) by buildScales against the core-only data; this reads that
+		// as the starting point, widens it with every plugin's own reach, then nices the COMBINED
+		// range exactly once — the single .nice() call that actually determines what renders.
+		const [lo0, hi0] = scales.y.domain();
+		let lo = lo0;
+		let hi = hi0;
+		for (const plugin of this.plugins) {
+			const extra = plugin.domain?.(layoutCtx);
+			if (!extra) continue;
+			lo = Math.min(lo, extra[0]);
+			hi = Math.max(hi, extra[1]);
+		}
+		scales.y.domain([lo, hi]).range([innerH, 0]).nice();
+
+		let offset = innerH + gap;
+		const panes = paneEntries.map(({ pane, plugin }) => {
+			paneScalesMap.set(pane.id, scaleLinear().domain(pane.domain).range([pane.height, 0]));
+			const entry = { pane, plugin, offset };
+			offset += pane.height + gap;
+			return entry;
+		});
+
+		const ctx: ChartContext = { ...layoutCtx, inner: { width: innerW, height: innerH } };
+		return { ctx, innerH, panes };
+	}
+
+	/** Disposes every plugin's previous `setup()` disposer and runs the CURRENT `plugins` array's,
+	 * but only when that array is a different reference from the one last set up for (decision 11 —
+	 * an ordinary reactive update, no rebuild machinery to guard). `ctx` reflects the fully-resolved
+	 * layer (post-pane, post-domain-merge), matching what every other hook sees this render; `null`
+	 * only when `plugins` is empty, in which case there is nothing to set up anyway. */
+	private syncPluginSetups(ctx: ChartContext | null): void {
+		if (this.plugins === this.#pluginsSetupFor) return;
+		this.#disposePlugins();
+		if (ctx) {
+			for (const plugin of this.plugins) {
+				const dispose = plugin.setup?.(ctx);
+				if (dispose) this.#pluginDisposers.push(dispose);
+			}
+		}
+		this.#pluginsSetupFor = this.plugins;
 	}
 
 	private renderSeries(s: ChartSeries, i: number, scales: ReturnType<typeof buildScales>, bars: ReturnType<typeof groupedBars>, yScale: ReturnType<typeof buildScales>["y"], data: ChartDatum[]) {
@@ -955,8 +1106,24 @@ export class DjChart extends DojoElement {
 		</svg>`;
 	}
 
-	private renderLegend(): TemplateResult {
-		// Radial charts have no series; the legend lists categories (slices) instead.
+	/** Plugin-contributed legend entries (decision 13, P4), appended AFTER the core series entries —
+	 * their marks aren't in `series`, so without this a candlestick chart's legend would silently
+	 * skip them. `[]` (nothing rendered) when there's no plugin context (radial/xy/horizontal, or no
+	 * plugins at all). */
+	private pluginLegendItems(pluginCtx: ChartContext | null): TemplateResult[] {
+		if (!pluginCtx) return [];
+		const items: TemplateResult[] = [];
+		for (const p of this.plugins) {
+			for (const item of p.legendItems?.(pluginCtx) ?? []) {
+				items.push(html`<span class="legend-item"><span class="legend-swatch" style=${`background:${item.color}`}></span>${item.label}</span>`);
+			}
+		}
+		return items;
+	}
+
+	private renderLegend(pluginCtx: ChartContext | null = null): TemplateResult {
+		// Radial charts have no series; the legend lists categories (slices) instead. Plugins are
+		// vertical-cartesian only (Track P), so there's nothing to append here.
 		if (this.group() === "radial") {
 			const cats = categories(this.data, this.categoryKey);
 			return html`<div class="legend" part="legend">
@@ -966,7 +1133,8 @@ export class DjChart extends DojoElement {
 			</div>`;
 		}
 		if (this.legendToggle) {
-			// Interactive legend: each item is a button that toggles its series' visibility.
+			// Interactive legend: each item is a button that toggles its series' visibility. Plugin
+			// entries aren't toggleable series, so they render as plain (non-button) legend items.
 			return html`<div class="legend" part="legend">
 				${this.series.map((s, i) => {
 					const off = this.hiddenKeys.has(s.key);
@@ -978,24 +1146,35 @@ export class DjChart extends DojoElement {
 						@click=${() => this.toggleSeries(s.key)}
 					><span class="legend-swatch" style=${`background:${this.color(s, i)}`}></span>${s.label ?? s.key}</button>`;
 				})}
+				${this.pluginLegendItems(pluginCtx)}
 			</div>`;
 		}
 		return html`<div class="legend" part="legend">
 			${this.series.map(
 				(s, i) => html`<span class="legend-item"><span class="legend-swatch" style=${`background:${this.color(s, i)}`}></span>${s.label ?? s.key}</span>`,
 			)}
+			${this.pluginLegendItems(pluginCtx)}
 		</div>`;
 	}
 
-	private renderTooltip(scales: ReturnType<typeof buildScales>): TemplateResult {
+	private renderTooltip(scales: ReturnType<typeof buildScales>, pluginCtx: ChartContext | null = null): TemplateResult {
 		if (this.hovered == null) return html`<div class="tooltip" part="tooltip" hidden></div>`;
 		const c = this.hovered;
-		const row = this.data.find((d) => cat(d, this.categoryKey) === c);
 		const left = MARGIN.left + xCenter(scales, c);
+		const style = `left:${left}px; top:${this.topMargin}px`;
+		// A plugin can replace the tooltip body for a category; the first non-undefined in array
+		// order wins, the core body otherwise (decision, P2).
+		if (pluginCtx) {
+			for (const p of this.plugins) {
+				const body = p.renderTooltip?.(c, pluginCtx);
+				if (body !== undefined) return html`<div class="tooltip" part="tooltip" style=${style}>${body}</div>`;
+			}
+		}
+		const row = this.data.find((d) => cat(d, this.categoryKey) === c);
 		return html`<div
 			class="tooltip"
 			part="tooltip"
-			style=${`left:${left}px; top:${this.topMargin}px`}
+			style=${style}
 		>
 			<strong>${this.fmtX(c)}</strong>
 			${this.series.map((s, i) => {
@@ -1016,7 +1195,18 @@ export class DjChart extends DojoElement {
 		return text !== undefined ? html`<span class="point-label-text">${text}</span>` : nothing;
 	}
 
-	private renderTable(cats: string[], fpCache: Map<string, Map<number, string>>): TemplateResult {
+	/** Plugin-contributed table columns (decision 13, P4): a header plus one cell per row, flattened
+	 * across plugins in order. `[]` when there's no plugin context. Cells are indexed by row position
+	 * — a fine assumption for the vertical-cartesian-only, typically-brush-free charts Track F's
+	 * plugins target, but it means a `pluginCtx.data` narrowed by an active brush (a different length
+	 * than `this.data`, which the table always renders in full) would misalign; not exercised by any
+	 * spec'd combination, so not specially handled here. */
+	private pluginTableColumns(pluginCtx: ChartContext | null): Array<{ header: string; cells: string[] }> {
+		return pluginCtx ? this.plugins.flatMap((p) => p.tableRows?.(pluginCtx) ?? []) : [];
+	}
+
+	private renderTable(cats: string[], fpCache: Map<string, Map<number, string>>, pluginCtx: ChartContext | null = null): TemplateResult {
+		const pluginColumns = this.pluginTableColumns(pluginCtx);
 		// x/y charts have a numeric x column instead of a category column.
 		if (this.group() === "xy") {
 			const xk = this.xKey || "x";
@@ -1024,11 +1214,11 @@ export class DjChart extends DojoElement {
 			return html`<table class="sr-only">
 				<caption>${this.label ?? summary(this.type, this.series, cats)}</caption>
 				<thead>
-					<tr><th>${xk}</th>${this.series.map((s) => html`<th>${s.label ?? s.key}</th>`)}</tr>
+					<tr><th>${xk}</th>${this.series.map((s) => html`<th>${s.label ?? s.key}</th>`)}${pluginColumns.map((col) => html`<th scope="col">${col.header}</th>`)}</tr>
 				</thead>
 				<tbody>
 					${this.data.map(
-						(row, rowIndex) => html`<tr><th scope="row">${this.valueCell(val(row[seriesX(first, this.xKey)]), first)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}</tr>`,
+						(row, rowIndex) => html`<tr><th scope="row">${this.valueCell(val(row[seriesX(first, this.xKey)]), first)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}${pluginColumns.map((col) => html`<td>${col.cells[rowIndex] ?? ""}</td>`)}</tr>`,
 					)}
 				</tbody>
 			</table>`;
@@ -1036,11 +1226,11 @@ export class DjChart extends DojoElement {
 		return html`<table class="sr-only">
 			<caption>${this.label ?? summary(this.type, this.series, cats)}</caption>
 			<thead>
-				<tr><th>${this.categoryKey || "Category"}</th>${this.series.map((s) => html`<th>${s.label ?? s.key}</th>`)}</tr>
+				<tr><th>${this.categoryKey || "Category"}</th>${this.series.map((s) => html`<th>${s.label ?? s.key}</th>`)}${pluginColumns.map((col) => html`<th scope="col">${col.header}</th>`)}</tr>
 			</thead>
 			<tbody>
 				${this.data.map(
-					(row, rowIndex) => html`<tr><th scope="row">${cat(row, this.categoryKey)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}</tr>`,
+					(row, rowIndex) => html`<tr><th scope="row">${cat(row, this.categoryKey)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}${pluginColumns.map((col) => html`<td>${col.cells[rowIndex] ?? ""}</td>`)}</tr>`,
 				)}
 			</tbody>
 		</table>`;

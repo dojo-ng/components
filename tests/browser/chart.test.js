@@ -2,7 +2,7 @@
 // (ResizeObserver-driven, so happy-dom can't exercise it), interactive legend toggling,
 // keyboard operation of the brush window, and an axe pass. Not a form control.
 import { sendKeys } from "@web/test-runner-commands";
-import { html, svg } from "lit";
+import { svg } from "lit";
 import { mount, cleanup, make, assert, assertEqual, settleFrames } from "./helpers.js";
 import { assertNoViolations } from "./a11y.js";
 import "../../packages/chart/dist/index.js";

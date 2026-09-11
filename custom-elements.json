@@ -7699,6 +7699,7 @@
                 "text": "string"
               },
               "default": "\"\"",
+              "description": "The document, serialized through the active `format` (HTML by default). Readable and writable at any time, not just at construction: assigning after the editor is built replaces the whole document, discarding the selection and undo history, and emits no `dj-change` \u2014 the same as setting a native input's `value`.",
               "attribute": "value"
             },
             {
@@ -7815,7 +7816,8 @@
               "type": {
                 "text": "string"
               },
-              "fieldName": "value"
+              "fieldName": "value",
+              "description": "The document, serialized through the active `format` (HTML by default). Readable and writable at any time, not just at construction: assigning after the editor is built replaces the whole document, discarding the selection and undo history, and emits no `dj-change` \u2014 the same as setting a native input's `value`."
             },
             {
               "name": "name",

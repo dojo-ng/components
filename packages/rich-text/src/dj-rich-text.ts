@@ -60,6 +60,10 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 	#internals: ElementInternals;
 	#editor?: LexicalEditor;
 	#applyingValue = false;
+	/** The value the editor last LOADED or last serialized OUT. `#syncValue()` writes `this.value` on
+	 *  every editor change, so `value` is in the changed-properties map on every keystroke; comparing
+	 *  against this is what tells an outside assignment apart from the editor's own echo. */
+	#appliedValue = "";
 	#built = false;
 	#disposers: Array<() => void> = [];
 	#active: Set<string> = new Set();
@@ -69,6 +73,10 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 	#ctx: RichTextContext;
 	@query(".dj-rt-editable") private editable!: HTMLElement;
 
+	/** The document, serialized through the active `format` (HTML by default). Readable and writable
+	 *  at any time, not just at construction: assigning after the editor is built replaces the whole
+	 *  document, discarding the selection and undo history, and emits no `dj-change` — the same as
+	 *  setting a native input's `value`. */
 	@property() value = "";
 	@property({ reflect: true }) name?: string;
 	@property() label?: string;
@@ -128,6 +136,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 	}
 
 	protected override updated(c: Map<PropertyKey, unknown>) {
+		let appliedValue = false;
 		if (!this.#editor) {
 			this.#buildEditor();
 		} else if (c.has("plugins") && c.get("plugins") !== undefined) {
@@ -135,12 +144,20 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 			this.value = this.#serialize();
 			this.#teardown();
 			this.#buildEditor();
+		} else if (c.has("value") && this.value !== this.#appliedValue) {
+			// A value set from OUTSIDE the editor. An equal value here is the editor's own echo and
+			// must not be re-deserialized: doing so would rebuild the document under the caret on
+			// every character typed.
+			this.#applyValue(this.value, this.#currentFormat());
+			appliedValue = true;
 		}
 		if (c.has("disabled")) {
 			this.#editor?.setEditable(!this.isDisabled);
 			if (this.editable) this.editable.contentEditable = this.isDisabled ? "false" : "true";
 		}
-		if (c.has("format") && !c.has("plugins") && this.#built) this.#syncValue();
+		// Skipped when the value branch just ran: that already loaded the document through the new
+		// format, and serializing straight back out would emit a spurious dj-change.
+		if (c.has("format") && !c.has("plugins") && !appliedValue && this.#built) this.#syncValue();
 	}
 
 	#resolvePlugins(): RichTextPlugin[] {
@@ -233,6 +250,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 		}
 		this.#built = true;
 		this.ready = true;                            // re-render so the toolbar shows now that ctx.editor is live
+		this.#appliedValue = this.value;
 		if (this.value) this.#applyValue(this.value, this.#currentFormat());
 	}
 
@@ -255,6 +273,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 	/** Push the editor's current content out to `value` / the form, emitting `dj-change` on change. */
 	#syncValue() {
 		const out = this.#serialize();
+		this.#appliedValue = out;
 		if (out !== this.value) {
 			this.value = out;
 			this.#internals.setFormValue(out);
@@ -264,6 +283,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 
 	/** Load `data` into the editor through `fmt`'s deserializer; suppresses the echo-back sync. */
 	#applyValue(data: string, fmt: RichTextFormat) {
+		this.#appliedValue = data;
 		const editor = this.#editor;
 		if (!editor) { this.value = data; return; }
 		this.#applyingValue = true;

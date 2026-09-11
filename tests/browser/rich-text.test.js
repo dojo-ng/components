@@ -116,4 +116,59 @@ describe("dj-rich-text", () => {
 		await settleFrames();
 		await assertNoViolations(el);
 	});
+
+	it("a value set after the editor is built replaces the document", async () => {
+		const el = await mount(make("dj-rich-text", { label: "Body" }));
+		await el.updateComplete;
+		await settleFrames();
+
+		el.value = "<p>Seeded after build</p>";
+		await el.updateComplete;
+		await settleFrames();
+
+		const editable = el.querySelector(".dj-rt-editable");
+		assert(
+			editable.textContent.includes("Seeded after build"),
+			`the assigned value should reach the editable region (got ${JSON.stringify(editable.textContent)})`,
+		);
+		assert(el.value.includes("Seeded after build"), "and should round-trip back out through the serializer");
+	});
+
+	it("a value set after build replaces the existing content rather than appending to it", async () => {
+		const el = await mount(make("dj-rich-text", { label: "Body" }));
+		await el.updateComplete;
+		await settleFrames();
+		el.focus();
+		await sendKeys({ type: "typed" });
+		await el.updateComplete;
+		await settleFrames();
+
+		el.value = "<p>replacement</p>";
+		await el.updateComplete;
+		await settleFrames();
+
+		const text = el.querySelector(".dj-rt-editable").textContent;
+		assert(text.includes("replacement"), "the new value is in the document");
+		assert(!text.includes("typed"), "the old content is replaced, not appended to");
+	});
+
+	it("typing is not disturbed by the editor writing its own value back", async () => {
+		const el = await mount(make("dj-rich-text", { label: "Body" }));
+		await el.updateComplete;
+		await settleFrames();
+		el.focus();
+		await sendKeys({ type: "Hello" });
+		await el.updateComplete;
+		await settleFrames();
+		await sendKeys({ type: " world" });
+		await el.updateComplete;
+		await settleFrames();
+
+		const text = el.querySelector(".dj-rt-editable").textContent;
+		assertEqual(
+			text.trim(),
+			"Hello world",
+			"each keystroke lands after the last; re-applying value on every change would reset the caret",
+		);
+	});
 });

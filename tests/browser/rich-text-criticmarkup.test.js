@@ -10,11 +10,10 @@ describe("rich-text-criticmarkup: the comment popup, keyboard and axe", () => {
 	afterEach(cleanup);
 
 	async function mountWithComment() {
-		// `value` has to be set BEFORE first connect, alongside `format`/`plugins` — dj-rich-text
-		// only applies `value` through the active format at `#buildEditor()` time (its first
-		// `updated()`); setting `.value` on an already-built editor has no wired effect (there is no
-		// `c.has("value")` branch in `updated()`), so it must be a construction-time property here,
-		// not a later assignment.
+		// Seeding at construction, alongside `format`/`plugins`, is one of two supported ways to load
+		// content (the other being a later `.value =` assignment, wired since
+		// rich-text-value-button-name-spec.md Track V, 2026-09-10). Construction-time is used here
+		// because `format`/`plugins` also need to be set before the editor builds.
 		const el = make("dj-rich-text", {
 			label: "Body",
 			format: "criticmarkup",

@@ -88,4 +88,18 @@ describe("dj-chart", () => {
 		assert(el.shadowRoot.querySelectorAll(".point-label").length > 0, "point labels actually rendered for this assertion to mean anything");
 		await assertNoViolations(el);
 	});
+
+	// Track L (log scale): happy-dom can't lay out real SVG geometry, so the actual break in the
+	// line — the thing decision 3 cares about most — is confirmed here, in a real renderer, not just
+	// via the linePath string in the unit suite.
+	it("y-scale=\"log\": a non-positive value breaks the line into two subpaths, and axe stays clean", async () => {
+		const data = [{ m: "Jan", v: 10 }, { m: "Feb", v: 0 }, { m: "Mar", v: 30 }];
+		const el = await mount(chart({ data, label: "Sensor", yScale: "log" }));
+		await settleChart(el);
+		const line = el.shadowRoot.querySelector('[part="line"]');
+		assert(line, "the line still renders");
+		const d = line.getAttribute("d") ?? "";
+		assertEqual((d.match(/M/g) ?? []).length, 2, "the non-positive value breaks the path into two subpaths, same as the unit-tested linePath string");
+		await assertNoViolations(el);
+	});
 });

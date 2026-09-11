@@ -71,6 +71,8 @@ Set `data` (array of rows), `series` (one entry per plotted value), and `categor
 | `missing` | missing ↻ | `MissingMode` | `"gap"` |
 | `pointLabels` | point-labels | `boolean` | `false` |
 | `formatPoint` | — | `(value: number, row: ChartDatum, series: ChartSeries) => string` | — |
+| `yScale` | y-scale ↻ | `ScaleKind` | `"linear"` |
+| `yScaleRight` | y-scale-right ↻ | `ScaleKind` | `"linear"` |
 
 **Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`, `point-labels`, `point-label`
 
@@ -351,6 +353,30 @@ A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. 
   ];
   // A name instead of the number, mirrored into the accessible table automatically:
   // pl.formatPoint = (value, row) => row.month + " revenue";
+</script>
+```
+
+### Logarithmic value scale
+
+`y-scale="log"` (a second, `y-scale-right`, does the same for the secondary axis) switches the value axis to `scaleLog` — it names the VALUE axis regardless of `orientation`, so it drives horizontal bars' x-axis too. A logarithmic axis never includes zero: its domain is `[smallest positive value, largest value]`, then `.nice()` (which snaps to the nearest DECADE, not an arbitrary round number). A zero or a negative value has no position on a log axis, so it's always a gap there — the line/area breaks, the bar is omitted, the marker is absent — even under `missing="zero"`, which cannot resurrect it; the value still shows as its real number in the tooltip and the accessible table, distinct from a true missing value's em dash. Tick labels are thinned decade-first: the decades within the domain always show, and the 2×/5× multiple of each is added only while every label still clears a 24px minimum gap, so a tall chart gets more ticks than a short one automatically. `stacked` and `y-scale="log"` together are refused (one console warning) and render linear instead — a stacked segment's drawn height on a log axis is a ratio, not a quantity, which defeats the one thing a stacked chart is for. Bars alone ARE allowed on log; a bar's length there reads as a ratio to the axis floor, not an absolute quantity, which is a documented reading rather than a limitation. Out of scope: `dj-sparkline` (no axis to read), the brush overview strip (its own local shape-only mapping), and a logarithmic x-axis for scatter/bubble.
+
+```html
+<div style="width: 480px; height: 280px">
+  <dj-chart id="lg" type="line" markers category-key="day" label="Sensor reading" show-grid y-label="Value" y-scale="log"></dj-chart>
+</div>
+<script type="module">
+  import "@dojo-ng/chart";
+  const lg = document.getElementById("lg");
+  lg.series = [{ key: "reading", label: "Reading" }];
+  // day 3 read exactly 0 — not a missing value, but a real reading with no position on a log
+  // axis, so it draws as a gap here too (distinct from a missing cell in the accessible table).
+  lg.data = [
+    { day: "Mon", reading: 4 },
+    { day: "Tue", reading: 40 },
+    { day: "Wed", reading: 0 },
+    { day: "Thu", reading: 400 },
+    { day: "Fri", reading: 4000 },
+  ];
 </script>
 ```
 

@@ -193,6 +193,8 @@ declare module "solid-js" {
         "missing"?: DjChart["missing"];
         "point-labels"?: DjChart["pointLabels"];
         "formatPoint"?: DjChart["formatPoint"];
+        "y-scale"?: DjChart["yScale"];
+        "y-scale-right"?: DjChart["yScaleRight"];
       };
       "dj-checkbox": JSX.HTMLAttributes<DjCheckbox> & {
         "checked"?: DjCheckbox["checked"];

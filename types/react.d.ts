@@ -197,6 +197,8 @@ declare module "react" {
         "missing"?: DjChart["missing"];
         "point-labels"?: DjChart["pointLabels"];
         "formatPoint"?: DjChart["formatPoint"];
+        "y-scale"?: DjChart["yScale"];
+        "y-scale-right"?: DjChart["yScaleRight"];
       };
       "dj-checkbox": DjProps<DjCheckbox> & {
         "checked"?: DjCheckbox["checked"];

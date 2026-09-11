@@ -4,7 +4,7 @@ import { ref } from "lit/directives/ref.js";
 import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
 import { LocaleController, formatNumber, messages, registerDefaults } from "@dojo-ng/i18n";
 import styles from "./dj-chart.styles.js";
-import type { ChartDatum, ChartSeries, ChartType, ChartMargin, ChartRenderer, MissingMode } from "./types.js";
+import type { ChartDatum, ChartSeries, ChartType, ChartMargin, ChartRenderer, MissingMode, ScaleKind, ValueScale } from "./types.js";
 import {
 	buildScales,
 	buildXYScales,
@@ -36,6 +36,9 @@ import {
 	effectiveRenderer,
 	placeLabels,
 	LABEL_DENSITY_CAP,
+	baselineOf,
+	isLogScale,
+	isGapValue,
 	type CanvasMark,
 	type PointLabel,
 } from "./core.js";
@@ -161,6 +164,15 @@ export class DjChart extends DojoElement {
 	 * mirrors the SAME formatted text into the affected cells too, since otherwise it would be
 	 * sighted-only information no screen reader can reach. */
 	@property({ attribute: false }) formatPoint?: (value: number, row: ChartDatum, series: ChartSeries) => string;
+	/** The value axis's scale — names the VALUE axis regardless of `orientation` (so it drives
+	 * horizontal bars' x-axis too), matching the existing `yLabel`/`fmtY` convention. `"log"` never
+	 * includes zero: a non-positive value has no position on it and is always a gap (decision 3),
+	 * even under `missing="zero"`. Refused together with `stacked` (a stacked segment's drawn height
+	 * on a log axis is a ratio, not a quantity) — falls back to `"linear"` with a console warning. */
+	@property({ attribute: "y-scale", reflect: true }) yScale: ScaleKind = "linear";
+	/** Same as `yScale`, for the secondary (right) axis — so a price-on-log with volume-on-linear
+	 * combo works. */
+	@property({ attribute: "y-scale-right", reflect: true }) yScaleRight: ScaleKind = "linear";
 
 	@state() private w = 0;
 	@state() private h = 0;
@@ -200,6 +212,25 @@ export class DjChart extends DojoElement {
 		return this.orientation === "horizontal" && this.type === "bar";
 	}
 
+	/** Counts real (non-missing) non-positive cells across `data`/`series` that fall on a
+	 * logarithmically-scaled axis, and `warnOnce`s with the count if there are any (decision 3,
+	 * L3) — `yOf` resolves a series index to its actual axis scale (primary or secondary), so a
+	 * combo where only one axis is log is counted correctly, and a chart with no log axis at all
+	 * costs one `isLogScale` check per series and nothing else. */
+	private warnLogNonPositive(data: ChartDatum[], series: ChartSeries[], yOf: (seriesIndex: number) => ValueScale): void {
+		let count = 0;
+		series.forEach((s, i) => {
+			if (!isLogScale(yOf(i))) return;
+			for (const row of data) {
+				const raw = val(row[s.key]);
+				if (raw !== null && raw <= 0) count++;
+			}
+		});
+		if (count > 0) {
+			this.warnOnce("log-non-positive", `dj-chart: ${count} values are not positive and are omitted on a logarithmic axis.`);
+		}
+	}
+
 	// Warn once (and ignore) for the documented horizontal-orientation and canvas-renderer limitations.
 	override willUpdate() {
 		if (this.orientation === "horizontal") {
@@ -212,6 +243,9 @@ export class DjChart extends DojoElement {
 		}
 		if (this.renderer === "canvas" && !this.canvasEligibleType) {
 			this.warnOnce("canvas-unsupported", `dj-chart: renderer="canvas" is not supported for type="${this.type}" with the current configuration (bar, stacked, pie/donut, bubble, and a series overriding to "bar" all stay svg); falling back to svg.`);
+		}
+		if (this.stacked && (this.yScale === "log" || this.yScaleRight === "log")) {
+			this.warnOnce("log-stacked", `dj-chart: y-scale="log" is not supported with stacked; falling back to linear.`);
 		}
 	}
 
@@ -463,16 +497,17 @@ export class DjChart extends DojoElement {
 		const [vs, ve] = this.viewRange(this.data.length);
 		const data = this.brush && this.view ? this.data.slice(vs, ve + 1) : this.data;
 		const cats2 = categories(data, this.categoryKey);
-		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys, this.missing);
+		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys, this.missing, this.yScale, this.yScaleRight);
 		const yOf = (i: number) => (this.series[i]?.axis === "right" && scales.yRight ? scales.yRight : scales.y);
-		const ticks = yTicks(scales, 5);
+		this.warnLogNonPositive(data, this.series, yOf);
+		const ticks = yTicks(scales, 5, innerH);
 		const yR = scales.yRight;
 		let rightAxis: unknown = nothing;
 		if (yR) {
 			const sc = yR;
 			rightAxis = svg`<g class="axis" part="axis">
 				<line x1="${innerW}" y1="0" x2="${innerW}" y2="${innerH}"></line>
-				${ticksOf(sc, 5).map((t) => svg`<text x="${innerW + 8}" y="${sc(t)}" text-anchor="start" dominant-baseline="middle">${this.fmtY(t)}</text>`)}
+				${ticksOf(sc, 5, innerH).map((t) => svg`<text x="${innerW + 8}" y="${sc(t)}" text-anchor="start" dominant-baseline="middle">${this.fmtY(t)}</text>`)}
 				${this.yLabelRight
 					? svg`<text class="axis-title" transform="translate(${innerW + RIGHT_AXIS_MARGIN - 12},${innerH / 2}) rotate(90)" text-anchor="middle">${this.yLabelRight}</text>`
 					: nothing}
@@ -500,10 +535,11 @@ export class DjChart extends DojoElement {
 				return;
 			}
 			const yScale = yOf(i);
+			const isLog = isLogScale(yScale);
 			data.forEach((row, localIdx) => {
 				const rowIndex = vs + localIdx;
 				const raw = val(row[s.key]);
-				if (raw === null && this.missingOf(s) !== "zero") return;
+				if (isGapValue(raw, this.missingOf(s), isLog)) return;
 				labelCandidates.push({
 					x: xCenter(scales, cat(row, this.categoryKey)),
 					y: yScale(raw ?? 0) - 8,
@@ -600,9 +636,10 @@ export class DjChart extends DojoElement {
 	 * value is missing draws no marker unless `missing` resolves to `"zero"`. */
 	private renderMarkers(data: ChartDatum[], key: string, color: string, scales: ReturnType<typeof buildScales>, yScale: ReturnType<typeof buildScales>["y"] = scales.y, missing: MissingMode = "zero") {
 		if (!this.markers) return nothing;
+		const isLog = isLogScale(yScale);
 		return svg`${data.map((row) => {
 			const raw = val(row[key]);
-			if (raw === null && missing !== "zero") return nothing;
+			if (isGapValue(raw, missing, isLog)) return nothing;
 			const c = cat(row, this.categoryKey);
 			return svg`<circle class="marker" part="point" cx="${xCenter(scales, c)}" cy="${yScale(raw ?? 0)}" r="3.5" fill=${color}></circle>`;
 		})}`;
@@ -619,9 +656,10 @@ export class DjChart extends DojoElement {
 		const longest = cats.reduce((m, c) => Math.max(m, this.fmtX(c).length), 0);
 		const hLeft = Math.min(Math.max(MARGIN.left, longest * 7 + 14), Math.floor(W * 0.4));
 		const innerW = Math.max(0, W - hLeft - MARGIN.right);
-		const scales = buildScalesH(this.data, this.series, this.categoryKey, this.stacked, innerW, innerH, this.hiddenKeys, this.missing);
+		const scales = buildScalesH(this.data, this.series, this.categoryKey, this.stacked, innerW, innerH, this.hiddenKeys, this.missing, this.yScale);
 		const band = scales.yBand;
-		const xticks = ticksOf(scales.x, 5);
+		const xticks = ticksOf(scales.x, 5, innerW);
+		this.warnLogNonPositive(this.data, this.series, () => scales.x);
 		const bars = this.stacked
 			? horizontalStackedBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys, this.missing)
 			: horizontalBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys, this.missing);
@@ -1043,7 +1081,7 @@ export class DjChart extends DojoElement {
 		const innerW = Math.max(0, W - MARGIN.left - (hasRight ? RIGHT_AXIS_MARGIN : MARGIN.right));
 		const [vs, ve] = this.viewRange(this.data.length);
 		const data = this.brush && this.view ? this.data.slice(vs, ve + 1) : this.data;
-		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys, this.missing);
+		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys, this.missing, this.yScale, this.yScaleRight);
 		const style = getComputedStyle(this);
 		const marks: CanvasMark[] = [];
 		this.series.forEach((s, i) => {
@@ -1052,7 +1090,7 @@ export class DjChart extends DojoElement {
 			if (t !== "line" && t !== "area") return;
 			const yScale = s.axis === "right" && scales.yRight ? scales.yRight : scales.y;
 			const points = seriesPoints(data, this.categoryKey, s.key, scales, yScale, this.missingOf(s)).map((p) => ({ x: p.x + MARGIN.left, y: p.y + topMargin }));
-			marks.push({ type: t, color: this.resolveCanvasColor(s, i, style), points, baseline: yScale(0) + topMargin });
+			marks.push({ type: t, color: this.resolveCanvasColor(s, i, style), points, baseline: baselineOf(yScale) + topMargin });
 		});
 		return marks;
 	}

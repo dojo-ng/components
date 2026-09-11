@@ -1967,6 +1967,28 @@
               "description": "Override point-label text; defaults to `fmtY(value)` (so `numberFormat`/`formatY` apply with no extra wiring). Receives the row and the series, so a label can show something the plotted number alone can't \u2014 a name from another column, a share of total. When set, `renderTable` mirrors the SAME formatted text into the affected cells too, since otherwise it would be sighted-only information no screen reader can reach."
             },
             {
+              "kind": "field",
+              "name": "yScale",
+              "type": {
+                "text": "ScaleKind"
+              },
+              "default": "\"linear\"",
+              "description": "The value axis's scale \u2014 names the VALUE axis regardless of `orientation` (so it drives horizontal bars' x-axis too), matching the existing `yLabel`/`fmtY` convention. `\"log\"` never includes zero: a non-positive value has no position on it and is always a gap (decision 3), even under `missing=\"zero\"`. Refused together with `stacked` (a stacked segment's drawn height on a log axis is a ratio, not a quantity) \u2014 falls back to `\"linear\"` with a console warning.",
+              "attribute": "y-scale",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "yScaleRight",
+              "type": {
+                "text": "ScaleKind"
+              },
+              "default": "\"linear\"",
+              "description": "Same as `yScale`, for the secondary (right) axis \u2014 so a price-on-log with volume-on-linear combo works.",
+              "attribute": "y-scale-right",
+              "reflects": true
+            },
+            {
               "kind": "method",
               "name": "appendData",
               "description": "Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).",
@@ -2174,6 +2196,22 @@
               },
               "fieldName": "pointLabels",
               "description": "Show a label at each plotted point/bar/slice (line, area, scatter, bar, pie/donut \u2014 not horizontal bars). Per-series override on `ChartSeries.pointLabels`. No label is drawn for a gap; above ~150 candidates the whole set is skipped (a console warning once) rather than drawing an unreadable smear of overlapping numbers."
+            },
+            {
+              "name": "y-scale",
+              "type": {
+                "text": "ScaleKind"
+              },
+              "fieldName": "yScale",
+              "description": "The value axis's scale \u2014 names the VALUE axis regardless of `orientation` (so it drives horizontal bars' x-axis too), matching the existing `yLabel`/`fmtY` convention. `\"log\"` never includes zero: a non-positive value has no position on it and is always a gap (decision 3), even under `missing=\"zero\"`. Refused together with `stacked` (a stacked segment's drawn height on a log axis is a ratio, not a quantity) \u2014 falls back to `\"linear\"` with a console warning."
+            },
+            {
+              "name": "y-scale-right",
+              "type": {
+                "text": "ScaleKind"
+              },
+              "fieldName": "yScaleRight",
+              "description": "Same as `yScale`, for the secondary (right) axis \u2014 so a price-on-log with volume-on-linear combo works."
             }
           ],
           "cssParts": [

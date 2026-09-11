@@ -1337,6 +1337,8 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 | `missing` | missing ↻ | `MissingMode` | `"gap"` |
 | `pointLabels` | point-labels | `boolean` | `false` |
 | `formatPoint` | — | `(value: number, row: ChartDatum, series: ChartSeries) => string` | — |
+| `yScale` | y-scale ↻ | `ScaleKind` | `"linear"` |
+| `yScaleRight` | y-scale-right ↻ | `ScaleKind` | `"linear"` |
 
 **Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`, `point-labels`, `point-label`
 

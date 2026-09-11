@@ -30,7 +30,11 @@ import {
 	estimateLabelWidth,
 	placeLabels,
 	LABEL_DENSITY_CAP,
+	baselineOf,
+	isLogScale,
+	logTicks,
 } from "../packages/chart/dist/core.js";
+import { scaleLinear, scaleLog } from "d3-scale";
 import { inlinePresentationalStyles, serializeChartSvg } from "../packages/chart/dist/export.js";
 
 const DATA = [
@@ -331,6 +335,126 @@ test("placeLabels: 149 candidates are subject only to the overlap rule, not the 
 	const { kept, capped } = placeLabels(candidates, 11);
 	assert.equal(capped, false);
 	assert.ok(kept.length > 0 && kept.length < n, "some collide (2px apart) and are skipped, not all of them");
+});
+
+// ---- Track L: logarithmic value scale ----
+
+const LOG_SERIES = [{ key: "u" }];
+const LOG_DATA_ZERO = [
+	{ cat: "A", u: 10 },
+	{ cat: "B", u: 0 },
+	{ cat: "C", u: 30 },
+];
+const LOG_DATA_NULL = [
+	{ cat: "A", u: 10 },
+	{ cat: "B", u: null },
+	{ cat: "C", u: 30 },
+];
+
+test("buildScales: y-scale='log' domain excludes zero and starts at the smallest positive value", () => {
+	const scales = buildScales(LOG_DATA_ZERO, LOG_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), "gap", "log");
+	assert.ok(isLogScale(scales.y));
+	assert.equal(scales.y.domain()[0], 10, "domain starts at the smallest POSITIVE value, not 0");
+	// .nice() on a log scale snaps OUTWARD TO A DECADE boundary, not to an arbitrary "nice" number the
+	// way a linear scale's .nice() would — [10, 30] (the raw [smallest positive, largest]) nices to
+	// [10, 100], confirmed directly against d3-scale rather than assumed.
+	assert.equal(scales.y.domain()[1], 100, "the raw largest value (30) nices UP to the next decade");
+});
+
+test("baselineOf: scale(0) on linear, the range floor on log", () => {
+	const linear = scaleLinear().domain([-10, 30]).range([INNER_H, 0]);
+	assert.ok(Math.abs(baselineOf(linear) - linear(0)) < 1e-9);
+	const log = scaleLog().domain([1, 1000]).range([INNER_H, 0]);
+	assert.equal(baselineOf(log), INNER_H, "the axis floor — the range's own start, index 0");
+});
+
+test("buildScales: stacked + y-scale='log' downgrades to linear internally (decision 4)", () => {
+	const scales = buildScales(DATA, SERIES, "cat", "bar", true, INNER_W, INNER_H, new Set(), "gap", "log");
+	assert.equal(isLogScale(scales.y), false, "stacked always wins over a requested log scale");
+});
+
+test("dj-chart: y-scale='log' with stacked warns once and falls back to linear", async () => {
+	const warns = await captureWarn(async () => {
+		const el = await mount("dj-chart", { type: "bar", categoryKey: "cat", data: DATA, series: SERIES, stacked: true, yScale: "log" });
+		await seed(el);
+		el.requestUpdate();
+		await settled(el); // a second render must not warn again
+	});
+	assert.equal(warns.filter((w) => w.includes('y-scale="log"') && w.includes("stacked")).length, 1);
+});
+
+test("buildScales: y-scale='log' positions match a hand-computed scaleLog over the same domain", () => {
+	const data = [{ cat: "A", u: 10 }, { cat: "B", u: 100 }, { cat: "C", u: 1000 }];
+	const scales = buildScales(data, LOG_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), "gap", "log");
+	const hand = scaleLog().domain([10, 1000]).range([INNER_H, 0]).nice();
+	assert.deepEqual(scales.y.domain(), hand.domain());
+	for (const v of [10, 50, 100, 500, 1000]) {
+		assert.ok(Math.abs(scales.y(v) - hand(v)) < 1e-6, `mismatch at ${v}`);
+	}
+});
+
+test("linePath: a non-positive value on a log axis is ALWAYS a gap — gap/zero break the path, connect spans it", () => {
+	const gapScales = buildScales(LOG_DATA_ZERO, LOG_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), "gap", "log");
+	assert.equal((linePath(LOG_DATA_ZERO, "cat", "u", gapScales, gapScales.y, "gap").match(/M/g) ?? []).length, 2, "gap: broken into two subpaths");
+
+	const connectScales = buildScales(LOG_DATA_ZERO, LOG_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), "connect", "log");
+	assert.equal((linePath(LOG_DATA_ZERO, "cat", "u", connectScales, connectScales.y, "connect").match(/M/g) ?? []).length, 1, "connect spans across the log gap just like a missing value would");
+
+	const zeroScales = buildScales(LOG_DATA_ZERO, LOG_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), "zero", "log");
+	assert.equal((linePath(LOG_DATA_ZERO, "cat", "u", zeroScales, zeroScales.y, "zero").match(/M/g) ?? []).length, 2, "missing=\"zero\" does NOT resurrect a zero on a log axis (L3)");
+});
+
+test("buildScales: category count (hit-bands) is unaffected by a log gap", () => {
+	const scales = buildScales(LOG_DATA_ZERO, LOG_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), "gap", "log");
+	assert.equal(scales.cats.length, LOG_DATA_ZERO.length);
+});
+
+test("renderTable: on a log axis, a real 0 shows as a plain number — distinct from a true missing em dash", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: LOG_DATA_ZERO, series: [{ key: "u" }], yScale: "log" });
+	await settled(el);
+	const cells = el.renderRoot.querySelectorAll("table.sr-only tbody td");
+	assert.equal(cells[1].querySelector("span[aria-label]"), null, "0 is a REAL value on this axis, not missing — no em dash");
+	assert.equal(cells[1].textContent.trim(), "0");
+
+	const elNull = await mount("dj-chart", { type: "line", categoryKey: "cat", data: LOG_DATA_NULL, series: [{ key: "u" }], yScale: "log" });
+	await settled(elNull);
+	const cellsNull = elNull.renderRoot.querySelectorAll("table.sr-only tbody td");
+	assert.ok(cellsNull[1].querySelector("span[aria-label]"), "a TRUE missing value still shows the em dash — the two gaps stay distinguishable, same proof pattern as Track V");
+});
+
+test("dj-chart: non-positive values on a log axis warn once, naming the count", async () => {
+	const warns = await captureWarn(async () => {
+		const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: LOG_DATA_ZERO, series: [{ key: "u" }], yScale: "log" });
+		await seed(el);
+		el.requestUpdate();
+		await settled(el); // a second render must not warn again
+	});
+	const logWarns = warns.filter((w) => w.includes("not positive") && w.includes("logarithmic"));
+	assert.equal(logWarns.length, 1, JSON.stringify(warns));
+	assert.ok(logWarns[0].includes("1 values"), logWarns[0]);
+});
+
+test("logTicks: at 300px, a decade span of 1 to 10,000 yields exactly the five decades", () => {
+	const scale = scaleLog().domain([1, 10000]).range([300, 0]);
+	assert.deepEqual(logTicks(scale, 300), [1, 10, 100, 1000, 10000]);
+});
+
+test("logTicks: at 900px, the 2x and 5x multiples appear too", () => {
+	const scale = scaleLog().domain([1, 10000]).range([900, 0]);
+	const ticks = logTicks(scale, 900);
+	assert.ok(ticks.includes(2) && ticks.includes(5), JSON.stringify(ticks));
+	assert.ok(ticks.length > 5, JSON.stringify(ticks));
+});
+
+test("logTicks: every returned tick is at least 24px from its neighbor, asserted from the scale", () => {
+	for (const [domain, pixels] of [[[1, 10000], 300], [[1, 10000], 900], [[1, 1e6], 400]]) {
+		const scale = scaleLog().domain(domain).range([pixels, 0]);
+		const ticks = [...logTicks(scale, pixels)].sort((a, b) => a - b);
+		const positions = ticks.map((t) => scale(t));
+		for (let i = 1; i < positions.length; i++) {
+			assert.ok(Math.abs(positions[i] - positions[i - 1]) >= 24 - 1e-6, `${domain} @ ${pixels}px: ${ticks[i - 1]},${ticks[i]} too close`);
+		}
+	}
 });
 
 // ---- center-label helpers ----

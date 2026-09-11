@@ -1,7 +1,7 @@
-import { scaleLinear, scaleBand, scalePoint, scaleSqrt, type ScaleLinear, type ScaleBand, type ScalePoint } from "d3-scale";
+import { scaleLinear, scaleLog, scaleBand, scalePoint, scaleSqrt, type ScaleLinear, type ScaleBand, type ScalePoint } from "d3-scale";
 import { line as d3line, area as d3area, stack as d3stack, arc as d3arc, pie as d3pie } from "d3-shape";
 import { max as d3max, extent as d3extent } from "d3-array";
-import type { ChartDatum, ChartSeries, ChartType, ChartRenderer, MissingMode } from "./types.js";
+import type { ChartDatum, ChartSeries, ChartType, ChartRenderer, MissingMode, ValueScale, ScaleKind } from "./types.js";
 
 /** Coerce an unknown cell to a finite number, or `null` when it isn't one — a missing value stays
  * missing instead of becoming a false zero. `null`, `undefined`, and `""` are checked explicitly
@@ -41,8 +41,8 @@ export function hasBars(series: ChartSeries[], chartType: ChartType): boolean {
 export interface Scales {
 	x: ScaleBand<string> | ScalePoint<string>;
 	xBand: ScaleBand<string>; // always a band, for tick/grid spacing and bar math
-	y: ScaleLinear<number, number>; // primary (left) axis
-	yRight?: ScaleLinear<number, number>; // secondary (right) axis, when any series opts in
+	y: ValueScale; // primary (left) axis
+	yRight?: ValueScale; // secondary (right) axis, when any series opts in
 	cats: string[];
 	band: boolean;
 }
@@ -51,13 +51,49 @@ function axisOf(s: ChartSeries): "left" | "right" {
 	return s.axis === "right" ? "right" : "left";
 }
 
+/** True when `scale` is logarithmic — duck-typed via d3-scale's own `.base()` accessor, which only
+ * `scaleLog` defines, since {@link ValueScale} itself doesn't distinguish the two at the type level. */
+export function isLogScale(scale: ValueScale): boolean {
+	return typeof (scale as { base?: unknown }).base === "function";
+}
+
+/** Whether a resolved cell counts as a "gap" — the one place Track V's missing-value rule and
+ * Track L's log-axis rule both funnel through, so nothing downstream has to know there are two
+ * reasons a point might not be there. `raw` is the already-{@link val}-resolved cell. A missing
+ * cell (`null`) respects `missing` (`"zero"` draws it as a real 0); a non-positive cell on a
+ * logarithmic scale is ALWAYS a gap (decision 3) — `missing="zero"` does not resurrect it (L3),
+ * because there is no position on a log axis for zero or a negative number to occupy. */
+export function isGapValue(raw: number | null, missing: MissingMode, isLog: boolean): boolean {
+	if (raw === null) return missing !== "zero";
+	return isLog && raw <= 0;
+}
+
+/** The zero-equivalent baseline a bar or area's fill grows from. Linear returns `scale(0)`, the
+ * literal zero line (which may sit outside the visible range for a `"gap"`-excluded all-positive
+ * domain — see {@link yDomain} — exactly as it should: nothing to anchor to). Log has no position
+ * for zero at all, so it returns the axis floor instead — `scale.range()[0]`, the pixel a log
+ * scale's smallest (positive) domain value maps to, which is the correct "floor" for either a
+ * vertical y-range (`[innerH, 0]`, so index 0 is the bottom) or a horizontal x-range (`[0, innerW]`,
+ * so index 0 is the left edge) without needing to know which orientation called it. */
+export function baselineOf(scale: ValueScale): number {
+	if (isLogScale(scale)) return scale.range()[0];
+	return scale(0);
+}
+
 /** Numeric y domain for a set of series, summing per row when stacked. A cell {@link val} can't
  * parse is excluded rather than coerced to zero, UNLESS the resolved `missing` mode for its series
  * is `"zero"` (decision 21/22). Zero is still folded into the domain for ordinary, fully-present
  * data — that long-standing convention only lifts once a real cell was actually excluded, so an
  * honest gap doesn't get a dishonest floor drawn under it (a series of `[10, null, 30]` under
- * `gap`/`connect` domains to `[10, 30]`, not `[0, 30]`; under `zero` it's `[0, 30]` as before). */
-function yDomain(data: ChartDatum[], series: ChartSeries[], stacked: boolean, defaultMissing: MissingMode = "zero"): [number, number] {
+ * `gap`/`connect` domains to `[10, 30]`, not `[0, 30]`; under `zero` it's `[0, 30]` as before).
+ *
+ * `scaleKind` (Track L) — `stacked` never reaches here as `"log"`: the caller downgrades to
+ * `"linear"` first (decision 4), so only the non-stacked branch needs log awareness. There, a
+ * non-positive value is excluded from the domain unconditionally (decision 3, L3 — `missing="zero"`
+ * does not resurrect it, so `isGapValue` rather than a bare `<= 0` check is what decides this), and
+ * the domain never gets the zero-folding a linear axis gets: it is exactly `[smallest positive
+ * value, largest value]` per decision 2, because log has no position for zero to fold in AT. */
+function yDomain(data: ChartDatum[], series: ChartSeries[], stacked: boolean, defaultMissing: MissingMode = "zero", scaleKind: ScaleKind = "linear"): [number, number] {
 	if (!series.length) return [0, 0];
 	const modeOf = (s: ChartSeries) => s.missing ?? defaultMissing;
 	if (stacked) {
@@ -80,26 +116,25 @@ function yDomain(data: ChartDatum[], series: ChartSeries[], stacked: boolean, de
 		}
 		return [lo, hi];
 	}
+	const isLog = scaleKind === "log";
 	let lo: number | undefined;
 	let hi: number | undefined;
 	let excluded = false;
 	for (const row of data) {
 		for (const s of series) {
 			const raw = val(row[s.key]);
-			let v: number | undefined = raw ?? undefined;
-			if (raw === null) {
-				if (modeOf(s) === "zero") v = 0;
-				else {
-					excluded = true;
-					continue;
-				}
+			const mode = modeOf(s);
+			if (isGapValue(raw, mode, isLog)) {
+				excluded = true;
+				continue;
 			}
-			lo = lo === undefined ? v : Math.min(lo, v!);
-			hi = hi === undefined ? v : Math.max(hi, v!);
+			const v = raw ?? 0; // raw is non-null here (isGapValue already handled the null case)
+			lo = lo === undefined ? v : Math.min(lo, v);
+			hi = hi === undefined ? v : Math.max(hi, v);
 		}
 	}
-	if (lo === undefined || hi === undefined) return [0, 0];
-	if (!excluded) {
+	if (lo === undefined || hi === undefined) return isLog ? [1, 10] : [0, 0];
+	if (!isLog && !excluded) {
 		lo = Math.min(lo, 0);
 		hi = Math.max(hi, 0);
 	}
@@ -107,7 +142,10 @@ function yDomain(data: ChartDatum[], series: ChartSeries[], stacked: boolean, de
 }
 
 /** Build x and y scales for the plot area (innerW × innerH), accounting for stacking and a
- * secondary (right) y-axis when any series sets `axis: "right"`. */
+ * secondary (right) y-axis when any series sets `axis: "right"`. `yScaleKind`/`yScaleRightKind`
+ * (Track L) pick `scaleLog` for the named axis — downgraded to `"linear"` internally whenever
+ * `stacked` is true, regardless of what was asked for, so the stacked-plus-log refusal (decision 4)
+ * holds even if a caller forgets to check first; `dj-chart.ts` still owns the actual `warnOnce`. */
 export function buildScales(
 	data: ChartDatum[],
 	series: ChartSeries[],
@@ -118,6 +156,8 @@ export function buildScales(
 	innerH: number,
 	hidden: Set<string> = new Set(),
 	missing: MissingMode = "gap",
+	yScaleKind: ScaleKind = "linear",
+	yScaleRightKind: ScaleKind = "linear",
 ): Scales {
 	const cats = categories(data, categoryKey);
 	const visible = series.filter((s) => !hidden.has(s.key));
@@ -127,10 +167,18 @@ export function buildScales(
 
 	const left = visible.filter((s) => axisOf(s) === "left");
 	const right = visible.filter((s) => axisOf(s) === "right");
+	const leftKind: ScaleKind = stacked ? "linear" : yScaleKind;
+	const rightKind: ScaleKind = stacked ? "linear" : yScaleRightKind;
 	// Left scale spans the visible left-axis series (or all visible series when none are left).
-	const y = scaleLinear().domain(yDomain(data, left.length ? left : visible, stacked, missing)).range([innerH, 0]).nice();
+	const y = (leftKind === "log" ? scaleLog() : scaleLinear())
+		.domain(yDomain(data, left.length ? left : visible, stacked, missing, leftKind))
+		.range([innerH, 0])
+		.nice();
 	const yRight = right.length
-		? scaleLinear().domain(yDomain(data, right, stacked, missing)).range([innerH, 0]).nice()
+		? (rightKind === "log" ? scaleLog() : scaleLinear())
+				.domain(yDomain(data, right, stacked, missing, rightKind))
+				.range([innerH, 0])
+				.nice()
 		: undefined;
 	return { x, xBand, y, yRight, cats, band };
 }
@@ -144,43 +192,56 @@ export function xCenter(scales: Scales, category: string): number {
 	return (scales.x as ScalePoint<string>)(category) ?? 0;
 }
 
+/** A safe input for `yScale(...)`: `raw` itself, unless it's non-positive on a log scale, where
+ * `Math.log` of it would be `NaN`/`-Infinity` — the caller has already marked that point as a gap
+ * ({@link isGapValue}), so the exact substitute value never actually reaches the screen; it only
+ * has to keep the generator from choking on it. */
+function safeYInput(raw: number, yScale: ValueScale, isLog: boolean): number {
+	return isLog && raw <= 0 ? yScale.domain()[0] : raw;
+}
+
 /** SVG path `d` for a line series (`yScale` defaults to the primary axis). `missing` controls a
  * non-finite cell: `"gap"` breaks the path there (`.defined()`); `"connect"` drops the row before
  * the generator runs, so the line spans the hole with one continuous segment; `"zero"` treats it
- * as a real zero, unchanged from before Track V. */
+ * as a real zero, unchanged from before Track V — except on a logarithmic `yScale`, where a
+ * non-positive value is ALWAYS a gap regardless of `missing` (decision 3, L3): {@link isGapValue}
+ * is the one place both rules are decided, so `linePath` itself never re-derives either. */
 export function linePath(
 	data: ChartDatum[],
 	categoryKey: string,
 	key: string,
 	scales: Scales,
-	yScale: ScaleLinear<number, number> = scales.y,
+	yScale: ValueScale = scales.y,
 	missing: MissingMode = "zero",
 ): string {
-	const rows = missing === "connect" ? data.filter((row) => val(row[key]) !== null) : data;
+	const isLog = isLogScale(yScale);
+	const rows = missing === "connect" ? data.filter((row) => !isGapValue(val(row[key]), missing, isLog)) : data;
 	const gen = d3line<ChartDatum>()
-		.defined((row) => missing !== "gap" || val(row[key]) !== null)
+		.defined((row) => !isGapValue(val(row[key]), missing, isLog))
 		.x((row) => xCenter(scales, cat(row, categoryKey)))
-		.y((row) => yScale(val(row[key]) ?? 0));
+		.y((row) => yScale(safeYInput(val(row[key]) ?? 0, yScale, isLog)));
 	return gen(rows) ?? "";
 }
 
-/** SVG path `d` for an area series (baseline at y=0; `yScale` defaults to the primary axis).
- * `missing` behaves exactly as it does for {@link linePath}, applied to both edges of the fill. */
+/** SVG path `d` for an area series (baseline at {@link baselineOf}; `yScale` defaults to the
+ * primary axis). `missing` behaves exactly as it does for {@link linePath}, including the
+ * logarithmic non-positive-is-always-a-gap rule, applied to both edges of the fill. */
 export function areaPath(
 	data: ChartDatum[],
 	categoryKey: string,
 	key: string,
 	scales: Scales,
-	yScale: ScaleLinear<number, number> = scales.y,
+	yScale: ValueScale = scales.y,
 	missing: MissingMode = "zero",
 ): string {
-	const rows = missing === "connect" ? data.filter((row) => val(row[key]) !== null) : data;
-	const base = yScale(0);
+	const isLog = isLogScale(yScale);
+	const rows = missing === "connect" ? data.filter((row) => !isGapValue(val(row[key]), missing, isLog)) : data;
+	const base = baselineOf(yScale);
 	const gen = d3area<ChartDatum>()
-		.defined((row) => missing !== "gap" || val(row[key]) !== null)
+		.defined((row) => !isGapValue(val(row[key]), missing, isLog))
 		.x((row) => xCenter(scales, cat(row, categoryKey)))
 		.y0(base)
-		.y1((row) => yScale(val(row[key]) ?? 0));
+		.y1((row) => yScale(safeYInput(val(row[key]) ?? 0, yScale, isLog)));
 	return gen(rows) ?? "";
 }
 
@@ -193,19 +254,21 @@ export interface CanvasPoint {
 
 /** Point positions for a cartesian line/area series — the same x/y {@link linePath} plots, as
  * raw points instead of an SVG path string, for the canvas renderer (`yScale` defaults to the
- * primary axis). `missing !== "zero"` omits a row with a non-finite cell from the returned points
- * entirely — the canvas draw protocol is a single polyline with no `.defined()` equivalent, so
- * `"gap"` and `"connect"` render the same way here: the line runs straight through to the next
- * real point rather than breaking, which is the documented limit of the canvas renderer for gaps. */
+ * primary axis). Omits a gapped row entirely — missing (per `missing`) or, on a logarithmic
+ * `yScale`, non-positive (decision 3) — from the returned points: the canvas draw protocol is a
+ * single polyline with no `.defined()` equivalent, so `"gap"` and `"connect"` (and a log gap)
+ * render the same way here: the line runs straight through to the next real point rather than
+ * breaking, which is the documented limit of the canvas renderer for gaps. */
 export function seriesPoints(
 	data: ChartDatum[],
 	categoryKey: string,
 	key: string,
 	scales: Scales,
-	yScale: ScaleLinear<number, number> = scales.y,
+	yScale: ValueScale = scales.y,
 	missing: MissingMode = "zero",
 ): CanvasPoint[] {
-	const rows = missing === "zero" ? data : data.filter((row) => val(row[key]) !== null);
+	const isLog = isLogScale(yScale);
+	const rows = data.filter((row) => !isGapValue(val(row[key]), missing, isLog));
 	return rows.map((row) => ({ x: xCenter(scales, cat(row, categoryKey)), y: yScale(val(row[key]) ?? 0) }));
 }
 
@@ -225,13 +288,16 @@ export interface Bar {
  * (defaults to the primary axis), so bar series on a secondary axis size correctly. `defaultMissing`
  * (per-series override on `ChartSeries.missing`) omits a bar entirely for a non-finite cell unless
  * the resolved mode is `"zero"` — the bar slot stays reserved (`inner`'s domain is the full series
- * list, built before this loop), so the remaining bars in the group keep their x positions. */
+ * list, built before this loop), so the remaining bars in the group keep their x positions. On a
+ * logarithmic axis a non-positive value is omitted the same way, unconditionally (decision 3): bars
+ * ARE allowed on log (decision 4), but a bar's length there reads as a ratio to the axis floor, not
+ * a quantity, and there is no floor for zero or a negative number to grow from. */
 export function groupedBars(
 	data: ChartDatum[],
 	categoryKey: string,
 	series: ChartSeries[],
 	scales: Scales,
-	yOf: (seriesIndex: number) => ScaleLinear<number, number> = () => scales.y,
+	yOf: (seriesIndex: number) => ValueScale = () => scales.y,
 	hidden: Set<string> = new Set(),
 	defaultMissing: MissingMode = "zero",
 ): Bar[] {
@@ -248,10 +314,10 @@ export function groupedBars(
 		const c = cat(row, categoryKey);
 		const gx = band(c) ?? 0;
 		barKeys.forEach(({ s, i }, j) => {
-			const raw = val(row[s.key]);
-			if (raw === null && (s.missing ?? defaultMissing) !== "zero") return;
 			const ys = yOf(i);
-			const y0 = ys(0);
+			const raw = val(row[s.key]);
+			if (isGapValue(raw, s.missing ?? defaultMissing, isLogScale(ys))) return;
+			const y0 = baselineOf(ys);
 			const v = raw ?? 0;
 			const yv = ys(v);
 			out.push({
@@ -324,13 +390,15 @@ export function stackedBars(
 export interface ScalesH {
 	/** Band scale over categories, sized to the inner HEIGHT. */
 	yBand: ScaleBand<string>;
-	/** Linear value scale, sized to the inner WIDTH (always includes zero). */
-	x: ScaleLinear<number, number>;
+	/** The value axis, sized to the inner WIDTH — linear (always includes zero) or, per `y-scale`
+	 * (decision 1: it names the value axis "regardless of orientation"), logarithmic. */
+	x: ValueScale;
 	cats: string[];
 }
 
-/** Build horizontal-bar scales: a Y band for categories and an X linear scale for values.
- * Honors `hidden` and the stacked domain exactly as {@link buildScales} does. */
+/** Build horizontal-bar scales: a Y band for categories and an X value scale. Honors `hidden` and
+ * the stacked domain exactly as {@link buildScales} does, including the stacked-plus-log downgrade
+ * to `"linear"` (decision 4) — enforced here too, not just in the vertical path. */
 export function buildScalesH(
 	data: ChartDatum[],
 	series: ChartSeries[],
@@ -340,17 +408,22 @@ export function buildScalesH(
 	innerH: number,
 	hidden: Set<string> = new Set(),
 	missing: MissingMode = "gap",
+	xScaleKind: ScaleKind = "linear",
 ): ScalesH {
 	const cats = categories(data, categoryKey);
 	const visible = series.filter((s) => !hidden.has(s.key));
 	const yBand = scaleBand<string>().domain(cats).range([0, innerH]).padding(0.2);
-	const x = scaleLinear().domain(yDomain(data, visible, stacked, missing)).range([0, innerW]).nice();
+	const kind: ScaleKind = stacked ? "linear" : xScaleKind;
+	const x = (kind === "log" ? scaleLog() : scaleLinear())
+		.domain(yDomain(data, visible, stacked, missing, kind))
+		.range([0, innerW])
+		.nice();
 	return { yBand, x, cats };
 }
 
-/** Rectangles for grouped (side-by-side) horizontal bars. Bars grow rightward from x=0;
- * each category band is split among the visible bar series. Mirrors {@link groupedBars},
- * including the same `defaultMissing` bar-omission rule. */
+/** Rectangles for grouped (side-by-side) horizontal bars. Bars grow rightward from the baseline
+ * ({@link baselineOf}); each category band is split among the visible bar series. Mirrors
+ * {@link groupedBars}, including the same `defaultMissing` and logarithmic bar-omission rules. */
 export function horizontalBars(
 	data: ChartDatum[],
 	categoryKey: string,
@@ -367,14 +440,15 @@ export function horizontalBars(
 		.domain(barKeys.map((_, j) => j))
 		.range([0, band.bandwidth()])
 		.padding(0.1);
-	const x0 = scales.x(0);
+	const isLog = isLogScale(scales.x);
+	const x0 = baselineOf(scales.x);
 	const out: Bar[] = [];
 	data.forEach((row, rowIndex) => {
 		const c = cat(row, categoryKey);
 		const gy = band(c) ?? 0;
 		barKeys.forEach(({ s, i }, j) => {
 			const raw = val(row[s.key]);
-			if (raw === null && (s.missing ?? defaultMissing) !== "zero") return;
+			if (isGapValue(raw, s.missing ?? defaultMissing, isLog)) return;
 			const v = raw ?? 0;
 			const xv = scales.x(v);
 			out.push({
@@ -446,14 +520,65 @@ export function centerSubLabelSize(innerRadius: number): number {
 	return Math.max(9, Math.min(16, innerRadius * 0.28));
 }
 
-/** Y-axis tick values from the primary scale. */
-export function yTicks(scales: Scales, count = 5): number[] {
+/** Y-axis tick values from the primary scale. On a logarithmic scale, `pixels` (the axis length)
+ * routes through {@link logTicks} instead of the raw `count` — passing no `pixels` falls back to
+ * the scale's own (potentially crowded) default, so existing callers that haven't been updated yet
+ * still get a sane, if untidied, answer rather than a thrown error. */
+export function yTicks(scales: Scales, count = 5, pixels?: number): number[] {
+	if (isLogScale(scales.y)) return pixels !== undefined ? logTicks(scales.y, pixels) : scales.y.ticks();
 	return scales.y.ticks(count);
 }
 
-/** Tick values for any linear scale (used for the secondary axis). */
-export function ticksOf(scale: ScaleLinear<number, number>, count = 5): number[] {
+/** Tick values for any value scale (used for the secondary axis and the horizontal path) — the
+ * same log-aware behavior as {@link yTicks}, for a scale that isn't necessarily `scales.y` itself. */
+export function ticksOf(scale: ValueScale, count = 5, pixels?: number): number[] {
+	if (isLogScale(scale)) return pixels !== undefined ? logTicks(scale, pixels) : scale.ticks();
 	return scale.ticks(count);
+}
+
+/** Decade-first tick thinning for a logarithmic value scale (decision 6): `scaleLog().ticks()`
+ * yields decade boundaries plus their 1-through-9 multiples, which at a typical chart height
+ * overprints into an unreadable stripe. This takes the decades within the domain first and, only
+ * while every tick still clears `minGapPx` (default 24, matching decision 6) from its pixel
+ * neighbor, adds each decade's 2× and 5× multiple. If the bare decades themselves don't clear the
+ * gap (a domain spanning many decades in very little `pixels`), they're thinned by an even stride
+ * until they do, rather than returning an overcrowded set. Labels format through the caller's own
+ * `fmtY`, so `numberFormat`/`formatY` keep working unchanged — this only decides WHICH values get a
+ * tick, never how one is printed. */
+export function logTicks(scale: ValueScale, pixels: number, minGapPx = 24): number[] {
+	const [lo, hi] = scale.domain();
+	if (!(lo > 0) || !(hi > lo)) return scale.ticks();
+	const loExp = Math.floor(Math.log10(lo));
+	const hiExp = Math.ceil(Math.log10(hi));
+	const decades: number[] = [];
+	for (let e = loExp; e <= hiExp; e++) {
+		const v = 10 ** e;
+		if (v >= lo && v <= hi) decades.push(v);
+	}
+	if (decades.length === 0) return scale.ticks();
+	const clearsGap = (ticks: number[]): boolean => {
+		const positions = ticks.map((t) => scale(t)).sort((a, b) => a - b);
+		for (let i = 1; i < positions.length; i++) {
+			if (Math.abs(positions[i] - positions[i - 1]) < minGapPx) return false;
+		}
+		return true;
+	};
+	if (!clearsGap(decades)) {
+		for (let stride = 2; stride <= decades.length; stride++) {
+			const thinned = decades.filter((_, i) => i % stride === 0);
+			if (clearsGap(thinned)) return thinned;
+		}
+		return [decades[0], decades[decades.length - 1]];
+	}
+	const withMultiples = [...decades];
+	for (const d of decades) {
+		for (const m of [2, 5]) {
+			const v = d * m;
+			if (v > lo && v < hi) withMultiples.push(v);
+		}
+	}
+	withMultiples.sort((a, b) => a - b);
+	return clearsGap(withMultiples) ? withMultiples : decades;
 }
 
 // ---- scatter / bubble (linear x and y) ----

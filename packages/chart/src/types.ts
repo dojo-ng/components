@@ -1,9 +1,19 @@
+import type { ScaleContinuousNumeric } from "d3-scale";
+
 /**
  * Chart mark type. `line`/`area`/`bar` are cartesian (category x, linear y); `scatter`/`bubble`
  * are an x/y plot (linear x and y); `pie`/`donut` are radial. A series can override the
  * chart-level `type` to build combos.
  */
 export type ChartType = "line" | "area" | "bar" | "scatter" | "bubble" | "pie" | "donut";
+
+/** The value (non-category) axis scale, widened from a bare `ScaleLinear` so `scaleLog` satisfies
+ * it too (Track L) — `scaleLinear()` and `scaleLog()` share this shape. */
+export type ValueScale = ScaleContinuousNumeric<number, number>;
+
+/** `"linear"` (default) or `"log"` for the value axis — cartesian only (the x/y scatter axes and
+ * `dj-sparkline` are out of scope, decision 8). */
+export type ScaleKind = "linear" | "log";
 
 /** How `dj-chart` draws series marks. `"canvas"` is an opt-in escape hatch for very large series
  * (axes, grid, legend, and tooltip stay SVG/DOM either way). */

@@ -29,6 +29,9 @@ The foundational button.
 | `label` | label | `string` | — |
 | `iconPosition` | icon-position ↻ | `IconPosition` | `"before"` |
 | `title` | title | `string` | `""` |
+| `ariaLabel` | aria-label ↻ | `string \| null` | `null` |
+| `ariaPressed` | aria-pressed ↻ | `string \| null` | `null` |
+| `ariaExpanded` | aria-expanded ↻ | `string \| null` | `null` |
 
 **Slots:** default (the button label), `icon` (an icon, placed per `icon-position`)
 
@@ -50,7 +53,7 @@ A button that inherits the surrounding theme rather than imposing its own. Mirro
 
 *Extends `DjButton`; inherits its properties and behavior.*
 
-A circular (or extended/pill) action button, optionally fixed to a screen position. Subclasses `<dj-button>`; default-slot label, `icon` slot. @cssprop [--dj-fab-z-index=800] - Stacking order of the floating action button.
+A circular (or extended/pill) action button, optionally fixed to a screen position. Subclasses `<dj-button>`; default-slot label, `icon` slot.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -506,6 +509,8 @@ Star rating (0..max). Form-associated. (Half-step `allowHalf` accepted; full-sta
 
 **Methods:** `checkValidity()`, `restoreFormState(state: File | string | FormData | null)`
 
+**CSS properties:** `--dj-rate-size` (default `1.5rem`; Size of one star.)
+
 
 ### `<dj-date-input>` · `@dojo-ng/date-input`
 
@@ -711,7 +716,7 @@ Right-click the trigger (default slot) to open a menu of `options`; emits `dj-se
 
 ### `<dj-dialog>` · `@dojo-ng/dialog`
 
-A modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role="alertdialog"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close`. Parts: `underlay`, `dialog`, `title`, `close`, `content`, `actions`. @cssprop [--dj-dialog-z-index=941] - Stacking order of the dialog. @cssprop [--dj-dialog-underlay-z-index=940] - Stacking order of the dialog underlay (scrim).
+A modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role="alertdialog"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close`. Parts: `underlay`, `dialog`, `title`, `close`, `content`, `actions`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -735,7 +740,7 @@ A modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll 
 
 ### `<dj-slide-pane>` · `@dojo-ng/slide-pane`
 
-A panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`. @cssprop [--dj-slide-pane-size=320px] - Width (left/right) or height (top/bottom) of the pane. @cssprop [--dj-slide-pane-z-index=931] - Stacking order of the pane. @cssprop [--dj-slide-pane-underlay-z-index=930] - Stacking order of the pane underlay (scrim).
+A panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -774,7 +779,7 @@ Shows tip content next to its trigger on hover/focus. The trigger goes in the de
 
 ### `<dj-snackbar>` · `@dojo-ng/snackbar`
 
-A toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`. @cssprop [--dj-snackbar-z-index=960] - Stacking order of the snackbar.
+A toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -946,7 +951,7 @@ A breadcrumb trail from `items`. Part: `list`.
 
 ### `<dj-header>` · `@dojo-ng/header`
 
-App header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`. @cssprop [--dj-header-z-index=700] - Stacking order of the header.
+App header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1059,6 +1064,29 @@ A hierarchical tree from `nodes`. Each node may carry an `icon` (a registered ic
 **CSS properties:** `--dj-tree-indent` (default `1.1rem`; Indentation added per nesting level.), `--dj-tree-count-color` (default `var(--dj-color-text-muted)`; Color of the trailing count badge.)
 
 
+### `<dj-nav>` · `@dojo-ng/nav`
+
+A nav landmark that collapses into a trigger + panel below a threshold. The threshold is the `--dj-nav-collapsed` custom property (0 or 1), read via `TokenFlagController` rather than a `breakpoint` prop, so it lives in the existing `--dj-*` theme system and is container-aware: a nav inside a narrow sidebar on a wide screen collapses. One arrangement is ever in the DOM — never both, hidden: the plain `<nav>` when expanded, or the trigger plus (while open) a panel wrapping that same `<nav>` when collapsed. `panel` picks the collapsed presentation: `"drawer"` composes `<dj-slide-pane>` (its `align` follows the reading direction); `"dropdown"` and `"overlay"` are positioned in this component's own shadow DOM. This is a disclosure, not a menu button — the links are plain slotted `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree`, and the trigger carries no `aria-haspopup`.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `label` | label | `string` | — |
+| `open` | open ↻ | `boolean` | `false` |
+| `panel` | panel ↻ | `"drawer" \| "dropdown" \| "overlay"` | `"drawer"` |
+| `triggerLabel` | trigger-label | `string` | — |
+| `collapsed` | collapsed ↻ | `boolean` | `false` |
+
+**Slots:** default (the links — plain `<a>` elements), `trigger`
+
+**Parts:** `trigger`, `panel`, `nav`
+
+**Events:** `dj-nav-collapse` (detail `{ collapsed }`), `dj-nav-toggle` (detail `{ open }`)
+
+**Methods:** `show()`, `hide()`, `toggle()`, `refresh()` (Delegates to `TokenFlagController` — the escape hatch for a runtime pin or theme switch that `ResizeObserver` cannot see (it only sees size changes).)
+
+**CSS properties:** `--dj-nav-collapsed` (default `1`; The threshold flag read by TokenFlagController; 0 keeps the inline arrangement, 1 collapses it. Any value a consumer sets (directly, inherited from `:root`, or from their own `@container`/`@media` rule) wins over the component's own 45rem default — set it directly for a permanent hamburger, set both branches to move the flip point, or set it to `initial` to release an inherited pin.), `--dj-nav-gap` (default `1rem`; Gap between links in the inline arrangement.), `--dj-slide-pane-size` (Passed through to the drawer presentation.)
+
+
 ## Data display
 
 
@@ -1091,7 +1119,7 @@ applies it itself), `dj-card-click` (detail `{ card, key }`)
 
 ### `<dj-list>` · `@dojo-ng/list`
 
-A single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard (space to grab, arrows to move, space to drop, escape to cancel) — controlled: it emits `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`. @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.
+A single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard (space to grab, arrows to move, space to drop, escape to cancel) — controlled: it emits `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1387,7 +1415,7 @@ An inline status banner. It sits in the page flow (unlike the transient, floatin
 
 ### `<dj-progress>` · `@dojo-ng/progress`
 
-Determinate progress bar. value within min..max; `show-output` shows percent. Part: `bar`. @cssprop [--dj-progress-height=8px] - Thickness of the progress bar.
+Determinate progress bar. value within min..max; `show-output` shows percent. Part: `bar`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|

@@ -37,6 +37,19 @@ text), virtualization layout (data grid), and CSS media features are exercised f
 component has behavior tests and an axe-core accessibility check. (WTR + Playwright + axe:
 `npm run test:browser`; the relative performance gate is `npm run bench:components`.)
 
+Per-component axe coverage is gate-enforced, not merely asserted here: `a11y_gate.py`
+(`npm run a11y-gate`) reads every default-suite test file that calls `assertNoViolations`, reads
+the element packages and their tags the same way the doc/manifest generators do, and fails the
+build if any element package is uncovered and unexplained. Three named categories, none a silent
+pass: `EXEMPT` (a package that renders nothing an axe run could assert anything about —
+`global-event`), `OPT_IN_COVERAGE` (genuinely audited, but only by a test deliberately excluded
+from the default suite, e.g. `video`'s real-video.js-engine run behind `DJ_REAL_VIDEO`), and
+`KNOWN_GAPS`, the ratcheting backlog of packages still owed real coverage — empty as of
+2026-09-10, since it is what the gate exists to shrink to nothing. The gate also fails if a
+`KNOWN_GAPS` entry goes stale (the package it names is now covered by the default suite and the
+entry should be removed), so that allowlist cannot quietly stop ratcheting. History and the
+coverage-closing work are in `component-a11y-coverage-spec.md`.
+
 Build and package sanity. The workspace builds clean with `tsc -b`, and each package's published
 entry imports without error.
 
@@ -51,7 +64,7 @@ motion, color, or layout.
 |---|---|---|
 | Local dev | Any layer, on demand | No |
 | Pre-commit (fast) | Type-check, lint, affected logic unit tests | Yes |
-| Merge request (CI) | Type-check, lint, all logic unit tests, component + axe tests on Chromium, build | Yes |
+| Merge request (CI) | Type-check, lint, all logic unit tests, component + axe tests on Chromium, `a11y_gate.py`, build | Yes |
 | Pre-release | The full CI suite, then build and a published-package import smoke | Yes |
 | Default branch (post-merge) | Full suite including the cross-browser matrix; coverage report | Yes (keep the branch green) |
 

@@ -16,6 +16,7 @@ verify:
     - npm run test:generators
     - python3 license_lint.py
     - npm run check-drift
+    - npm run a11y-gate
 
 browser:chromium:
   stage: test

@@ -29,6 +29,7 @@
     "changeset": "changeset",
     "lint": "eslint packages/*/src tests && python3 direction_lint.py",
     "leak-gate": "python3 leak_gate.py",
+    "a11y-gate": "python3 a11y_gate.py",
     "version-packages": "changeset version && python3 genversions.py",
     "release": "npm run build && changeset publish",
     "test:generators": "python3 -m unittest discover -s tests/generators -p \"test_*.py\"",

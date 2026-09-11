@@ -15,6 +15,7 @@ import type { SearchKey, SearchQuery, SearchToken } from "./query.js";
 const EN: Record<string, string> = {
 	clearSearch: "Clear search",
 	removeFilter: "Remove {filter}",
+	suggestions: "Suggestions",
 };
 registerDefaults("dj", EN);
 
@@ -242,6 +243,7 @@ export class DjSearchBox extends DojoElement {
 						placeholder=${this.tokens.length ? nothing : (this.placeholder ?? nothing)}
 						?disabled=${this.disabled}
 						role="combobox" aria-label=${this.label ?? nothing} aria-expanded=${this.open ? "true" : "false"}
+						aria-controls="suggestions"
 						@input=${this.onInput} @keydown=${this.onKey}
 						@focus=${() => { this.focused = true; }}
 						@blur=${() => { this.focused = false; }} />
@@ -250,7 +252,7 @@ export class DjSearchBox extends DojoElement {
 						: nothing}
 				</div>
 				<dj-popup .anchor=${this.input} .open=${this.open && this.#suggestions.length > 0} position=${this.position} .scrollLock=${false} @dj-close=${() => { this.open = false; }}>
-					<dj-list .options=${this.#suggestions} @change=${(e: Event) => this.onSelect(e)}></dj-list>
+					<dj-list id="suggestions" label=${this.#msg("suggestions")} .options=${this.#suggestions} @change=${(e: Event) => this.onSelect(e)}></dj-list>
 				</dj-popup>
 			</div>
 		`;

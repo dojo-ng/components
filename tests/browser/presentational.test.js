@@ -2,7 +2,7 @@
 // axe. These are mostly static, so a render check plus an accessibility check is the whole job.
 // (Full enter/leave animation timing and reduced-motion behavior are CSS-media-driven and are a
 // manual/dev-tools check per docs/qa-requirements.md.)
-import { mount, cleanup, make, assert } from "./helpers.js";
+import { mount, cleanup, make, assert, assertEqual } from "./helpers.js";
 import { assertNoViolations } from "./a11y.js";
 import "../../packages/avatar/dist/index.js";
 import "../../packages/icon/dist/index.js";
@@ -21,6 +21,14 @@ import "../../packages/theme/dist/index.js";
 import "../../packages/breadcrumb-group/dist/index.js";
 import "../../packages/transition/dist/index.js";
 import "../../packages/transition-group/dist/index.js";
+import "../../packages/alert/dist/index.js";
+import "../../packages/badge/dist/index.js";
+import "../../packages/skeleton/dist/index.js";
+import "../../packages/header-card/dist/index.js";
+import "../../packages/toolbar/dist/index.js";
+import "../../packages/action-button/dist/index.js";
+import "../../packages/floating-action-button/dist/index.js";
+import "../../packages/button/dist/index.js";
 
 // Simple tag + props + text cases: render, then axe.
 const CASES = [
@@ -33,6 +41,11 @@ const CASES = [
 	{ tag: "dj-loading-indicator", props: { label: "Loading", type: "circular-medium" } },
 	{ tag: "dj-avatar", props: { alt: "Ada Lovelace" }, text: "AL" },
 	{ tag: "dj-theme", props: { theme: "light" }, text: "Themed region" },
+	// component-a11y-coverage-spec.md A3: real rendered state, not an empty shell.
+	{ tag: "dj-alert", props: { variant: "warning", closable: true }, text: "Your session is about to expire." },
+	{ tag: "dj-badge", props: { variant: "danger" }, text: "4" },
+	{ tag: "dj-skeleton", props: { effect: "sheen" } },
+	{ tag: "dj-header-card", props: { title: "Quarterly report", subtitle: "Q3 2026" }, text: "Revenue grew 12% year over year." },
 ];
 
 describe("presentational components render + axe", () => {
@@ -117,5 +130,43 @@ describe("presentational components render + axe", () => {
 		await mount(g);
 		await g.updateComplete;
 		await assertNoViolations(g);
+	});
+
+	it("dj-toolbar renders a labelled toolbar with slotted actions and an overflow menu", async () => {
+		const el = make("dj-toolbar", {
+			label: "Document actions",
+			overflow: [{ value: "duplicate", label: "Duplicate" }, { value: "delete", label: "Delete" }],
+		});
+		el.append(make("span", { slot: "leading" }, "Doc"), make("dj-button", { slot: "actions", kind: "text" }, "Share"));
+		await mount(el);
+		await el.updateComplete;
+		assert(el.shadowRoot.querySelector('[role="toolbar"]'), "renders a toolbar landmark");
+		await assertNoViolations(el);
+	});
+
+	it("dj-action-button forwards its aria-label to the native button", async () => {
+		const el = await mount(make("dj-action-button", { ariaLabel: "Save draft" }, "Save"));
+		await el.updateComplete;
+		assertEqual(
+			el.shadowRoot.querySelector('[part="base"]').getAttribute("aria-label"),
+			"Save draft",
+			"the native button carries the forwarded accessible name",
+		);
+		await assertNoViolations(el);
+	});
+
+	it("dj-floating-action-button is icon-only and still gets a real accessible name", async () => {
+		// The exact shape CB9 (rich-text-value-button-name-spec.md Track A) fixed: an aria-hidden
+		// icon with no visible text, relying on dj-button forwarding the host aria-label.
+		const el = make("dj-floating-action-button", { ariaLabel: "Add item" });
+		el.innerHTML = '<svg slot="icon" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+		await mount(el);
+		await el.updateComplete;
+		assertEqual(
+			el.shadowRoot.querySelector('[part="base"]').getAttribute("aria-label"),
+			"Add item",
+			"the icon-only FAB's native button carries the forwarded accessible name",
+		);
+		await assertNoViolations(el);
 	});
 });

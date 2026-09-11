@@ -1,67 +1,458 @@
 [
-	{ "id": "parse-insertion", "op": "parse", "input": "{++foo++}",
-		"expected": [ { "kind": "insertion", "start": 0, "end": 9, "text": "foo", "spansBlock": false, "nested": false } ] },
-	{ "id": "parse-deletion", "op": "parse", "input": "{--bar--}",
-		"expected": [ { "kind": "deletion", "start": 0, "end": 9, "text": "bar", "spansBlock": false, "nested": false } ] },
-	{ "id": "parse-substitution", "op": "parse", "input": "{~~old~>new~~}",
-		"expected": [ { "kind": "substitution", "start": 0, "end": 14, "old": "old", "new": "new", "spansBlock": false, "nested": false } ] },
-	{ "id": "parse-comment", "op": "parse", "input": "{>>note<<}",
-		"expected": [ { "kind": "comment", "start": 0, "end": 10, "text": "note", "spansBlock": false, "nested": false } ] },
-	{ "id": "parse-highlight", "op": "parse", "input": "{==hl==}",
-		"expected": [ { "kind": "highlight", "start": 0, "end": 8, "text": "hl", "spansBlock": false, "nested": false } ] },
-	{ "id": "parse-nested-same-kind", "op": "parse", "input": "{--a {--b--} c--}",
+	{
+		"id": "parse-insertion",
+		"op": "parse",
+		"input": "{++foo++}",
 		"expected": [
-			{ "kind": "deletion", "start": 0, "end": 17, "text": "a {--b--} c", "spansBlock": false, "nested": true },
-			{ "kind": "deletion", "start": 5, "end": 12, "text": "b", "spansBlock": false, "nested": false }
-		] },
-	{ "id": "parse-nested-different-kind", "op": "parse", "input": "{++a {--b--} c++}",
+			{
+				"kind": "insertion",
+				"start": 0,
+				"end": 9,
+				"text": "foo",
+				"spansBlock": false,
+				"nested": false
+			}
+		]
+	},
+	{
+		"id": "parse-deletion",
+		"op": "parse",
+		"input": "{--bar--}",
 		"expected": [
-			{ "kind": "insertion", "start": 0, "end": 17, "text": "a {--b--} c", "spansBlock": false, "nested": true },
-			{ "kind": "deletion", "start": 5, "end": 12, "text": "b", "spansBlock": false, "nested": false }
-		] },
-	{ "id": "parse-unterminated", "op": "parse", "input": "{++foo", "expected": [] },
-	{ "id": "parse-fenced-code-skip", "op": "parse", "input": "```\n{--not tracked--}\n```", "expected": [] },
-	{ "id": "parse-reading-order", "op": "parse", "input": "{++a++}{--b--}{==c==}",
+			{
+				"kind": "deletion",
+				"start": 0,
+				"end": 9,
+				"text": "bar",
+				"spansBlock": false,
+				"nested": false
+			}
+		]
+	},
+	{
+		"id": "parse-substitution",
+		"op": "parse",
+		"input": "{~~old~>new~~}",
 		"expected": [
-			{ "kind": "insertion", "start": 0, "end": 7, "text": "a", "spansBlock": false, "nested": false },
-			{ "kind": "deletion", "start": 7, "end": 14, "text": "b", "spansBlock": false, "nested": false },
-			{ "kind": "highlight", "start": 14, "end": 21, "text": "c", "spansBlock": false, "nested": false }
-		] },
-	{ "id": "parse-spans-block", "op": "parse", "input": "{++A\n\nB++}",
-		"expected": [ { "kind": "insertion", "start": 0, "end": 10, "text": "A\n\nB", "spansBlock": true, "nested": false } ] },
-
-	{ "id": "accept-insertion", "op": "accept", "input": "{++foo++}", "mark": 0, "expected": "foo" },
-	{ "id": "decline-insertion", "op": "decline", "input": "{++foo++}", "mark": 0, "expected": "" },
-	{ "id": "accept-deletion", "op": "accept", "input": "{--bar--}", "mark": 0, "expected": "" },
-	{ "id": "decline-deletion", "op": "decline", "input": "{--bar--}", "mark": 0, "expected": "bar" },
-	{ "id": "accept-substitution", "op": "accept", "input": "{~~old~>new~~}", "mark": 0, "expected": "new" },
-	{ "id": "decline-substitution", "op": "decline", "input": "{~~old~>new~~}", "mark": 0, "expected": "old" },
-	{ "id": "accept-highlight-bare", "op": "accept", "input": "{==hl==}", "mark": 0, "expected": "hl" },
-	{ "id": "decline-highlight-bare", "op": "decline", "input": "{==hl==}", "mark": 0, "expected": "hl" },
-	{ "id": "accept-comment-bare", "op": "accept", "input": "{>>note<<}", "mark": 0, "expected": "{>>note<<}" },
-	{ "id": "decline-comment-bare", "op": "decline", "input": "{>>note<<}", "mark": 0, "expected": "{>>note<<}" },
-	{ "id": "accept-highlight-anchored-comment", "op": "accept", "input": "{==hl==}{>>note<<}", "mark": 0, "expected": "hl" },
-	{ "id": "decline-highlight-anchored-comment", "op": "decline", "input": "{==hl==}{>>note<<}", "mark": 0, "expected": "hl" },
-
-	{ "id": "acceptAll-nested-deletion", "op": "acceptAll", "input": "{--a {--b--} c--}", "expected": "" },
-	{ "id": "declineAll-nested-deletion", "op": "declineAll", "input": "{--a {--b--} c--}", "expected": "a b c" },
-	{ "id": "acceptAll-identity-no-marks", "op": "acceptAll", "input": "plain prose, no marks here.", "expected": "plain prose, no marks here." },
-	{ "id": "declineAll-identity-no-marks", "op": "declineAll", "input": "plain prose, no marks here.", "expected": "plain prose, no marks here." },
-	{ "id": "acceptAll-bare-comment-survives", "op": "acceptAll", "input": "{++x++}{>>note<<}", "expected": "x{>>note<<}" },
-	{ "id": "declineAll-bare-comment-survives", "op": "declineAll", "input": "{++x++}{>>note<<}", "expected": "{>>note<<}" },
-	{ "id": "stripComments-removes-bare-comment", "op": "stripComments", "input": "x{>>note<<}", "expected": "x" },
-
-	{ "id": "token-accept-insertion-break", "op": "accept", "input": "A{++¶++}B", "mark": 0, "expected": "A\n\nB" },
-	{ "id": "token-decline-insertion-break", "op": "decline", "input": "A{++¶++}B", "mark": 0, "expected": "AB" },
-	{ "id": "token-accept-deletion-break", "op": "accept", "input": "A{--¶--}B", "mark": 0, "expected": "AB" },
-	{ "id": "token-decline-deletion-break", "op": "decline", "input": "A{--¶--}B", "mark": 0, "expected": "A\n\nB" },
-	{ "id": "token-decline-insertion-no-orphan-blank-line", "op": "decline", "input": "{++A¶B++}", "mark": 0, "expected": "" },
-	{ "id": "token-accept-insertion-content-break", "op": "accept", "input": "{++A¶B++}", "mark": 0, "expected": "A\n\nB" },
-	{ "id": "token-accept-doubled-pilcrow-literal", "op": "accept", "input": "{++A¶¶B++}", "mark": 0, "expected": "A¶B" },
-
-	{ "id": "tokenize-insertion-block-spanning", "op": "tokenize", "input": "{++A\n\nB++}", "expected": "{++A¶B++}" },
-	{ "id": "tokenize-substitution-block-spanning", "op": "tokenize", "input": "{~~A\n\nB~>C~~}", "expected": "{~~A¶B~>C~~}" },
-
-	{ "id": "portable-insertion-tokenized-to-split", "op": "portable", "input": "{++A¶B++}", "expected": "{++A++}\n\n{++B++}" },
-	{ "id": "declineAll-portable-split-blank-line-cost", "op": "declineAll", "input": "{++A++}\n\n{++B++}", "expected": "\n\n" }
+			{
+				"kind": "substitution",
+				"start": 0,
+				"end": 14,
+				"old": "old",
+				"new": "new",
+				"spansBlock": false,
+				"nested": false
+			}
+		]
+	},
+	{
+		"id": "parse-comment",
+		"op": "parse",
+		"input": "{>>note<<}",
+		"expected": [
+			{
+				"kind": "comment",
+				"start": 0,
+				"end": 10,
+				"text": "note",
+				"spansBlock": false,
+				"nested": false
+			}
+		]
+	},
+	{
+		"id": "parse-highlight",
+		"op": "parse",
+		"input": "{==hl==}",
+		"expected": [
+			{
+				"kind": "highlight",
+				"start": 0,
+				"end": 8,
+				"text": "hl",
+				"spansBlock": false,
+				"nested": false
+			}
+		]
+	},
+	{
+		"id": "parse-nested-same-kind",
+		"op": "parse",
+		"input": "{--a {--b--} c--}",
+		"expected": [
+			{
+				"kind": "deletion",
+				"start": 0,
+				"end": 17,
+				"text": "a {--b--} c",
+				"spansBlock": false,
+				"nested": true
+			},
+			{
+				"kind": "deletion",
+				"start": 5,
+				"end": 12,
+				"text": "b",
+				"spansBlock": false,
+				"nested": false
+			}
+		]
+	},
+	{
+		"id": "parse-nested-different-kind",
+		"op": "parse",
+		"input": "{++a {--b--} c++}",
+		"expected": [
+			{
+				"kind": "insertion",
+				"start": 0,
+				"end": 17,
+				"text": "a {--b--} c",
+				"spansBlock": false,
+				"nested": true
+			},
+			{
+				"kind": "deletion",
+				"start": 5,
+				"end": 12,
+				"text": "b",
+				"spansBlock": false,
+				"nested": false
+			}
+		]
+	},
+	{
+		"id": "parse-unterminated",
+		"op": "parse",
+		"input": "{++foo",
+		"expected": []
+	},
+	{
+		"id": "parse-fenced-code-skip",
+		"op": "parse",
+		"input": "```\n{--not tracked--}\n```",
+		"expected": []
+	},
+	{
+		"id": "parse-reading-order",
+		"op": "parse",
+		"input": "{++a++}{--b--}{==c==}",
+		"expected": [
+			{
+				"kind": "insertion",
+				"start": 0,
+				"end": 7,
+				"text": "a",
+				"spansBlock": false,
+				"nested": false
+			},
+			{
+				"kind": "deletion",
+				"start": 7,
+				"end": 14,
+				"text": "b",
+				"spansBlock": false,
+				"nested": false
+			},
+			{
+				"kind": "highlight",
+				"start": 14,
+				"end": 21,
+				"text": "c",
+				"spansBlock": false,
+				"nested": false
+			}
+		]
+	},
+	{
+		"id": "parse-spans-block",
+		"op": "parse",
+		"input": "{++A\n\nB++}",
+		"expected": [
+			{
+				"kind": "insertion",
+				"start": 0,
+				"end": 10,
+				"text": "A\n\nB",
+				"spansBlock": true,
+				"nested": false
+			}
+		]
+	},
+	{
+		"id": "accept-insertion",
+		"op": "accept",
+		"input": "{++foo++}",
+		"mark": 0,
+		"expected": "foo"
+	},
+	{
+		"id": "decline-insertion",
+		"op": "decline",
+		"input": "{++foo++}",
+		"mark": 0,
+		"expected": ""
+	},
+	{
+		"id": "accept-deletion",
+		"op": "accept",
+		"input": "{--bar--}",
+		"mark": 0,
+		"expected": ""
+	},
+	{
+		"id": "decline-deletion",
+		"op": "decline",
+		"input": "{--bar--}",
+		"mark": 0,
+		"expected": "bar"
+	},
+	{
+		"id": "accept-substitution",
+		"op": "accept",
+		"input": "{~~old~>new~~}",
+		"mark": 0,
+		"expected": "new"
+	},
+	{
+		"id": "decline-substitution",
+		"op": "decline",
+		"input": "{~~old~>new~~}",
+		"mark": 0,
+		"expected": "old"
+	},
+	{
+		"id": "accept-highlight-bare",
+		"op": "accept",
+		"input": "{==hl==}",
+		"mark": 0,
+		"expected": "hl"
+	},
+	{
+		"id": "decline-highlight-bare",
+		"op": "decline",
+		"input": "{==hl==}",
+		"mark": 0,
+		"expected": "hl"
+	},
+	{
+		"id": "accept-comment-bare",
+		"op": "accept",
+		"input": "{>>note<<}",
+		"mark": 0,
+		"expected": "{>>note<<}"
+	},
+	{
+		"id": "decline-comment-bare",
+		"op": "decline",
+		"input": "{>>note<<}",
+		"mark": 0,
+		"expected": "{>>note<<}"
+	},
+	{
+		"id": "accept-highlight-anchored-comment",
+		"op": "accept",
+		"input": "{==hl==}{>>note<<}",
+		"mark": 0,
+		"expected": "hl"
+	},
+	{
+		"id": "decline-highlight-anchored-comment",
+		"op": "decline",
+		"input": "{==hl==}{>>note<<}",
+		"mark": 0,
+		"expected": "hl"
+	},
+	{
+		"id": "acceptAll-nested-deletion",
+		"op": "acceptAll",
+		"input": "{--a {--b--} c--}",
+		"expected": ""
+	},
+	{
+		"id": "declineAll-nested-deletion",
+		"op": "declineAll",
+		"input": "{--a {--b--} c--}",
+		"expected": "a b c"
+	},
+	{
+		"id": "acceptAll-identity-no-marks",
+		"op": "acceptAll",
+		"input": "plain prose, no marks here.",
+		"expected": "plain prose, no marks here."
+	},
+	{
+		"id": "declineAll-identity-no-marks",
+		"op": "declineAll",
+		"input": "plain prose, no marks here.",
+		"expected": "plain prose, no marks here."
+	},
+	{
+		"id": "acceptAll-bare-comment-survives",
+		"op": "acceptAll",
+		"input": "{++x++}{>>note<<}",
+		"expected": "x{>>note<<}"
+	},
+	{
+		"id": "declineAll-bare-comment-survives",
+		"op": "declineAll",
+		"input": "{++x++}{>>note<<}",
+		"expected": "{>>note<<}"
+	},
+	{
+		"id": "stripComments-removes-bare-comment",
+		"op": "stripComments",
+		"input": "x{>>note<<}",
+		"expected": "x"
+	},
+	{
+		"id": "token-accept-insertion-break",
+		"op": "accept",
+		"input": "A{++¶++}B",
+		"mark": 0,
+		"expected": "A\n\nB"
+	},
+	{
+		"id": "token-decline-insertion-break",
+		"op": "decline",
+		"input": "A{++¶++}B",
+		"mark": 0,
+		"expected": "AB"
+	},
+	{
+		"id": "token-accept-deletion-break",
+		"op": "accept",
+		"input": "A{--¶--}B",
+		"mark": 0,
+		"expected": "A B"
+	},
+	{
+		"id": "token-decline-deletion-break",
+		"op": "decline",
+		"input": "A{--¶--}B",
+		"mark": 0,
+		"expected": "A\n\nB"
+	},
+	{
+		"id": "token-decline-insertion-no-orphan-blank-line",
+		"op": "decline",
+		"input": "{++A¶B++}",
+		"mark": 0,
+		"expected": ""
+	},
+	{
+		"id": "token-accept-insertion-content-break",
+		"op": "accept",
+		"input": "{++A¶B++}",
+		"mark": 0,
+		"expected": "A\n\nB"
+	},
+	{
+		"id": "token-accept-doubled-pilcrow-literal",
+		"op": "accept",
+		"input": "{++A¶¶B++}",
+		"mark": 0,
+		"expected": "A¶B"
+	},
+	{
+		"id": "tokenize-insertion-block-spanning",
+		"op": "tokenize",
+		"input": "{++A\n\nB++}",
+		"expected": "{++A¶B++}"
+	},
+	{
+		"id": "tokenize-substitution-block-spanning",
+		"op": "tokenize",
+		"input": "{~~A\n\nB~>C~~}",
+		"expected": "{~~A¶B~>C~~}"
+	},
+	{
+		"id": "portable-insertion-tokenized-to-split",
+		"op": "portable",
+		"input": "{++A¶B++}",
+		"expected": "{++A++}\n\n{++B++}"
+	},
+	{
+		"id": "declineAll-portable-split-blank-line-cost",
+		"op": "declineAll",
+		"input": "{++A++}\n\n{++B++}",
+		"expected": "\n\n"
+	},
+	{
+		"id": "seam-accept-merge-injects-space",
+		"op": "accept",
+		"input": "The first paragraph ends here.{--¶--}The second begins here.",
+		"mark": 0,
+		"expected": "The first paragraph ends here. The second begins here."
+	},
+	{
+		"id": "seam-accept-merge-space-already-before",
+		"op": "accept",
+		"input": "A. {--¶--}B",
+		"mark": 0,
+		"expected": "A. B"
+	},
+	{
+		"id": "seam-accept-merge-space-already-after",
+		"op": "accept",
+		"input": "A.{--¶--} B",
+		"mark": 0,
+		"expected": "A. B"
+	},
+	{
+		"id": "seam-accept-merge-at-body-start",
+		"op": "accept",
+		"input": "{--¶--}B",
+		"mark": 0,
+		"expected": "B"
+	},
+	{
+		"id": "seam-accept-merge-at-body-end",
+		"op": "accept",
+		"input": "A{--¶--}",
+		"mark": 0,
+		"expected": "A"
+	},
+	{
+		"id": "seam-accept-split-absorbs-space-before",
+		"op": "accept",
+		"input": "A. {++¶++}B",
+		"mark": 0,
+		"expected": "A.\n\nB"
+	},
+	{
+		"id": "seam-accept-split-absorbs-space-after",
+		"op": "accept",
+		"input": "A.{++¶++} B",
+		"mark": 0,
+		"expected": "A.\n\nB"
+	},
+	{
+		"id": "seam-decline-split-restores-verbatim",
+		"op": "decline",
+		"input": "run{++¶++}together",
+		"mark": 0,
+		"expected": "runtogether"
+	},
+	{
+		"id": "seam-decline-merge-restores-verbatim",
+		"op": "decline",
+		"input": "A. {--¶--}B",
+		"mark": 0,
+		"expected": "A. \n\nB"
+	},
+	{
+		"id": "seam-accept-deletion-without-break-joins-nothing",
+		"op": "accept",
+		"input": "A{--x--}B",
+		"mark": 0,
+		"expected": "AB"
+	},
+	{
+		"id": "seam-accept-substitution-replaces-the-break",
+		"op": "accept",
+		"input": "{~~A¶B~>C~~}",
+		"mark": 0,
+		"expected": "C"
+	}
 ]

@@ -198,7 +198,14 @@ function resolve(text: string, mark: Mark, side: "new" | "old"): string {
 		return text;
 	}
 	const end = mark.kind === "highlight" ? highlightEnd(text, mark) : mark.end;
-	return text.slice(0, mark.start) + keptText(mark, side) + text.slice(end);
+	// Decision 18: only an ACCEPT adjusts whitespace at a paragraph-break seam. A decline restores
+	// the original text verbatim — `run{++¶++}together` declines back to `runtogether`, not to
+	// `run together` — and a highlight is kept unchanged in both directions, so neither touches the
+	// seam. `settleSeams` is a no-op on a string with no sentinel in it, which is every other case.
+	const adjusts = side === "new" && mark.kind !== "highlight";
+	const kept = keptText(mark, side, adjusts ? BREAK_SEAM : PARAGRAPH_BREAK);
+	const dropped = adjusts && kept === "" && hasStructuralToken(droppedText(mark, side));
+	return settleSeams(text.slice(0, mark.start) + (dropped ? JOIN_SEAM : kept) + text.slice(end));
 }
 
 /**
@@ -215,18 +222,33 @@ function highlightEnd(text: string, mark: Mark): number {
 	return mark.end;
 }
 
-function keptText(mark: Mark, side: "new" | "old"): string {
+function keptText(mark: Mark, side: "new" | "old", breakAs: string = PARAGRAPH_BREAK): string {
 	switch (mark.kind) {
 		case "highlight":
-			return resolveParagraphTokens(mark.text!);
+			return resolveParagraphTokens(mark.text!, PARAGRAPH_TOKEN, breakAs);
 		case "substitution":
-			return resolveParagraphTokens(side === "new" ? mark.new! : mark.old!);
+			return resolveParagraphTokens(side === "new" ? mark.new! : mark.old!, PARAGRAPH_TOKEN, breakAs);
 		case "insertion":
-			return side === "new" ? resolveParagraphTokens(mark.text!) : "";
+			return side === "new" ? resolveParagraphTokens(mark.text!, PARAGRAPH_TOKEN, breakAs) : "";
 		case "deletion":
-			return side === "new" ? "" : resolveParagraphTokens(mark.text!);
+			return side === "new" ? "" : resolveParagraphTokens(mark.text!, PARAGRAPH_TOKEN, breakAs);
 		default:
 			throw new Error(`unknown mark kind ${mark.kind}`);
+	}
+}
+
+/** The text this resolution DISCARDS — the mirror of `keptText`, and the only place a break that is
+ * about to disappear can still be seen. */
+function droppedText(mark: Mark, side: "new" | "old"): string {
+	switch (mark.kind) {
+		case "insertion":
+			return side === "new" ? "" : mark.text!;
+		case "deletion":
+			return side === "new" ? mark.text! : "";
+		case "substitution":
+			return side === "new" ? mark.old! : mark.new!;
+		default:
+			return "";
 	}
 }
 
@@ -332,7 +354,7 @@ export function unescapeToken(text: string, token: string = PARAGRAPH_TOKEN): st
  * and a doubled (escaped) token becomes the single literal character it stands for. Scans
  * left-to-right so a doubled pair is consumed as a unit and never mistaken for two lone tokens.
  */
-function resolveParagraphTokens(text: string, token: string = PARAGRAPH_TOKEN): string {
+function resolveParagraphTokens(text: string, token: string = PARAGRAPH_TOKEN, breakAs: string = PARAGRAPH_BREAK): string {
 	if (token === "") return text;
 	let out = "";
 	let i = 0;
@@ -342,7 +364,7 @@ function resolveParagraphTokens(text: string, token: string = PARAGRAPH_TOKEN): 
 				out += token + token; // escaped pair — unescapeToken folds it below
 				i += token.length * 2;
 			} else {
-				out += "\n\n"; // unpaired: a structural break
+				out += breakAs; // unpaired: a structural break
 				i += token.length;
 			}
 		} else {
@@ -391,6 +413,68 @@ export function tokenizeBlockSpanning(text: string, token: string = PARAGRAPH_TO
  */
 export function toPortableCriticMarkup(text: string, token: string = PARAGRAPH_TOKEN): string {
 	return normalizeBlockSpanning(resolveParagraphTokens(text, token));
+}
+
+// --- decision 18: whitespace at a paragraph-break seam ------------------------------------------
+
+/** A real paragraph break, as this grammar spells one. */
+const PARAGRAPH_BREAK = "\n\n";
+
+// Two sentinels, placed by `resolve` and consumed by `settleSeams` within that same call. They exist
+// so a seam adjustment can see the characters on BOTH sides of the mark — which a rule written over
+// the mark's own span cannot — without a regex sweep that would touch whitespace elsewhere in the
+// document that this resolution does not own (G2's "leaving all other text untouched"). Deliberately
+// outside the U+E000..U+E007 block `maskNested` uses; nothing outside this file ever sees one.
+const BREAK_SEAM = "\uE010"; // a break this resolution CREATES
+const JOIN_SEAM = "\uE011"; // a break this resolution REMOVES, with nothing kept in its place
+
+/** Horizontal whitespace only: a seam adjustment never eats a neighbouring line's newline. */
+const HORIZONTAL_WS = /[ \t]*/;
+
+/** True if `text` holds at least one UNPAIRED token — a structural break rather than a doubled
+ * literal. Scans in `resolveParagraphTokens`' left-to-right order so the two always agree on which
+ * tokens are structural. */
+function hasStructuralToken(text: string, token: string = PARAGRAPH_TOKEN): boolean {
+	if (token === "") return false;
+	let i = 0;
+	while (i < text.length) {
+		if (text.startsWith(token, i)) {
+			if (text.startsWith(token, i + token.length)) {
+				i += token.length * 2;
+				continue;
+			}
+			return true;
+		}
+		i++;
+	}
+	return false;
+}
+
+/**
+ * Turn the seam sentinels into real text, which is where decision 18's two rules actually live:
+ *
+ * - A break being CREATED absorbs the horizontal whitespace on either side of it, so accepting
+ *   `here. {++¶++}The` does not leave a space stranded at the end of the first paragraph.
+ * - A break being REMOVED becomes a single space, so accepting `here.{--¶--}The` reads
+ *   `here. The` rather than `here.The` — but only when real text sits hard against both sides, so a
+ *   merge into text that already has whitespace (or at the very start or end of the body) adds
+ *   nothing.
+ */
+function settleSeams(text: string): string {
+	if (!text.includes(BREAK_SEAM) && !text.includes(JOIN_SEAM)) return text;
+	const broken = text.replace(new RegExp(`${HORIZONTAL_WS.source}${BREAK_SEAM}${HORIZONTAL_WS.source}`, "g"), PARAGRAPH_BREAK);
+	return settleJoinSeam(broken);
+}
+
+/** One join seam at a time, by index rather than by regex, so a character outside the Basic
+ * Multilingual Plane on either side of the seam is never split. */
+function settleJoinSeam(text: string): string {
+	const at = text.indexOf(JOIN_SEAM);
+	if (at < 0) return text;
+	const before = text.slice(0, at);
+	const after = text.slice(at + JOIN_SEAM.length);
+	const needsSpace = before !== "" && after !== "" && !/\s$/.test(before) && !/^\s/.test(after);
+	return settleJoinSeam(before + (needsSpace ? " " : "") + after);
 }
 
 // --- decision 11: nesting is detected and masked, not mangled ----------------------------------

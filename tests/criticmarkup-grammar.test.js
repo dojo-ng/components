@@ -56,7 +56,7 @@ function runCase(op, input, mark) {
 // The count is asserted as a literal, not derived from the array's own length, so a case cannot be
 // quietly dropped without this test noticing.
 test("conformance.json carries at least the cases this spec named by name", () => {
-	assert.ok(conformance.length >= 41, `expected at least 41 cases, found ${conformance.length}`);
+	assert.ok(conformance.length >= 52, `expected at least 52 cases, found ${conformance.length}`);
 });
 
 for (const c of conformance) {

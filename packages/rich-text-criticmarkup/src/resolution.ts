@@ -15,7 +15,7 @@
  * (Track T3), not baked into these functions themselves.
  */
 
-import { $createParagraphNode, $getNodeByKey, $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isRootOrShadowRoot, type ElementNode, type LexicalEditor, type LexicalNode } from "lexical";
+import { $createParagraphNode, $createTextNode, $getNodeByKey, $getRoot, $getSelection, $isElementNode, $isRangeSelection, $isRootOrShadowRoot, $isTextNode, type ElementNode, type LexicalEditor, type LexicalNode } from "lexical";
 import type { MarkKind } from "./grammar.js";
 import {
 	$isBreakNode,
@@ -115,11 +115,13 @@ function resolveOne(editor: LexicalEditor, node: LexicalNode, side: "new" | "old
 		resolved?.add(pair.deletion.getKey());
 		resolved?.add(pair.insertion.getKey());
 		if (side === "new") {
+			// No join seam here even when the deletion held a break (decision 18): the insertion's own
+			// text lands in its place, so the two sides are not becoming adjacent.
 			pair.deletion.remove();
-			unwrapAndResolveBreaks(pair.insertion);
+			unwrapAndResolveBreaks(pair.insertion, true);
 		} else {
 			pair.insertion.remove();
-			unwrapAndResolveBreaks(pair.deletion);
+			unwrapAndResolveBreaks(pair.deletion, false);
 		}
 		dispatchChange(editor, "substitution", side === "new" ? "accept" : "decline");
 		return;
@@ -135,8 +137,15 @@ function resolveOne(editor: LexicalEditor, node: LexicalNode, side: "new" | "old
 		unwrap(node);
 	} else {
 		const keep = $isInsertionNode(node) ? side === "new" : side === "old";
-		if (keep) unwrapAndResolveBreaks(node);
-		else node.remove();
+		if (keep) {
+			unwrapAndResolveBreaks(node, side === "new");
+		} else {
+			// Decision 18: accepting a deletion that holds a break closes a real paragraph boundary, so
+			// the text on either side needs the space that boundary was providing. Declining an
+			// insertion drops a break that never existed in the document, so it changes nothing.
+			if (side === "new" && holdsBreak(node)) joinAtRemovedBreak(node);
+			node.remove();
+		}
 	}
 	dispatchChange(editor, kind, side === "new" ? "accept" : "decline");
 }
@@ -176,14 +185,59 @@ function unwrap(node: ElementNode): LexicalNode[] {
  * children — a kept paragraph-break proposal (decision 16) stops being a decorator and becomes an
  * actual block boundary, mirroring what `grammar.accept`/`decline` do to the token at the string
  * level. */
-function unwrapAndResolveBreaks(node: ElementNode): void {
+function unwrapAndResolveBreaks(node: ElementNode, creating: boolean): void {
 	const children = unwrap(node);
 	for (const child of children) {
-		if ($isBreakNode(child)) splitBlockAtBreak(child);
+		if ($isBreakNode(child)) splitBlockAtBreak(child, creating);
 	}
 }
 
-function splitBlockAtBreak(breakNode: BreakNode): void {
+/** True if `node` holds a `BreakNode` — the tree-side reading of `grammar.hasStructuralToken`. */
+function holdsBreak(node: ElementNode): boolean {
+	return node.getChildren().some($isBreakNode);
+}
+
+/**
+ * Decision 18's join rule on the live tree: a single space where the removed break was, but only
+ * when real text sits hard against both sides of it. Inserted as its own text node rather than
+ * appended to the neighbour, so a formatted run keeps its own format and Lexical's own
+ * normalization merges the pair where they match.
+ */
+function joinAtRemovedBreak(node: ElementNode): void {
+	const before = node.getPreviousSibling()?.getTextContent() ?? "";
+	const after = node.getNextSibling()?.getTextContent() ?? "";
+	if (before === "" || after === "") return;
+	if (/\s$/.test(before) || /^\s/.test(after)) return;
+	node.insertBefore($createTextNode(" "));
+}
+
+/** Decision 18's absorb rule on the live tree: the horizontal whitespace on either side of a break
+ * being CREATED goes with it, so an accepted split does not strand a space at the end of the first
+ * block or open the second one with one. A break being RESTORED (a declined merge) is left exactly
+ * as the document had it. */
+function trimSeam(block: ElementNode, edge: "end" | "start"): void {
+	// Walks inward from the edge over a SNAPSHOT of the children, rather than re-reading the edge
+	// child on each pass. The loop's progress has to come from the walk itself and never from
+	// `remove()` having taken effect: Lexical reinstates an empty text node at a block edge in some
+	// reconciliation paths, and a loop that re-read `getLastChild()` would then be handed the same
+	// node forever — a hung page rather than a failed assertion, which is the kind of bug a headless
+	// test with a simpler tree can miss entirely.
+	const children = block.getChildren();
+	const ordered = edge === "end" ? [...children].reverse() : children;
+	for (const child of ordered) {
+		if (!$isTextNode(child)) return;
+		const text = child.getTextContent();
+		const trimmed = edge === "end" ? text.replace(/[ \t]+$/, "") : text.replace(/^[ \t]+/, "");
+		if (trimmed === text) return;
+		if (trimmed !== "") {
+			child.setTextContent(trimmed);
+			return;
+		}
+		child.remove();
+	}
+}
+
+function splitBlockAtBreak(breakNode: BreakNode, creating: boolean): void {
 	const block = topLevelBlockOf(breakNode);
 	if (!block) {
 		breakNode.remove();
@@ -198,6 +252,10 @@ function splitBlockAtBreak(breakNode: BreakNode): void {
 	}
 	block.insertAfter(newBlock);
 	breakNode.remove();
+	if (creating) {
+		trimSeam(block, "end");
+		trimSeam(newBlock, "start");
+	}
 }
 
 function topLevelBlockOf(node: LexicalNode): ElementNode | null {

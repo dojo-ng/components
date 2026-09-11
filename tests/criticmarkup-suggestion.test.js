@@ -323,7 +323,9 @@ test("S3 'mark': merging at block start gives one block, one deletion holding on
 	});
 	const value = valueOf(editor);
 	assert.equal(value, `A{--${PARAGRAPH_TOKEN}--}B`);
-	assert.equal(acceptAll(value), "AB");
+	// Decision 18: accepting the merge puts back the space the removed break was providing; declining
+	// restores the two blocks verbatim.
+	assert.equal(acceptAll(value), "A B");
 	assert.equal(declineAll(value), "A\n\nB");
 });
 

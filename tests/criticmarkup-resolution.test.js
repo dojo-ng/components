@@ -219,13 +219,58 @@ test("declineMark on a merge-deletion undoes the merge — one block becomes two
 	assert.equal(valueOf(editor), decline(source, parseMarks(source)[0]));
 });
 
-test("acceptMark on a merge-deletion keeps the merge — stays one block", () => {
+test("acceptMark on a merge-deletion keeps the merge — stays one block, with decision 18's space", () => {
 	const editor = editorWith();
 	const source = "A{--¶--}B";
 	importValue(editor, source);
 	const node = findMarkNode(editor, $isDeletionNode);
 	acceptMark(editor, node);
 	editor.getEditorState().read(() => assert.equal($getRoot().getChildrenSize(), 1));
+	assert.equal(valueOf(editor), "A B");
+	assert.equal(valueOf(editor), accept(source, parseMarks(source)[0]));
+});
+
+// --- decision 18: whitespace at the seam, on the live tree, matching grammar exactly -------------
+//
+// Every case cross-checks against `accept`/`decline` on the same source, which is the only thing
+// that keeps the two paths from drifting: the assertion on the literal string says what the rule IS,
+// and the assertion against the grammar says the editor does not have its own private opinion of it.
+
+test("accepting a merge adds no space when one side already has whitespace", () => {
+	for (const source of ["A. {--¶--}B", "A.{--¶--} B"]) {
+		const editor = editorWith();
+		importValue(editor, source);
+		acceptMark(editor, findMarkNode(editor, $isDeletionNode));
+		assert.equal(valueOf(editor), "A. B", source);
+		assert.equal(valueOf(editor), accept(source, parseMarks(source)[0]), source);
+	}
+});
+
+test("accepting a split absorbs the horizontal whitespace on either side of the new break", () => {
+	for (const source of ["A. {++¶++}B", "A.{++¶++} B"]) {
+		const editor = editorWith();
+		importValue(editor, source);
+		acceptMark(editor, findMarkNode(editor, $isInsertionNode));
+		editor.getEditorState().read(() => assert.equal($getRoot().getChildrenSize(), 2, source));
+		assert.equal(valueOf(editor), "A.\n\nB", source);
+		assert.equal(valueOf(editor), accept(source, parseMarks(source)[0]), source);
+	}
+});
+
+test("declining restores the document verbatim — a mid-word split proposal does NOT gain a space", () => {
+	const editor = editorWith();
+	const source = "run{++¶++}together";
+	importValue(editor, source);
+	declineMark(editor, findMarkNode(editor, $isInsertionNode));
+	assert.equal(valueOf(editor), "runtogether");
+	assert.equal(valueOf(editor), decline(source, parseMarks(source)[0]));
+});
+
+test("accepting an ordinary deletion that holds no break joins nothing", () => {
+	const editor = editorWith();
+	const source = "A{--x--}B";
+	importValue(editor, source);
+	acceptMark(editor, findMarkNode(editor, $isDeletionNode));
 	assert.equal(valueOf(editor), "AB");
 	assert.equal(valueOf(editor), accept(source, parseMarks(source)[0]));
 });
@@ -252,7 +297,7 @@ test("acceptMark on a live merge-deletion (suggestion mode ON throughout) actual
 
 	const node = findMarkNode(editor, $isDeletionNode);
 	acceptMark(editor, node);
-	assert.equal(valueOf(editor), "AB", "the diff listener must not see this as new text disappearing and re-wrap it");
+	assert.equal(valueOf(editor), "A B", "the diff listener must not see this as new text disappearing and re-wrap it");
 	editor.getEditorState().read(() => assert.equal($getRoot().getChildrenSize(), 1));
 });
 

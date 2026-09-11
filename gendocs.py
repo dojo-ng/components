@@ -2,7 +2,7 @@
 gendocs.py — generate the consolidated component reference (Markdown).
 
 Run from components/:  python3 gendocs.py
-Output:               /tmp/components-reference.md  (copy into docs/ as needed)
+Output:               docs/components-reference.md
 
 Source extraction lives in genlib.py (shared with gencem.py / genreadmes.py).
 """
@@ -100,7 +100,7 @@ def main():
   o.append("- **`@dojo-ng/store`** — `createStore` (Zustand vanilla) and `StoreController`, a Lit reactive controller that re-renders a host on a selected store slice.")
   o.append("- **`@dojo-ng/context`** — the typed context-key registry (`storeContext`, `localeContext`) plus the `@lit/context` provider/consumer primitives.")
 
-  open("/tmp/components-reference.md", "w").write("\n".join(o))
+  open("docs/components-reference.md", "w").write("\n".join(o))
   print("documented:", len(seen))
 
 

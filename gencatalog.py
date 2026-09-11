@@ -192,6 +192,14 @@ def plugin_entry(pkg):
 
 
 def main():
+    # A components-only clone (most CI runners) has no sibling skill/ repo at all. Print a line
+    # and exit 0 rather than fail, so `npm run docs` can call this unconditionally — the same
+    # "merge behind an existence check" shape the overlay packages already use.
+    out_dir = os.path.dirname(OUT) or "."
+    if not os.path.isdir(out_dir):
+        print(f"catalog: skipped — {out_dir} not found (no skill repo checked out beside this one)")
+        return
+
     o = [HEADER]
 
     # Picker: one line per group, listing every tag each of its packages registers (almost

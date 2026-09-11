@@ -40,10 +40,10 @@ COMPONENTS = os.path.dirname(os.path.abspath(__file__))
 SKILL_CATALOG = os.environ.get(
     "DJ_SKILL_CATALOG", os.path.join(COMPONENTS, "..", "skill", "dojo-ng", "references", "components.md")
 )
-DOC_REFERENCE = "/tmp/components-reference.md"
+DOC_REFERENCE = "docs/components-reference.md"
 
 # (label, path) — the artifacts a "leak" would actually show up in. Paths relative to COMPONENTS
-# except DOC_REFERENCE and SKILL_CATALOG, which are absolute/relative-to-parent already.
+# except SKILL_CATALOG, which is relative-to-parent already (or absolute, via DJ_SKILL_CATALOG).
 ARTIFACTS = [
     ("custom-elements.json", "custom-elements.json"),
     ("types/react.d.ts", "types/react.d.ts"),
@@ -149,7 +149,7 @@ def two_run_comparison():
     """[str] — one finding per artifact that differs with the overlay present, or [] if all
     stay byte-identical. Restores every tracked artifact this touches to its original bytes
     before returning, success or failure."""
-    tracked = [(label, path) for label, path in ARTIFACTS if path != DOC_REFERENCE]
+    tracked = list(ARTIFACTS)
     originals = {}
     for label, path in tracked:
         full = _abspath(path)

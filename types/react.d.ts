@@ -141,6 +141,9 @@ declare module "react" {
         "label"?: DjButton["label"];
         "icon-position"?: DjButton["iconPosition"];
         "title"?: DjButton["title"];
+        "aria-label"?: DjButton["ariaLabel"];
+        "aria-pressed"?: DjButton["ariaPressed"];
+        "aria-expanded"?: DjButton["ariaExpanded"];
       };
       "dj-calendar": DjProps<DjCalendar> & {
         "value"?: DjCalendar["value"];

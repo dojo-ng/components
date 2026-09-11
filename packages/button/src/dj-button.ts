@@ -21,6 +21,15 @@ export type IconPosition = "before" | "after";
  * so consumers listen for `click` as they would on a native button. No duplicate
  * custom events are emitted.
  *
+ * Accessible name: default-slot text (or the `label` property, its fallback) names the button —
+ * that is the common case and needs nothing else. For an icon-only button, put `aria-label` on
+ * `<dj-button>` and it reaches the native button inside the shadow root (a custom-element host is
+ * not the button in the accessibility tree, so leaving it only on the host names nothing).
+ * `aria-pressed` and `aria-expanded` forward the same way, for a toolbar toggle or a disclosure
+ * trigger. `aria-labelledby`, `aria-describedby`, and `aria-controls` are deliberately NOT
+ * forwarded: they are IDREFs, and an IDREF inside a shadow root cannot resolve to an id in the
+ * light DOM, so forwarding one would create a dangling reference that reads as working.
+ *
  * @cssprop [--dj-button-font-size-small=var(--dj-font-size-small)] - Font size of a small button.
  * @cssprop [--dj-button-font-size-medium=var(--dj-font-size-medium)] - Font size of a medium button.
  * @cssprop [--dj-button-font-size-large=1.125rem] - Font size of a large button.
@@ -53,6 +62,19 @@ export class DjButton extends DojoElement {
 
 	/** Native title (tooltip) text. */
 	@property() override title = "";
+
+	/** Accessible name, forwarded to the native button inside the shadow root. A custom-element host
+	 *  is not the button in the accessibility tree, so an `aria-label` left on `<dj-button>` names
+	 *  nothing. IDREF attributes (`aria-labelledby`, `aria-describedby`, `aria-controls`) are
+	 *  deliberately NOT forwarded: an IDREF inside a shadow root cannot resolve to a light-DOM id, so
+	 *  forwarding one would create a dangling reference that reads as working. */
+	@property({ attribute: "aria-label", reflect: true }) override ariaLabel: string | null = null;
+
+	/** Toggle state for a button used as a toggle, forwarded alongside the name. */
+	@property({ attribute: "aria-pressed", reflect: true }) override ariaPressed: string | null = null;
+
+	/** Disclosure state for a button that controls a panel, forwarded alongside the name. */
+	@property({ attribute: "aria-expanded", reflect: true }) override ariaExpanded: string | null = null;
 
 	@state() private hasIcon = false;
 
@@ -105,6 +127,9 @@ export class DjButton extends DojoElement {
 				value=${this.value ?? nothing}
 				title=${this.title || nothing}
 				aria-disabled=${this.disabled ? "true" : "false"}
+				aria-label=${this.ariaLabel ?? nothing}
+				aria-pressed=${this.ariaPressed ?? nothing}
+				aria-expanded=${this.ariaExpanded ?? nothing}
 				@click=${this.handleClick}
 			>
 				${this.iconPosition === "before" ? icon : nothing}

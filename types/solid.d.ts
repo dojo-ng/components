@@ -137,6 +137,9 @@ declare module "solid-js" {
         "label"?: DjButton["label"];
         "icon-position"?: DjButton["iconPosition"];
         "title"?: DjButton["title"];
+        "aria-label"?: DjButton["ariaLabel"];
+        "aria-pressed"?: DjButton["ariaPressed"];
+        "aria-expanded"?: DjButton["ariaExpanded"];
       };
       "dj-calendar": JSX.HTMLAttributes<DjCalendar> & {
         "value"?: DjCalendar["value"];

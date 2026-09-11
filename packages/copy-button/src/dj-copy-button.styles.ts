@@ -4,8 +4,10 @@ export default css`
 	:host([hidden]) { display: none; }
 	.icon { display: inline-flex; }
 	.icon svg { width: 1.1em; height: 1.1em; }
-	/* Icon-only: the localized state text is the button's accessible name, kept for AT but
-	   visually hidden (dj-button doesn't forward a host aria-label). */
+	/* Icon-only: dj-button forwards a host aria-label to the native button now (Track A of
+	   rich-text-value-button-name-spec.md, 2026-09-10), but this label text stays visually hidden
+	   rather than becoming redundant -- it is a live STATE ANNOUNCEMENT (Copy, Copied, Copy failed),
+	   not just a static name, so it has to be real slotted content an AT re-announces on change. */
 	dj-button::part(label) {
 		position: absolute;
 		width: 1px;

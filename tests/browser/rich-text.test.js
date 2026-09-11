@@ -117,6 +117,28 @@ describe("dj-rich-text", () => {
 		await assertNoViolations(el);
 	});
 
+	it("an icon-only toolbar item with no custom render() has no serious or critical violations", async () => {
+		// The exact shape #renderItem produces for a plugin toolbar item with an aria-hidden icon and
+		// a label but no custom render() -- the shape criticmarkup's toolbar had to work around before
+		// Track A of rich-text-value-button-name-spec.md forwarded aria-label to the native button.
+		const iconOnlyPlugin = {
+			name: "icon-only-test-plugin",
+			toolbar: [
+				{
+					id: "test-action",
+					label: "Test action",
+					icon: '<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">'
+						+ '<path d="M5 12h14" stroke="currentColor" stroke-width="2" fill="none"/></svg>',
+					run: () => {},
+				},
+			],
+		};
+		const el = await mount(make("dj-rich-text", { label: "Body", plugins: [iconOnlyPlugin] }));
+		await el.updateComplete;
+		await settleFrames();
+		await assertNoViolations(el);
+	});
+
 	it("a value set after the editor is built replaces the document", async () => {
 		const el = await mount(make("dj-rich-text", { label: "Body" }));
 		await el.updateComplete;

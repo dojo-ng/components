@@ -1007,6 +1007,39 @@
               "attribute": "title"
             },
             {
+              "kind": "field",
+              "name": "ariaLabel",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "Accessible name, forwarded to the native button inside the shadow root. A custom-element host is not the button in the accessibility tree, so an `aria-label` left on `<dj-button>` names nothing. IDREF attributes (`aria-labelledby`, `aria-describedby`, `aria-controls`) are deliberately NOT forwarded: an IDREF inside a shadow root cannot resolve to a light-DOM id, so forwarding one would create a dangling reference that reads as working.",
+              "attribute": "aria-label",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "ariaPressed",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "Toggle state for a button used as a toggle, forwarded alongside the name.",
+              "attribute": "aria-pressed",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "ariaExpanded",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "Disclosure state for a button that controls a panel, forwarded alongside the name.",
+              "attribute": "aria-expanded",
+              "reflects": true
+            },
+            {
               "kind": "method",
               "name": "focus",
               "description": "Move focus to the underlying native button.",
@@ -1089,6 +1122,30 @@
               },
               "fieldName": "title",
               "description": "Native title (tooltip) text."
+            },
+            {
+              "name": "aria-label",
+              "type": {
+                "text": "string | null"
+              },
+              "fieldName": "ariaLabel",
+              "description": "Accessible name, forwarded to the native button inside the shadow root. A custom-element host is not the button in the accessibility tree, so an `aria-label` left on `<dj-button>` names nothing. IDREF attributes (`aria-labelledby`, `aria-describedby`, `aria-controls`) are deliberately NOT forwarded: an IDREF inside a shadow root cannot resolve to a light-DOM id, so forwarding one would create a dangling reference that reads as working."
+            },
+            {
+              "name": "aria-pressed",
+              "type": {
+                "text": "string | null"
+              },
+              "fieldName": "ariaPressed",
+              "description": "Toggle state for a button used as a toggle, forwarded alongside the name."
+            },
+            {
+              "name": "aria-expanded",
+              "type": {
+                "text": "string | null"
+              },
+              "fieldName": "ariaExpanded",
+              "description": "Disclosure state for a button that controls a panel, forwarded alongside the name."
             }
           ],
           "slots": [

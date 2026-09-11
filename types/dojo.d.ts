@@ -143,6 +143,9 @@ declare module "@dojo-ng/framework" {
         "label"?: DjButton["label"];
         "icon-position"?: DjButton["iconPosition"];
         "title"?: DjButton["title"];
+        "aria-label"?: DjButton["ariaLabel"];
+        "aria-pressed"?: DjButton["ariaPressed"];
+        "aria-expanded"?: DjButton["ariaExpanded"];
       };
       "dj-calendar": DjVNodeBase & {
         "value"?: DjCalendar["value"];

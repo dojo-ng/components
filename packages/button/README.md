@@ -4,6 +4,8 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
+> For an icon-only button, put `aria-label` on `<dj-button>` — it forwards to the native button inside the shadow root, along with `aria-pressed`/`aria-expanded` for a toggle or disclosure trigger. `aria-labelledby`/`aria-describedby`/`aria-controls` are not forwarded: those are IDREFs, which cannot resolve across the shadow boundary.
+
 ## Install
 
 ```bash
@@ -36,6 +38,9 @@ The `kind` property selects contained, outlined, or text styling.
 | `label` | label | `string` | — |
 | `iconPosition` | icon-position ↻ | `IconPosition` | `"before"` |
 | `title` | title | `string` | `""` |
+| `ariaLabel` | aria-label ↻ | `string \| null` | `null` |
+| `ariaPressed` | aria-pressed ↻ | `string \| null` | `null` |
+| `ariaExpanded` | aria-expanded ↻ | `string \| null` | `null` |
 
 **Slots:** default (the button label), `icon` (an icon, placed per `icon-position`)
 
@@ -55,6 +60,16 @@ Slot an icon and place it with `icon-position`.
 <dj-button icon-position="before">
   <svg slot="icon" viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="2" fill="none"/></svg>
   Add item
+</dj-button>
+```
+
+### Icon-only
+
+`aria-label` on the host reaches the native button, so an icon-only button still has an accessible name.
+
+```html
+<dj-button kind="text" aria-label="Add item">
+  <svg slot="icon" aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path d="M5 12h14M12 5v14" stroke="currentColor" stroke-width="2" fill="none"/></svg>
 </dj-button>
 ```
 

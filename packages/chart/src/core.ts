@@ -217,6 +217,8 @@ export interface Bar {
 	seriesIndex: number;
 	category: string;
 	value: number;
+	/** The row's index in `data`, for point labels to look up the original row (Track M). */
+	rowIndex: number;
 }
 
 /** Rectangles for grouped (side-by-side) bars. `yOf` maps a series index to its axis y-scale
@@ -242,7 +244,7 @@ export function groupedBars(
 		.range([0, band.bandwidth()])
 		.padding(0.1);
 	const out: Bar[] = [];
-	for (const row of data) {
+	data.forEach((row, rowIndex) => {
 		const c = cat(row, categoryKey);
 		const gx = band(c) ?? 0;
 		barKeys.forEach(({ s, i }, j) => {
@@ -260,9 +262,10 @@ export function groupedBars(
 				seriesIndex: i,
 				category: c,
 				value: v,
+				rowIndex,
 			});
 		});
-	}
+	});
 	return out;
 }
 
@@ -304,6 +307,7 @@ export function stackedBars(
 				seriesIndex,
 				category: c,
 				value: raw ?? 0,
+				rowIndex,
 			});
 		});
 	});
@@ -365,7 +369,7 @@ export function horizontalBars(
 		.padding(0.1);
 	const x0 = scales.x(0);
 	const out: Bar[] = [];
-	for (const row of data) {
+	data.forEach((row, rowIndex) => {
 		const c = cat(row, categoryKey);
 		const gy = band(c) ?? 0;
 		barKeys.forEach(({ s, i }, j) => {
@@ -381,9 +385,10 @@ export function horizontalBars(
 				seriesIndex: i,
 				category: c,
 				value: v,
+				rowIndex,
 			});
 		});
-	}
+	});
 	return out;
 }
 
@@ -421,6 +426,7 @@ export function horizontalStackedBars(
 				seriesIndex,
 				category: c,
 				value: raw ?? 0,
+				rowIndex,
 			});
 		});
 	});
@@ -513,6 +519,9 @@ export interface PieSlice {
 	 * omits its own row from the layout, so slice color stays aligned with the legend's, which
 	 * colors by that same original index. */
 	index: number;
+	/** The slice's angular midpoint in radians, d3-arc's convention (0 at 12 o'clock, clockwise) —
+	 * for a point label placed outside the arc (Track M). */
+	midAngle: number;
 }
 
 /** Arc paths for a pie or donut from one value series (innerRadius > 0 makes a donut). A row whose
@@ -536,7 +545,59 @@ export function pieArcs(
 		category: cat(seg.data.d, categoryKey),
 		value: val(seg.data.d[valueKey]) ?? 0,
 		index: seg.data.i,
+		midAngle: (seg.startAngle + seg.endAngle) / 2,
 	}));
+}
+
+// ---- point labels (Track M) ----
+//
+// Real text measurement means `getBBox`, a per-label layout that doesn't exist in happy-dom, so
+// collision avoidance here is an ESTIMATE by construction (decision 28): width from character
+// count times a per-character factor derived from the font size, placed in a fixed order, skipping
+// any candidate whose estimated box overlaps one already kept. Above a density cap the whole set is
+// dropped rather than drawing an unreadable smear of overlapping numbers (the CV2 hazard: one more
+// `<text>` node per point, and text layout is exactly what froze a tab at 20,000 categories).
+
+/** A candidate point label before collision placement: its position, text, and a stable sort key
+ * ("category order" — decision 28) that also breaks ties deterministically so re-rendering the same
+ * data never flickers between which label of an overlapping pair wins. */
+export interface PointLabel {
+	x: number;
+	y: number;
+	text: string;
+	order: number;
+}
+
+/** Average glyph width as a fraction of font size, for the numeral- and letter-heavy text a chart
+ * label actually carries — not a general-purpose text metric. */
+const LABEL_CHAR_WIDTH_FACTOR = 0.6;
+/** Above this many candidates, decision 28 skips the whole set rather than placing any — the same
+ * per-node-cost hazard CV2 found in tick labels and hit-bands. */
+export const LABEL_DENSITY_CAP = 150;
+
+/** Estimated pixel width of a label's text at the given font size (see the section note — this is
+ * deliberately approximate, not `getBBox`). */
+export function estimateLabelWidth(text: string, fontSize: number): number {
+	return text.length * fontSize * LABEL_CHAR_WIDTH_FACTOR;
+}
+
+/** Greedily places label candidates in `order`, skipping any whose estimated box overlaps one
+ * already kept — so of any overlapping pair, the first in category order always wins, the same
+ * result on every render. `capped` is true (and `kept` empty) once `candidates.length` exceeds
+ * {@link LABEL_DENSITY_CAP}; the caller is expected to `warnOnce` on that. */
+export function placeLabels(candidates: PointLabel[], fontSize: number): { kept: PointLabel[]; capped: boolean } {
+	if (candidates.length > LABEL_DENSITY_CAP) return { kept: [], capped: true };
+	const ordered = [...candidates].sort((a, b) => a.order - b.order);
+	const kept: PointLabel[] = [];
+	for (const c of ordered) {
+		const cw = estimateLabelWidth(c.text, fontSize);
+		const overlaps = kept.some((k) => {
+			const kw = estimateLabelWidth(k.text, fontSize);
+			return Math.abs(c.x - k.x) < (cw + kw) / 2 + 4 && Math.abs(c.y - k.y) < fontSize + 4;
+		});
+		if (!overlaps) kept.push(c);
+	}
+	return { kept, capped: false };
 }
 
 /** A short text summary for the chart's accessible name. */

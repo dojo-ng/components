@@ -1335,14 +1335,16 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 | `maxPoints` | max-points | `number` | `0` |
 | `renderer` | renderer ↻ | `ChartRenderer` | `"svg"` |
 | `missing` | missing ↻ | `MissingMode` | `"gap"` |
+| `pointLabels` | point-labels | `boolean` | `false` |
+| `formatPoint` | — | `(value: number, row: ChartDatum, series: ChartSeries) => string` | — |
 
-**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`
+**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`, `point-labels`, `point-label`
 
 **Events:** `dj-legend-toggle` (detail `{ key, hidden }`), `dj-hover` (detail `{ category }` or `null`; cartesian and radial)
 
 **Methods:** `appendData(rows: ChartDatum[])` (Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).), `toSvg(): string` (Serializes the current plot as a standalone SVG string: presentational styles inlined (no external stylesheet or theme tokens needed to render it correctly elsewhere) and, when the canvas renderer is actually in effect (`effectiveRendererNow`, never the raw `renderer` property — they differ whenever a fallback applies, and a chart that asked for canvas but fell back must not get an empty bitmap composited over it), its drawn bitmap composited in at the same position and stacking it renders on screen. `""` when the chart isn't {@link ready} (no data, zero measured size) — the same gate `render()` uses for its placeholder.), `toPng(scale): Promise<Blob>` (Rasterizes {@link toSvg}'s output to a PNG `Blob` at `scale`× (default 2, for retina and for print). Rejects if the chart isn't {@link ready} ({@link toSvg} would return `""`).)
 
-**CSS properties:** `--dj-chart-height` (default `18rem`; Overall chart height (width fills the container).), `--dj-chart-1` (default `#2563eb`; Categorical series color 1.), `--dj-chart-2` (default `#16a34a`; Categorical series color 2.), `--dj-chart-3` (default `#d97706`; Categorical series color 3.), `--dj-chart-4` (default `#dc2626`; Categorical series color 4.), `--dj-chart-5` (default `#7c3aed`; Categorical series color 5.), `--dj-chart-6` (default `#0891b2`; Categorical series color 6.), `--dj-chart-7` (default `#db2777`; Categorical series color 7.), `--dj-chart-8` (default `#65a30d`; Categorical series color 8.)
+**CSS properties:** `--dj-chart-height` (default `18rem`; Overall chart height (width fills the container).), `--dj-chart-label-size` (default `0.6875rem`; Point-label font size.), `--dj-chart-label-color` (Point-label text color; defaults to `--dj-color-text`.), `--dj-chart-label-halo` (Point-label halo stroke; defaults to `--dj-color-background`.), `--dj-chart-1` (default `#2563eb`; Categorical series color 1.), `--dj-chart-2` (default `#16a34a`; Categorical series color 2.), `--dj-chart-3` (default `#d97706`; Categorical series color 3.), `--dj-chart-4` (default `#dc2626`; Categorical series color 4.), `--dj-chart-5` (default `#7c3aed`; Categorical series color 5.), `--dj-chart-6` (default `#0891b2`; Categorical series color 6.), `--dj-chart-7` (default `#db2777`; Categorical series color 7.), `--dj-chart-8` (default `#65a30d`; Categorical series color 8.)
 
 
 ### `<dj-sparkline>` · `@dojo-ng/chart`

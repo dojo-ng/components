@@ -31,6 +31,17 @@ export default css`
 	   instead of sharing one bidi paragraph and clipping. */
 	.center-label { fill: var(--dj-color-text, #1f2937); font-weight: 600; unicode-bidi: isolate; }
 	.center-sub-label { fill: var(--dj-color-text-muted, #6b7280); font-weight: 400; unicode-bidi: isolate; }
+	/* Point labels (Track M): a halo (a wide, round-joined stroke painted BEFORE the fill, via
+	   paint-order) keeps the text legible wherever it lands on top of a mark or the grid. */
+	.point-label {
+		font-size: var(--dj-chart-label-size, 0.6875rem);
+		fill: var(--dj-chart-label-color, var(--dj-color-text, #1f2937));
+		paint-order: stroke;
+		stroke: var(--dj-chart-label-halo, var(--dj-color-background, #fff));
+		stroke-width: 3px;
+		stroke-linejoin: round;
+	}
+	.point-label-text { margin-inline-start: 0.35em; }
 	.hit { fill: transparent; }
 	/* Enter/update transitions. The shared reducedMotion rule zeroes these durations under
 	   prefers-reduced-motion, so they are automatically disabled for that preference. */
@@ -79,5 +90,6 @@ export default css`
 		.brush-handle { fill: CanvasText; }
 		.brush-context { stroke: CanvasText; }
 		.center-label, .center-sub-label { fill: CanvasText; }
+		.point-label { fill: CanvasText; stroke: Canvas; }
 	}
 `;

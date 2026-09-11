@@ -74,4 +74,18 @@ describe("dj-chart", () => {
 		await settleChart(el);
 		await assertNoViolations(el);
 	});
+
+	// Track M (point labels): decision 27's whole argument is that a <text> label inside
+	// role="img" isn't independently announced, so a label adds nothing to double-read — but that
+	// argument only holds as long as role="img" is actually still there. Checked directly rather
+	// than assumed, same as M3 asks.
+	it("point labels: axe clean, and role=\"img\" is still present on the plot SVG", async () => {
+		const el = await mount(chart({ label: "Monthly visits", pointLabels: true }));
+		await settleChart(el);
+		const svg = el.shadowRoot.querySelector('svg[part="plot"]');
+		assert(svg, "the plot SVG renders");
+		assertEqual(svg.getAttribute("role"), "img", "role=img is what makes the point labels non-double-read (decision 27) — if this ever changes, that assumption breaks");
+		assert(el.shadowRoot.querySelectorAll(".point-label").length > 0, "point labels actually rendered for this assertion to mean anything");
+		await assertNoViolations(el);
+	});
 });

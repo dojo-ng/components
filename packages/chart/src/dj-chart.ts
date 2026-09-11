@@ -34,7 +34,10 @@ import {
 	xyPoints,
 	drawSeries,
 	effectiveRenderer,
+	placeLabels,
+	LABEL_DENSITY_CAP,
 	type CanvasMark,
+	type PointLabel,
 } from "./core.js";
 import { serializeChartSvg, rasterizeSvg } from "./export.js";
 
@@ -44,6 +47,13 @@ const RAMP = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2", 
 const MARGIN: ChartMargin = { top: 8, right: 12, bottom: 28, left: 44 };
 // Right margin when a secondary axis is present, leaving room for its tick labels and title.
 const RIGHT_AXIS_MARGIN = 48;
+// Top margin when any series shows point labels, so a label on the domain's maximum has room to
+// draw without clipping against the SVG viewBox's top edge (Track M, decision "must not be clipped").
+const LABEL_MARGIN_TOP = 22;
+// Matches --dj-chart-label-size's default below; used for the width/height estimate in placeLabels.
+const LABEL_FONT_SIZE = 11;
+// Radius reserved for an "outside the arc" pie/donut label, so it isn't clipped against the SVG edge.
+const RADIAL_LABEL_PAD = 16;
 
 /**
  * `<dj-chart>` — a themeable, accessible SVG chart. Set `data` (array of rows) and `series`.
@@ -64,11 +74,15 @@ const RIGHT_AXIS_MARGIN = 48;
  * `max-points` bounds how much history it keeps.
  *
  * Parts: `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`,
- * `brush-handle`, `tooltip`.
+ * `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`, `point-labels`,
+ * `point-label`.
  * Events: `dj-hover` (detail `{ category }` or `null`; cartesian and radial), `dj-legend-toggle`
  * (detail `{ key, hidden }`).
  *
  * @cssprop [--dj-chart-height=18rem] - Overall chart height (width fills the container).
+ * @cssprop [--dj-chart-label-size=0.6875rem] - Point-label font size.
+ * @cssprop [--dj-chart-label-color] - Point-label text color; defaults to `--dj-color-text`.
+ * @cssprop [--dj-chart-label-halo] - Point-label halo stroke; defaults to `--dj-color-background`.
  * @cssprop [--dj-chart-1=#2563eb] - Categorical series color 1.
  * @cssprop [--dj-chart-2=#16a34a] - Categorical series color 2.
  * @cssprop [--dj-chart-3=#d97706] - Categorical series color 3.
@@ -136,6 +150,17 @@ export class DjChart extends DojoElement {
 	 * (bars, markers, and points are still omitted). `"zero"` treats it as a real zero — the
 	 * pre-Track-V behavior, kept as an escape hatch. Per-series override on `ChartSeries.missing`. */
 	@property({ reflect: true }) missing: MissingMode = "gap";
+	/** Show a label at each plotted point/bar/slice (line, area, scatter, bar, pie/donut — not
+	 * horizontal bars). Per-series override on `ChartSeries.pointLabels`. No label is drawn for a
+	 * gap; above ~150 candidates the whole set is skipped (a console warning once) rather than
+	 * drawing an unreadable smear of overlapping numbers. */
+	@property({ attribute: "point-labels", type: Boolean }) pointLabels = false;
+	/** Override point-label text; defaults to `fmtY(value)` (so `numberFormat`/`formatY` apply with
+	 * no extra wiring). Receives the row and the series, so a label can show something the plotted
+	 * number alone can't — a name from another column, a share of total. When set, `renderTable`
+	 * mirrors the SAME formatted text into the affected cells too, since otherwise it would be
+	 * sighted-only information no screen reader can reach. */
+	@property({ attribute: false }) formatPoint?: (value: number, row: ChartDatum, series: ChartSeries) => string;
 
 	@state() private w = 0;
 	@state() private h = 0;
@@ -245,6 +270,46 @@ export class DjChart extends DojoElement {
 	/** The resolved missing-value mode for a series: its own override, else the chart's `missing`. */
 	private missingOf(s: ChartSeries): MissingMode {
 		return s.missing ?? this.missing;
+	}
+	/** Whether a series shows point labels: its own override, else the chart's `pointLabels`. */
+	private pointLabelsOf(s: ChartSeries): boolean {
+		return s.pointLabels ?? this.pointLabels;
+	}
+	/** Extra top clearance when any series shows point labels, so a label on the domain's maximum
+	 * has room to draw without clipping (Track M). Cartesian-vertical and xy plots both use it via
+	 * the shared `innerH`/`<g transform>` math; horizontal bars don't get point labels, so they keep
+	 * the plain margin regardless. */
+	private get topMargin(): number {
+		return !this.isHBar && this.series.some((s) => this.pointLabelsOf(s)) ? LABEL_MARGIN_TOP : MARGIN.top;
+	}
+	/** `formatPoint(value, row, series)` results for every point-labeled, non-gap cell, computed
+	 * EXACTLY ONCE per render here and shared between the SVG label and the accessible table
+	 * (decision 29, Track M task M3) — the two can never independently drift because both read the
+	 * same precomputed string. Keyed by series key, then by the row's index in `this.data` (the
+	 * ORIGINAL, unbrushed array, so a lookup is valid regardless of whether the caller is iterating
+	 * the full data or a brush-narrowed slice of it). Empty — no calls at all — when `formatPoint`
+	 * is unset. */
+	private formatPointCache(): Map<string, Map<number, string>> {
+		const out = new Map<string, Map<number, string>>();
+		const fp = this.formatPoint;
+		if (!fp) return out;
+		for (const s of this.series) {
+			if (!this.pointLabelsOf(s)) continue;
+			const perRow = new Map<number, string>();
+			this.data.forEach((row, i) => {
+				const raw = val(row[s.key]);
+				if (raw === null && this.missingOf(s) !== "zero") return; // no label, nothing to cache
+				perRow.set(i, fp(raw ?? 0, row, s));
+			});
+			out.set(s.key, perRow);
+		}
+		return out;
+	}
+	/** A point label's text for one (series, row) pair: the cached `formatPoint` result when set,
+	 * else `fmtY(value)`. `rowIndex` is always the row's index in `this.data` (see
+	 * {@link formatPointCache}), never a brush-local index. */
+	private labelText(rowIndex: number, value: number, s: ChartSeries, fpCache: Map<string, Map<number, string>>): string {
+		return fpCache.get(s.key)?.get(rowIndex) ?? this.fmtY(value);
 	}
 	/** The localized "no value" string (decision 23), for a missing cell's `aria-label`. */
 	private noValueLabel(): string {
@@ -360,14 +425,17 @@ export class DjChart extends DojoElement {
 		// ResizeObserver target stays stable across renders. The accessible table is always
 		// present, so content is never missing before first paint.
 		const canvasNow = ready && this.effectiveRendererNow === "canvas";
+		// Computed once per render and threaded to both the SVG labels and the table below, so a
+		// formatPoint result can never independently drift between the two (decision 29, Track M).
+		const fpCache = this.formatPointCache();
 		return html`
 			<div class="plot">
-				${ready ? this.renderPlot(cats, accName) : html`<div class="sr-only" role="img" aria-label=${accName}></div>`}
+				${ready ? this.renderPlot(cats, accName, fpCache) : html`<div class="sr-only" role="img" aria-label=${accName}></div>`}
 				${canvasNow ? this.renderCanvas() : nothing}
 			</div>
 			${ready && this.brush && this.group() === "cartesian" && !this.isHBar ? this.renderBrush() : nothing}
 			${ready && showLegend ? this.renderLegend() : nothing}
-			${this.renderTable(cats)}
+			${this.renderTable(cats, fpCache)}
 		`;
 	}
 
@@ -378,13 +446,14 @@ export class DjChart extends DojoElement {
 		return html`<canvas part="plot-canvas" class="plot-canvas" ${ref((el) => (this.#canvasEl = el as HTMLCanvasElement | undefined))}></canvas>`;
 	}
 
-	private renderPlot(cats: string[], accName: string): TemplateResult {
+	private renderPlot(cats: string[], accName: string, fpCache: Map<string, Map<number, string>>): TemplateResult {
 		const W = this.w;
 		const H = this.h;
 		const fam = this.group();
-		if (fam === "radial") return this.renderRadial(W, H, cats, accName);
-		const innerH = Math.max(0, H - MARGIN.top - MARGIN.bottom);
-		if (fam === "xy") return this.renderXY(W, H, Math.max(0, W - MARGIN.left - MARGIN.right), innerH, accName);
+		if (fam === "radial") return this.renderRadial(W, H, cats, accName, fpCache);
+		const topMargin = this.topMargin;
+		const innerH = Math.max(0, H - topMargin - MARGIN.bottom);
+		if (fam === "xy") return this.renderXY(W, H, Math.max(0, W - MARGIN.left - MARGIN.right), innerH, accName, fpCache);
 		// Horizontal bars are a separate render so the vertical path below stays byte-identical.
 		if (this.isHBar) return this.renderCartesianH(W, H, innerH, accName);
 		// Cartesian. A secondary axis needs extra right margin for its tick labels.
@@ -416,9 +485,38 @@ export class DjChart extends DojoElement {
 				: groupedBars(data, this.categoryKey, this.series, scales, yOf, this.hiddenKeys, this.missing)
 			: [];
 
+		// Point labels (Track M): one candidate per plotted point/bar-end, across every labeled,
+		// visible series — `vs` converts a brush-local row index back to `this.data`'s own index, so
+		// a formatPointCache lookup (keyed by the ORIGINAL index) stays correct under a brush window.
+		const labelCandidates: PointLabel[] = [];
+		this.series.forEach((s, i) => {
+			if (this.hiddenKeys.has(s.key) || !this.pointLabelsOf(s)) return;
+			if (this.seriesType(s) === "bar") {
+				bars.filter((b) => b.seriesIndex === i).forEach((b) => {
+					const rowIndex = vs + b.rowIndex;
+					const cy = this.stacked ? b.y + b.height / 2 : b.value >= 0 ? b.y - 6 : b.y + b.height + 14;
+					labelCandidates.push({ x: b.x + b.width / 2, y: cy, text: this.labelText(rowIndex, b.value, s, fpCache), order: rowIndex });
+				});
+				return;
+			}
+			const yScale = yOf(i);
+			data.forEach((row, localIdx) => {
+				const rowIndex = vs + localIdx;
+				const raw = val(row[s.key]);
+				if (raw === null && this.missingOf(s) !== "zero") return;
+				labelCandidates.push({
+					x: xCenter(scales, cat(row, this.categoryKey)),
+					y: yScale(raw ?? 0) - 8,
+					text: this.labelText(rowIndex, raw ?? 0, s, fpCache),
+					order: rowIndex,
+				});
+			});
+		});
+		const pointLabels = this.placedLabels(labelCandidates);
+
 		return html`
 			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot" class="${this.#streaming ? "no-transition" : ""}">
-				<g transform="translate(${MARGIN.left},${MARGIN.top})">
+				<g transform="translate(${MARGIN.left},${topMargin})">
 					${this.showGrid
 						? svg`<g class="grid" part="grid">${ticks.map(
 								(t) => svg`<line x1="0" x2="${innerW}" y1="${scales.y(t)}" y2="${scales.y(t)}"></line>`,
@@ -444,6 +542,7 @@ export class DjChart extends DojoElement {
 					<g part="series">
 						${this.series.map((s, i) => (this.hiddenKeys.has(s.key) ? nothing : this.renderSeries(s, i, scales, bars, yOf(i), data)))}
 					</g>
+					${this.renderPointLabels(pointLabels)}
 					<g>
 						${cats2.map(
 							(c) => svg`<rect class="hit" x="${(scales.band ? (scales.xBand(c) ?? 0) : xCenter(scales, c) - 4)}" y="0" width="${scales.band ? scales.xBand.bandwidth() : 8}" height="${innerH}" @pointerenter=${() => this.onHover(c)} @pointerleave=${() => this.onHover(null)}></rect>`,
@@ -453,6 +552,26 @@ export class DjChart extends DojoElement {
 			</svg>
 			${this.renderTooltip(scales)}
 		`;
+	}
+
+	/** Runs {@link placeLabels} and warns once (per element) when the candidate count exceeds the
+	 * density cap — shared by every render path that draws point labels. */
+	private placedLabels(candidates: PointLabel[]): PointLabel[] {
+		if (!candidates.length) return [];
+		const { kept, capped } = placeLabels(candidates, LABEL_FONT_SIZE);
+		if (capped) {
+			this.warnOnce("label-density-cap", `dj-chart: ${candidates.length} point labels exceed the ${LABEL_DENSITY_CAP}-label density cap; omitting all point labels for this render.`);
+		}
+		return kept;
+	}
+
+	/** Renders the labels {@link placedLabels} kept as `aria-hidden` `<text>` nodes — redundant with
+	 * the accessible table by design (decision 27), never the load-bearing accessible presentation. */
+	private renderPointLabels(labels: PointLabel[]) {
+		if (!labels.length) return nothing;
+		return svg`<g part="point-labels">${labels.map(
+			(l) => svg`<text class="point-label" part="point-label" x="${l.x}" y="${l.y}" text-anchor="middle" dominant-baseline="central" aria-hidden="true">${l.text}</text>`,
+		)}</g>`;
 	}
 
 	private renderSeries(s: ChartSeries, i: number, scales: ReturnType<typeof buildScales>, bars: ReturnType<typeof groupedBars>, yScale: ReturnType<typeof buildScales>["y"], data: ChartDatum[]) {
@@ -567,15 +686,17 @@ export class DjChart extends DojoElement {
 	}
 
 	/** Scatter and bubble: linear x and y axes with point (or size-encoded) marks. */
-	private renderXY(W: number, H: number, innerW: number, innerH: number, accName: string): TemplateResult {
+	private renderXY(W: number, H: number, innerW: number, innerH: number, accName: string, fpCache: Map<string, Map<number, string>>): TemplateResult {
 		const vis = this.series.filter((s) => !this.hiddenKeys.has(s.key));
 		const scales = buildXYScales(this.data, vis.length ? vis : this.series, this.xKey, innerW, innerH);
 		const r = radiusFor(this.data, this.type === "bubble" ? this.sizeKey : undefined);
 		const xticks = scales.x.ticks(5);
 		const yticks = scales.y.ticks(5);
+		const topMargin = this.topMargin;
+		const labelCandidates: PointLabel[] = [];
 		return html`
 			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot">
-				<g transform="translate(${MARGIN.left},${MARGIN.top})">
+				<g transform="translate(${MARGIN.left},${topMargin})">
 					${this.showGrid
 						? svg`<g class="grid" part="grid">
 								${yticks.map((t) => svg`<line x1="0" x2="${innerW}" y1="${scales.y(t)}" y2="${scales.y(t)}"></line>`)}
@@ -604,22 +725,27 @@ export class DjChart extends DojoElement {
 							// separate per-category hit-band rects, there's no other hit-testing layer).
 							const onCanvas = this.effectiveRendererNow === "canvas";
 							const missing = this.missingOf(s);
+							const showLabels = this.pointLabelsOf(s);
 							return svg`${this.data.map((row, ri) => {
 								const xv = val(row[xk]);
 								const yv = val(row[s.key]);
 								if ((xv === null || yv === null) && missing !== "zero") return nothing;
+								if (showLabels) {
+									labelCandidates.push({ x: scales.x(xv ?? 0), y: scales.y(yv ?? 0) - 8, text: this.labelText(ri, yv ?? 0, s, fpCache), order: ri });
+								}
 								return svg`<circle class="point-mark" part="point" cx="${scales.x(xv ?? 0)}" cy="${scales.y(yv ?? 0)}" r="${this.type === "bubble" ? r(num(row[s.sizeKey ?? this.sizeKey ?? ""])) : 4}" fill=${onCanvas ? "transparent" : c}
 									@pointerenter=${() => (this.hoverPt = { si, ri })} @pointerleave=${() => (this.hoverPt = null)}></circle>`;
 							})}`;
 						})}
 					</g>
+					${this.renderPointLabels(this.placedLabels(labelCandidates))}
 				</g>
 			</svg>
-			${this.renderXYTooltip(scales, r)}
+			${this.renderXYTooltip(scales, r, topMargin)}
 		`;
 	}
 
-	private renderXYTooltip(scales: ReturnType<typeof buildXYScales>, r: (v: number) => number): TemplateResult {
+	private renderXYTooltip(scales: ReturnType<typeof buildXYScales>, r: (v: number) => number, topMargin: number): TemplateResult {
 		const pt = this.hoverPt;
 		if (!pt) return html`<div class="tooltip" part="tooltip" hidden></div>`;
 		const s = this.series[pt.si];
@@ -629,7 +755,7 @@ export class DjChart extends DojoElement {
 		const xv = val(row[xk]) ?? 0;
 		const yv = val(row[s.key]) ?? 0;
 		const left = MARGIN.left + scales.x(xv);
-		const top = MARGIN.top + scales.y(yv);
+		const top = topMargin + scales.y(yv);
 		const sizeKey = s.sizeKey ?? this.sizeKey;
 		void r;
 		return html`<div class="tooltip" part="tooltip" style=${`left:${left}px; top:${top}px`}>
@@ -641,17 +767,32 @@ export class DjChart extends DojoElement {
 	}
 
 	/** Pie and donut: arc slices from the first series, with a category legend and slice tooltip. */
-	private renderRadial(W: number, H: number, cats: string[], accName: string): TemplateResult {
-		const valueKey = this.series[0]?.key ?? "";
-		const R = Math.max(0, Math.min(W, H) / 2 - 4);
+	private renderRadial(W: number, H: number, cats: string[], accName: string, fpCache: Map<string, Map<number, string>>): TemplateResult {
+		const first = this.series[0];
+		const valueKey = first?.key ?? "";
+		const showLabels = !!first && this.pointLabelsOf(first);
+		// Reserve a ring outside the drawn slices for "outside the arc" labels (decision 25) so one
+		// doesn't clip against the SVG viewBox edge.
+		const R = Math.max(0, Math.min(W, H) / 2 - 4 - (showLabels ? RADIAL_LABEL_PAD : 0));
 		const ratio = this.type === "donut" ? this.innerRadius ?? 0.6 : this.innerRadius ?? 0;
 		const innerR = Math.max(0, Math.min(0.95, ratio)) * R;
-		const slices = pieArcs(this.data, this.categoryKey, valueKey, R, innerR, this.missingOf(this.series[0] ?? { key: valueKey }));
+		const slices = pieArcs(this.data, this.categoryKey, valueKey, R, innerR, this.missingOf(first ?? { key: valueKey }));
 		// Center label: only for donut (a pie has no hole); sized from the hole radius, token-colored.
 		const showCenter = this.type === "donut" && !!this.centerLabel;
 		const labelSize = centerLabelSize(innerR);
 		const subSize = centerSubLabelSize(innerR);
 		const hasSub = !!this.centerSubLabel;
+		const labelR = R + RADIAL_LABEL_PAD * 0.6;
+		const pointLabels = showLabels && first
+			? this.placedLabels(
+					slices.map((sl) => ({
+						x: Math.sin(sl.midAngle) * labelR,
+						y: -Math.cos(sl.midAngle) * labelR,
+						text: this.labelText(sl.index, sl.value, first, fpCache),
+						order: sl.index,
+					})),
+				)
+			: [];
 		// Render the value and sub-label as two INDEPENDENT, middle-anchored <text> elements — not
 		// one <text> with a <tspan>. A shared text element puts the value run and the sub-label run
 		// in one bidi paragraph under one text-anchor, which in RTL (e.g. ar-EG) reorders the runs
@@ -668,6 +809,7 @@ export class DjChart extends DojoElement {
 								? svg`<text class="center-sub-label" part="center-sub-label" x="0" y="${labelSize * 0.55}" text-anchor="middle" dominant-baseline="central" font-size="${subSize}">${this.centerSubLabel}</text>`
 								: nothing}`
 						: nothing}
+					${this.renderPointLabels(pointLabels)}
 				</g>
 			</svg>
 			${this.renderRadialTooltip(valueKey, W)}
@@ -815,7 +957,7 @@ export class DjChart extends DojoElement {
 		return html`<div
 			class="tooltip"
 			part="tooltip"
-			style=${`left:${left}px; top:${MARGIN.top}px`}
+			style=${`left:${left}px; top:${this.topMargin}px`}
 		>
 			<strong>${this.fmtX(c)}</strong>
 			${this.series.map((s, i) => {
@@ -825,7 +967,18 @@ export class DjChart extends DojoElement {
 		</div>`;
 	}
 
-	private renderTable(cats: string[]): TemplateResult {
+	/** The extra `formatPoint` text `renderTable` mirrors into an "affected" cell (decision 29) —
+	 * the raw value's own cell content is unchanged; this is appended after it, in its own span, so
+	 * a screen reader gets both the real number and whatever else `formatPoint` put on the chart.
+	 * `nothing` (byte-identical output) whenever this row/series pair wasn't in `fpCache`, which is
+	 * every row when `formatPoint` is unset at all — decision 29's "nothing changes... when it is
+	 * absent". */
+	private pointLabelSpan(rowIndex: number, s: ChartSeries, fpCache: Map<string, Map<number, string>>) {
+		const text = fpCache.get(s.key)?.get(rowIndex);
+		return text !== undefined ? html`<span class="point-label-text">${text}</span>` : nothing;
+	}
+
+	private renderTable(cats: string[], fpCache: Map<string, Map<number, string>>): TemplateResult {
 		// x/y charts have a numeric x column instead of a category column.
 		if (this.group() === "xy") {
 			const xk = this.xKey || "x";
@@ -837,7 +990,7 @@ export class DjChart extends DojoElement {
 				</thead>
 				<tbody>
 					${this.data.map(
-						(row) => html`<tr><th scope="row">${this.valueCell(val(row[seriesX(first, this.xKey)]), first)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}</td>`)}</tr>`,
+						(row, rowIndex) => html`<tr><th scope="row">${this.valueCell(val(row[seriesX(first, this.xKey)]), first)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}</tr>`,
 					)}
 				</tbody>
 			</table>`;
@@ -849,7 +1002,7 @@ export class DjChart extends DojoElement {
 			</thead>
 			<tbody>
 				${this.data.map(
-					(row) => html`<tr><th scope="row">${cat(row, this.categoryKey)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}</td>`)}</tr>`,
+					(row, rowIndex) => html`<tr><th scope="row">${cat(row, this.categoryKey)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}</tr>`,
 				)}
 			</tbody>
 		</table>`;
@@ -884,7 +1037,8 @@ export class DjChart extends DojoElement {
 	 * (brush window, secondary-axis margin) so the canvas geometry always lines up with the SVG
 	 * axes it's drawn inside. */
 	private cartesianCanvasMarks(W: number, H: number): CanvasMark[] {
-		const innerH = Math.max(0, H - MARGIN.top - MARGIN.bottom);
+		const topMargin = this.topMargin;
+		const innerH = Math.max(0, H - topMargin - MARGIN.bottom);
 		const hasRight = this.series.some((s) => s.axis === "right");
 		const innerW = Math.max(0, W - MARGIN.left - (hasRight ? RIGHT_AXIS_MARGIN : MARGIN.right));
 		const [vs, ve] = this.viewRange(this.data.length);
@@ -897,15 +1051,16 @@ export class DjChart extends DojoElement {
 			const t = this.seriesType(s);
 			if (t !== "line" && t !== "area") return;
 			const yScale = s.axis === "right" && scales.yRight ? scales.yRight : scales.y;
-			const points = seriesPoints(data, this.categoryKey, s.key, scales, yScale, this.missingOf(s)).map((p) => ({ x: p.x + MARGIN.left, y: p.y + MARGIN.top }));
-			marks.push({ type: t, color: this.resolveCanvasColor(s, i, style), points, baseline: yScale(0) + MARGIN.top });
+			const points = seriesPoints(data, this.categoryKey, s.key, scales, yScale, this.missingOf(s)).map((p) => ({ x: p.x + MARGIN.left, y: p.y + topMargin }));
+			marks.push({ type: t, color: this.resolveCanvasColor(s, i, style), points, baseline: yScale(0) + topMargin });
 		});
 		return marks;
 	}
 
 	/** Canvas marks for an x/y (scatter) chart: mirrors `renderXY`'s own scale-building. */
 	private xyCanvasMarks(W: number, H: number): CanvasMark[] {
-		const innerH = Math.max(0, H - MARGIN.top - MARGIN.bottom);
+		const topMargin = this.topMargin;
+		const innerH = Math.max(0, H - topMargin - MARGIN.bottom);
 		const innerW = Math.max(0, W - MARGIN.left - MARGIN.right);
 		const vis = this.series.filter((s) => !this.hiddenKeys.has(s.key));
 		const scales = buildXYScales(this.data, vis.length ? vis : this.series, this.xKey, innerW, innerH);
@@ -914,7 +1069,7 @@ export class DjChart extends DojoElement {
 		this.series.forEach((s, i) => {
 			if (this.hiddenKeys.has(s.key)) return;
 			const xk = seriesX(s, this.xKey);
-			const points = xyPoints(this.data, xk, s.key, scales).map((p) => ({ x: p.x + MARGIN.left, y: p.y + MARGIN.top, r: 4 }));
+			const points = xyPoints(this.data, xk, s.key, scales).map((p) => ({ x: p.x + MARGIN.left, y: p.y + topMargin, r: 4 }));
 			marks.push({ type: "scatter", color: this.resolveCanvasColor(s, i, style), points });
 		});
 		return marks;

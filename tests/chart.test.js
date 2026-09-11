@@ -27,6 +27,9 @@ import {
 	drawSeries,
 	effectiveRenderer,
 	resolveVar,
+	estimateLabelWidth,
+	placeLabels,
+	LABEL_DENSITY_CAP,
 } from "../packages/chart/dist/core.js";
 import { inlinePresentationalStyles, serializeChartSvg } from "../packages/chart/dist/export.js";
 
@@ -254,6 +257,80 @@ test("pieArcs: a missing value omits its slice from the layout entirely, keeping
 
 	const slicesZero = pieArcs(data, "cat", "v", 50, 0, "zero");
 	assert.equal(slicesZero.length, 3, "zero mode still draws all three slices, the missing one at value 0");
+});
+
+test("pieArcs: exposes each slice's midAngle for an outside-the-arc label", () => {
+	// Two equal-value slices split a full circle exactly in half: A's midpoint is a quarter turn
+	// in (π/2, d3-arc's 0-at-12-o'clock clockwise convention), B's is three-quarters (3π/2).
+	const data = [{ cat: "A", v: 1 }, { cat: "B", v: 1 }];
+	const slices = pieArcs(data, "cat", "v", 50, 0);
+	assert.ok(Math.abs(slices[0].midAngle - Math.PI / 2) < 1e-9);
+	assert.ok(Math.abs(slices[1].midAngle - (3 * Math.PI) / 2) < 1e-9);
+});
+
+// ---- Track M: point labels (estimateLabelWidth, placeLabels) ----
+// Real text measurement means getBBox, a per-label layout that doesn't exist in happy-dom
+// (decision 28), so collision placement is exercised here as pure math; the actual SVG <text>
+// labels are inside the same svg-tagged-template happy-dom gap the marker/bar tests already work
+// around (see the file banner) — confirmed in a browser (Track B), not here.
+
+test("estimateLabelWidth: scales with both text length and font size", () => {
+	const w10 = estimateLabelWidth("12345", 10);
+	const w20 = estimateLabelWidth("1234567890", 10);
+	assert.ok(w20 > w10, "more characters -> wider estimate");
+	assert.ok(Math.abs(w20 - w10 * 2) < 1e-9, "linear in character count");
+	assert.ok(estimateLabelWidth("12345", 20) > w10, "larger font -> wider estimate");
+});
+
+test("placeLabels: two overlapping candidates keep only the first in category order", () => {
+	// Same y (so the y-proximity check doesn't save them); x 3px apart is well inside either
+	// label's own estimated half-width at a normal chart font size, so they overlap.
+	const a = { x: 100, y: 50, text: "42", order: 0 };
+	const b = { x: 103, y: 50, text: "42", order: 1 };
+	const { kept, capped } = placeLabels([b, a], 11); // shuffled input order on purpose
+	assert.equal(capped, false);
+	assert.equal(kept.length, 1, "the overlapping pair collapses to one label");
+	assert.equal(kept[0].order, 0, "the FIRST in category order is the one kept, regardless of input order");
+});
+
+test("placeLabels: non-overlapping candidates are all kept, in no particular count-reducing way", () => {
+	const far = [
+		{ x: 0, y: 0, text: "1", order: 0 },
+		{ x: 500, y: 0, text: "2", order: 1 },
+		{ x: 1000, y: 0, text: "3", order: 2 },
+	];
+	const { kept, capped } = placeLabels(far, 11);
+	assert.equal(capped, false);
+	assert.equal(kept.length, 3);
+});
+
+test("placeLabels: vertically separated labels at the same x do not count as overlapping", () => {
+	// Same x, but far apart in y (e.g. two different series' labels near each other's x position
+	// but at very different heights) — must not be treated as a collision.
+	const a = { x: 100, y: 10, text: "42", order: 0 };
+	const b = { x: 100, y: 200, text: "42", order: 1 };
+	const { kept } = placeLabels([a, b], 11);
+	assert.equal(kept.length, 2);
+});
+
+test(`placeLabels: the density cap — ${LABEL_DENSITY_CAP} kept, ${LABEL_DENSITY_CAP + 1} skips everything`, () => {
+	const wellSpread = (n) => Array.from({ length: n }, (_, i) => ({ x: i * 1000, y: 0, text: "1", order: i }));
+	const atCap = placeLabels(wellSpread(LABEL_DENSITY_CAP), 11);
+	assert.equal(atCap.capped, false);
+	assert.equal(atCap.kept.length, LABEL_DENSITY_CAP);
+
+	const overCap = placeLabels(wellSpread(LABEL_DENSITY_CAP + 1), 11);
+	assert.equal(overCap.capped, true, "one candidate past the cap skips the whole set");
+	assert.equal(overCap.kept.length, 0);
+});
+
+test("placeLabels: 149 candidates are subject only to the overlap rule, not the density cap", () => {
+	const n = LABEL_DENSITY_CAP - 1;
+	// Alternate near (would-overlap) and far (would-not) spacing so this isn't just "all far apart".
+	const candidates = Array.from({ length: n }, (_, i) => ({ x: i * 2, y: 0, text: "1", order: i }));
+	const { kept, capped } = placeLabels(candidates, 11);
+	assert.equal(capped, false);
+	assert.ok(kept.length > 0 && kept.length < n, "some collide (2px apart) and are skipped, not all of them");
 });
 
 // ---- center-label helpers ----
@@ -710,6 +787,101 @@ test("renderTooltip: a missing series value shows an em-dash tooltip row; a real
 	row = el.renderRoot.querySelector(".tooltip-row");
 	assert.equal(row.querySelector("span[aria-label]"), null, "a real 0's tooltip row carries no aria-label span");
 	assert.ok(row.textContent.includes("0"), "a real 0 still reads as 0 in the tooltip");
+});
+
+// ---- Track M: formatPoint reaching the accessible table (decision 29, M3) ----
+// The SVG <text> labels themselves are inside the svg-tagged-template happy-dom gap (see the file
+// banner) and are confirmed in a browser (Track B). renderTable is plain HTML, so it's the one
+// place formatPoint's actual behavior — receiving (value, row, series), being shared rather than
+// called twice, respecting gaps and the per-series override — can be asserted directly here.
+
+const NAMED_DATA = [
+	{ cat: "A", u: 10, name: "Alpha" },
+	{ cat: "B", u: 20, name: "Beta" },
+	{ cat: "C", u: 30, name: "Gamma" },
+];
+
+test("renderTable: point-labels alone, with no formatPoint, leaves the table byte-identical", async () => {
+	const off = await mount("dj-chart", { type: "line", categoryKey: "cat", data: NAMED_DATA, series: [{ key: "u" }] });
+	await settled(off);
+	const on = await mount("dj-chart", { type: "line", categoryKey: "cat", data: NAMED_DATA, series: [{ key: "u" }], pointLabels: true });
+	await settled(on);
+	assert.equal(
+		on.renderRoot.querySelector("table.sr-only").outerHTML,
+		off.renderRoot.querySelector("table.sr-only").outerHTML,
+		"decision 29: nothing changes in the table when formatPoint is absent",
+	);
+	assert.equal(on.renderRoot.querySelectorAll(".point-label-text").length, 0);
+});
+
+test("renderTable: formatPoint text reaches the affected cells, the raw number first", async () => {
+	const el = await mount("dj-chart", {
+		type: "line",
+		categoryKey: "cat",
+		data: NAMED_DATA,
+		series: [{ key: "u" }],
+		pointLabels: true,
+		formatPoint: (value, row) => row.name,
+	});
+	await settled(el);
+	const cells = el.renderRoot.querySelectorAll("table.sr-only tbody td");
+	assert.equal(cells.length, 3);
+	[10, 20, 30].forEach((v, i) => assert.ok(cells[i].textContent.startsWith(String(v)), "the raw value is still first"));
+	["Alpha", "Beta", "Gamma"].forEach((name, i) => {
+		const span = cells[i].querySelector(".point-label-text");
+		assert.ok(span, `cell ${i} carries the formatPoint span`);
+		assert.equal(span.textContent, name);
+	});
+});
+
+test("renderTable: formatPoint applies only to a series whose point-labels are actually on", async () => {
+	const series = [{ key: "u" }, { key: "v", pointLabels: false }];
+	const data = [{ cat: "A", u: 10, v: 4, name: "Alpha" }];
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data, series, pointLabels: true, formatPoint: (value, row) => row.name });
+	await settled(el);
+	const cells = el.renderRoot.querySelectorAll("table.sr-only tbody td");
+	assert.ok(cells[0].querySelector(".point-label-text"), "u has point-labels on (chart default) — formatPoint reaches its cell");
+	assert.equal(cells[1].querySelector(".point-label-text"), null, "v opted out of point-labels — no formatPoint text for it");
+});
+
+test("renderTable: no formatPoint span for a gapped row — the em dash stands alone", async () => {
+	const data = [{ cat: "A", u: 10, name: "Alpha" }, { cat: "B", u: null, name: "Beta" }];
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data, series: [{ key: "u" }], pointLabels: true, formatPoint: (value, row) => row.name });
+	await settled(el);
+	const cells = el.renderRoot.querySelectorAll("table.sr-only tbody td");
+	assert.ok(cells[0].querySelector(".point-label-text"), "the real row still gets its formatPoint span");
+	assert.equal(cells[1].querySelector(".point-label-text"), null, "the gapped row gets no formatPoint span");
+	assert.ok(cells[1].querySelector("span[aria-label]"), "the gap's em dash (Track V) is untouched by Track M");
+});
+
+test("renderTable: formatPoint is called exactly once per row — the SVG label and the table cell share that call", async () => {
+	const calls = [];
+	const el = await mount("dj-chart", {
+		type: "line",
+		categoryKey: "cat",
+		data: NAMED_DATA,
+		series: [{ key: "u" }],
+		pointLabels: true,
+		formatPoint: (value, row) => {
+			calls.push(row.cat);
+			return row.name;
+		},
+	});
+	await settled(el); // the initial (unseeded) render already calls formatPoint once per row
+	calls.length = 0; // isolate exactly the render triggered below
+	await seed(el); // ready: true now, so the SVG label-building path runs too, not just the table
+	assert.deepEqual(calls.sort(), ["A", "B", "C"], "exactly one call per row for this render — a refactor that formats the label and the cell independently would show 6, not 3");
+});
+
+test("dj-chart point-labels: more than the density cap warns once and does not throw", async () => {
+	const data = Array.from({ length: LABEL_DENSITY_CAP + 1 }, (_, i) => ({ cat: `c${i}`, u: i }));
+	const warns = await captureWarn(async () => {
+		const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data, series: [{ key: "u" }], pointLabels: true });
+		await seed(el);
+		el.requestUpdate();
+		await settled(el); // a second render must not warn again
+	});
+	assert.equal(warns.filter((w) => w.includes("density cap")).length, 1);
 });
 
 test("donut center-label rides in the accessible name", async () => {

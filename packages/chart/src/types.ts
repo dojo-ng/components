@@ -34,6 +34,8 @@ export interface ChartSeries {
 	axis?: "left" | "right";
 	/** Override the chart's `missing` handling for this series. */
 	missing?: MissingMode;
+	/** Override the chart's `pointLabels` for this series. */
+	pointLabels?: boolean;
 }
 
 /** A row of data. Values are read by `categoryKey` (x) and each series `key` (y). */

@@ -69,14 +69,16 @@ Set `data` (array of rows), `series` (one entry per plotted value), and `categor
 | `maxPoints` | max-points | `number` | `0` |
 | `renderer` | renderer ↻ | `ChartRenderer` | `"svg"` |
 | `missing` | missing ↻ | `MissingMode` | `"gap"` |
+| `pointLabels` | point-labels | `boolean` | `false` |
+| `formatPoint` | — | `(value: number, row: ChartDatum, series: ChartSeries) => string` | — |
 
-**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`
+**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`, `point-labels`, `point-label`
 
 **Events:** `dj-legend-toggle` (detail `{ key, hidden }`), `dj-hover` (detail `{ category }` or `null`; cartesian and radial)
 
 **Methods:** `appendData(rows: ChartDatum[])` (Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).), `toSvg(): string` (Serializes the current plot as a standalone SVG string: presentational styles inlined (no external stylesheet or theme tokens needed to render it correctly elsewhere) and, when the canvas renderer is actually in effect (`effectiveRendererNow`, never the raw `renderer` property — they differ whenever a fallback applies, and a chart that asked for canvas but fell back must not get an empty bitmap composited over it), its drawn bitmap composited in at the same position and stacking it renders on screen. `""` when the chart isn't {@link ready} (no data, zero measured size) — the same gate `render()` uses for its placeholder.), `toPng(scale): Promise<Blob>` (Rasterizes {@link toSvg}'s output to a PNG `Blob` at `scale`× (default 2, for retina and for print). Rejects if the chart isn't {@link ready} ({@link toSvg} would return `""`).)
 
-**CSS properties:** `--dj-chart-height` (default `18rem`; Overall chart height (width fills the container).), `--dj-chart-1` (default `#2563eb`; Categorical series color 1.), `--dj-chart-2` (default `#16a34a`; Categorical series color 2.), `--dj-chart-3` (default `#d97706`; Categorical series color 3.), `--dj-chart-4` (default `#dc2626`; Categorical series color 4.), `--dj-chart-5` (default `#7c3aed`; Categorical series color 5.), `--dj-chart-6` (default `#0891b2`; Categorical series color 6.), `--dj-chart-7` (default `#db2777`; Categorical series color 7.), `--dj-chart-8` (default `#65a30d`; Categorical series color 8.)
+**CSS properties:** `--dj-chart-height` (default `18rem`; Overall chart height (width fills the container).), `--dj-chart-label-size` (default `0.6875rem`; Point-label font size.), `--dj-chart-label-color` (Point-label text color; defaults to `--dj-color-text`.), `--dj-chart-label-halo` (Point-label halo stroke; defaults to `--dj-color-background`.), `--dj-chart-1` (default `#2563eb`; Categorical series color 1.), `--dj-chart-2` (default `#16a34a`; Categorical series color 2.), `--dj-chart-3` (default `#d97706`; Categorical series color 3.), `--dj-chart-4` (default `#dc2626`; Categorical series color 4.), `--dj-chart-5` (default `#7c3aed`; Categorical series color 5.), `--dj-chart-6` (default `#0891b2`; Categorical series color 6.), `--dj-chart-7` (default `#db2777`; Categorical series color 7.), `--dj-chart-8` (default `#65a30d`; Categorical series color 8.)
 
 ## Examples
 
@@ -326,6 +328,29 @@ A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. 
   ];
   // mv.missing = "connect";
   // mv.missing = "zero"; // the old behavior, if some consumer depended on it
+</script>
+```
+
+### Point labels
+
+`point-labels` (per-series override on `ChartSeries.pointLabels`) draws a label at each plotted point/bar-end/slice: above the point for line, area, scatter, and bubble; above a grouped bar's end (below it for a negative value) or centered in a stacked segment; outside the arc for pie/donut. Label text is `fmtY(value)` by default, so `numberFormat`/`formatY` apply with no extra wiring — set `formatPoint(value, row, series)` for something else (a name from another column, a share of total); when set, the accessible table gets the same formatted text mirrored into the affected cells (in addition to the raw number, which stays first), since it would otherwise be sighted-only information. No label is drawn for a missing (gapped) value. Collision avoidance is an ESTIMATE, not real text measurement (`getBBox` costs a layout per label) — width from character count times a per-character factor, placed in category order, skipping anything that would overlap a label already placed; above roughly 150 labels the whole set is skipped rather than drawing an unreadable smear of overlapping numbers. Three tokens style the text: `--dj-chart-label-size`, `--dj-chart-label-color`, and `--dj-chart-label-halo` (the halo is a stroke painted behind the fill so a label stays legible over a colored mark or the grid).
+
+```html
+<div style="width: 480px; height: 280px">
+  <dj-chart id="pl" type="bar" point-labels category-key="month" label="Revenue" show-grid y-label="USD (k)"></dj-chart>
+</div>
+<script type="module">
+  import "@dojo-ng/chart";
+  const pl = document.getElementById("pl");
+  pl.series = [{ key: "revenue", label: "Revenue" }];
+  pl.data = [
+    { month: "Jan", revenue: 42 },
+    { month: "Feb", revenue: 50 },
+    { month: "Mar", revenue: 47 },
+    { month: "Apr", revenue: 61 },
+  ];
+  // A name instead of the number, mirrored into the accessible table automatically:
+  // pl.formatPoint = (value, row) => row.month + " revenue";
 </script>
 ```
 

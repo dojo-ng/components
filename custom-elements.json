@@ -1949,6 +1949,24 @@
               "reflects": true
             },
             {
+              "kind": "field",
+              "name": "pointLabels",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Show a label at each plotted point/bar/slice (line, area, scatter, bar, pie/donut \u2014 not horizontal bars). Per-series override on `ChartSeries.pointLabels`. No label is drawn for a gap; above ~150 candidates the whole set is skipped (a console warning once) rather than drawing an unreadable smear of overlapping numbers.",
+              "attribute": "point-labels"
+            },
+            {
+              "kind": "field",
+              "name": "formatPoint",
+              "type": {
+                "text": "(value: number, row: ChartDatum, series: ChartSeries) => string"
+              },
+              "description": "Override point-label text; defaults to `fmtY(value)` (so `numberFormat`/`formatY` apply with no extra wiring). Receives the row and the series, so a label can show something the plotted number alone can't \u2014 a name from another column, a share of total. When set, `renderTable` mirrors the SAME formatted text into the affected cells too, since otherwise it would be sighted-only information no screen reader can reach."
+            },
+            {
               "kind": "method",
               "name": "appendData",
               "description": "Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).",
@@ -2148,6 +2166,14 @@
               },
               "fieldName": "missing",
               "description": "How a missing (non-finite) cell is drawn. `\"gap\"` (the default) breaks the line/area and omits the marker, bar, and point \u2014 the honest reading, since the alternative silently plots a zero the data never gave. `\"connect\"` spans the hole in a line/area instead of breaking it (bars, markers, and points are still omitted). `\"zero\"` treats it as a real zero \u2014 the pre-Track-V behavior, kept as an escape hatch. Per-series override on `ChartSeries.missing`."
+            },
+            {
+              "name": "point-labels",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "pointLabels",
+              "description": "Show a label at each plotted point/bar/slice (line, area, scatter, bar, pie/donut \u2014 not horizontal bars). Per-series override on `ChartSeries.pointLabels`. No label is drawn for a gap; above ~150 candidates the whole set is skipped (a console warning once) rather than drawing an unreadable smear of overlapping numbers."
             }
           ],
           "cssParts": [
@@ -2210,6 +2236,14 @@
             {
               "name": "center-sub-label",
               "description": ""
+            },
+            {
+              "name": "point-labels",
+              "description": ""
+            },
+            {
+              "name": "point-label",
+              "description": ""
             }
           ],
           "cssProperties": [
@@ -2217,6 +2251,19 @@
               "name": "--dj-chart-height",
               "default": "18rem",
               "description": "Overall chart height (width fills the container)."
+            },
+            {
+              "name": "--dj-chart-label-size",
+              "default": "0.6875rem",
+              "description": "Point-label font size."
+            },
+            {
+              "name": "--dj-chart-label-color",
+              "description": "Point-label text color; defaults to `--dj-color-text`."
+            },
+            {
+              "name": "--dj-chart-label-halo",
+              "description": "Point-label halo stroke; defaults to `--dj-color-background`."
             },
             {
               "name": "--dj-chart-1",

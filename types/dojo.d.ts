@@ -197,6 +197,8 @@ declare module "@dojo-ng/framework" {
         "max-points"?: DjChart["maxPoints"];
         "renderer"?: DjChart["renderer"];
         "missing"?: DjChart["missing"];
+        "point-labels"?: DjChart["pointLabels"];
+        "formatPoint"?: DjChart["formatPoint"];
       };
       "dj-checkbox": DjVNodeBase & {
         "checked"?: DjCheckbox["checked"];

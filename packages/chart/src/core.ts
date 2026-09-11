@@ -1,12 +1,23 @@
 import { scaleLinear, scaleBand, scalePoint, scaleSqrt, type ScaleLinear, type ScaleBand, type ScalePoint } from "d3-scale";
 import { line as d3line, area as d3area, stack as d3stack, arc as d3arc, pie as d3pie } from "d3-shape";
-import { max as d3max, min as d3min, extent as d3extent } from "d3-array";
-import type { ChartDatum, ChartSeries, ChartType, ChartRenderer } from "./types.js";
+import { max as d3max, extent as d3extent } from "d3-array";
+import type { ChartDatum, ChartSeries, ChartType, ChartRenderer, MissingMode } from "./types.js";
 
-/** Coerce an unknown cell to a finite number (NaN/undefined become 0). */
-export function num(v: unknown): number {
+/** Coerce an unknown cell to a finite number, or `null` when it isn't one — a missing value stays
+ * missing instead of becoming a false zero. `null`, `undefined`, and `""` are checked explicitly
+ * before the `Number()` coercion because JS coerces all three to `0` (`Number(null) === 0`), which
+ * would otherwise sail straight through `Number.isFinite` as a false "real" zero — the exact bug
+ * Track V exists to fix. */
+export function val(v: unknown): number | null {
+	if (v === null || v === undefined || v === "") return null;
 	const n = typeof v === "number" ? v : Number(v);
-	return Number.isFinite(n) ? n : 0;
+	return Number.isFinite(n) ? n : null;
+}
+
+/** Coerce an unknown cell to a finite number (a missing value becomes 0). Kept for the call sites
+ * where zero genuinely is the right answer (decision 21); everywhere else uses {@link val}. */
+export function num(v: unknown): number {
+	return val(v) ?? 0;
 }
 
 /** The category (x) label for a row. */
@@ -40,28 +51,57 @@ function axisOf(s: ChartSeries): "left" | "right" {
 	return s.axis === "right" ? "right" : "left";
 }
 
-/** Numeric y domain for a set of series, summing per row when stacked. Always includes zero. */
-function yDomain(data: ChartDatum[], series: ChartSeries[], stacked: boolean): [number, number] {
+/** Numeric y domain for a set of series, summing per row when stacked. A cell {@link val} can't
+ * parse is excluded rather than coerced to zero, UNLESS the resolved `missing` mode for its series
+ * is `"zero"` (decision 21/22). Zero is still folded into the domain for ordinary, fully-present
+ * data — that long-standing convention only lifts once a real cell was actually excluded, so an
+ * honest gap doesn't get a dishonest floor drawn under it (a series of `[10, null, 30]` under
+ * `gap`/`connect` domains to `[10, 30]`, not `[0, 30]`; under `zero` it's `[0, 30]` as before). */
+function yDomain(data: ChartDatum[], series: ChartSeries[], stacked: boolean, defaultMissing: MissingMode = "zero"): [number, number] {
 	if (!series.length) return [0, 0];
-	let lo = 0;
-	let hi = 0;
+	const modeOf = (s: ChartSeries) => s.missing ?? defaultMissing;
 	if (stacked) {
+		// Stacks always treat a missing series as absent, never as zero (decision 24): the row's
+		// other series still stack normally and the missing one contributes nothing.
+		let lo = 0;
+		let hi = 0;
 		for (const row of data) {
 			let pos = 0;
 			let neg = 0;
 			for (const s of series) {
-				const v = num(row[s.key]);
+				const raw = val(row[s.key]);
+				const v = raw ?? (modeOf(s) === "zero" ? 0 : undefined);
+				if (v === undefined) continue;
 				if (v >= 0) pos += v;
 				else neg += v;
 			}
 			hi = Math.max(hi, pos);
 			lo = Math.min(lo, neg);
 		}
-	} else {
-		const hiMax = d3max(data, (row) => d3max(series, (s) => num(row[s.key])) ?? 0) ?? 0;
-		const loMin = d3min(data, (row) => d3min(series, (s) => num(row[s.key])) ?? 0) ?? 0;
-		hi = Math.max(0, hiMax);
-		lo = Math.min(0, loMin);
+		return [lo, hi];
+	}
+	let lo: number | undefined;
+	let hi: number | undefined;
+	let excluded = false;
+	for (const row of data) {
+		for (const s of series) {
+			const raw = val(row[s.key]);
+			let v: number | undefined = raw ?? undefined;
+			if (raw === null) {
+				if (modeOf(s) === "zero") v = 0;
+				else {
+					excluded = true;
+					continue;
+				}
+			}
+			lo = lo === undefined ? v : Math.min(lo, v!);
+			hi = hi === undefined ? v : Math.max(hi, v!);
+		}
+	}
+	if (lo === undefined || hi === undefined) return [0, 0];
+	if (!excluded) {
+		lo = Math.min(lo, 0);
+		hi = Math.max(hi, 0);
 	}
 	return [lo, hi];
 }
@@ -77,6 +117,7 @@ export function buildScales(
 	innerW: number,
 	innerH: number,
 	hidden: Set<string> = new Set(),
+	missing: MissingMode = "gap",
 ): Scales {
 	const cats = categories(data, categoryKey);
 	const visible = series.filter((s) => !hidden.has(s.key));
@@ -87,9 +128,9 @@ export function buildScales(
 	const left = visible.filter((s) => axisOf(s) === "left");
 	const right = visible.filter((s) => axisOf(s) === "right");
 	// Left scale spans the visible left-axis series (or all visible series when none are left).
-	const y = scaleLinear().domain(yDomain(data, left.length ? left : visible, stacked)).range([innerH, 0]).nice();
+	const y = scaleLinear().domain(yDomain(data, left.length ? left : visible, stacked, missing)).range([innerH, 0]).nice();
 	const yRight = right.length
-		? scaleLinear().domain(yDomain(data, right, stacked)).range([innerH, 0]).nice()
+		? scaleLinear().domain(yDomain(data, right, stacked, missing)).range([innerH, 0]).nice()
 		: undefined;
 	return { x, xBand, y, yRight, cats, band };
 }
@@ -103,34 +144,44 @@ export function xCenter(scales: Scales, category: string): number {
 	return (scales.x as ScalePoint<string>)(category) ?? 0;
 }
 
-/** SVG path `d` for a line series (`yScale` defaults to the primary axis). */
+/** SVG path `d` for a line series (`yScale` defaults to the primary axis). `missing` controls a
+ * non-finite cell: `"gap"` breaks the path there (`.defined()`); `"connect"` drops the row before
+ * the generator runs, so the line spans the hole with one continuous segment; `"zero"` treats it
+ * as a real zero, unchanged from before Track V. */
 export function linePath(
 	data: ChartDatum[],
 	categoryKey: string,
 	key: string,
 	scales: Scales,
 	yScale: ScaleLinear<number, number> = scales.y,
+	missing: MissingMode = "zero",
 ): string {
+	const rows = missing === "connect" ? data.filter((row) => val(row[key]) !== null) : data;
 	const gen = d3line<ChartDatum>()
+		.defined((row) => missing !== "gap" || val(row[key]) !== null)
 		.x((row) => xCenter(scales, cat(row, categoryKey)))
-		.y((row) => yScale(num(row[key])));
-	return gen(data) ?? "";
+		.y((row) => yScale(val(row[key]) ?? 0));
+	return gen(rows) ?? "";
 }
 
-/** SVG path `d` for an area series (baseline at y=0; `yScale` defaults to the primary axis). */
+/** SVG path `d` for an area series (baseline at y=0; `yScale` defaults to the primary axis).
+ * `missing` behaves exactly as it does for {@link linePath}, applied to both edges of the fill. */
 export function areaPath(
 	data: ChartDatum[],
 	categoryKey: string,
 	key: string,
 	scales: Scales,
 	yScale: ScaleLinear<number, number> = scales.y,
+	missing: MissingMode = "zero",
 ): string {
+	const rows = missing === "connect" ? data.filter((row) => val(row[key]) !== null) : data;
 	const base = yScale(0);
 	const gen = d3area<ChartDatum>()
+		.defined((row) => missing !== "gap" || val(row[key]) !== null)
 		.x((row) => xCenter(scales, cat(row, categoryKey)))
 		.y0(base)
-		.y1((row) => yScale(num(row[key])));
-	return gen(data) ?? "";
+		.y1((row) => yScale(val(row[key]) ?? 0));
+	return gen(rows) ?? "";
 }
 
 export interface CanvasPoint {
@@ -142,15 +193,20 @@ export interface CanvasPoint {
 
 /** Point positions for a cartesian line/area series — the same x/y {@link linePath} plots, as
  * raw points instead of an SVG path string, for the canvas renderer (`yScale` defaults to the
- * primary axis). */
+ * primary axis). `missing !== "zero"` omits a row with a non-finite cell from the returned points
+ * entirely — the canvas draw protocol is a single polyline with no `.defined()` equivalent, so
+ * `"gap"` and `"connect"` render the same way here: the line runs straight through to the next
+ * real point rather than breaking, which is the documented limit of the canvas renderer for gaps. */
 export function seriesPoints(
 	data: ChartDatum[],
 	categoryKey: string,
 	key: string,
 	scales: Scales,
 	yScale: ScaleLinear<number, number> = scales.y,
+	missing: MissingMode = "zero",
 ): CanvasPoint[] {
-	return data.map((row) => ({ x: xCenter(scales, cat(row, categoryKey)), y: yScale(num(row[key])) }));
+	const rows = missing === "zero" ? data : data.filter((row) => val(row[key]) !== null);
+	return rows.map((row) => ({ x: xCenter(scales, cat(row, categoryKey)), y: yScale(val(row[key]) ?? 0) }));
 }
 
 export interface Bar {
@@ -164,7 +220,10 @@ export interface Bar {
 }
 
 /** Rectangles for grouped (side-by-side) bars. `yOf` maps a series index to its axis y-scale
- * (defaults to the primary axis), so bar series on a secondary axis size correctly. */
+ * (defaults to the primary axis), so bar series on a secondary axis size correctly. `defaultMissing`
+ * (per-series override on `ChartSeries.missing`) omits a bar entirely for a non-finite cell unless
+ * the resolved mode is `"zero"` — the bar slot stays reserved (`inner`'s domain is the full series
+ * list, built before this loop), so the remaining bars in the group keep their x positions. */
 export function groupedBars(
 	data: ChartDatum[],
 	categoryKey: string,
@@ -172,6 +231,7 @@ export function groupedBars(
 	scales: Scales,
 	yOf: (seriesIndex: number) => ScaleLinear<number, number> = () => scales.y,
 	hidden: Set<string> = new Set(),
+	defaultMissing: MissingMode = "zero",
 ): Bar[] {
 	const band = scales.xBand;
 	const barKeys = series
@@ -186,9 +246,11 @@ export function groupedBars(
 		const c = cat(row, categoryKey);
 		const gx = band(c) ?? 0;
 		barKeys.forEach(({ s, i }, j) => {
+			const raw = val(row[s.key]);
+			if (raw === null && (s.missing ?? defaultMissing) !== "zero") return;
 			const ys = yOf(i);
 			const y0 = ys(0);
-			const v = num(row[s.key]);
+			const v = raw ?? 0;
 			const yv = ys(v);
 			out.push({
 				x: gx + (inner(j) ?? 0),
@@ -205,22 +267,32 @@ export function groupedBars(
 }
 
 /** Rectangles for stacked bars (uses d3-stack). Hidden series are dropped from the stack;
- * `seriesIndex` stays the original index so colors and series identity remain stable. */
+ * `seriesIndex` stays the original index so colors and series identity remain stable. A missing
+ * cell (per the resolved `missing` mode, decision 24) contributes no segment — not a zero-height
+ * one, which is a rect with no height that would still consume a color and a tooltip row — while
+ * the row's other series still stack normally: d3-stack's own value accessor is overridden to
+ * `val(...) ?? 0` (rather than its default unary-plus coercion) so an `undefined` cell can't turn
+ * the whole stack's running sum into `NaN`, the same failure mode a `null` cell used to risk. */
 export function stackedBars(
 	data: ChartDatum[],
 	categoryKey: string,
 	series: ChartSeries[],
 	scales: Scales,
 	hidden: Set<string> = new Set(),
+	defaultMissing: MissingMode = "zero",
 ): Bar[] {
 	const visible = series.map((s, i) => ({ s, i })).filter(({ s }) => !hidden.has(s.key));
 	const keys = visible.map((v) => v.s.key);
-	const layers = d3stack<ChartDatum>().keys(keys)(data);
+	const layers = d3stack<ChartDatum>()
+		.keys(keys)
+		.value((d, key) => val(d[key]) ?? 0)(data);
 	const band = scales.xBand;
 	const out: Bar[] = [];
 	layers.forEach((layer, li) => {
-		const seriesIndex = visible[li].i;
+		const { s, i: seriesIndex } = visible[li];
 		layer.forEach((seg, rowIndex) => {
+			const raw = val(data[rowIndex][s.key]);
+			if (raw === null && (s.missing ?? defaultMissing) !== "zero") return;
 			const c = cat(data[rowIndex], categoryKey);
 			const yTop = scales.y(seg[1]);
 			const yBot = scales.y(seg[0]);
@@ -231,7 +303,7 @@ export function stackedBars(
 				height: Math.abs(yBot - yTop),
 				seriesIndex,
 				category: c,
-				value: num(data[rowIndex][visible[li].s.key]),
+				value: raw ?? 0,
 			});
 		});
 	});
@@ -263,22 +335,25 @@ export function buildScalesH(
 	innerW: number,
 	innerH: number,
 	hidden: Set<string> = new Set(),
+	missing: MissingMode = "gap",
 ): ScalesH {
 	const cats = categories(data, categoryKey);
 	const visible = series.filter((s) => !hidden.has(s.key));
 	const yBand = scaleBand<string>().domain(cats).range([0, innerH]).padding(0.2);
-	const x = scaleLinear().domain(yDomain(data, visible, stacked)).range([0, innerW]).nice();
+	const x = scaleLinear().domain(yDomain(data, visible, stacked, missing)).range([0, innerW]).nice();
 	return { yBand, x, cats };
 }
 
 /** Rectangles for grouped (side-by-side) horizontal bars. Bars grow rightward from x=0;
- * each category band is split among the visible bar series. Mirrors {@link groupedBars}. */
+ * each category band is split among the visible bar series. Mirrors {@link groupedBars},
+ * including the same `defaultMissing` bar-omission rule. */
 export function horizontalBars(
 	data: ChartDatum[],
 	categoryKey: string,
 	series: ChartSeries[],
 	scales: ScalesH,
 	hidden: Set<string> = new Set(),
+	defaultMissing: MissingMode = "zero",
 ): Bar[] {
 	const band = scales.yBand;
 	const barKeys = series
@@ -294,7 +369,9 @@ export function horizontalBars(
 		const c = cat(row, categoryKey);
 		const gy = band(c) ?? 0;
 		barKeys.forEach(({ s, i }, j) => {
-			const v = num(row[s.key]);
+			const raw = val(row[s.key]);
+			if (raw === null && (s.missing ?? defaultMissing) !== "zero") return;
+			const v = raw ?? 0;
 			const xv = scales.x(v);
 			out.push({
 				x: Math.min(x0, xv),
@@ -311,22 +388,28 @@ export function horizontalBars(
 }
 
 /** Rectangles for stacked horizontal bars (uses d3-stack). Hidden series are dropped from the
- * stack; `seriesIndex` stays the original index so colors stay stable. Mirrors {@link stackedBars}. */
+ * stack; `seriesIndex` stays the original index so colors stay stable. Mirrors {@link stackedBars},
+ * including the same missing-cell omission and the `undefined`-safe value accessor. */
 export function horizontalStackedBars(
 	data: ChartDatum[],
 	categoryKey: string,
 	series: ChartSeries[],
 	scales: ScalesH,
 	hidden: Set<string> = new Set(),
+	defaultMissing: MissingMode = "zero",
 ): Bar[] {
 	const visible = series.map((s, i) => ({ s, i })).filter(({ s }) => !hidden.has(s.key));
 	const keys = visible.map((v) => v.s.key);
-	const layers = d3stack<ChartDatum>().keys(keys)(data);
+	const layers = d3stack<ChartDatum>()
+		.keys(keys)
+		.value((d, key) => val(d[key]) ?? 0)(data);
 	const band = scales.yBand;
 	const out: Bar[] = [];
 	layers.forEach((layer, li) => {
-		const seriesIndex = visible[li].i;
+		const { s, i: seriesIndex } = visible[li];
 		layer.forEach((seg, rowIndex) => {
+			const raw = val(data[rowIndex][s.key]);
+			if (raw === null && (s.missing ?? defaultMissing) !== "zero") return;
 			const c = cat(data[rowIndex], categoryKey);
 			const xLeft = scales.x(seg[0]);
 			const xRight = scales.x(seg[1]);
@@ -337,7 +420,7 @@ export function horizontalStackedBars(
 				height: band.bandwidth(),
 				seriesIndex,
 				category: c,
-				value: num(data[rowIndex][visible[li].s.key]),
+				value: raw ?? 0,
 			});
 		});
 	});
@@ -391,8 +474,8 @@ export function buildXYScales(
 	const ys: number[] = [];
 	for (const row of data) {
 		for (const s of series) {
-			xs.push(num(row[seriesX(s, xKey)]));
-			ys.push(num(row[s.key]));
+			xs.push(val(row[seriesX(s, xKey)]) ?? 0);
+			ys.push(val(row[s.key]) ?? 0);
 		}
 	}
 	const [x0, x1] = (d3extent(xs) as [number, number] | [undefined, undefined]) ?? [0, 1];
@@ -405,7 +488,7 @@ export function buildXYScales(
 /** Point positions for an x/y (scatter) series — the canvas-renderer counterpart of the SVG
  * `<circle>` marks in `renderXY`. `xKey` is the resolved per-series x accessor ({@link seriesX}). */
 export function xyPoints(data: ChartDatum[], xKey: string, key: string, scales: XYScales): CanvasPoint[] {
-	return data.map((row) => ({ x: scales.x(num(row[xKey])), y: scales.y(num(row[key])) }));
+	return data.map((row) => ({ x: scales.x(val(row[xKey]) ?? 0), y: scales.y(val(row[key]) ?? 0) }));
 }
 
 /** A radius function for bubbles (area-encoded via sqrt), or a constant when no `sizeKey`. */
@@ -426,24 +509,33 @@ export interface PieSlice {
 	d: string;
 	category: string;
 	value: number;
+	/** The row's index in the ORIGINAL (unfiltered) data array — stable even when a missing value
+	 * omits its own row from the layout, so slice color stays aligned with the legend's, which
+	 * colors by that same original index. */
 	index: number;
 }
 
-/** Arc paths for a pie or donut from one value series (innerRadius > 0 makes a donut). */
+/** Arc paths for a pie or donut from one value series (innerRadius > 0 makes a donut). A row whose
+ * value is missing is omitted from the layout entirely (decision 24) — not drawn as a zero-value
+ * sliver — unless the resolved `missing` mode is `"zero"`. */
 export function pieArcs(
 	data: ChartDatum[],
 	categoryKey: string,
 	valueKey: string,
 	radius: number,
 	innerRadius: number,
+	missing: MissingMode = "zero",
 ): PieSlice[] {
-	const layout = d3pie<ChartDatum>().value((d) => Math.max(0, num(d[valueKey]))).sort(null);
+	const rows = data
+		.map((d, i) => ({ d, i }))
+		.filter(({ d }) => missing === "zero" || val(d[valueKey]) !== null);
+	const layout = d3pie<(typeof rows)[number]>().value(({ d }) => Math.max(0, val(d[valueKey]) ?? 0)).sort(null);
 	const a = d3arc<ReturnType<typeof layout>[number]>().innerRadius(innerRadius).outerRadius(radius);
-	return layout(data).map((seg, i) => ({
+	return layout(rows).map((seg) => ({
 		d: a(seg) ?? "",
-		category: cat(data[i], categoryKey),
-		value: num(data[i][valueKey]),
-		index: i,
+		category: cat(seg.data.d, categoryKey),
+		value: val(seg.data.d[valueKey]) ?? 0,
+		index: seg.data.i,
 	}));
 }
 

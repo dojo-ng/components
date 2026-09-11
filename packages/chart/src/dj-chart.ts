@@ -2,9 +2,9 @@ import { html, svg, nothing, type TemplateResult } from "lit";
 import { property, state } from "lit/decorators.js";
 import { ref } from "lit/directives/ref.js";
 import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
-import { LocaleController, formatNumber } from "@dojo-ng/i18n";
+import { LocaleController, formatNumber, messages, registerDefaults } from "@dojo-ng/i18n";
 import styles from "./dj-chart.styles.js";
-import type { ChartDatum, ChartSeries, ChartType, ChartMargin, ChartRenderer } from "./types.js";
+import type { ChartDatum, ChartSeries, ChartType, ChartMargin, ChartRenderer, MissingMode } from "./types.js";
 import {
 	buildScales,
 	buildXYScales,
@@ -14,6 +14,7 @@ import {
 	categories,
 	cat,
 	num,
+	val,
 	xCenter,
 	linePath,
 	areaPath,
@@ -36,6 +37,8 @@ import {
 	type CanvasMark,
 } from "./core.js";
 import { serializeChartSvg, rasterizeSvg } from "./export.js";
+
+registerDefaults("dj", { noValue: "No value" });
 
 const RAMP = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
 const MARGIN: ChartMargin = { top: 8, right: 12, bottom: 28, left: 44 };
@@ -127,6 +130,12 @@ export class DjChart extends DojoElement {
 	 * fall back to `svg` (a console warning for an unsupported type, none for forced-colors — see
 	 * the CV decisions). */
 	@property({ reflect: true }) renderer: ChartRenderer = "svg";
+	/** How a missing (non-finite) cell is drawn. `"gap"` (the default) breaks the line/area and
+	 * omits the marker, bar, and point — the honest reading, since the alternative silently plots
+	 * a zero the data never gave. `"connect"` spans the hole in a line/area instead of breaking it
+	 * (bars, markers, and points are still omitted). `"zero"` treats it as a real zero — the
+	 * pre-Track-V behavior, kept as an escape hatch. Per-series override on `ChartSeries.missing`. */
+	@property({ reflect: true }) missing: MissingMode = "gap";
 
 	@state() private w = 0;
 	@state() private h = 0;
@@ -232,6 +241,23 @@ export class DjChart extends DojoElement {
 	}
 	private seriesType(s: ChartSeries): ChartType {
 		return s.type ?? this.type;
+	}
+	/** The resolved missing-value mode for a series: its own override, else the chart's `missing`. */
+	private missingOf(s: ChartSeries): MissingMode {
+		return s.missing ?? this.missing;
+	}
+	/** The localized "no value" string (decision 23), for a missing cell's `aria-label`. */
+	private noValueLabel(): string {
+		return messages.resolve("dj", this.#i18n.locale, "noValue") ?? "No value";
+	}
+	/** A tooltip/table cell's content for one series' value: the em dash with a localized
+	 * "no value" `aria-label` when the cell is missing under a non-`"zero"` mode, else the raw
+	 * value (`fmt` formats it — `this.fmtY` for a tooltip, identity for the raw table cell). */
+	private valueCell(raw: number | null, s: ChartSeries, fmt: (v: number) => unknown = (v) => v) {
+		if (raw === null && this.missingOf(s) !== "zero") {
+			return html`<span aria-label=${this.noValueLabel()}>&mdash;</span>`;
+		}
+		return fmt(raw ?? 0);
 	}
 	/** Which rendering family the chart type belongs to. */
 	private group(): "cartesian" | "xy" | "radial" {
@@ -368,7 +394,7 @@ export class DjChart extends DojoElement {
 		const [vs, ve] = this.viewRange(this.data.length);
 		const data = this.brush && this.view ? this.data.slice(vs, ve + 1) : this.data;
 		const cats2 = categories(data, this.categoryKey);
-		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys);
+		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys, this.missing);
 		const yOf = (i: number) => (this.series[i]?.axis === "right" && scales.yRight ? scales.yRight : scales.y);
 		const ticks = yTicks(scales, 5);
 		const yR = scales.yRight;
@@ -386,8 +412,8 @@ export class DjChart extends DojoElement {
 
 		const bars = hasBars(this.series, this.type)
 			? this.stacked
-				? stackedBars(data, this.categoryKey, this.series, scales, this.hiddenKeys)
-				: groupedBars(data, this.categoryKey, this.series, scales, yOf, this.hiddenKeys)
+				? stackedBars(data, this.categoryKey, this.series, scales, this.hiddenKeys, this.missing)
+				: groupedBars(data, this.categoryKey, this.series, scales, yOf, this.hiddenKeys, this.missing)
 			: [];
 
 		return html`
@@ -432,17 +458,18 @@ export class DjChart extends DojoElement {
 	private renderSeries(s: ChartSeries, i: number, scales: ReturnType<typeof buildScales>, bars: ReturnType<typeof groupedBars>, yScale: ReturnType<typeof buildScales>["y"], data: ChartDatum[]) {
 		const t = this.seriesType(s);
 		const c = this.color(s, i);
+		const missing = this.missingOf(s);
 		// The canvas renderer draws the line/area path itself (see #cartesianCanvasMarks);
 		// markers stay SVG regardless (an opt-in decoration, not the node-count-heavy default path).
 		const onCanvas = this.effectiveRendererNow === "canvas";
 		if (t === "line") {
-			if (onCanvas) return this.renderMarkers(data, s.key, c, scales, yScale);
-			return svg`<path class="series-line" part="line" d=${linePath(data, this.categoryKey, s.key, scales, yScale)} stroke=${c}></path>${this.renderMarkers(data, s.key, c, scales, yScale)}`;
+			if (onCanvas) return this.renderMarkers(data, s.key, c, scales, yScale, missing);
+			return svg`<path class="series-line" part="line" d=${linePath(data, this.categoryKey, s.key, scales, yScale, missing)} stroke=${c}></path>${this.renderMarkers(data, s.key, c, scales, yScale, missing)}`;
 		}
 		if (t === "area") {
-			if (onCanvas) return this.renderMarkers(data, s.key, c, scales, yScale);
-			return svg`<path class="series-area" d=${areaPath(data, this.categoryKey, s.key, scales, yScale)} fill=${c}></path>
-				<path class="series-line" part="line" d=${linePath(data, this.categoryKey, s.key, scales, yScale)} stroke=${c}></path>${this.renderMarkers(data, s.key, c, scales, yScale)}`;
+			if (onCanvas) return this.renderMarkers(data, s.key, c, scales, yScale, missing);
+			return svg`<path class="series-area" d=${areaPath(data, this.categoryKey, s.key, scales, yScale, missing)} fill=${c}></path>
+				<path class="series-line" part="line" d=${linePath(data, this.categoryKey, s.key, scales, yScale, missing)} stroke=${c}></path>${this.renderMarkers(data, s.key, c, scales, yScale, missing)}`;
 		}
 		// bar: render the rects belonging to this series index (already on its axis via groupedBars)
 		return svg`${bars
@@ -450,12 +477,15 @@ export class DjChart extends DojoElement {
 			.map((b) => svg`<rect class="bar" part="bar" x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}" fill=${c}></rect>`)}`;
 	}
 
-	/** Point markers at each datum for line/area series, shown when `markers` is set. */
-	private renderMarkers(data: ChartDatum[], key: string, color: string, scales: ReturnType<typeof buildScales>, yScale: ReturnType<typeof buildScales>["y"] = scales.y) {
+	/** Point markers at each datum for line/area series, shown when `markers` is set. A row whose
+	 * value is missing draws no marker unless `missing` resolves to `"zero"`. */
+	private renderMarkers(data: ChartDatum[], key: string, color: string, scales: ReturnType<typeof buildScales>, yScale: ReturnType<typeof buildScales>["y"] = scales.y, missing: MissingMode = "zero") {
 		if (!this.markers) return nothing;
 		return svg`${data.map((row) => {
+			const raw = val(row[key]);
+			if (raw === null && missing !== "zero") return nothing;
 			const c = cat(row, this.categoryKey);
-			return svg`<circle class="marker" part="point" cx="${xCenter(scales, c)}" cy="${yScale(num(row[key]))}" r="3.5" fill=${color}></circle>`;
+			return svg`<circle class="marker" part="point" cx="${xCenter(scales, c)}" cy="${yScale(raw ?? 0)}" r="3.5" fill=${color}></circle>`;
 		})}`;
 	}
 
@@ -470,12 +500,12 @@ export class DjChart extends DojoElement {
 		const longest = cats.reduce((m, c) => Math.max(m, this.fmtX(c).length), 0);
 		const hLeft = Math.min(Math.max(MARGIN.left, longest * 7 + 14), Math.floor(W * 0.4));
 		const innerW = Math.max(0, W - hLeft - MARGIN.right);
-		const scales = buildScalesH(this.data, this.series, this.categoryKey, this.stacked, innerW, innerH, this.hiddenKeys);
+		const scales = buildScalesH(this.data, this.series, this.categoryKey, this.stacked, innerW, innerH, this.hiddenKeys, this.missing);
 		const band = scales.yBand;
 		const xticks = ticksOf(scales.x, 5);
 		const bars = this.stacked
-			? horizontalStackedBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys)
-			: horizontalBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys);
+			? horizontalStackedBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys, this.missing)
+			: horizontalBars(this.data, this.categoryKey, this.series, scales, this.hiddenKeys, this.missing);
 		return html`
 			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot" class="${this.#streaming ? "no-transition" : ""}">
 				<g transform="translate(${hLeft},${MARGIN.top})">
@@ -529,9 +559,10 @@ export class DjChart extends DojoElement {
 		const top = MARGIN.top + (band(c) ?? 0) + band.bandwidth() / 2;
 		return html`<div class="tooltip" part="tooltip" style=${`left:${left}px; top:${top}px`}>
 			<strong>${this.fmtX(c)}</strong>
-			${this.series.map(
-				(s, i) => html`<div class="tooltip-row"><span class="tooltip-swatch" style=${`background:${this.color(s, i)}`}></span>${s.label ?? s.key}: ${this.fmtY(row ? num(row[s.key]) : 0)}</div>`,
-			)}
+			${this.series.map((s, i) => {
+				const raw = row ? val(row[s.key]) : 0;
+				return html`<div class="tooltip-row"><span class="tooltip-swatch" style=${`background:${this.color(s, i)}`}></span>${s.label ?? s.key}: ${this.valueCell(raw, s, (v) => this.fmtY(v))}</div>`;
+			})}
 		</div>`;
 	}
 
@@ -572,10 +603,14 @@ export class DjChart extends DojoElement {
 							// invisible hit targets, since hover here is per-point (unlike cartesian's
 							// separate per-category hit-band rects, there's no other hit-testing layer).
 							const onCanvas = this.effectiveRendererNow === "canvas";
-							return svg`${this.data.map(
-								(row, ri) => svg`<circle class="point-mark" part="point" cx="${scales.x(num(row[xk]))}" cy="${scales.y(num(row[s.key]))}" r="${this.type === "bubble" ? r(num(row[s.sizeKey ?? this.sizeKey ?? ""])) : 4}" fill=${onCanvas ? "transparent" : c}
-									@pointerenter=${() => (this.hoverPt = { si, ri })} @pointerleave=${() => (this.hoverPt = null)}></circle>`,
-							)}`;
+							const missing = this.missingOf(s);
+							return svg`${this.data.map((row, ri) => {
+								const xv = val(row[xk]);
+								const yv = val(row[s.key]);
+								if ((xv === null || yv === null) && missing !== "zero") return nothing;
+								return svg`<circle class="point-mark" part="point" cx="${scales.x(xv ?? 0)}" cy="${scales.y(yv ?? 0)}" r="${this.type === "bubble" ? r(num(row[s.sizeKey ?? this.sizeKey ?? ""])) : 4}" fill=${onCanvas ? "transparent" : c}
+									@pointerenter=${() => (this.hoverPt = { si, ri })} @pointerleave=${() => (this.hoverPt = null)}></circle>`;
+							})}`;
 						})}
 					</g>
 				</g>
@@ -591,8 +626,8 @@ export class DjChart extends DojoElement {
 		const row = this.data[pt.ri];
 		if (!s || !row) return html`<div class="tooltip" part="tooltip" hidden></div>`;
 		const xk = seriesX(s, this.xKey);
-		const xv = num(row[xk]);
-		const yv = num(row[s.key]);
+		const xv = val(row[xk]) ?? 0;
+		const yv = val(row[s.key]) ?? 0;
 		const left = MARGIN.left + scales.x(xv);
 		const top = MARGIN.top + scales.y(yv);
 		const sizeKey = s.sizeKey ?? this.sizeKey;
@@ -601,7 +636,7 @@ export class DjChart extends DojoElement {
 			<strong>${s.label ?? s.key}</strong>
 			<div class="tooltip-row">${this.xLabel ?? xk}: ${this.fmtY(xv)}</div>
 			<div class="tooltip-row">${this.yLabel ?? s.key}: ${this.fmtY(yv)}</div>
-			${this.type === "bubble" && sizeKey ? html`<div class="tooltip-row">${sizeKey}: ${this.fmtY(num(row[sizeKey]))}</div>` : nothing}
+			${this.type === "bubble" && sizeKey ? html`<div class="tooltip-row">${sizeKey}: ${this.fmtY(val(row[sizeKey]) ?? 0)}</div>` : nothing}
 		</div>`;
 	}
 
@@ -611,7 +646,7 @@ export class DjChart extends DojoElement {
 		const R = Math.max(0, Math.min(W, H) / 2 - 4);
 		const ratio = this.type === "donut" ? this.innerRadius ?? 0.6 : this.innerRadius ?? 0;
 		const innerR = Math.max(0, Math.min(0.95, ratio)) * R;
-		const slices = pieArcs(this.data, this.categoryKey, valueKey, R, innerR);
+		const slices = pieArcs(this.data, this.categoryKey, valueKey, R, innerR, this.missingOf(this.series[0] ?? { key: valueKey }));
 		// Center label: only for donut (a pie has no hole); sized from the hole radius, token-colored.
 		const showCenter = this.type === "donut" && !!this.centerLabel;
 		const labelSize = centerLabelSize(innerR);
@@ -644,7 +679,7 @@ export class DjChart extends DojoElement {
 		const row = this.data.find((d) => cat(d, this.categoryKey) === this.hovered);
 		return html`<div class="tooltip" part="tooltip" style=${`left:${W / 2}px; top:${MARGIN.top}px`}>
 			<strong>${this.fmtX(this.hovered)}</strong>
-			<div class="tooltip-row">${this.fmtY(row ? num(row[valueKey]) : 0)}</div>
+			<div class="tooltip-row">${this.fmtY(row ? (val(row[valueKey]) ?? 0) : 0)}</div>
 		</div>`;
 	}
 
@@ -783,9 +818,10 @@ export class DjChart extends DojoElement {
 			style=${`left:${left}px; top:${MARGIN.top}px`}
 		>
 			<strong>${this.fmtX(c)}</strong>
-			${this.series.map(
-				(s, i) => html`<div class="tooltip-row"><span class="tooltip-swatch" style=${`background:${this.color(s, i)}`}></span>${s.label ?? s.key}: ${this.fmtY(row ? num(row[s.key]) : 0)}</div>`,
-			)}
+			${this.series.map((s, i) => {
+				const raw = row ? val(row[s.key]) : 0;
+				return html`<div class="tooltip-row"><span class="tooltip-swatch" style=${`background:${this.color(s, i)}`}></span>${s.label ?? s.key}: ${this.valueCell(raw, s, (v) => this.fmtY(v))}</div>`;
+			})}
 		</div>`;
 	}
 
@@ -793,6 +829,7 @@ export class DjChart extends DojoElement {
 		// x/y charts have a numeric x column instead of a category column.
 		if (this.group() === "xy") {
 			const xk = this.xKey || "x";
+			const first = this.series[0] ?? { key: "" };
 			return html`<table class="sr-only">
 				<caption>${this.label ?? summary(this.type, this.series, cats)}</caption>
 				<thead>
@@ -800,7 +837,7 @@ export class DjChart extends DojoElement {
 				</thead>
 				<tbody>
 					${this.data.map(
-						(row) => html`<tr><th scope="row">${num(row[seriesX(this.series[0] ?? { key: "" }, this.xKey)])}</th>${this.series.map((s) => html`<td>${num(row[s.key])}</td>`)}</tr>`,
+						(row) => html`<tr><th scope="row">${this.valueCell(val(row[seriesX(first, this.xKey)]), first)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}</td>`)}</tr>`,
 					)}
 				</tbody>
 			</table>`;
@@ -812,7 +849,7 @@ export class DjChart extends DojoElement {
 			</thead>
 			<tbody>
 				${this.data.map(
-					(row) => html`<tr><th scope="row">${cat(row, this.categoryKey)}</th>${this.series.map((s) => html`<td>${num(row[s.key])}</td>`)}</tr>`,
+					(row) => html`<tr><th scope="row">${cat(row, this.categoryKey)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}</td>`)}</tr>`,
 				)}
 			</tbody>
 		</table>`;
@@ -852,7 +889,7 @@ export class DjChart extends DojoElement {
 		const innerW = Math.max(0, W - MARGIN.left - (hasRight ? RIGHT_AXIS_MARGIN : MARGIN.right));
 		const [vs, ve] = this.viewRange(this.data.length);
 		const data = this.brush && this.view ? this.data.slice(vs, ve + 1) : this.data;
-		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys);
+		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys, this.missing);
 		const style = getComputedStyle(this);
 		const marks: CanvasMark[] = [];
 		this.series.forEach((s, i) => {
@@ -860,7 +897,7 @@ export class DjChart extends DojoElement {
 			const t = this.seriesType(s);
 			if (t !== "line" && t !== "area") return;
 			const yScale = s.axis === "right" && scales.yRight ? scales.yRight : scales.y;
-			const points = seriesPoints(data, this.categoryKey, s.key, scales, yScale).map((p) => ({ x: p.x + MARGIN.left, y: p.y + MARGIN.top }));
+			const points = seriesPoints(data, this.categoryKey, s.key, scales, yScale, this.missingOf(s)).map((p) => ({ x: p.x + MARGIN.left, y: p.y + MARGIN.top }));
 			marks.push({ type: t, color: this.resolveCanvasColor(s, i, style), points, baseline: yScale(0) + MARGIN.top });
 		});
 		return marks;

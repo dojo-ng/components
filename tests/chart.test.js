@@ -13,6 +13,9 @@ import {
 	stackedBars,
 	horizontalBars,
 	horizontalStackedBars,
+	linePath,
+	areaPath,
+	pieArcs,
 	centerLabelSize,
 	centerSubLabelSize,
 	accessibleName,
@@ -130,6 +133,127 @@ test("horizontal: seriesIndex stays original when a series is hidden (stacked)",
 	const bars = horizontalStackedBars(DATA, "cat", SERIES, sh, hidden);
 	assert.equal(bars.length, 3); // only v remains, one per category
 	for (const b of bars) assert.equal(b.seriesIndex, 1, "v keeps its original index");
+});
+
+// ---- Track V: missing values, gaps, and segments ----
+//
+// A null/undefined/non-numeric cell is a MISSING value, not a zero (decision 21/22). `missing`
+// controls how it draws: "gap" breaks the line/area and omits the mark; "connect" drops the row
+// before the line/area generator runs, so the line spans the hole with one continuous segment;
+// "zero" is today's pre-Track-V arithmetic, kept as an escape hatch. linePath/areaPath return
+// plain path-`d` strings — no DOM involved — so these are checked directly on the string, the
+// same way sparklineLinePath is above.
+
+const GAP_DATA = [
+	{ cat: "A", u: 10 },
+	{ cat: "B", u: null },
+	{ cat: "C", u: 30 },
+];
+const GAP_SERIES = [{ key: "u" }];
+
+test("linePath: missing='gap' breaks the path into two subpaths and yDomain excludes the null", () => {
+	const scales = buildScales(GAP_DATA, GAP_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), "gap");
+	const d = linePath(GAP_DATA, "cat", "u", scales, scales.y, "gap");
+	assert.equal((d.match(/M/g) ?? []).length, 2, "one M per side of the gap");
+	assert.equal(scales.y.domain()[0], 10, "domain starts at the smallest REAL value, not a forced 0");
+});
+
+test("linePath: missing='connect' drops the null row — one continuous segment from 10 to 30", () => {
+	const scales = buildScales(GAP_DATA, GAP_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), "connect");
+	const d = linePath(GAP_DATA, "cat", "u", scales, scales.y, "connect");
+	assert.equal((d.match(/M/g) ?? []).length, 1, "a single moveto");
+	assert.equal((d.match(/L/g) ?? []).length, 1, "one lineto spanning the hole");
+	assert.equal(scales.y.domain()[0], 10, "connect excludes the null from the domain exactly as gap does");
+});
+
+test("linePath: missing='zero' matches today's arithmetic — one path through the floor", () => {
+	const scales = buildScales(GAP_DATA, GAP_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), "zero");
+	const d = linePath(GAP_DATA, "cat", "u", scales, scales.y, "zero");
+	assert.equal((d.match(/M/g) ?? []).length, 1, "one continuous path");
+	assert.equal((d.match(/L/g) ?? []).length, 2, "passes through all three points, the null included as 0");
+	assert.equal(scales.y.domain()[0], 0, "zero mode keeps the forced-zero domain");
+});
+
+test("areaPath: missing='gap' breaks the fill the same way linePath breaks the line", () => {
+	const scales = buildScales(GAP_DATA, GAP_SERIES, "cat", "area", false, INNER_W, INNER_H, new Set(), "gap");
+	const d = areaPath(GAP_DATA, "cat", "u", scales, scales.y, "gap");
+	assert.equal((d.match(/M/g) ?? []).length, 2, "the area fill breaks into two pieces, one per side of the gap");
+});
+
+test("areaPath: missing='connect' fills one continuous shape across the hole", () => {
+	const scales = buildScales(GAP_DATA, GAP_SERIES, "cat", "area", false, INNER_W, INNER_H, new Set(), "connect");
+	const d = areaPath(GAP_DATA, "cat", "u", scales, scales.y, "connect");
+	assert.equal((d.match(/M/g) ?? []).length, 1, "one continuous fill shape");
+});
+
+test("groupedBars: a null renders one fewer rect and the remaining bars keep their x positions", () => {
+	const full = buildScales(GAP_DATA, GAP_SERIES, "cat", "bar", false, INNER_W, INNER_H, new Set(), "zero");
+	const barsZero = groupedBars(GAP_DATA, "cat", GAP_SERIES, full, undefined, new Set(), "zero");
+	assert.equal(barsZero.length, 3, "zero mode still draws all three bars (the null as a real 0)");
+
+	const gap = buildScales(GAP_DATA, GAP_SERIES, "cat", "bar", false, INNER_W, INNER_H, new Set(), "gap");
+	const barsGap = groupedBars(GAP_DATA, "cat", GAP_SERIES, gap, undefined, new Set(), "gap");
+	assert.equal(barsGap.length, 2, "gap omits the bar for the missing category");
+	const a = barsGap.find((b) => b.category === "A");
+	const c = barsGap.find((b) => b.category === "C");
+	const aZero = barsZero.find((b) => b.category === "A");
+	const cZero = barsZero.find((b) => b.category === "C");
+	assert.equal(a.x, aZero.x, "category A's bar keeps its x position with or without the gap");
+	assert.equal(c.x, cZero.x, "category C's bar keeps its x position with or without the gap");
+});
+
+test("buildScales: the category hit-band count is the category count regardless of missing mode", () => {
+	for (const missing of ["gap", "connect", "zero"]) {
+		const scales = buildScales(GAP_DATA, GAP_SERIES, "cat", "line", false, INNER_W, INNER_H, new Set(), missing);
+		assert.equal(scales.cats.length, GAP_DATA.length, `${missing}: hit-band count tracks every category, missing or not`);
+	}
+});
+
+test("stackedBars: a null contributes no segment — one fewer rect, and the row's other series stacks as if the missing one were absent (decision 24)", () => {
+	const data = [
+		{ cat: "A", u: 10, v: 5 },
+		{ cat: "B", u: null, v: 5 },
+	];
+	const series = [{ key: "u" }, { key: "v" }];
+	const scales = buildScales(data, series, "cat", "bar", true, INNER_W, INNER_H, new Set(), "gap");
+	const bars = stackedBars(data, "cat", series, scales, new Set(), "gap");
+	assert.equal(bars.length, 3, "2 segments for row A, 1 for row B (u omitted) — one fewer rect");
+	assert.equal(bars.filter((b) => b.category === "B").length, 1);
+
+	// Independently stack v ALONE (u not even in the series list) and compare — if the gapped
+	// stack matches this exactly, u contributed NOTHING to v's position, not a zero-height slot
+	// that still occupies space.
+	const vOnly = stackedBars(data, "cat", [{ key: "v" }], scales);
+	const vGapped = bars.find((b) => b.category === "B" && b.seriesIndex === 1);
+	const vAlone = vOnly.find((b) => b.category === "B");
+	assert.ok(Math.abs(vGapped.y - vAlone.y) < 1e-6, "v stacks at the same height whether u is gapped or simply absent from the series list");
+	assert.ok(Math.abs(vGapped.height - vAlone.height) < 1e-6);
+});
+
+test("stackedBars: missing='zero' keeps today's behavior — every row keeps its segment", () => {
+	const data = [
+		{ cat: "A", u: 10, v: 5 },
+		{ cat: "B", u: null, v: 5 },
+	];
+	const series = [{ key: "u" }, { key: "v" }];
+	const scales = buildScales(data, series, "cat", "bar", true, INNER_W, INNER_H, new Set(), "zero");
+	const bars = stackedBars(data, "cat", series, scales, new Set(), "zero");
+	assert.equal(bars.length, 4, "zero mode draws all 4 segments, including u's zero-height one for row B");
+});
+
+test("pieArcs: a missing value omits its slice from the layout entirely, keeping the original data index for color/legend alignment", () => {
+	const data = [
+		{ cat: "A", v: 10 },
+		{ cat: "B", v: null },
+		{ cat: "C", v: 30 },
+	];
+	const slicesGap = pieArcs(data, "cat", "v", 50, 0, "gap");
+	assert.equal(slicesGap.length, 2, "one fewer slice for the missing category");
+	assert.deepEqual(slicesGap.map((s) => s.category), ["A", "C"]);
+	assert.deepEqual(slicesGap.map((s) => s.index), [0, 2], "index stays the ORIGINAL data index, not the compacted position");
+
+	const slicesZero = pieArcs(data, "cat", "v", 50, 0, "zero");
+	assert.equal(slicesZero.length, 3, "zero mode still draws all three slices, the missing one at value 0");
 });
 
 // ---- center-label helpers ----
@@ -538,6 +662,54 @@ test("vertical bar chart renders a plot svg and never warns (no regression)", as
 	});
 	assert.equal(warns.length, 0, "vertical path emits no warnings");
 	assert.ok(el.renderRoot.querySelector("svg[part='plot']"), "vertical bar chart renders a plot svg");
+});
+
+// ---- Track V3: gaps in the tooltip and the accessible table ----
+// Both live outside any <svg> (plain HTML, `.tooltip`/`table.sr-only`), so unlike the SVG marks
+// they survive happy-dom's Lit/SVG gap and can be asserted on directly here.
+
+const MISSING_DATA = [
+	{ cat: "A", u: 10 },
+	{ cat: "B", u: null },
+	{ cat: "C", u: 0 },
+];
+
+test("renderTable: a missing cell is an em dash with a 'no value' aria-label; a real 0 is plain 0 with no label", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: MISSING_DATA, series: [{ key: "u" }] });
+	await settled(el);
+	const cells = el.renderRoot.querySelectorAll("table.sr-only tbody td");
+	assert.equal(cells.length, 3);
+	const missingCell = cells[1];
+	const span = missingCell.querySelector("span[aria-label]");
+	assert.ok(span, "the missing cell (default missing=\"gap\") carries an aria-labeled span");
+	assert.equal(span.textContent, "—");
+	assert.notEqual(span.getAttribute("aria-label"), "");
+	const zeroCell = cells[2];
+	assert.equal(zeroCell.querySelector("span[aria-label]"), null, "a real 0 carries no aria-label span");
+	assert.equal(zeroCell.textContent.trim(), "0");
+});
+
+test("renderTable: missing='zero' shows every cell as a plain number, matching pre-Track-V output", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: MISSING_DATA, series: [{ key: "u" }], missing: "zero" });
+	await settled(el);
+	const cells = el.renderRoot.querySelectorAll("table.sr-only tbody td");
+	for (const c of cells) assert.equal(c.querySelector("span[aria-label]"), null, "zero mode never shows the em dash");
+	assert.equal(cells[1].textContent.trim(), "0", "the missing row reads as a real 0 under zero mode");
+});
+
+test("renderTooltip: a missing series value shows an em-dash tooltip row; a real 0 shows 0", async () => {
+	const el = await mount("dj-chart", { type: "line", categoryKey: "cat", data: MISSING_DATA, series: [{ key: "u" }] });
+	await seed(el);
+	el.hovered = "B";
+	await settled(el);
+	let row = el.renderRoot.querySelector(".tooltip-row");
+	assert.ok(row.querySelector("span[aria-label]"), "missing value's tooltip row carries the aria-labeled em dash");
+
+	el.hovered = "C";
+	await settled(el);
+	row = el.renderRoot.querySelector(".tooltip-row");
+	assert.equal(row.querySelector("span[aria-label]"), null, "a real 0's tooltip row carries no aria-label span");
+	assert.ok(row.textContent.includes("0"), "a real 0 still reads as 0 in the tooltip");
 });
 
 test("donut center-label rides in the accessible name", async () => {

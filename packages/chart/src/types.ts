@@ -9,6 +9,13 @@ export type ChartType = "line" | "area" | "bar" | "scatter" | "bubble" | "pie" |
  * (axes, grid, legend, and tooltip stay SVG/DOM either way). */
 export type ChartRenderer = "svg" | "canvas";
 
+/** How a non-finite (missing) cell is drawn. `"gap"` (the default) breaks the line/area and omits
+ * the marker, bar, and point — the honest reading, since the alternative silently plots a zero the
+ * data never gave. `"connect"` spans the hole in a line/area instead of breaking it (bars, markers,
+ * and points are still omitted, since there's no value to place one at). `"zero"` treats it as a
+ * real zero — today's pre-Track-V behavior, kept as an escape hatch for a consumer relying on it. */
+export type MissingMode = "gap" | "connect" | "zero";
+
 /** One plotted series, reading its y value from `key` on each data row. */
 export interface ChartSeries {
 	/** Accessor key into each data row for this series' numeric value. */
@@ -25,6 +32,8 @@ export interface ChartSeries {
 	sizeKey?: string;
 	/** Which y-axis this series uses. `"right"` adds a secondary axis with its own scale. Defaults to `"left"`. */
 	axis?: "left" | "right";
+	/** Override the chart's `missing` handling for this series. */
+	missing?: MissingMode;
 }
 
 /** A row of data. Values are read by `categoryKey` (x) and each series `key` (y). */

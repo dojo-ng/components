@@ -194,6 +194,7 @@ declare module "react" {
         "formatX"?: DjChart["formatX"];
         "max-points"?: DjChart["maxPoints"];
         "renderer"?: DjChart["renderer"];
+        "missing"?: DjChart["missing"];
       };
       "dj-checkbox": DjProps<DjCheckbox> & {
         "checked"?: DjCheckbox["checked"];

@@ -68,6 +68,7 @@ Set `data` (array of rows), `series` (one entry per plotted value), and `categor
 | `formatX` | — | `(category: string) => string` | — |
 | `maxPoints` | max-points | `number` | `0` |
 | `renderer` | renderer ↻ | `ChartRenderer` | `"svg"` |
+| `missing` | missing ↻ | `MissingMode` | `"gap"` |
 
 **Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`
 
@@ -298,6 +299,33 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
   const cv = document.getElementById("cv");
   cv.series = [{ key: "v", label: "Value" }];
   cv.data = Array.from({ length: 2000 }, (_, i) => ({ i, v: Math.sin(i / 200) * 50 + 50 }));
+</script>
+```
+
+### Missing values: gap, connect, or zero
+
+A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. `missing` (default `"gap"`, per-series override on `ChartSeries.missing`) controls how it draws: `"gap"` breaks the line/area and omits the marker, bar, and point at that spot (the category's hit-band and tooltip row still work there, showing an em dash with a localized "no value" label — never a silent 0); `"connect"` drops the row before the line/area is drawn, so the line spans the hole with one continuous segment (bars, markers, and points are still omitted, since there is no value to place one at); `"zero"` treats it as a real zero, which is what every chart did before this property existed. **This is a behavior change: a chart whose data already carries nulls or undefined cells now draws a gap where it used to silently draw a zero.** If you were relying on the old arithmetic, set `missing="zero"` and nothing else changes.
+
+```html
+<div style="width: 480px; height: 280px">
+  <dj-chart id="mv" type="line" markers category-key="day" label="Sensor reading" show-grid y-label="Value"></dj-chart>
+</div>
+<script type="module">
+  import "@dojo-ng/chart";
+  const mv = document.getElementById("mv");
+  mv.series = [{ key: "reading", label: "Reading" }];
+  // day 3's sensor dropped out: null, not a real 0. The default missing="gap" breaks the
+  // line there instead of drawing a false reading; missing="connect" would span it with a
+  // straight segment; missing="zero" restores the pre-Track-V behavior of plotting it as 0.
+  mv.data = [
+    { day: "Mon", reading: 42 },
+    { day: "Tue", reading: 45 },
+    { day: "Wed", reading: null },
+    { day: "Thu", reading: 48 },
+    { day: "Fri", reading: 50 },
+  ];
+  // mv.missing = "connect";
+  // mv.missing = "zero"; // the old behavior, if some consumer depended on it
 </script>
 ```
 

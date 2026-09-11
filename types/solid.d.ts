@@ -190,6 +190,7 @@ declare module "solid-js" {
         "formatX"?: DjChart["formatX"];
         "max-points"?: DjChart["maxPoints"];
         "renderer"?: DjChart["renderer"];
+        "missing"?: DjChart["missing"];
       };
       "dj-checkbox": JSX.HTMLAttributes<DjCheckbox> & {
         "checked"?: DjCheckbox["checked"];

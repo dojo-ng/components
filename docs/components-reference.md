@@ -1334,6 +1334,7 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 | `formatX` | — | `(category: string) => string` | — |
 | `maxPoints` | max-points | `number` | `0` |
 | `renderer` | renderer ↻ | `ChartRenderer` | `"svg"` |
+| `missing` | missing ↻ | `MissingMode` | `"gap"` |
 
 **Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`
 

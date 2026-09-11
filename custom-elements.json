@@ -1938,6 +1938,17 @@
               "reflects": true
             },
             {
+              "kind": "field",
+              "name": "missing",
+              "type": {
+                "text": "MissingMode"
+              },
+              "default": "\"gap\"",
+              "description": "How a missing (non-finite) cell is drawn. `\"gap\"` (the default) breaks the line/area and omits the marker, bar, and point \u2014 the honest reading, since the alternative silently plots a zero the data never gave. `\"connect\"` spans the hole in a line/area instead of breaking it (bars, markers, and points are still omitted). `\"zero\"` treats it as a real zero \u2014 the pre-Track-V behavior, kept as an escape hatch. Per-series override on `ChartSeries.missing`.",
+              "attribute": "missing",
+              "reflects": true
+            },
+            {
               "kind": "method",
               "name": "appendData",
               "description": "Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).",
@@ -2129,6 +2140,14 @@
               },
               "fieldName": "renderer",
               "description": "Opt-in escape hatch for very large series: `\"canvas\"` draws series marks on a `<canvas>` instead of SVG nodes (axes, grid, legend, and tooltip stay SVG/DOM either way). Honored only for `line`/`area`/`scatter` (not `bar`, `stacked`, pie/donut, `bubble`, or a combo where any series overrides to `bar`) and only outside `forced-colors: active`; unsupported combinations fall back to `svg` (a console warning for an unsupported type, none for forced-colors \u2014 see the CV decisions)."
+            },
+            {
+              "name": "missing",
+              "type": {
+                "text": "MissingMode"
+              },
+              "fieldName": "missing",
+              "description": "How a missing (non-finite) cell is drawn. `\"gap\"` (the default) breaks the line/area and omits the marker, bar, and point \u2014 the honest reading, since the alternative silently plots a zero the data never gave. `\"connect\"` spans the hole in a line/area instead of breaking it (bars, markers, and points are still omitted). `\"zero\"` treats it as a real zero \u2014 the pre-Track-V behavior, kept as an escape hatch. Per-series override on `ChartSeries.missing`."
             }
           ],
           "cssParts": [

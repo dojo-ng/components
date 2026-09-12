@@ -159,7 +159,7 @@
 			tuned for a first-time visitor and it stays <code>noindex</code>. A separate, live, no-install,
 			multi-framework playground is planned (see the site plan) but not built yet; this page is not a
 			preview of it.</p>
-			<p class="header-stats"><!-- GENERATED:HEADER-STATS BEGIN -->41 demo sections across 8 groups, covering 69 of 110 shipped packages (see the coverage list at the foot of the page). Built from Dojo NG v0.1.0.<!-- GENERATED:HEADER-STATS END --></p>
+			<p class="header-stats"><!-- GENERATED:HEADER-STATS BEGIN -->41 demo sections across 8 groups, covering 69 of 112 shipped packages (see the coverage list at the foot of the page). Built from Dojo NG v0.1.0.<!-- GENERATED:HEADER-STATS END --></p>
 		</header>
 
 		<div class="toolbar">
@@ -685,6 +685,17 @@
 			<div style="width: 480px; --dj-chart-height: 280px"><dj-chart id="chart-interactive" type="line" markers legend-toggle brush category-key="month" label="Interactive: toggle the legend, drag the brush" show-grid y-label="USD (k)"></dj-chart></div>
 		</div>
 		<span id="chart-state" style="color: var(--dj-color-text-muted)">hover a category…</span>
+		<p style="color: var(--dj-color-text-muted); margin: 1.5rem 0 0.5rem">
+			Three chart-level toggles at once, on one small series with two deliberate holes (Wed, Sat) so <code>missing</code>'s three modes are directly comparable on the same data.
+		</p>
+		<div class="row" style="gap: var(--dj-spacing-small); align-items: center; margin-block-end: 0.5rem; flex-wrap: wrap">
+			<dj-button id="chart-yscale-toggle" kind="outlined">y-scale: linear</dj-button>
+			<dj-button id="chart-missing-toggle" kind="outlined">missing: gap</dj-button>
+			<dj-button id="chart-labels-toggle" kind="outlined">point-labels: off</dj-button>
+		</div>
+		<div style="width: 420px; --dj-chart-height: 240px">
+			<dj-chart id="chart-toggles" type="line" markers category-key="day" label="Toggle demo" show-grid y-label="Value"></dj-chart>
+		</div>
 		</section>
 <section id="sparklines" data-dj-packages="chart">
 		<h3>Sparklines</h3>
@@ -881,6 +892,7 @@
 						<li><a href="data-grid-demo.html">Data grid</a>: 1,000 rows virtualized with TanStack Table and TanStack Virtual.</li>
 						<li><a href="data-grid-plugins-demo.html">Data grid plugins</a>: formats, filtering, pagination, and export in one grid; a second grid demonstrates controlled inline editing.</li>
 						<li><a href="data-grid-print-demo.html">Data grid, print layout</a>: a 200-row grid formatted for printing.</li>
+						<li><a href="financial-demo.html">Financial chart</a>: 500 trading days of OHLC and volume, candlestick + volume + a 20-period SMA drawn entirely by <code>@dojo-ng/chart-financial</code> plugins, with style/log-scale toggles and the brush wired through to all three.</li>
 						<li><a href="media-demo.html">Media components</a>: dj-audio wraps the native audio element, and dj-video wraps video.js in light DOM.</li>
 						<li><a href="rich-text-demo.html">Rich-text plugins</a>: the default plugin set, plus headings, lists, and a custom strikethrough plugin built against the same plugin API.</li>
 						<li><a href="rich-text-print-demo.html">Rich text, print layout</a>: a long document formatted for printing.</li>
@@ -891,10 +903,11 @@
 
 				<!-- GENERATED:COVERAGE BEGIN -->
 				<details class="coverage">
-					<summary>69 of 110 shipped packages have a demo on this page (41 do not)</summary>
+					<summary>69 of 112 shipped packages have a demo on this page (43 do not)</summary>
 					<ul>
 					<li>audio</li>
 					<li>board</li>
+					<li>chart-financial</li>
 					<li>data-grid</li>
 					<li>data-grid-cell-components</li>
 					<li>data-grid-detail</li>
@@ -918,6 +931,7 @@
 					<li>rich-text</li>
 					<li>rich-text-autolink</li>
 					<li>rich-text-color</li>
+					<li>rich-text-criticmarkup</li>
 					<li>rich-text-embed</li>
 					<li>rich-text-emoji</li>
 					<li>rich-text-headings</li>
@@ -1227,6 +1241,38 @@
 				{ month: "May", revenue: 58, target: 55 }, { month: "Jun", revenue: 70, target: 60 },
 				{ month: "Jul", revenue: 66, target: 62 }, { month: "Aug", revenue: 74, target: 68 },
 			];
+
+			// y-scale / missing / point-labels toggles: one small series with two deliberate holes
+			// (Wed, Sat) so gap/connect/zero are directly comparable on the same data, and few
+			// enough points that point labels stay readable rather than overlapping.
+			const togglesChart = document.getElementById("chart-toggles");
+			togglesChart.series = [{ key: "value", label: "Value" }];
+			togglesChart.data = [
+				{ day: "Mon", value: 42 },
+				{ day: "Tue", value: 58 },
+				{ day: "Wed", value: null },
+				{ day: "Thu", value: 65 },
+				{ day: "Fri", value: 30 },
+				{ day: "Sat", value: null },
+				{ day: "Sun", value: 72 },
+			];
+			const yscaleToggle = document.getElementById("chart-yscale-toggle");
+			yscaleToggle.addEventListener("click", () => {
+				togglesChart.yScale = togglesChart.yScale === "log" ? "linear" : "log";
+				yscaleToggle.textContent = `y-scale: ${togglesChart.yScale}`;
+			});
+			const MISSING_MODES = ["gap", "connect", "zero"];
+			const missingToggle = document.getElementById("chart-missing-toggle");
+			missingToggle.addEventListener("click", () => {
+				const next = MISSING_MODES[(MISSING_MODES.indexOf(togglesChart.missing) + 1) % MISSING_MODES.length];
+				togglesChart.missing = next;
+				missingToggle.textContent = `missing: ${next}`;
+			});
+			const labelsToggle = document.getElementById("chart-labels-toggle");
+			labelsToggle.addEventListener("click", () => {
+				togglesChart.pointLabels = !togglesChart.pointLabels;
+				labelsToggle.textContent = `point-labels: ${togglesChart.pointLabels ? "on" : "off"}`;
+			});
 
 			// carousel: per-view toggle + slide-change log
 			const carousel = document.getElementById("carousel-demo");

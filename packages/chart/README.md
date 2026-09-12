@@ -307,6 +307,36 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
 </script>
 ```
 
+### Plugin seam: extending the plot with your own marks
+
+`plugins` (default `[]`) lets code outside the package add marks, panes, tooltip content, legend entries, and accessible-table columns, with the core knowing nothing about any of it — build one with `defineChartPlugin` (also exported from `@dojo-ng/chart`). A plugin can draw inside the plot (`renderUnder`/`renderOver`, sharing the same scales and coordinate space the core series use), reserve a strip below the plot for its own value scale (`panes`), widen the y-domain to fit what it draws (`domain`), replace the tooltip body for a category, and contribute `legendItems`/`tableRows` so anything it draws stays as accessible as a built-in mark. A chart with NO core `series` at all is a fully supported shape — a candlestick chart draws everything through plugins; see [`@dojo-ng/chart-financial`](../chart-financial/README.md) for real candlestick, volume, indicator, and crosshair plugins built this way. `renderer="canvas"` and plugins don't mix (one console warning, falls back to `svg`), since a plugin's marks are SVG.
+
+```html
+<div style="width: 480px; height: 280px">
+  <dj-chart id="pg" type="line" category-key="day" label="Reading with an alert threshold" show-grid y-label="Value"></dj-chart>
+</div>
+<script type="module">
+  import "@dojo-ng/chart";
+  import { defineChartPlugin } from "@dojo-ng/chart";
+  import { svg } from "lit";
+  const thresholdPlugin = (value, label) => defineChartPlugin({
+    name: "threshold",
+    domain: () => [value, value],
+    renderOver: (ctx) => svg`<line x1="0" y1="${ctx.scales.y(value)}" x2="${ctx.inner.width}" y2="${ctx.scales.y(value)}" stroke="var(--dj-color-danger-600, #dc2626)" stroke-dasharray="4 2"></line>`,
+    legendItems: () => [{ label, color: "var(--dj-color-danger-600, #dc2626)" }],
+  });
+  const pg = document.getElementById("pg");
+  pg.series = [{ key: "reading", label: "Reading" }];
+  pg.plugins = [thresholdPlugin(80, "Alert threshold")];
+  pg.data = [
+    { day: "Mon", reading: 42 },
+    { day: "Tue", reading: 65 },
+    { day: "Wed", reading: 88 },
+    { day: "Thu", reading: 71 },
+  ];
+</script>
+```
+
 ### Missing values: gap, connect, or zero
 
 A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. `missing` (default `"gap"`, per-series override on `ChartSeries.missing`) controls how it draws: `"gap"` breaks the line/area and omits the marker, bar, and point at that spot (the category's hit-band and tooltip row still work there, showing an em dash with a localized "no value" label — never a silent 0); `"connect"` drops the row before the line/area is drawn, so the line spans the hole with one continuous segment (bars, markers, and points are still omitted, since there is no value to place one at); `"zero"` treats it as a real zero, which is what every chart did before this property existed. **This is a behavior change: a chart whose data already carries nulls or undefined cells now draws a gap where it used to silently draw a zero.** If you were relying on the old arithmetic, set `missing="zero"` and nothing else changes.

@@ -472,9 +472,15 @@ export class DjChart extends DojoElement {
 
 	/** Whether the chart has a measured plot box and something to draw — shared by `render()` (the
 	 *  placeholder-vs-plot choice) and `toSvg()` (its own early-return: exporting before this is
-	 *  true would just serialize the `sr-only` placeholder, or find no `svg[part="plot"]` at all). */
+	 *  true would just serialize the `sr-only` placeholder, or find no `svg[part="plot"]` at all).
+	 *  `series.length > 0 || plugins.length > 0`: a plugin-only chart (a candlestick chart has no
+	 *  `series` of its own — @dojo-ng/chart-financial's own doc comment) still has something to
+	 *  draw. Before Track P this was just `series.length > 0`, correctly, since nothing else could
+	 *  put a mark on the plot; found stale by chart-requests-spec.md's F5, whose own fixture
+	 *  (candles + volume + an indicator, zero core series) rendered nothing but the `sr-only`
+	 *  placeholder until this changed. */
 	private get ready(): boolean {
-		return this.w > 0 && this.h > 0 && this.data.length > 0 && this.series.length > 0;
+		return this.w > 0 && this.h > 0 && this.data.length > 0 && (this.series.length > 0 || this.plugins.length > 0);
 	}
 
 	override render() {
@@ -483,7 +489,9 @@ export class DjChart extends DojoElement {
 		const centerForAria = this.type === "donut" ? this.centerLabel : undefined;
 		const accName = accessibleName(this.label, this.type, this.series, cats, centerForAria);
 		const ready = this.ready;
-		const showLegend = this.showLegend && this.series.length > 0;
+		// Same reasoning as `ready` above: a plugin-only chart still has legend entries to show
+		// (decision 13 — a data-drawing plugin contributes to the legend), even with no core series.
+		const showLegend = this.showLegend && (this.series.length > 0 || this.plugins.length > 0);
 		// The .plot box is ALWAYS this same node (only its contents vary), so the
 		// ResizeObserver target stays stable across renders. The accessible table is always
 		// present, so content is never missing before first paint.
@@ -721,16 +729,32 @@ export class DjChart extends DojoElement {
 		// already built (and .nice()'d) by buildScales against the core-only data; this reads that
 		// as the starting point, widens it with every plugin's own reach, then nices the COMBINED
 		// range exactly once — the single .nice() call that actually determines what renders.
+		// A chart with NO core series has nothing real in scales.y’s own domain yet — yDomain’s
+		// empty-series placeholder (`[0, 0]` linear, `[1, 10]` log) exists only so buildScales has
+		// something valid to build a scale against, not as a floor any plugin’s own data should be
+		// measured from. Folding it into the merge unconditionally pinned the axis at that
+		// placeholder forever (0 for a candlestick-only chart, however far above it the real price
+		// data sits) — found from a real candlestick+volume+indicator demo where every candle
+		// rendered as a near-flat hairline because the axis spanned $0-$170 instead of the actual
+		// ~$140-$170 the data lived in. With no core series, the merge starts from the first
+		// plugin’s own domain instead of the placeholder.
+		const hasCoreSeries = this.series.length > 0;
 		const [lo0, hi0] = scales.y.domain();
-		let lo = lo0;
-		let hi = hi0;
+		let lo: number | undefined = hasCoreSeries ? lo0 : undefined;
+		let hi: number | undefined = hasCoreSeries ? hi0 : undefined;
 		for (const plugin of this.plugins) {
 			const extra = plugin.domain?.(layoutCtx);
 			if (!extra) continue;
-			lo = Math.min(lo, extra[0]);
-			hi = Math.max(hi, extra[1]);
+			lo = lo === undefined ? extra[0] : Math.min(lo, extra[0]);
+			hi = hi === undefined ? extra[1] : Math.max(hi, extra[1]);
 		}
-		scales.y.domain([lo, hi]).range([innerH, 0]).nice();
+		if (lo !== undefined && hi !== undefined) {
+			scales.y.domain([lo, hi]).range([innerH, 0]).nice();
+		} else {
+			// No core series AND no plugin contributed a domain — nothing real to build against;
+			// keep the placeholder domain, just give it a valid pane-adjusted range.
+			scales.y.range([innerH, 0]).nice();
+		}
 
 		let offset = innerH + gap;
 		const panes = paneEntries.map(({ pane, plugin }) => {

@@ -148,6 +148,26 @@ describe("dj-chart", () => {
 		await assertNoViolations(el);
 	});
 
+	// Found via a real financial-demo.html session (2026-09-12), not reasoned out in advance: a
+	// chart with NO core series (a candlestick chart, decision 17) had its y-axis permanently
+	// pinned at the yDomain "no series" placeholder (0 for linear) even once a plugin's own domain()
+	// widened it — every candle rendered as a near-flat hairline because the axis spanned $0-$170
+	// instead of the actual ~$140-$170 the data lived in. Fixed in buildPluginLayer: with no core
+	// series, the merge starts from the plugin's own domain instead of folding in the placeholder.
+	it("plugin seam: a chart with no core series is NOT pinned at the yDomain placeholder", async () => {
+		const plugin = defineChartPlugin({ name: "price-plugin", domain: () => [140, 170] });
+		const el = await mount(chart({ series: [], plugins: [plugin] }));
+		await settleChart(el);
+
+		const svgEl = el.shadowRoot.querySelector('svg[part="plot"]');
+		const axisTicks = [...svgEl.querySelectorAll("g.axis text")]
+			.map((t) => Number(t.textContent))
+			.filter((n) => Number.isFinite(n));
+		assert(axisTicks.length > 0, "the axis renders numeric ticks at all");
+		assert(!axisTicks.includes(0), `axis must not include the placeholder's 0 floor (got ${axisTicks.join(", ")})`);
+		assert(Math.min(...axisTicks) > 100, `the tightest tick should sit close to the plugin's own [140,170] domain, not near 0 (got ${axisTicks.join(", ")})`);
+	});
+
 	// Track P (plugin seam, P4): a plugin's legend/table extra columns are real accessible content —
 	// confirmed here for both the header/cell association axe checks and, unlike unit tests, that the
 	// whole chart (plugin content included) stays clean end to end.

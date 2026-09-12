@@ -492,24 +492,30 @@ def parse_methods(s):
 
 
 # ---------------------------------------------------------------------------
-# Plugins  (data-grid-*/rich-text-* packages that build a grid/editor plugin,
+# Plugins  (data-grid-*/rich-text-*/chart-* packages that build a grid/editor/chart plugin,
 # as opposed to a custom element). Consumed by gencatalog.py.
 # ---------------------------------------------------------------------------
 
-_PLUGIN_FACTORY_CALL = re.compile(r"(?:=\s*|return\s+)define(DataGrid|RichText)Plugin\(")
+_PLUGIN_FACTORY_CALL = re.compile(r"(?:=\s*|return\s+)define(DataGrid|RichText|Chart)Plugin\(")
 _PLUGIN_FACTORY_FN = re.compile(
-    r"export function (\w+Plugin)\(([^)]*)\)\s*:\s*(?:DataGridPlugin|RichTextPlugin)\b"
+    r"export function (\w+Plugin)\(([^)]*)\)\s*:\s*(?:DataGridPlugin|RichTextPlugin|ChartPlugin)\b"
 )
 _PLUGIN_READY_CONST = re.compile(r"export const (\w+Plugin)\s*=")
+
+# Maps the define*Plugin() family name to the host package's short name (the name it appears
+# under in GROUPS/gendocs.py, e.g. "chart" for @dojo-ng/chart) — plugin_host()'s return value is
+# compared against that short name by gencatalog.py's plugins_for_host().
+_PLUGIN_FAMILY_HOST = {"DataGrid": "data-grid", "RichText": "rich-text", "Chart": "chart"}
 
 
 def plugin_host(pkg):
     """Which plugin family (if any) this package belongs to — decided by whether its source
-    actually CALLS `defineDataGridPlugin`/`defineRichTextPlugin` to build a plugin object, not by
-    a `data-grid-`/`rich-text-` name prefix. A package with an `export class Dj...` is a
-    component, never a plugin, even if a define*Plugin call appears somewhere in it (the host
-    packages themselves call it to build the plugin machinery). Returns "data-grid", "rich-text",
-    or None — this is the detection rule locked in by plugin-catalog-spec.md."""
+    actually CALLS `defineDataGridPlugin`/`defineRichTextPlugin`/`defineChartPlugin` to build a
+    plugin object, not by a `data-grid-`/`rich-text-`/`chart-` name prefix. A package with an
+    `export class Dj...` is a component, never a plugin, even if a define*Plugin call appears
+    somewhere in it (the host packages themselves call it to build the plugin machinery). Returns
+    the host package's short name (e.g. "data-grid", "rich-text", "chart") or None — this is the
+    detection rule locked in by plugin-catalog-spec.md."""
     found = None
     for f in sorted(glob.glob(f"{pkg_root(pkg)}/{pkg}/src/*.ts")):
         s = open(f).read()
@@ -517,27 +523,29 @@ def plugin_host(pkg):
             return None
         m = _PLUGIN_FACTORY_CALL.search(s)
         if m:
-            found = "data-grid" if m.group(1) == "DataGrid" else "rich-text"
+            found = _PLUGIN_FAMILY_HOST[m.group(1)]
     return found
 
 
 def plugin_api(pkg):
-    """(factory_name, factory_params, ready_names) for a plugin package.
-    factory_name/params: the exported function whose name ends in `Plugin` and returns a
-    `DataGridPlugin`/`RichTextPlugin` (`None, None` when the package only exports ready-made
-    instances with nothing left to configure — e.g. `rich-text-headings`). ready_names: exported
-    `const xPlugin = ...` instances, in source order — 0, 1, or more (e.g. `rich-text-color`
-    exports both `colorPlugin` and `backgroundColorPlugin` off one factory)."""
-    factory_name, factory_params, ready = None, None, []
+    """(factories, ready_names) for a plugin package.
+    factories: every exported function whose name ends in `Plugin` and returns a
+    `DataGridPlugin`/`RichTextPlugin`/`ChartPlugin`, as (name, params) pairs in source order
+    (file name order, then order within file) — empty when the package only exports ready-made
+    instances with nothing left to configure (e.g. `rich-text-headings`). Almost always 0 or 1
+    entry, but a package can ship several independently-composable factory plugins side by side
+    (e.g. `chart-financial`'s `candlestickPlugin` and `volumePlugin`), so this collects ALL of
+    them rather than stopping at the first match. ready_names: exported `const xPlugin = ...`
+    instances, in source order — 0, 1, or more (e.g. `rich-text-color` exports both `colorPlugin`
+    and `backgroundColorPlugin` off one factory)."""
+    factories, ready = [], []
     for f in sorted(glob.glob(f"{pkg_root(pkg)}/{pkg}/src/*.ts")):
         s = open(f).read()
-        if factory_name is None:
-            fm = _PLUGIN_FACTORY_FN.search(s)
-            if fm:
-                factory_name, factory_params = fm.group(1), fm.group(2)
+        for fm in _PLUGIN_FACTORY_FN.finditer(s):
+            factories.append((fm.group(1), fm.group(2)))
         for cm in _PLUGIN_READY_CONST.finditer(s):
             ready.append(cm.group(1))
-    return factory_name, factory_params, ready
+    return factories, ready
 
 
 def options_type_of(params):

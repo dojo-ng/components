@@ -90,7 +90,13 @@ export function baselineOf(scale: ValueScale): number {
  * the domain never gets the zero-folding a linear axis gets: it is exactly `[smallest positive
  * value, largest value]` per decision 2, because log has no position for zero to fold in AT. */
 function yDomain(data: ChartDatum[], series: ChartSeries[], stacked: boolean, defaultMissing: MissingMode = "zero", scaleKind: ScaleKind = "linear"): [number, number] {
-	if (!series.length) return [0, 0];
+	// No series to read a domain from — the same "nothing to compute from" case the isLog
+	// branch already handles 30 lines down (`lo`/`hi` staying undefined); routed through the
+	// same fallback rather than a bare [0, 0] so scaleLog().domain([0, 0]) — which is NaN
+	// everywhere, log has no position for zero — never gets built. Hit for real by a
+	// candlestick-only chart (`series: []`, all marks from a plugin) with `y-scale="log"`
+	// (chart-requests-spec.md F5).
+	if (!series.length) return scaleKind === "log" ? [1, 10] : [0, 0];
 	const modeOf = (s: ChartSeries) => s.missing ?? defaultMissing;
 	if (stacked) {
 		// Stacks always treat a missing series as absent, never as zero (decision 24): the row's

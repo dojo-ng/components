@@ -99,6 +99,7 @@ export const SUPPORT_PACKAGES = [
 	"context",
 	"i18n",
 	"store",
+	"chart-financial",
 	"rich-text-headings",
 	"rich-text-lists",
 	"rich-text-table",

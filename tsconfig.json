@@ -296,6 +296,9 @@
       "path": "packages/chart"
     },
     {
+      "path": "packages/chart-financial"
+    },
+    {
       "path": "packages/transition"
     },
     {

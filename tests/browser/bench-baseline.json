@@ -1,5 +1,8 @@
 {
   "chartRender": 231.40000000596046,
   "gridMount": 26.399999991059303,
-  "gridScroll": 268.20000000298023
+  "gridScroll": 268.20000000298023,
+  "financialChart250": 45,
+  "financialChart500": 60,
+  "financialChart2000": 195
 }

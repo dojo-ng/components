@@ -361,6 +361,21 @@ test("buildScales: y-scale='log' domain excludes zero and starts at the smallest
 	assert.equal(scales.y.domain()[1], 100, "the raw largest value (30) nices UP to the next decade");
 });
 
+// A candlestick-only chart (Track F: no core series at all, every mark drawn by a plugin) with
+// `y-scale="log"` — found while verifying chart-requests-spec.md's F5. `yDomain`'s "no series"
+// early return used to be a bare `[0, 0]` regardless of scale kind, so `scaleLog().domain([0,
+// 0]).nice()` got built — and a log scale has no position for 0, so EVERY call to it returns NaN
+// (confirmed directly against d3-scale, not assumed). Fixed by routing the empty-series case
+// through the same `isLog ? [1, 10] : [0, 0]` fallback the "no finite values" case 30 lines down
+// already used — the two are the same "nothing to build a domain from" situation.
+test("buildScales: an empty series array with y-scale='log' does not build a domain containing zero", () => {
+	const scales = buildScales([], [], "cat", "line", false, INNER_W, INNER_H, new Set(), "gap", "log");
+	assert.ok(isLogScale(scales.y));
+	const [lo, hi] = scales.y.domain();
+	assert.ok(lo > 0, `log domain must not include zero or negative; got ${lo}`);
+	assert.ok(Number.isFinite(scales.y(lo)) && Number.isFinite(scales.y(hi)), "the scale must not evaluate to NaN");
+});
+
 test("baselineOf: scale(0) on linear, the range floor on log", () => {
 	const linear = scaleLinear().domain([-10, 30]).range([INNER_H, 0]);
 	assert.ok(Math.abs(baselineOf(linear) - linear(0)) < 1e-9);

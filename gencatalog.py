@@ -146,28 +146,31 @@ def component_entries(pkg):
 def plugins_for_host(host_pkg):
     """Plugin packages that belong under `host_pkg`'s entry, in name order. Source-driven per
     `G.plugin_host` — a package qualifies because its code calls `defineDataGridPlugin`/
-    `defineRichTextPlugin`, never because of a `data-grid-`/`rich-text-` name prefix. This is
-    also why a lookalike like `rich-text-menu` (menu plumbing, no such call) or `dnd` (a generic
-    primitive, no host at all) never shows up here — see plugin-catalog-spec.md PC1."""
+    `defineRichTextPlugin`/`defineChartPlugin`, never because of a `data-grid-`/`rich-text-`/
+    `chart-` name prefix. This is also why a lookalike like `rich-text-menu` (menu plumbing, no
+    such call) or `dnd` (a generic primitive, no host at all) never shows up here — see
+    plugin-catalog-spec.md PC1."""
     return sorted(
         pkg for pkg in os.listdir(G.FOSS_ROOT)
         if has_pkg(pkg) and pkg != host_pkg and G.plugin_host(pkg) == host_pkg
     )
 
 
-def plugin_entry(pkg):
-    """A plugin's catalog entry — deliberately smaller than component_entry(): the package name,
-    the factory (or ready-made instance) and its options, a one-line "when to use it" (the first
-    sentence of its NOTES, never new prose), and its primary worked example."""
-    factory_name, factory_params, ready = G.plugin_api(pkg)
-    label = factory_name or (ready[0] if ready else pkg)
-    o = [f"#### `{label}` · `@dojo-ng/{pkg}`\n"]
+def plugin_entries(pkg):
+    """A plugin package's catalog entries — deliberately smaller than component_entry(): the
+    package name, each factory (or ready-made instance) and its options, a one-line "when to use
+    it" (the first sentence of its NOTES, never new prose), and the primary worked example.
+    Almost every plugin package exports exactly one factory, so this yields one entry — but a
+    package can ship several independently-composable factory plugins side by side (e.g.
+    `chart-financial`'s `candlestickPlugin` and `volumePlugin`, each pushed into the host's
+    `plugins` array on its own), so each factory gets its own heading rather than being merged
+    into one entry a search for either name might miss."""
+    factories, ready = G.plugin_api(pkg)
 
     note = NOTES.get(pkg, "")
-    if note:
-        o.append(G.md_safe(first_sentences(note, 2)) + "\n")
+    note_line = G.md_safe(first_sentences(note, 2)) + "\n" if note else None
 
-    if factory_name:
+    def options_block(factory_name, factory_params):
         opts_type = G.options_type_of(factory_params)
         fields = G.interface_fields(pkg, opts_type)
         if fields:
@@ -175,20 +178,52 @@ def plugin_entry(pkg):
             for f in fields:
                 sig = f"`{f['name']}{'?' if f['optional'] else ''}{f['params']}: {G.cell(f['type'])}`"
                 parts.append(f"{sig} ({f['description']})" if f["description"] else sig)
-            o.append(f"**Options:** {G.md_safe(', '.join(parts))}\n")
-        elif factory_params == "":
-            o.append("No options.\n")
-    if ready:
-        names = ", ".join(f"`{n}`" for n in ready)
-        if factory_name:
-            o.append(f"**Ready-made:** {names} — import directly to use with defaults; call `{factory_name}(options)` yourself to customize.\n")
-        else:
-            o.append(f"**Ready-made:** {names} — the only export; nothing to configure.\n")
+            return f"**Options:** {G.md_safe(', '.join(parts))}\n"
+        if factory_params == "":
+            return "No options.\n"
+        return None
 
+    entries = []
+    if factories:
+        for factory_name, factory_params in factories:
+            o = [f"#### `{factory_name}` · `@dojo-ng/{pkg}`\n"]
+            if note_line:
+                o.append(note_line)
+            opts = options_block(factory_name, factory_params)
+            if opts:
+                o.append(opts)
+            entries.append(o)
+        # Ready-made instances sit alongside the factories in one shared package (e.g.
+        # `rich-text-color`'s `colorPlugin`/`backgroundColorPlugin` off its one factory) — no
+        # current package combines multiple factories with ready-mades, so attaching the note to
+        # the last factory entry is the reasonable default rather than guessing which factory
+        # each ready instance belongs to.
+        if ready:
+            names = ", ".join(f"`{n}`" for n in ready)
+            last_name = factories[-1][0]
+            entries[-1].append(
+                f"**Ready-made:** {names} — import directly to use with defaults; call `{last_name}(options)` yourself to customize.\n"
+            )
+    elif ready:
+        o = [f"#### `{ready[0]}` · `@dojo-ng/{pkg}`\n"]
+        if note_line:
+            o.append(note_line)
+        names = ", ".join(f"`{n}`" for n in ready)
+        o.append(f"**Ready-made:** {names} — the only export; nothing to configure.\n")
+        entries.append(o)
+    else:
+        o = [f"#### `{pkg}` · `@dojo-ng/{pkg}`\n"]
+        if note_line:
+            o.append(note_line)
+        entries.append(o)
+
+    # The primary worked example documents the package as a whole, so it's attached only to the
+    # first entry — same reasoning as component_entries() not repeating an example per class.
     code = example_code(pkg)
     if code:
-        o.append("```html\n" + code + "\n```\n")
-    return "\n".join(o)
+        entries[0].append("```html\n" + code + "\n```\n")
+
+    return ["\n".join(o) for o in entries]
 
 
 def main():
@@ -241,7 +276,7 @@ def main():
                 body.append(f"**Plugins for `<{tag}>`** — pushed via the `plugins` property (JavaScript only).\n")
                 for ppkg in plugin_pkgs:
                     seen_plugins.add(ppkg)
-                    body.append(plugin_entry(ppkg))
+                    body.extend(plugin_entries(ppkg))
         if body:
             o.append(f"\n## {group}\n")
             o.extend(body)

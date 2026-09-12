@@ -99,6 +99,19 @@
 	--dj-chart-7: #db2777;
 	--dj-chart-8: #65a30d;
 
+	/* Financial chart tokens (Track F/L, @dojo-ng/chart-financial). Up/down chain to the
+	   success/danger semantic roles rather than a standalone hex, so retuning success/danger
+	   retunes candlesticks and volume bars for free. Crosshair chains to the muted-text role — a
+	   neutral guide, not a brand color. Pane gap is spacing, not a color, so it carries one value
+	   rather than varying per theme (matching the spacing-scale tokens above, which don't either).
+	   OS forced-colors is handled inside the component's own marks (shape/fill-pattern, not these
+	   tokens) since a page-level sheet can't reach inside a shadow root — see dj-chart-financial's
+	   own note on this, the same reasoning the forced-colors block below already documents. */
+	--dj-chart-up: var(--dj-color-success-600);
+	--dj-chart-down: var(--dj-color-danger-600);
+	--dj-chart-crosshair: var(--dj-color-text-muted);
+	--dj-chart-pane-gap: 8px;
+
 	/* Sizing */
 	--dj-input-height-small: 1.75rem;
 	--dj-input-height-medium: 2.5rem;
@@ -164,6 +177,10 @@
 	--dj-color-background: var(--dj-color-neutral-0);
 	--dj-color-border: var(--dj-color-neutral-300);
 	--dj-overlay-background-color: rgb(0 0 0 / 0.6);
+
+	--dj-chart-up: var(--dj-color-success-600);
+	--dj-chart-down: var(--dj-color-danger-600);
+	--dj-chart-crosshair: var(--dj-color-text-muted);
 }
 
 /* Follow the OS when no explicit theme is chosen. */
@@ -185,6 +202,12 @@
 		--dj-color-primary-500: #60a5fa;
 		--dj-color-primary-600: #3b82f6;
 		--dj-color-primary-700: #93c5fd;
+		/* --dj-color-success-600 was missing here (present in the explicit [data-dj-theme="dark"]
+		   block above, line ~171, but never mirrored into the OS-driven fallback) — found while
+		   wiring --dj-chart-up through the success role for OS-dark; added rather than left silent,
+		   since a token this block otherwise omits would leave --dj-chart-up on its LIGHT value for
+		   anyone following the OS instead of setting data-dj-theme explicitly. */
+		--dj-color-success-600: #22c55e;
 		--dj-color-danger-600: #f87171;
 		--dj-chart-1: #60a5fa;
 		--dj-chart-2: #4ade80;
@@ -194,6 +217,9 @@
 		--dj-chart-6: #22d3ee;
 		--dj-chart-7: #f472b6;
 		--dj-chart-8: #a3e635;
+		--dj-chart-up: var(--dj-color-success-600);
+		--dj-chart-down: var(--dj-color-danger-600);
+		--dj-chart-crosshair: var(--dj-color-text-muted);
 		--dj-overlay-background-color: rgb(0 0 0 / 0.6);
 	}
 }
@@ -243,6 +269,10 @@
 	--dj-icon-color: currentColor;
 	--dj-overlay-background-color: rgb(0 0 0 / 0.7);
 
+	--dj-chart-up: var(--dj-color-success-600);
+	--dj-chart-down: var(--dj-color-danger-600);
+	--dj-chart-crosshair: var(--dj-color-text-muted);
+
 	--dj-input-border-width: 2px;
 	--dj-focus-ring-color: #000000;
 	--dj-focus-ring: 3px solid #000000;
@@ -254,7 +284,12 @@
    focus-ring token to the system highlight so every outline-based ring stays visible; the
    scrim becomes opaque so dialogs/popups read as layered. Per-component shadow styles add
    the rest (outline rings where we used box-shadow, borders for elevation, system colors for
-   checked/selected state) since a page-level sheet can't reach inside shadow roots. */
+   checked/selected state) since a page-level sheet can't reach inside shadow roots. This is
+   also why up/down candlestick and volume marks aren't touched here: @dojo-ng/chart-financial's
+   own SVG marks (rendered into dj-chart's shadow root by the plugin seam) carry their own
+   forced-colors rule distinguishing up/down by shape (hollow vs. filled), since forced-colors
+   would otherwise flatten --dj-chart-up/--dj-chart-down to the same system color regardless of
+   what they resolve to here — see candlestick.ts/volume.ts. */
 @media (forced-colors: active) {
 	:root {
 		--dj-focus-ring-color: Highlight;

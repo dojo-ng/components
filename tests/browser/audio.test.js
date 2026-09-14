@@ -30,12 +30,12 @@ describe("dj-audio", () => {
 		media.dispatchEvent(new Event("play"));
 		await el.updateComplete;
 		assertEqual(plays, 1, "a media play event emits dj-play");
-		assertEqual(el.shadowRoot.querySelector('[part="play"]').getAttribute("title"), "Pause", "the button now offers Pause");
+		assertEqual(el.shadowRoot.querySelector('[part="play"] dj-icon').getAttribute("alt-text"), "Pause", "the button now offers Pause");
 
 		media.dispatchEvent(new Event("pause"));
 		await el.updateComplete;
 		assertEqual(pauses, 1, "a media pause event emits dj-pause");
-		assertEqual(el.shadowRoot.querySelector('[part="play"]').getAttribute("title"), "Play", "the button offers Play again");
+		assertEqual(el.shadowRoot.querySelector('[part="play"] dj-icon').getAttribute("alt-text"), "Play", "the button offers Play again");
 
 		media.dispatchEvent(new Event("ended"));
 		assertEqual(ended, 1, "a media ended event emits dj-ended");

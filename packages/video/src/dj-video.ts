@@ -100,6 +100,10 @@ export class DjVideo extends DojoElement {
 		const player = await this.createPlayer(el, this.#options());
 		this.#player = player;
 		this.#initializing = false;
+		// video.js sets its own player-root aria-label ("Video Player"/"Audio Player") during
+		// createEl(), unconditionally — override it here so the `label` prop actually reaches the
+		// landmark a screen reader's rotor shows, not just the inner <video> element.
+		if (this.label) player.el().setAttribute("aria-label", this.label);
 		this.#wire(player);
 	}
 

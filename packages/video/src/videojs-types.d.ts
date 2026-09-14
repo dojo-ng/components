@@ -32,6 +32,7 @@ declare module "video.js" {
 		pause(): void;
 		currentTime(): number;
 		duration(): number;
+		el(): Element;
 	}
 
 	const videojs: (el: HTMLElement, options?: VideoJsOptions) => VideoJsPlayer;

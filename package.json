@@ -35,6 +35,7 @@
     "test:generators": "python3 -m unittest discover -s tests/generators -p \"test_*.py\"",
     "test:unit": "vitest run",
     "test:browser": "web-test-runner",
+    "test:video:real": "DJ_REAL_VIDEO=1 web-test-runner --files tests/browser/video-real.test.js",
     "build:coverage": "tsc -b . --sourceMap --force",
     "build:restore": "tsc -b . --force",
     "test:unit:coverage": "vitest run --no-cache --coverage --coverage.provider=v8 --coverage.reporter=lcovonly --coverage.reportsDirectory=coverage/unit --coverage.all=false",

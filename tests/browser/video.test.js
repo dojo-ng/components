@@ -10,7 +10,7 @@ class StubVideo extends DjVideo {
 	createPlayer(el, options) {
 		const handlers = {};
 		const player = {
-			el, options, played: 0, paused: 0,
+			options, played: 0, paused: 0,
 			play() { this.played++; return Promise.resolve(); },
 			pause() { this.paused++; },
 			dispose() {},
@@ -20,6 +20,7 @@ class StubVideo extends DjVideo {
 			duration() { return 10; },
 			src() {},
 			poster() {},
+			el() { return el; },
 		};
 		this.stub = player;
 		return player;

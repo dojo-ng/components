@@ -126,7 +126,6 @@ export class DjAudio extends DojoElement {
 					part="play"
 					class="play"
 					kind="text"
-					title=${label}
 					@click=${this.#onToggle}
 				>
 					<dj-icon slot="icon" alt-text=${label}>${this.playing ? PAUSE_ICON : PLAY_ICON}</dj-icon>

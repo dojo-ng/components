@@ -99,7 +99,7 @@ const RADIAL_LABEL_PAD = 16;
  */
 export class DjChart extends DojoElement {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.0";
+	static override version = "0.2.0";
 
 	@property({ attribute: false }) data: ChartDatum[] = [];
 	@property({ attribute: false }) series: ChartSeries[] = [];

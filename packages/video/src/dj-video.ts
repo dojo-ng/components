@@ -25,7 +25,7 @@ import type { VideoJsOptions, VideoJsPlayer, VideoJsSource } from "video.js";
  * (`muted`/`autoplay`/`loop`/`tracks`/`label`) recreate it (dispose → createPlayer).
  */
 export class DjVideo extends DojoElement {
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 
 	/** Ordered source list (`{ src, type }`). Takes precedence over `src`. */
 	@property({ attribute: false }) sources?: VideoJsSource[];

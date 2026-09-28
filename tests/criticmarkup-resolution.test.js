@@ -373,6 +373,53 @@ test("resolving a substitution pair emits ONE dj-criticmarkup-change with kind '
 	assert.deepEqual(events, [{ kind: "substitution", action: "accept" }]);
 });
 
+// --- unwanted scroll on resolve (found against NovelMaker's Edits drawer, 2026-09-27) -------------
+//
+// "Selecting an action in the edits pane causes the rich-text window to scroll to the last cursor
+// position rather than staying where the last edit was" — Lexical's own reconciler
+// (`updateDOMSelection` in the vendored `Lexical.dev.mjs`, read directly) scrolls a COLLAPSED
+// selection into view whenever an update leaves the editor root focused and the browser's native
+// selection has drifted from Lexical's own internal one, which is exactly the shape of a
+// button-click-initiated resolve: the native selection is wherever the mouse last did something
+// selectable (a toolbar or drawer button), while Lexical's own last-known selection is still
+// sitting wherever the author was last actually typing. `resolveMark`/`resolveAllMarks` now tag
+// every update with the literal `"skip-scroll-into-view"` string Lexical's own reconciler checks
+// (not exported as a named constant anywhere in its public API) specifically to suppress this.
+// Verified here by reading the update's own `tags` off `registerUpdateListener` — the same
+// mechanism the vendored reconciler itself consults — rather than trying to reproduce real pixel
+// scrolling in a headless DOM that has none.
+
+function updateTagsFor(run) {
+	const editor = editorWith();
+	importValue(editor, "{++ins++}");
+	let tags = null;
+	editor.registerUpdateListener(({ tags: t }) => {
+		if (tags === null) tags = t; // the first (and only) update this test triggers
+	});
+	run(editor);
+	return tags;
+}
+
+test("acceptMark/declineMark tag their update skip-scroll-into-view", () => {
+	for (const fn of [acceptMark, declineMark]) {
+		const tags = updateTagsFor((editor) => fn(editor, findMarkNode(editor, $isInsertionNode)));
+		assert.ok(tags.has("skip-scroll-into-view"), `${fn.name} should tag its update skip-scroll-into-view`);
+	}
+});
+
+test("acceptAllMarks/declineAllMarks tag their update skip-scroll-into-view", () => {
+	for (const fn of [acceptAllMarks, declineAllMarks]) {
+		const tags = updateTagsFor((editor) => fn(editor));
+		assert.ok(tags.has("skip-scroll-into-view"), `${fn.name} should tag its update skip-scroll-into-view`);
+	}
+});
+
+test("resolving a mark still tags SKIP_TAG alongside skip-scroll-into-view — suggestion mode's own diff-and-wrap listener must still be skipped", () => {
+	const tags = updateTagsFor((editor) => acceptMark(editor, findMarkNode(editor, $isInsertionNode)));
+	assert.ok(tags.has("dj-criticmarkup-suggestion"), "SKIP_TAG must still be present");
+	assert.ok(tags.has("skip-scroll-into-view"), "the new tag must not have replaced it");
+});
+
 // --- T2: acceptAllMarks / declineAllMarks ---------------------------------------------------------
 
 test("acceptAllMarks / declineAllMarks match grammar.acceptAll/declineAll on the same starting value", () => {

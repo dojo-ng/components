@@ -342,7 +342,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 		return html`
 			<style>
 				dj-rich-text { display: block; font-family: var(--dj-font-family, inherit); }
-				dj-rich-text .dj-rt-toolbar { display: flex; align-items: center; gap: .15rem; padding: .25rem; border: 1px solid var(--dj-color-border, #d1d5db); border-bottom: none; border-radius: var(--dj-input-border-radius-medium, .25rem) var(--dj-input-border-radius-medium, .25rem) 0 0; background: var(--dj-color-neutral-50, #f9fafb); }
+				dj-rich-text .dj-rt-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .15rem; padding: .25rem; border: 1px solid var(--dj-color-border, #d1d5db); border-bottom: none; border-radius: var(--dj-input-border-radius-medium, .25rem) var(--dj-input-border-radius-medium, .25rem) 0 0; background: var(--dj-color-neutral-50, #f9fafb); }
 				dj-rich-text .dj-rt-sep { align-self: stretch; width: 1px; margin: .15rem .25rem; background: var(--dj-color-border, #d1d5db); }
 				dj-rich-text .dj-rt-editable { min-height: 8rem; padding: var(--dj-spacing-small, .75rem); border: 1px solid var(--dj-color-border, #d1d5db); border-radius: 0 0 var(--dj-input-border-radius-medium, .25rem) var(--dj-input-border-radius-medium, .25rem); outline: none; background: var(--dj-color-background, #fff); color: var(--dj-color-text, #1f2937); }
 				dj-rich-text .dj-rt-editable:focus { border-color: var(--dj-color-primary-600, #2563eb); box-shadow: 0 0 0 1px var(--dj-color-primary-600, #2563eb); }

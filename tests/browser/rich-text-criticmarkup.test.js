@@ -90,6 +90,41 @@ describe("rich-text-criticmarkup: the comment popup, keyboard and axe", () => {
 		assert(el.value.includes("changed note"), `the edit should be saved into value (got ${JSON.stringify(el.value)})`);
 	});
 
+	// Q1.7 of NovelMaker's search-and-edits-spec.md (2026-09-27): the six toolbar items went from
+	// icon+aria-label to visible text after THIS test file's own axe run found the icon shape
+	// unnamed; a real consumer then found visible text overflows a normal-width toolbar. This
+	// checks the icon-plus-hidden-text replacement actually clears the same bar the visible-text
+	// swap was for, rather than assuming the reasoning in the code comment is enough.
+	it("the toolbar's icon buttons each still have a real accessible name, and the toolbar itself is axe-clean", async () => {
+		const el = await mountWithComment();
+		const buttons = [...el.querySelectorAll(".dj-rt-toolbar dj-button")];
+		assert(buttons.length >= 6, `expected the six criticmarkup toolbar buttons, found ${buttons.length}`);
+		await assertNoViolations(el);
+	});
+
+	// NovelMaker's Q1.7 pass (2026-09-27) reported clicking "Suggest edits" and seeing no visible
+	// change — traced to `isSuggestionMode` living in a WeakMap entirely outside Lexical's own
+	// editor state, so neither of the core's two built-in re-render triggers (an editor update, a
+	// selection change) ever fires from this click; a manual pass that clicked the button and then
+	// did something else right after read the SECOND action's own incidental re-render as proof the
+	// first one worked — exactly the shape this test is written to rule out, by checking the DOM
+	// immediately after the click and NOTHING else.
+	it("the suggest-edits button's own aria-pressed and kind flip on the SAME click that toggles the mode, with no other action in between", async () => {
+		const el = await mountWithComment();
+		const button = [...el.querySelectorAll(".dj-rt-toolbar dj-button")].find(
+			(b) => b.getAttribute("title") === "Suggest edits",
+		);
+		assert(button, "expected a Suggest edits toolbar button");
+		assertEqual(button.getAttribute("aria-pressed"), "false", "starts inactive");
+		assertEqual(button.getAttribute("kind"), "text", "starts as a plain text button");
+
+		button.shadowRoot.querySelector("button").click();
+		await settleFrames();
+
+		assertEqual(button.getAttribute("aria-pressed"), "true", "the click's own render should flip this");
+		assertEqual(button.getAttribute("kind"), "outlined", "and this — no second action should be needed");
+	});
+
 	it("has no serious or critical accessibility violations with the comment popup open", async () => {
 		const el = await mountWithComment();
 		const button = el.querySelector(".dj-cm-comment-button");

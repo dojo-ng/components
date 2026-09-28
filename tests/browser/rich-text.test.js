@@ -5,8 +5,9 @@
 import { sendKeys } from "@web/test-runner-commands";
 import { mount, cleanup, make, assert, assertEqual, settleFrames } from "./helpers.js";
 import { assertNoViolations } from "./a11y.js";
-import { sanitizeHtml } from "../../packages/rich-text/dist/index.js";
+import { sanitizeHtml, defaultPlugins } from "../../packages/rich-text/dist/index.js";
 import { createMentionsPlugin } from "../../packages/rich-text-mentions/dist/index.js";
+import { criticMarkupPlugin } from "../../packages/rich-text-criticmarkup/dist/index.js";
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -191,6 +192,31 @@ describe("dj-rich-text", () => {
 			text.trim(),
 			"Hello world",
 			"each keystroke lands after the last; re-applying value on every change would reset the caret",
+		);
+	});
+
+	// A real consumer (NovelMaker) hosts the editor in a column narrower than its own toolbar
+	// needs once several plugins each contribute a few items — `--nm-measure`'s 38rem reading
+	// column plus the criticmarkup plugin's six items ran the last two off-screen with no way to
+	// reach them short of widening the whole browser window. The toolbar itself has no width of
+	// its own to change; what it owns is whether it clips (the bug) or wraps (the fix).
+	it("the toolbar wraps onto more than one line rather than overflowing a narrow host", async () => {
+		const el = await mount(
+			make("dj-rich-text", { label: "Body", plugins: [...defaultPlugins, criticMarkupPlugin] }),
+		);
+		el.style.display = "block";
+		el.style.width = "300px";
+		await el.updateComplete;
+		await settleFrames();
+
+		const toolbar = el.querySelector(".dj-rt-toolbar");
+		const items = [...toolbar.children].filter((c) => c.getBoundingClientRect().width > 0);
+		assert(items.length > 4, "expected several toolbar items to test wrapping with");
+		const tops = new Set(items.map((c) => Math.round(c.getBoundingClientRect().top)));
+		assert(tops.size > 1, "a toolbar this narrow should wrap onto more than one row, not clip");
+		assert(
+			toolbar.scrollWidth <= toolbar.clientWidth + 1,
+			`the toolbar itself should not need horizontal scroll once it can wrap (scrollWidth ${toolbar.scrollWidth} vs clientWidth ${toolbar.clientWidth})`,
 		);
 	});
 });

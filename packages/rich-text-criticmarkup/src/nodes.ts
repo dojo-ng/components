@@ -274,13 +274,42 @@ export class CommentNode extends DecoratorNode<HTMLElement> {
 		return { element: el };
 	}
 
-	/** The button the container mounts; accessible name is the comment text itself. */
+	/**
+	 * The button `createDOM()`'s container span mounts; accessible name is the comment text
+	 * itself, carried as `aria-label` rather than as DOM content. It was a text node once
+	 * (`button.textContent = this.__text`, no other child) — the button is a fixed `1.1em`
+	 * icon (its glyph comes from `::before` in `CONTENT_CSS`) with no `overflow: hidden`, so a
+	 * raw text node long enough to exceed that width wrapped inside the flex box one-or-two
+	 * characters per line, stacking real (if visually blank, white-on-blue) layout geometry
+	 * down the column. A consumer building a `Range` over this node's rendered element —
+	 * NovelMaker's `rangeForMark`, `range.selectNodeContents(editor.getElementByKey(key))`,
+	 * for its reveal-on-scroll highlight — measured that geometry instead of the icon: 47
+	 * client rects for a ~54-character comment, one wrapped line per character, and a
+	 * `getBoundingClientRect()` union hundreds of pixels tall and off by hundreds of pixels
+	 * vertically from the icon's own position (confirmed live: a bare comment's reveal in
+	 * NovelMaker's Edits drawer was landing ~230px off from the icon, well over half the
+	 * visible editor height, before this fix). A `.dj-cm-sr-only` child — the pattern
+	 * `iconLabel()` above uses for `dj-button`'s shadow-DOM buttons — only trades that for a
+	 * smaller but still-wrong box: `clip: rect(0,0,0,0)` hides it from *paint*, not from
+	 * layout, and its `white-space: nowrap` keeps the text on one line but at its own full
+	 * natural width, so a Range over it still measures a stray sliver next to the icon.
+	 * `aria-label` gives the button its accessible name with no DOM content at all, so
+	 * `getElementByKey(key)`'s only child (this button) is itself a childless leaf — verified
+	 * live that `range.selectNodeContents(theContainerSpan)` then reports exactly ONE rect,
+	 * equal to `button.getBoundingClientRect()`: browsers fall back to an empty element's own
+	 * border box as the Range's content when there's nothing inside it left to fragment into
+	 * text runs. This button is a plain native `<button>`, not a custom-element host —
+	 * `iconLabel()`'s own docstring is about `aria-prohibited-attr`/`button-name` axe failures
+	 * specific to a role-less custom-element host and a shadow button whose only slotted
+	 * content was an `aria-hidden` icon; neither applies to a real `<button>`, which has an
+	 * implicit role and where `aria-label` is standard and axe-clean.
+	 */
 	override decorate(_editor: LexicalEditor): HTMLElement {
-		if (!this.#el || this.#el.textContent !== this.__text) {
+		if (!this.#el || this.#el.getAttribute("aria-label") !== this.__text) {
 			const button = document.createElement("button");
 			button.type = "button";
 			button.className = "dj-cm-comment-button";
-			button.textContent = this.__text;
+			button.setAttribute("aria-label", this.__text);
 			this.#el = button;
 		}
 		return this.#el;
@@ -383,15 +412,39 @@ export function $isCriticMark(
  * so every mark stays distinguishable when backgrounds flatten. Injected once via
  * `ensureEditorStyles("dj-rich-text-criticmarkup", CONTENT_CSS)`, called from the plugin's own
  * `setup()` (Track T), not from this module — node files don't touch the DOM at import time.
+ *
+ * **Dark-mode fix, found in a real consumer's browser pass (NovelMaker, Q1.7 of its
+ * `search-and-edits-spec.md`, 2026-09-27) and worth stating so it is not reintroduced.** The first
+ * version of this CSS painted insertion/deletion/highlight backgrounds with `success-100`/
+ * `danger-100`/`warning-100` — pale tints that `theme.css` only ever defines under `:root` and
+ * never redefines for `.dark`/`prefers-color-scheme: dark`, so in dark mode the background stayed
+ * pale while the ambient text color (`color: inherit`, or no override at all) correctly turned
+ * near-white — pale-on-near-white, unreadable. This is the exact failure a consumer of this
+ * package (NovelMaker) had already hit and fixed once for its own now-retired local plugin: "a pale
+ * mint or pale yellow background stays pale while the text drawn on it turns near-white ... backwards
+ * contrast." The same version also leaned on FOUR bare tokens — `--dj-color-success`,
+ * `--dj-color-danger`, `--dj-color-primary`, `--dj-color-on-primary` — that this package's own
+ * `theme.css` never defines at all (only the numbered shades exist), so every `var(--dj-color-X,
+ * fallback)` using them silently and permanently resolved to its hardcoded fallback, theme or no
+ * theme — invisible unless someone actually diffed light against dark, which is exactly how this
+ * shipped unnoticed. **The fix, and the rule for the next person editing this block: use a token
+ * that is redefined on BOTH sides of the `.dark` block in `theme.css`, never a bare
+ * `--dj-color-<hue>` with no shade number (none exist), and never a `-100` tint alone for
+ * anything a reader has to read text through** — `neutral-100`/`-200` (confirmed to invert:
+ * `#f3f4f6`/`#e5e7eb` light, `#1f2937`/`#374151` dark) carry the backgrounds now, and the `-600`
+ * semantic shades (all three of `success`/`warning`/`danger` are redefined for dark, confirmed by
+ * reading `theme.css` directly rather than assumed) carry the decorative accent color, which only
+ * has to read as a thin line, not as body text.
  */
 export const CONTENT_CSS = `
-dj-rich-text ins.dj-cm-insertion { text-decoration: underline; text-decoration-thickness: 2px; text-decoration-color: var(--dj-color-success, #16a34a); text-decoration-skip-ink: none; background: var(--dj-color-success-100, #dcfce7); }
-dj-rich-text del.dj-cm-deletion { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--dj-color-danger, #dc2626); background: var(--dj-color-danger-100, #fee2e2); }
-dj-rich-text mark.dj-cm-highlight { background: var(--dj-color-warning-100, #fef3c7); color: inherit; }
-dj-rich-text mark.dj-cm-highlight.dj-cm-has-comment { box-shadow: inset 0 -2px 0 var(--dj-color-warning, #d97706); }
-dj-rich-text .dj-cm-comment-button { display: inline-flex; align-items: center; justify-content: center; width: 1.1em; height: 1.1em; padding: 0; border: none; border-radius: 999px; background: var(--dj-color-primary, #2563eb); color: var(--dj-color-on-primary, #fff); font-size: .75em; line-height: 1; cursor: pointer; }
+dj-rich-text ins.dj-cm-insertion { text-decoration: underline; text-decoration-thickness: 2px; text-decoration-color: var(--dj-color-success-600, #16a34a); text-decoration-skip-ink: none; background: var(--dj-color-neutral-100, #f3f4f6); }
+dj-rich-text del.dj-cm-deletion { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--dj-color-danger-600, #dc2626); background: var(--dj-color-neutral-100, #f3f4f6); }
+dj-rich-text mark.dj-cm-highlight { background: var(--dj-color-neutral-200, #e5e7eb); color: inherit; }
+dj-rich-text mark.dj-cm-highlight.dj-cm-has-comment { box-shadow: inset 0 -2px 0 var(--dj-color-warning-600, #ca8a04); }
+dj-rich-text .dj-cm-comment-button { display: inline-flex; align-items: center; justify-content: center; width: 1.1em; height: 1.1em; padding: 0; border: none; border-radius: 999px; background: var(--dj-color-primary-600, #2563eb); color: var(--dj-color-neutral-0, #fff); font-size: .75em; line-height: 1; cursor: pointer; }
 dj-rich-text .dj-cm-comment-button::before { content: "\\1F4AC"; }
-dj-rich-text .dj-cm-break-pill { display: inline-block; padding: 0 .3em; border-radius: 3px; background: var(--dj-color-primary-100, #dbeafe); color: var(--dj-color-primary, #2563eb); font-size: .85em; }
+dj-rich-text .dj-cm-break-pill { display: inline-block; padding: 0 .3em; border-radius: 3px; background: var(--dj-color-primary-100, #dbeafe); color: var(--dj-color-primary-700, #1d4ed8); font-size: .85em; }
+.dj-cm-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (forced-colors: active) {
 	dj-rich-text ins.dj-cm-insertion, dj-rich-text del.dj-cm-deletion { background: transparent; text-decoration-color: CanvasText; }
 	dj-rich-text mark.dj-cm-highlight { background: Mark; color: MarkText; border: 1px solid CanvasText; }

@@ -76,6 +76,25 @@ export function declineAllMarks(editor: LexicalEditor): void {
 	resolveAllMarks(editor, "old");
 }
 
+// Lexical's own reconciler (`updateDOMSelection`, read directly from the vendored
+// `Lexical.dev.mjs` rather than assumed) scrolls a COLLAPSED selection into view
+// whenever an update leaves the editor root focused and the browser's own native
+// selection no longer matches Lexical's internal one — which is exactly the shape
+// every caller here has: a toolbar or drawer BUTTON click, never a caret move, so
+// the native selection has almost always drifted to wherever the mouse last did
+// something selectable, while Lexical's own last-known selection is still sitting
+// wherever the author was last actually typing. Left untagged, resolving a mark
+// pulls the view back to THAT old typing position instead of staying on the mark
+// just resolved — reported against NovelMaker's Edits drawer 2026-09-27 ("hard to
+// double-check a change after accepting it"), but the mechanism is Lexical's own
+// reconciliation, not anything the drawer does, so every caller of `acceptMark`/
+// `declineMark`/`acceptAllMarks`/`declineAllMarks` — the toolbar's own accept/
+// reject buttons included — had the identical risk. `"skip-scroll-into-view"` is
+// not exported as a named constant anywhere in Lexical's own public API, but it is
+// the literal tag string its reconciler checks (`Lexical.dev.mjs`'s own
+// `updateDOMSelection`), matching how Lexical's own examples use it directly.
+const SKIP_SCROLL_TAG = "skip-scroll-into-view";
+
 function resolveMark(editor: LexicalEditor, node: LexicalNode, side: "new" | "old"): void {
 	editor.update(
 		() => {
@@ -87,8 +106,9 @@ function resolveMark(editor: LexicalEditor, node: LexicalNode, side: "new" | "ol
 		// applied synchronously, not silently batched to a later microtask. Tagged with SKIP_TAG so
 		// suggestion mode's own diff-and-wrap listener, if still on, does not see the flattened text
 		// this resolution just changed (an accepted deletion, a declined insertion, a split/merge just
-		// made real) and re-wrap it right back up as a brand-new suggestion.
-		{ discrete: true, tag: SKIP_TAG },
+		// made real) and re-wrap it right back up as a brand-new suggestion. SKIP_SCROLL_TAG is the
+		// unwanted-scroll fix above.
+		{ discrete: true, tag: [SKIP_TAG, SKIP_SCROLL_TAG] },
 	);
 }
 
@@ -102,7 +122,7 @@ function resolveAllMarks(editor: LexicalEditor, side: "new" | "old"): void {
 				resolveOne(editor, node, side, resolved);
 			}
 		},
-		{ discrete: true, tag: SKIP_TAG },
+		{ discrete: true, tag: [SKIP_TAG, SKIP_SCROLL_TAG] },
 	);
 }
 

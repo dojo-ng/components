@@ -12,7 +12,7 @@
 
 import { $getRoot, $isElementNode, $isTextNode, type LexicalEditor, type LexicalNode } from "lexical";
 import { $convertFromMarkdownString, $convertToMarkdownString } from "@lexical/markdown";
-import { parseMarks, tokenizeBlockSpanning, maskNested, unmaskNested, PARAGRAPH_TOKEN } from "./grammar.js";
+import { parseMarks, tokenizeBlockSpanning, maskNested, unmaskNested, unmaskInlineFormat, PARAGRAPH_TOKEN } from "./grammar.js";
 import { criticMarkupTransformers } from "./transformers.js";
 
 export interface CriticMarkupRefusedDetail {
@@ -78,7 +78,7 @@ function refusalsIn(text: string): CriticMarkupRefusedDetail[] {
 function unmaskTextNodes(node: LexicalNode): void {
 	if ($isTextNode(node)) {
 		const current = node.getTextContent();
-		const unmasked = unmaskNested(current);
+		const unmasked = unmaskInlineFormat(unmaskNested(current));
 		if (unmasked !== current) node.setTextContent(unmasked);
 		return;
 	}

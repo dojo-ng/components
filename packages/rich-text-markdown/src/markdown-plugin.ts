@@ -31,6 +31,15 @@ export interface MarkdownPluginOptions {
 	shortcuts?: boolean;
 	/** Transformer set to use. Default the `@lexical/markdown` `TRANSFORMERS`. */
 	transformers?: Transformer[];
+	/**
+	 * Rewrite the markdown before it is imported, for a construct the transformer pipeline cannot
+	 * see on its own. `@lexical/markdown` always runs text-format transformers before text-match
+	 * ones, so a text-match construct whose content holds `*emphasis*` is split apart before its own
+	 * transformer runs; `@dojo-ng/rich-text-criticmarkup`'s `maskInlineFormat` is the pass that
+	 * fixes that for CriticMarkup. Must return a string the transformers can read. Import only;
+	 * export is unaffected.
+	 */
+	prepareImport?: (markdown: string) => string;
 }
 
 /**
@@ -42,17 +51,18 @@ export function usableTransformers(editor: LexicalEditor, transformers: Transfor
 	return transformers.filter((t) => editor.hasNodes("dependencies" in t ? t.dependencies : []));
 }
 
-/** Build a Markdown plugin. Override `shortcuts` (default on) or the `transformers` set. */
+/** Build a Markdown plugin. Override `shortcuts` (default on), the `transformers` set, or add a `prepareImport` pass. */
 export function createMarkdownPlugin(options: MarkdownPluginOptions = {}): RichTextPlugin {
 	const shortcuts = options.shortcuts ?? true;
 	const transformers = options.transformers ?? TRANSFORMERS;
+	const prepareImport = options.prepareImport ?? ((markdown: string) => markdown);
 	return defineRichTextPlugin({
 		name: "markdown",
 		formats: {
 			markdown: {
 				serialize: (editor) => $convertToMarkdownString(usableTransformers(editor, transformers)),
 				deserialize: (editor, data) =>
-					$convertFromMarkdownString(data, usableTransformers(editor, transformers)),
+					$convertFromMarkdownString(prepareImport(data), usableTransformers(editor, transformers)),
 			},
 		},
 		setup: (ctx) => {

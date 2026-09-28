@@ -19,7 +19,7 @@
 
 import { $createTextNode, $isTextNode, type TextNode } from "lexical";
 import type { Transformer } from "@lexical/markdown";
-import { escapeToken, unescapeToken, PARAGRAPH_TOKEN } from "./grammar.js";
+import { escapeToken, unescapeToken, inlineFormatSegments, unmaskInlineFormat, PARAGRAPH_TOKEN } from "./grammar.js";
 import {
 	$createBreakNode,
 	$isBreakNode,
@@ -50,9 +50,13 @@ function appendTokenSegments(parent: InsertionNode | DeletionNode | HighlightNod
 	let i = 0;
 	const flush = () => {
 		if (buffer === "") return;
-		const t = $createTextNode(unescapeToken(buffer));
-		t.setFormat(format);
-		parent.append(t);
+		// `maskInlineFormat` may have hidden emphasis inside the mark from the markdown import's
+		// text-format pass; rebuild it here as formatted runs. Unmasked content yields one run.
+		for (const segment of inlineFormatSegments(buffer, format)) {
+			const t = $createTextNode(unescapeToken(segment.text));
+			t.setFormat(segment.format);
+			parent.append(t);
+		}
 		buffer = "";
 	};
 	while (i < content.length) {
@@ -168,7 +172,7 @@ export const HIGHLIGHT_TRANSFORMER: Transformer = {
 		const [, raw, commentRaw] = match;
 		const node = $createHighlightNode();
 		appendTokenSegments(node, raw, textNode.getFormat());
-		if (commentRaw !== undefined) node.setComment(unescapeToken(commentRaw));
+		if (commentRaw !== undefined) node.setComment(unescapeToken(unmaskInlineFormat(commentRaw)));
 		textNode.replace(node);
 	},
 	export: (node, _exportChildren, exportFormat) => {
@@ -188,7 +192,7 @@ export const COMMENT_TRANSFORMER: Transformer = {
 	regExp: /\{>>(.*?)<<\}$/,
 	replace: (textNode, match) => {
 		const [, raw] = match;
-		textNode.replace($createCommentNode(unescapeToken(raw)));
+		textNode.replace($createCommentNode(unescapeToken(unmaskInlineFormat(raw))));
 	},
 	export: (node) => {
 		if (!$isCommentNode(node)) return null;

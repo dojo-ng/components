@@ -7,7 +7,7 @@
 
 import { html, type ReactiveControllerHost, type TemplateResult } from "lit";
 import { createRef, ref } from "lit/directives/ref.js";
-import { $getNearestNodeFromDOMNode, $getSelection, $isRangeSelection, type LexicalEditor, type LexicalNode } from "lexical";
+import { $getNearestNodeFromDOMNode, $getSelection, $isRangeSelection, TextNode, type LexicalEditor, type LexicalNode } from "lexical";
 import { mergeRegister } from "@lexical/utils";
 import { getDefaultLocale, messages, registerDefaults } from "@dojo-ng/i18n";
 import { defineRichTextPlugin, ensureEditorStyles, type RichTextContext, type RichTextPlugin, type RichTextToolbarItem } from "@dojo-ng/rich-text";
@@ -24,7 +24,7 @@ import {
 	$isHighlightNode,
 } from "./nodes.js";
 import { deserializeCriticMarkup, serializeCriticMarkup } from "./format.js";
-import { PARAGRAPH_TOKEN } from "./grammar.js";
+import { PARAGRAPH_TOKEN, unmaskInlineFormat } from "./grammar.js";
 import { setSuggestionMode, isSuggestionMode, configureSuggestionMode, type StructuralPolicy } from "./suggestion-mode.js";
 import { markAtSelection, acceptMark, declineMark, acceptAllMarks, declineAllMarks } from "./resolution.js";
 import { createCommentPopupController, type CommentPopupController } from "./comment-popup.js";
@@ -127,6 +127,16 @@ export function createCriticMarkupPlugin(options: CriticMarkupOptions = {}): Ric
 			ctx.host.addEventListener("click", onHostClick);
 
 			return mergeRegister(
+				// Safety net for `maskInlineFormat`: a masked character the mark transformers did not
+				// consume (a mark the markdown path could not pair, or one inside an inline code span)
+				// must never reach the document as a private-use code point. Those sentinels never
+				// occur in real text, so turning any that appear back into their literal character is
+				// always correct and a no-op otherwise.
+				ctx.editor.registerNodeTransform(TextNode, (node) => {
+					const current = node.getTextContent();
+					const unmasked = unmaskInlineFormat(current);
+					if (unmasked !== current) node.setTextContent(unmasked);
+				}),
 				// Mount CommentNode/BreakNode decorate() output (deferred from N1) and wire the
 				// comment button to open the popup, once per button — the click handler resolves
 				// the CURRENT node fresh each time rather than closing over one, so it never shows

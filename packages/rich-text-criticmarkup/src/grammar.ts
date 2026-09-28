@@ -521,3 +521,134 @@ export function unmaskNested(text: string): string {
 	for (const ch of text) out += UNMASK_OF.get(ch) ?? ch;
 	return out;
 }
+
+// --- inline formatting inside a mark (markdown import) ------------------------------------------
+
+// `@lexical/markdown`'s `$importBlocks` runs text-FORMAT transformers (`*`, `**`, `_`, `` ` ``)
+// before text-MATCH transformers, a fixed call order no transformer list can change. So a mark
+// whose content carries emphasis, `{--he thought *what?* and shook--}`, is split into three text
+// nodes by the italic transformer before any CriticMarkup transformer sees it, and none of the
+// three pieces holds a whole mark: the braces stay behind as literal text, the mark cannot be
+// accepted or rejected, and nothing reports a refusal. Found in NovelMaker, whose editor loads
+// chapters through the markdown format with `criticMarkupTransformers` in the transformer set.
+//
+// The fix is a masking pass in the same spirit as `maskNested`: before the markdown import, hide
+// the inline-format characters inside each mark behind private-use sentinels (U+E020 block, clear
+// of `maskNested`'s U+E000 block and `resolve`'s seam sentinels), so the format transformers see
+// nothing to claim there and the text-match transformers get whole marks. The mark transformers
+// then rebuild the formatting from the sentinels (`inlineFormatSegments`). `unmaskInlineFormat`
+// is the exact inverse, used as a safety net on any text a mark transformer did not consume.
+const INLINE_FORMAT_CHARS = ["*", "_", "`"] as const;
+const INLINE_MASK_OF = new Map<string, string>(INLINE_FORMAT_CHARS.map((ch, i) => [ch, String.fromCodePoint(0xe020 + i)]));
+const INLINE_UNMASK_OF = new Map<string, string>(INLINE_FORMAT_CHARS.map((ch, i) => [String.fromCodePoint(0xe020 + i), ch]));
+const STAR = INLINE_MASK_OF.get("*")!;
+const BACKTICK = INLINE_MASK_OF.get("`")!;
+
+/** Lexical's text-format bits, repeated here so this module stays free of a Lexical import. */
+const FORMAT_BOLD = 1;
+const FORMAT_ITALIC = 2;
+const FORMAT_CODE = 16;
+
+/**
+ * Mask `*`, `_`, and `` ` `` inside every top-level CriticMarkup mark, for a markdown import that
+ * runs `criticMarkupTransformers` alongside `@lexical/markdown`'s text-format transformers. Pass it
+ * as `createMarkdownPlugin({ prepareImport: maskInlineFormat })`. Length-preserving; text outside
+ * marks, nested marks (which the markdown path cannot pair anyway), and block-spanning marks are
+ * left exactly as they were.
+ */
+export function maskInlineFormat(text: string): string {
+	const marks = parseMarks(text).filter(
+		(m, _, all) => !m.nested && !m.spansBlock && !all.some((p) => p !== m && p.start <= m.start && m.end <= p.end),
+	);
+	if (!marks.length) return text;
+	const units = text.split("");
+	for (const mark of marks) {
+		for (let i = mark.start + TOKEN_LEN; i < mark.end - TOKEN_LEN; i++) {
+			const masked = INLINE_MASK_OF.get(units[i]);
+			if (masked) units[i] = masked;
+		}
+	}
+	return units.join("");
+}
+
+/** The exact inverse of `maskInlineFormat`: every inline sentinel becomes its literal character. */
+export function unmaskInlineFormat(text: string): string {
+	let out = "";
+	for (const ch of text) out += INLINE_UNMASK_OF.get(ch) ?? ch;
+	return out;
+}
+
+export interface InlineFormatSegment {
+	text: string;
+	/** Lexical text-format bits: 1 bold, 2 italic, 16 code. */
+	format: number;
+}
+
+/**
+ * Split masked mark content into formatted runs: `*x*` italic, `**x**` bold, `***x***` both, and
+ * `` `x` `` code, nesting allowed (`**a *b* c**`). These are the forms `$convertToMarkdownString`
+ * writes back, so the round trip is byte-exact. Anything unpaired, and every `_`, stays literal;
+ * `_x_` is not rebuilt as italic because the export would rewrite it as `*x*`. Plain strings in
+ * and out, so a caller with no editor can use it too.
+ */
+export function inlineFormatSegments(masked: string, format = 0): InlineFormatSegment[] {
+	const out: InlineFormatSegment[] = [];
+	let literal = "";
+	const flush = () => {
+		if (literal !== "") out.push({ text: literal, format });
+		literal = "";
+	};
+	let i = 0;
+	while (i < masked.length) {
+		const ch = masked[i];
+		if (ch === BACKTICK) {
+			const close = masked.indexOf(BACKTICK, i + 1);
+			if (close > i + 1) {
+				flush();
+				out.push({ text: unmaskInlineFormat(masked.slice(i + 1, close)), format: format | FORMAT_CODE });
+				i = close + 1;
+				continue;
+			}
+		} else if (ch === STAR) {
+			const run = runLength(masked, i);
+			const close = run <= 3 ? closingRun(masked, i + run, run) : -1;
+			if (close > 0) {
+				flush();
+				const bits = run === 1 ? FORMAT_ITALIC : run === 2 ? FORMAT_BOLD : FORMAT_BOLD | FORMAT_ITALIC;
+				out.push(...inlineFormatSegments(masked.slice(i + run, close), format | bits));
+				i = close + run;
+				continue;
+			}
+			literal += "*".repeat(run);
+			i += run;
+			continue;
+		}
+		literal += INLINE_UNMASK_OF.get(ch) ?? ch;
+		i++;
+	}
+	flush();
+	return out;
+}
+
+function runLength(text: string, at: number): number {
+	let n = 0;
+	while (text[at + n] === STAR) n++;
+	return n;
+}
+
+/** Index of the first star run of exactly `size` that can close an emphasis opened just before
+ * `from`: content must not start or end with whitespace, and must not be empty. -1 if none. */
+function closingRun(text: string, from: number, size: number): number {
+	if (from >= text.length || /\s/.test(text[from])) return -1;
+	let i = from;
+	while (i < text.length) {
+		if (text[i] === STAR) {
+			const run = runLength(text, i);
+			if (run === size && i > from && !/\s/.test(text[i - 1])) return i;
+			i += run;
+			continue;
+		}
+		i++;
+	}
+	return -1;
+}

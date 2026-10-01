@@ -1,6 +1,7 @@
 {
   "name": "@dojo-ng/theme",
-  "version": "0.1.0", "license": "BSD-3-Clause",
+  "version": "0.1.1",
+  "license": "BSD-3-Clause",
   "description": "Dojo NG theme tokens and scoping element",
   "type": "module",
   "main": "./dist/index.js",
@@ -10,7 +11,17 @@
     ".": "./dist/index.js",
     "./theme.css": "./theme.css"
   },
-  "files": ["dist", "theme.css", "!dist/**/*.map"],
-  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
-  "dependencies": { "@dojo-ng/dojo-element": "^0.1.0", "lit": "^3.3.0" }
+  "files": [
+    "dist",
+    "theme.css",
+    "!dist/**/*.map"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@dojo-ng/dojo-element": "^0.1.0",
+    "lit": "^3.3.0"
+  }
 }

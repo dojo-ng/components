@@ -28,6 +28,13 @@ const browsers = process.env.DJ_BROWSERS
 // engines still run in the normal `npm run test:browser` pass, uninstrumented.
 const coverage = Boolean(process.env.DJ_COVERAGE);
 
+// On CI only (GitLab sets CI=true): run one browser engine at a time and give each one 2 minutes
+// to start a page instead of the default 30 seconds. The shared Heptapod runner often cannot
+// start Firefox and WebKit pages in time when engines run side by side ("unable to create and
+// start a test page after 30000ms"), which fails the job with no test failure underneath; see
+// ground-rules.md. Local runs keep the defaults (2 engines at once, 30 seconds).
+const onCI = Boolean(process.env.CI);
+
 // DJ_REAL_VIDEO adds tests/browser/video-real.test.js, which audits dj-video against the REAL
 // video.js engine instead of the stub player video.test.js installs. It is OFF by default and
 // deliberately off the per-commit path: it loads the actual engine, which is heavy and is the
@@ -108,6 +115,7 @@ export default {
 	// resolves `video.js` exactly as it always has.
 	plugins: [emulateMediaPlugin(), ...(realVideo ? [videoJsUmdPlugin] : [])],
 	browsers: browsers.map((product) => playwrightLauncher({ product })),
+	...(onCI ? { concurrentBrowsers: 1, browserStartTimeout: 120000 } : {}),
 	testFramework: {
 		config: { ui: "bdd", timeout: 5000 },
 	},

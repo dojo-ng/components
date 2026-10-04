@@ -3,7 +3,7 @@ import { defineChartPlugin, type ChartContext, type ChartPlugin } from "@dojo-ng
 import { catOf, DEFAULT_UP_COLOR, DEFAULT_DOWN_COLOR, FORCED_COLORS_STYLE } from "./shared.js";
 
 /** Row-key names for the four OHLC fields, read directly off each data row — a candlestick chart
- * has no `series` of its own (decision 17), so there is nothing for these to attach to via
+ * has no `series` of its own, so there is nothing for these to attach to via
  * `ChartSeries` module augmentation; the plugin reads `ctx.data` by these keys instead. */
 export interface OhlcKeys {
 	open: string;
@@ -165,8 +165,8 @@ function renderBarMarks(marks: BarMark[]) {
 	</g>`;
 }
 
-/** `candlestickPlugin`'s options. Structurally identical to `OhlcKeys & {...}` (the shape the
- * frozen API spec names), but written as a flat named interface rather than `OhlcKeys & {...}` or
+/** `candlestickPlugin`'s options. Structurally identical to `OhlcKeys & {...}`, but written as a
+ * flat named interface rather than `OhlcKeys & {...}` or
  * `extends OhlcKeys` — `genlib.py`'s catalog generator (`interface_fields()`) parses an exported
  * interface's own literal members and does not resolve an `extends` clause's inherited fields, so
  * either of those would render an Options block silently missing `open`/`high`/`low`/`close`. The
@@ -191,7 +191,7 @@ export interface CandlestickPluginOptions {
 	label?: string;
 }
 
-/** A single candlestick (or OHLC-bar) instrument, drawn from four row keys (decision 17: one
+/** A single candlestick (or OHLC-bar) instrument, drawn from four row keys (one
  * plugin, a `style` option, rather than a candlestick plugin and a separate OHLC-bar plugin). */
 export function candlestickPlugin(options: CandlestickPluginOptions): ChartPlugin {
 	const keys: OhlcKeys = { open: options.open, high: options.high, low: options.low, close: options.close };

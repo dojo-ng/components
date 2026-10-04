@@ -6,8 +6,7 @@ import type { ChartDatum, ChartSeries, ChartType, ChartRenderer, MissingMode, Va
 /** Coerce an unknown cell to a finite number, or `null` when it isn't one — a missing value stays
  * missing instead of becoming a false zero. `null`, `undefined`, and `""` are checked explicitly
  * before the `Number()` coercion because JS coerces all three to `0` (`Number(null) === 0`), which
- * would otherwise sail straight through `Number.isFinite` as a false "real" zero — the exact bug
- * Track V exists to fix. */
+ * would otherwise sail straight through `Number.isFinite` as a false "real" zero. */
 export function val(v: unknown): number | null {
 	if (v === null || v === undefined || v === "") return null;
 	const n = typeof v === "number" ? v : Number(v);
@@ -15,7 +14,7 @@ export function val(v: unknown): number | null {
 }
 
 /** Coerce an unknown cell to a finite number (a missing value becomes 0). Kept for the call sites
- * where zero genuinely is the right answer (decision 21); everywhere else uses {@link val}. */
+ * where zero genuinely is the right answer; everywhere else uses {@link val}. */
 export function num(v: unknown): number {
 	return val(v) ?? 0;
 }
@@ -38,9 +37,9 @@ export function hasBars(series: ChartSeries[], chartType: ChartType): boolean {
 	return series.some((s) => effectiveType(s, chartType) === "bar");
 }
 
-// `Scales` itself moved to types.ts (Track P, decision "P1 moves the Scales interface into
-// types.ts") so a plugin package outside @dojo-ng/chart can name it; re-exported here too so every
-// existing `import type { Scales } from "./core.js"` (if any) keeps resolving.
+// `Scales` itself lives in types.ts so a plugin package outside @dojo-ng/chart can name it;
+// re-exported here too so every existing `import type { Scales } from "./core.js"` (if any)
+// keeps resolving.
 export type { Scales };
 
 function axisOf(s: ChartSeries): "left" | "right" {
@@ -53,11 +52,11 @@ export function isLogScale(scale: ValueScale): boolean {
 	return typeof (scale as { base?: unknown }).base === "function";
 }
 
-/** Whether a resolved cell counts as a "gap" — the one place Track V's missing-value rule and
- * Track L's log-axis rule both funnel through, so nothing downstream has to know there are two
+/** Whether a resolved cell counts as a "gap" — the one place the missing-value rule and
+ * the log-axis rule both funnel through, so nothing downstream has to know there are two
  * reasons a point might not be there. `raw` is the already-{@link val}-resolved cell. A missing
  * cell (`null`) respects `missing` (`"zero"` draws it as a real 0); a non-positive cell on a
- * logarithmic scale is ALWAYS a gap (decision 3) — `missing="zero"` does not resurrect it (L3),
+ * logarithmic scale is ALWAYS a gap — `missing="zero"` does not resurrect it,
  * because there is no position on a log axis for zero or a negative number to occupy. */
 export function isGapValue(raw: number | null, missing: MissingMode, isLog: boolean): boolean {
 	if (raw === null) return missing !== "zero";
@@ -78,28 +77,27 @@ export function baselineOf(scale: ValueScale): number {
 
 /** Numeric y domain for a set of series, summing per row when stacked. A cell {@link val} can't
  * parse is excluded rather than coerced to zero, UNLESS the resolved `missing` mode for its series
- * is `"zero"` (decision 21/22). Zero is still folded into the domain for ordinary, fully-present
+ * is `"zero"`. Zero is still folded into the domain for ordinary, fully-present
  * data — that long-standing convention only lifts once a real cell was actually excluded, so an
  * honest gap doesn't get a dishonest floor drawn under it (a series of `[10, null, 30]` under
  * `gap`/`connect` domains to `[10, 30]`, not `[0, 30]`; under `zero` it's `[0, 30]` as before).
  *
- * `scaleKind` (Track L) — `stacked` never reaches here as `"log"`: the caller downgrades to
- * `"linear"` first (decision 4), so only the non-stacked branch needs log awareness. There, a
- * non-positive value is excluded from the domain unconditionally (decision 3, L3 — `missing="zero"`
+ * `scaleKind` — `stacked` never reaches here as `"log"`: the caller downgrades to
+ * `"linear"` first, so only the non-stacked branch needs log awareness. There, a
+ * non-positive value is excluded from the domain unconditionally (`missing="zero"`
  * does not resurrect it, so `isGapValue` rather than a bare `<= 0` check is what decides this), and
  * the domain never gets the zero-folding a linear axis gets: it is exactly `[smallest positive
- * value, largest value]` per decision 2, because log has no position for zero to fold in AT. */
+ * value, largest value]`, because log has no position for zero to fold in AT. */
 function yDomain(data: ChartDatum[], series: ChartSeries[], stacked: boolean, defaultMissing: MissingMode = "zero", scaleKind: ScaleKind = "linear"): [number, number] {
 	// No series to read a domain from — the same "nothing to compute from" case the isLog
 	// branch already handles 30 lines down (`lo`/`hi` staying undefined); routed through the
 	// same fallback rather than a bare [0, 0] so scaleLog().domain([0, 0]) — which is NaN
 	// everywhere, log has no position for zero — never gets built. Hit for real by a
-	// candlestick-only chart (`series: []`, all marks from a plugin) with `y-scale="log"`
-	// (chart-requests-spec.md F5).
+	// candlestick-only chart (`series: []`, all marks from a plugin) with `y-scale="log"`.
 	if (!series.length) return scaleKind === "log" ? [1, 10] : [0, 0];
 	const modeOf = (s: ChartSeries) => s.missing ?? defaultMissing;
 	if (stacked) {
-		// Stacks always treat a missing series as absent, never as zero (decision 24): the row's
+		// Stacks always treat a missing series as absent, never as zero: the row's
 		// other series still stack normally and the missing one contributes nothing.
 		let lo = 0;
 		let hi = 0;
@@ -145,8 +143,8 @@ function yDomain(data: ChartDatum[], series: ChartSeries[], stacked: boolean, de
 
 /** Build x and y scales for the plot area (innerW × innerH), accounting for stacking and a
  * secondary (right) y-axis when any series sets `axis: "right"`. `yScaleKind`/`yScaleRightKind`
- * (Track L) pick `scaleLog` for the named axis — downgraded to `"linear"` internally whenever
- * `stacked` is true, regardless of what was asked for, so the stacked-plus-log refusal (decision 4)
+ * pick `scaleLog` for the named axis — downgraded to `"linear"` internally whenever
+ * `stacked` is true, regardless of what was asked for, so the stacked-plus-log refusal
  * holds even if a caller forgets to check first; `dj-chart.ts` still owns the actual `warnOnce`. */
 export function buildScales(
 	data: ChartDatum[],
@@ -205,8 +203,8 @@ function safeYInput(raw: number, yScale: ValueScale, isLog: boolean): number {
 /** SVG path `d` for a line series (`yScale` defaults to the primary axis). `missing` controls a
  * non-finite cell: `"gap"` breaks the path there (`.defined()`); `"connect"` drops the row before
  * the generator runs, so the line spans the hole with one continuous segment; `"zero"` treats it
- * as a real zero, unchanged from before Track V — except on a logarithmic `yScale`, where a
- * non-positive value is ALWAYS a gap regardless of `missing` (decision 3, L3): {@link isGapValue}
+ * as a real zero — except on a logarithmic `yScale`, where a
+ * non-positive value is ALWAYS a gap regardless of `missing`: {@link isGapValue}
  * is the one place both rules are decided, so `linePath` itself never re-derives either. */
 export function linePath(
 	data: ChartDatum[],
@@ -257,7 +255,7 @@ export interface CanvasPoint {
 /** Point positions for a cartesian line/area series — the same x/y {@link linePath} plots, as
  * raw points instead of an SVG path string, for the canvas renderer (`yScale` defaults to the
  * primary axis). Omits a gapped row entirely — missing (per `missing`) or, on a logarithmic
- * `yScale`, non-positive (decision 3) — from the returned points: the canvas draw protocol is a
+ * `yScale`, non-positive — from the returned points: the canvas draw protocol is a
  * single polyline with no `.defined()` equivalent, so `"gap"` and `"connect"` (and a log gap)
  * render the same way here: the line runs straight through to the next real point rather than
  * breaking, which is the documented limit of the canvas renderer for gaps. */
@@ -282,7 +280,7 @@ export interface Bar {
 	seriesIndex: number;
 	category: string;
 	value: number;
-	/** The row's index in `data`, for point labels to look up the original row (Track M). */
+	/** The row's index in `data`, for point labels to look up the original row. */
 	rowIndex: number;
 }
 
@@ -291,8 +289,8 @@ export interface Bar {
  * (per-series override on `ChartSeries.missing`) omits a bar entirely for a non-finite cell unless
  * the resolved mode is `"zero"` — the bar slot stays reserved (`inner`'s domain is the full series
  * list, built before this loop), so the remaining bars in the group keep their x positions. On a
- * logarithmic axis a non-positive value is omitted the same way, unconditionally (decision 3): bars
- * ARE allowed on log (decision 4), but a bar's length there reads as a ratio to the axis floor, not
+ * logarithmic axis a non-positive value is omitted the same way, unconditionally: bars
+ * ARE allowed on log, but a bar's length there reads as a ratio to the axis floor, not
  * a quantity, and there is no floor for zero or a negative number to grow from. */
 export function groupedBars(
 	data: ChartDatum[],
@@ -339,7 +337,7 @@ export function groupedBars(
 
 /** Rectangles for stacked bars (uses d3-stack). Hidden series are dropped from the stack;
  * `seriesIndex` stays the original index so colors and series identity remain stable. A missing
- * cell (per the resolved `missing` mode, decision 24) contributes no segment — not a zero-height
+ * cell (per the resolved `missing` mode) contributes no segment — not a zero-height
  * one, which is a rect with no height that would still consume a color and a tooltip row — while
  * the row's other series still stack normally: d3-stack's own value accessor is overridden to
  * `val(...) ?? 0` (rather than its default unary-plus coercion) so an `undefined` cell can't turn
@@ -393,14 +391,14 @@ export interface ScalesH {
 	/** Band scale over categories, sized to the inner HEIGHT. */
 	yBand: ScaleBand<string>;
 	/** The value axis, sized to the inner WIDTH — linear (always includes zero) or, per `y-scale`
-	 * (decision 1: it names the value axis "regardless of orientation"), logarithmic. */
+	 * (it names the value axis "regardless of orientation"), logarithmic. */
 	x: ValueScale;
 	cats: string[];
 }
 
 /** Build horizontal-bar scales: a Y band for categories and an X value scale. Honors `hidden` and
  * the stacked domain exactly as {@link buildScales} does, including the stacked-plus-log downgrade
- * to `"linear"` (decision 4) — enforced here too, not just in the vertical path. */
+ * to `"linear"` — enforced here too, not just in the vertical path. */
 export function buildScalesH(
 	data: ChartDatum[],
 	series: ChartSeries[],
@@ -538,10 +536,10 @@ export function ticksOf(scale: ValueScale, count = 5, pixels?: number): number[]
 	return scale.ticks(count);
 }
 
-/** Decade-first tick thinning for a logarithmic value scale (decision 6): `scaleLog().ticks()`
+/** Decade-first tick thinning for a logarithmic value scale: `scaleLog().ticks()`
  * yields decade boundaries plus their 1-through-9 multiples, which at a typical chart height
  * overprints into an unreadable stripe. This takes the decades within the domain first and, only
- * while every tick still clears `minGapPx` (default 24, matching decision 6) from its pixel
+ * while every tick still clears `minGapPx` (default 24) from its pixel
  * neighbor, adds each decade's 2× and 5× multiple. If the bare decades themselves don't clear the
  * gap (a domain spanning many decades in very little `pixels`), they're thinned by an even stride
  * until they do, rather than returning an overcrowded set. Labels format through the caller's own
@@ -647,12 +645,12 @@ export interface PieSlice {
 	 * colors by that same original index. */
 	index: number;
 	/** The slice's angular midpoint in radians, d3-arc's convention (0 at 12 o'clock, clockwise) —
-	 * for a point label placed outside the arc (Track M). */
+	 * for a point label placed outside the arc. */
 	midAngle: number;
 }
 
 /** Arc paths for a pie or donut from one value series (innerRadius > 0 makes a donut). A row whose
- * value is missing is omitted from the layout entirely (decision 24) — not drawn as a zero-value
+ * value is missing is omitted from the layout entirely — not drawn as a zero-value
  * sliver — unless the resolved `missing` mode is `"zero"`. */
 export function pieArcs(
 	data: ChartDatum[],
@@ -676,17 +674,17 @@ export function pieArcs(
 	}));
 }
 
-// ---- point labels (Track M) ----
+// ---- point labels ----
 //
 // Real text measurement means `getBBox`, a per-label layout that doesn't exist in happy-dom, so
-// collision avoidance here is an ESTIMATE by construction (decision 28): width from character
+// collision avoidance here is an ESTIMATE by construction: width from character
 // count times a per-character factor derived from the font size, placed in a fixed order, skipping
 // any candidate whose estimated box overlaps one already kept. Above a density cap the whole set is
-// dropped rather than drawing an unreadable smear of overlapping numbers (the CV2 hazard: one more
+// dropped rather than drawing an unreadable smear of overlapping numbers (one more
 // `<text>` node per point, and text layout is exactly what froze a tab at 20,000 categories).
 
 /** A candidate point label before collision placement: its position, text, and a stable sort key
- * ("category order" — decision 28) that also breaks ties deterministically so re-rendering the same
+ * ("category order") that also breaks ties deterministically so re-rendering the same
  * data never flickers between which label of an overlapping pair wins. */
 export interface PointLabel {
 	x: number;
@@ -698,8 +696,8 @@ export interface PointLabel {
 /** Average glyph width as a fraction of font size, for the numeral- and letter-heavy text a chart
  * label actually carries — not a general-purpose text metric. */
 const LABEL_CHAR_WIDTH_FACTOR = 0.6;
-/** Above this many candidates, decision 28 skips the whole set rather than placing any — the same
- * per-node-cost hazard CV2 found in tick labels and hit-bands. */
+/** Above this many candidates the whole set is skipped rather than placing any — the same
+ * per-node cost that tick labels and hit-bands have to guard against. */
 export const LABEL_DENSITY_CAP = 150;
 
 /** Estimated pixel width of a label's text at the given font size (see the section note — this is

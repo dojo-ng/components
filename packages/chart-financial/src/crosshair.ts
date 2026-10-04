@@ -47,10 +47,10 @@ export function crosshairStateAt(ctx: ChartContext, localX: number, localY: numb
 }
 
 /** Vertical guide at the hovered category (or raw x, unsnapped), horizontal guide at the pointer's
- * value, both with axis labels — `aria-hidden` (decision-27 precedent: a hover-only visual aid,
+ * value, both with axis labels — `aria-hidden` (a hover-only visual aid,
  * not a second copy of data the accessible table already carries). No CSS transition on any of
  * these marks and nothing conditionally suppressed for `prefers-reduced-motion`: there is no
- * animation here to suppress in the first place (F4) — `nothing` when not hovering swaps the whole
+ * animation here to suppress in the first place — `nothing` when not hovering swaps the whole
  * group in cleanly rather than fading it, so there's nothing to flicker either. */
 export function renderCrosshair(ctx: ChartContext, state: CrosshairState | null, color: string) {
 	if (!state) return nothing;
@@ -64,8 +64,8 @@ export function renderCrosshair(ctx: ChartContext, state: CrosshairState | null,
 	</g>`;
 }
 
-/** Vertical guide at the hovered category, horizontal at the pointer's value (decision, F4). Not a
- * data-drawing plugin in decision 13's sense (nothing here is a persisted representation of a
+/** Vertical guide at the hovered category, horizontal at the pointer's value. Not a
+ * data-drawing plugin (nothing here is a persisted representation of a
  * series — it exists only while the pointer is over the chart, and the tooltip/table already
  * carry the real values), so it declares no `legendItems`/`tableRows`. */
 export function crosshairPlugin(options: CrosshairPluginOptions = {}): ChartPlugin {

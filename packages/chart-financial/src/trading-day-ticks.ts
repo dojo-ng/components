@@ -1,11 +1,11 @@
 /** Minimum pixel gap between two kept ticks before a tighter grouping is rejected — reusing
- * `@dojo-ng/chart`'s own `logTicks` default (Track L) rather than inventing a second "how crowded
+ * `@dojo-ng/chart`'s own `logTicks` default rather than inventing a second "how crowded
  * is too crowded" number for the same kind of decision. */
 export const MIN_TICK_GAP_PX = 24;
 
 /** `(year, month)` grouping key for one category, via `Intl.DateTimeFormat.formatToParts` rather
- * than `Date.getUTCFullYear()`/`getUTCMonth()` — locale-aware (decision, F4: "using
- * Intl.DateTimeFormat through the chart's locale") and calendar-aware for a locale whose default
+ * than `Date.getUTCFullYear()`/`getUTCMonth()` — locale-aware (it uses
+ * Intl.DateTimeFormat with the chart's locale) and calendar-aware for a locale whose default
  * calendar isn't Gregorian, not just a timezone-safe way to read the same two numbers. */
 function monthPartsOf(date: Date, locale: string): { year: string; month: string } {
 	const parts = new Intl.DateTimeFormat(locale, { year: "numeric", month: "numeric", timeZone: "UTC" }).formatToParts(date);
@@ -46,7 +46,7 @@ function fits(n: number, pixels: number): boolean {
 	return n <= 1 || pixels / (n - 1) >= MIN_TICK_GAP_PX;
 }
 
-/** Thins ordinal date categories to month or quarter starts (decision 16), by available pixels,
+/** Thins ordinal date categories to month or quarter starts, by available pixels,
  * for a consumer to wire through `dj-chart`'s existing `formatX` — the core needs no change at
  * all: `formatX = (c) => tradingDayTicksSet.has(c) ? label(c) : ""`. The first and last category
  * are always kept regardless of grouping, even when they don't themselves fall on a boundary, so

@@ -7,16 +7,16 @@ export function catOf(row: ChartDatum, categoryKey: string): string {
 	return String(row[categoryKey] ?? "");
 }
 
-/** Shared with `volumePlugin`, which has no `upColor`/`downColor` options of its own (the frozen
- * API gives it only `key`/`height`/`label`) — it defers to these same tokens so a candlestick and
+/** Shared with `volumePlugin`, which has no `upColor`/`downColor` options of its own (its
+ * options are only `key`/`height`/`label`) — it defers to these same tokens so a candlestick and
  * a volume pane stay visually consistent by default. The real way to customize the pair together
  * is the CSS custom property itself, which both read; `candlestickPlugin`'s own `upColor`/
  * `downColor` options are a LOCAL override on top of that, not a second source of truth. */
 export const DEFAULT_UP_COLOR = "var(--dj-chart-up, #16a34a)";
 export const DEFAULT_DOWN_COLOR = "var(--dj-chart-down, #dc2626)";
 
-/** Forced-colors shape/pattern distinction for up/down marks (decision, F5: "distinguishable
- * without color... shape or fill pattern, not hue alone"). Under `forced-colors: active` the
+/** Forced-colors shape/pattern distinction for up/down marks: distinguishable
+ * without color, by shape or fill pattern, not by hue alone. Under `forced-colors: active` the
  * browser flattens author `fill`/`stroke` values to a small system palette regardless of what
  * `--dj-chart-up`/`--dj-chart-down` resolve to, so up/down would otherwise become visually
  * identical — this is what actually carries the distinction there: up renders hollow (`fill:

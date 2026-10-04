@@ -39,7 +39,7 @@ const EXPORT_STYLE_RULES: ReadonlyArray<readonly [string, Readonly<Record<string
  * A `fill`/`stroke` value that is NOT a `var()` reference — e.g. `"transparent"`, canvas mode's
  * invisible per-point scatter hit targets (dj-chart.ts's `renderXY`) — is left completely
  * untouched. That is deliberate and is what keeps those circles invisible in the export instead of
- * resolving them to a visible series color (the SCATTER TRAP the E3 spec entry warns about).
+ * resolving them to a visible series color.
  */
 export function inlinePresentationalStyles(root: SVGElement, tokens: Record<string, string>): void {
 	for (const [selector, props] of EXPORT_STYLE_RULES) {
@@ -104,8 +104,9 @@ export function serializeChartSvg(svgEl: SVGSVGElement, tokens: Record<string, s
  * Rasterizes an SVG string to a PNG `Blob` at `scale`× (default 2, for retina and for print), via
  * an `Image` decode into an offscreen `<canvas>`. NOT testable in happy-dom: this workspace's
  * harness has no `Image` constructor and no real 2D canvas context (confirmed directly — both are
- * simply absent, not just limited). See dj-chart.ts's `toPng()` and the E3 spec entry's BILL RUNS
- * note; this is real-browser-only, same as the CV canvas-renderer track's drawn-pixel checks.
+ * simply absent, not just limited). See dj-chart.ts's `toPng()`; this is real-browser-only, same as
+ * the canvas renderer's
+ * drawn-pixel checks.
  */
 export function rasterizeSvg(svgString: string, width: number, height: number, scale: number): Promise<Blob> {
 	return new Promise((resolve, reject) => {

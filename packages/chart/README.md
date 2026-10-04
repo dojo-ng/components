@@ -351,7 +351,7 @@ A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. 
   mv.series = [{ key: "reading", label: "Reading" }];
   // day 3's sensor dropped out: null, not a real 0. The default missing="gap" breaks the
   // line there instead of drawing a false reading; missing="connect" would span it with a
-  // straight segment; missing="zero" restores the pre-Track-V behavior of plotting it as 0.
+  // straight segment; missing="zero" restores the older behavior of plotting it as 0.
   mv.data = [
     { day: "Mon", reading: 42 },
     { day: "Tue", reading: 45 },

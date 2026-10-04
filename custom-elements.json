@@ -1933,7 +1933,7 @@
                 "text": "ChartRenderer"
               },
               "default": "\"svg\"",
-              "description": "Opt-in escape hatch for very large series: `\"canvas\"` draws series marks on a `<canvas>` instead of SVG nodes (axes, grid, legend, and tooltip stay SVG/DOM either way). Honored only for `line`/`area`/`scatter` (not `bar`, `stacked`, pie/donut, `bubble`, or a combo where any series overrides to `bar`) and only outside `forced-colors: active`; unsupported combinations fall back to `svg` (a console warning for an unsupported type, none for forced-colors \u2014 see the CV decisions).",
+              "description": "Opt-in escape hatch for very large series: `\"canvas\"` draws series marks on a `<canvas>` instead of SVG nodes (axes, grid, legend, and tooltip stay SVG/DOM either way). Honored only for `line`/`area`/`scatter` (not `bar`, `stacked`, pie/donut, `bubble`, or a combo where any series overrides to `bar`) and only outside `forced-colors: active`; unsupported combinations fall back to `svg` (a console warning for an unsupported type, none for forced-colors).",
               "attribute": "renderer",
               "reflects": true
             },
@@ -1944,7 +1944,7 @@
                 "text": "MissingMode"
               },
               "default": "\"gap\"",
-              "description": "How a missing (non-finite) cell is drawn. `\"gap\"` (the default) breaks the line/area and omits the marker, bar, and point \u2014 the honest reading, since the alternative silently plots a zero the data never gave. `\"connect\"` spans the hole in a line/area instead of breaking it (bars, markers, and points are still omitted). `\"zero\"` treats it as a real zero \u2014 the pre-Track-V behavior, kept as an escape hatch. Per-series override on `ChartSeries.missing`.",
+              "description": "How a missing (non-finite) cell is drawn. `\"gap\"` (the default) breaks the line/area and omits the marker, bar, and point \u2014 the honest reading, since the alternative silently plots a zero the data never gave. `\"connect\"` spans the hole in a line/area instead of breaking it (bars, markers, and points are still omitted). `\"zero\"` treats it as a real zero \u2014 the behavior before `missing` existed, kept as an escape hatch. Per-series override on `ChartSeries.missing`.",
               "attribute": "missing",
               "reflects": true
             },
@@ -1973,7 +1973,7 @@
                 "text": "ScaleKind"
               },
               "default": "\"linear\"",
-              "description": "The value axis's scale \u2014 names the VALUE axis regardless of `orientation` (so it drives horizontal bars' x-axis too), matching the existing `yLabel`/`fmtY` convention. `\"log\"` never includes zero: a non-positive value has no position on it and is always a gap (decision 3), even under `missing=\"zero\"`. Refused together with `stacked` (a stacked segment's drawn height on a log axis is a ratio, not a quantity) \u2014 falls back to `\"linear\"` with a console warning.",
+              "description": "The value axis's scale \u2014 names the VALUE axis regardless of `orientation` (so it drives horizontal bars' x-axis too), matching the existing `yLabel`/`fmtY` convention. `\"log\"` never includes zero: a non-positive value has no position on it and is always a gap, even under `missing=\"zero\"`. Refused together with `stacked` (a stacked segment's drawn height on a log axis is a ratio, not a quantity) \u2014 falls back to `\"linear\"` with a console warning.",
               "attribute": "y-scale",
               "reflects": true
             },
@@ -1995,7 +1995,7 @@
                 "text": "ChartPlugin[]"
               },
               "default": "[]",
-              "description": "Plugins draw extra marks (candlesticks, volume, an indicator) without the core knowing anything about them (decision 10) \u2014 factories, not classes, no registry. Applies to the vertical cartesian family only (line/area/bar, not stacked-plus-anything-else here beyond what cartesian already means, and not xy/radial/horizontal \u2014 Track F's plugins are all cartesian). A `plugins` change disposes every previous plugin's `setup()` and runs the new array's, in an ordinary reactive update (decision 11 \u2014 there is no creation-time constraint to guard, unlike `rich-text`/`data-grid`'s plugin seams). Forces `renderer=\"svg\"` (decision 12): mixing a canvas mark layer with plugin-drawn SVG would need a second draw protocol nobody has asked for. Default `[]` \u2014 a chart with no plugins renders exactly as one with the property absent."
+              "description": "Plugins draw extra marks (candlesticks, volume, an indicator) without the core knowing anything about them \u2014 factories, not classes, no registry. Applies to the vertical cartesian family only (line/area/bar, not stacked-plus-anything-else here beyond what cartesian already means, and not xy/radial/horizontal). A `plugins` change disposes every previous plugin's `setup()` and runs the new array's, in an ordinary reactive update (there is no creation-time constraint to guard, unlike `rich-text`/`data-grid`'s plugin seams). Forces `renderer=\"svg\"`: mixing a canvas mark layer with plugin-drawn SVG would need a second draw protocol nobody has asked for. Default `[]` \u2014 a chart with no plugins renders exactly as one with the property absent."
             },
             {
               "kind": "method",
@@ -2188,7 +2188,7 @@
                 "text": "ChartRenderer"
               },
               "fieldName": "renderer",
-              "description": "Opt-in escape hatch for very large series: `\"canvas\"` draws series marks on a `<canvas>` instead of SVG nodes (axes, grid, legend, and tooltip stay SVG/DOM either way). Honored only for `line`/`area`/`scatter` (not `bar`, `stacked`, pie/donut, `bubble`, or a combo where any series overrides to `bar`) and only outside `forced-colors: active`; unsupported combinations fall back to `svg` (a console warning for an unsupported type, none for forced-colors \u2014 see the CV decisions)."
+              "description": "Opt-in escape hatch for very large series: `\"canvas\"` draws series marks on a `<canvas>` instead of SVG nodes (axes, grid, legend, and tooltip stay SVG/DOM either way). Honored only for `line`/`area`/`scatter` (not `bar`, `stacked`, pie/donut, `bubble`, or a combo where any series overrides to `bar`) and only outside `forced-colors: active`; unsupported combinations fall back to `svg` (a console warning for an unsupported type, none for forced-colors)."
             },
             {
               "name": "missing",
@@ -2196,7 +2196,7 @@
                 "text": "MissingMode"
               },
               "fieldName": "missing",
-              "description": "How a missing (non-finite) cell is drawn. `\"gap\"` (the default) breaks the line/area and omits the marker, bar, and point \u2014 the honest reading, since the alternative silently plots a zero the data never gave. `\"connect\"` spans the hole in a line/area instead of breaking it (bars, markers, and points are still omitted). `\"zero\"` treats it as a real zero \u2014 the pre-Track-V behavior, kept as an escape hatch. Per-series override on `ChartSeries.missing`."
+              "description": "How a missing (non-finite) cell is drawn. `\"gap\"` (the default) breaks the line/area and omits the marker, bar, and point \u2014 the honest reading, since the alternative silently plots a zero the data never gave. `\"connect\"` spans the hole in a line/area instead of breaking it (bars, markers, and points are still omitted). `\"zero\"` treats it as a real zero \u2014 the behavior before `missing` existed, kept as an escape hatch. Per-series override on `ChartSeries.missing`."
             },
             {
               "name": "point-labels",
@@ -2212,7 +2212,7 @@
                 "text": "ScaleKind"
               },
               "fieldName": "yScale",
-              "description": "The value axis's scale \u2014 names the VALUE axis regardless of `orientation` (so it drives horizontal bars' x-axis too), matching the existing `yLabel`/`fmtY` convention. `\"log\"` never includes zero: a non-positive value has no position on it and is always a gap (decision 3), even under `missing=\"zero\"`. Refused together with `stacked` (a stacked segment's drawn height on a log axis is a ratio, not a quantity) \u2014 falls back to `\"linear\"` with a console warning."
+              "description": "The value axis's scale \u2014 names the VALUE axis regardless of `orientation` (so it drives horizontal bars' x-axis too), matching the existing `yLabel`/`fmtY` convention. `\"log\"` never includes zero: a non-positive value has no position on it and is always a gap, even under `missing=\"zero\"`. Refused together with `stacked` (a stacked segment's drawn height on a log axis is a ratio, not a quantity) \u2014 falls back to `\"linear\"` with a console warning."
             },
             {
               "name": "y-scale-right",

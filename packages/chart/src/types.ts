@@ -8,11 +8,11 @@ import type { ScaleContinuousNumeric, ScaleBand, ScalePoint } from "d3-scale";
 export type ChartType = "line" | "area" | "bar" | "scatter" | "bubble" | "pie" | "donut";
 
 /** The value (non-category) axis scale, widened from a bare `ScaleLinear` so `scaleLog` satisfies
- * it too (Track L) — `scaleLinear()` and `scaleLog()` share this shape. */
+ * it too — `scaleLinear()` and `scaleLog()` share this shape. */
 export type ValueScale = ScaleContinuousNumeric<number, number>;
 
 /** `"linear"` (default) or `"log"` for the value axis — cartesian only (the x/y scatter axes and
- * `dj-sparkline` are out of scope, decision 8). */
+ * `dj-sparkline` are out of scope). */
 export type ScaleKind = "linear" | "log";
 
 /** How `dj-chart` draws series marks. `"canvas"` is an opt-in escape hatch for very large series
@@ -23,7 +23,7 @@ export type ChartRenderer = "svg" | "canvas";
  * the marker, bar, and point — the honest reading, since the alternative silently plots a zero the
  * data never gave. `"connect"` spans the hole in a line/area instead of breaking it (bars, markers,
  * and points are still omitted, since there's no value to place one at). `"zero"` treats it as a
- * real zero — today's pre-Track-V behavior, kept as an escape hatch for a consumer relying on it. */
+ * real zero — the behavior before `missing` existed, kept as an escape hatch for a consumer relying on it. */
 export type MissingMode = "gap" | "connect" | "zero";
 
 /** One plotted series, reading its y value from `key` on each data row. */
@@ -58,7 +58,7 @@ export interface ChartMargin {
 	left: number;
 }
 
-/** The resolved x/y scales for a cartesian plot (Track P: moved here from `core.ts`, which stays
+/** The resolved x/y scales for a cartesian plot (moved here from `core.ts`, which stays
  * unexported, so a plugin package can name this type — everything else a plugin needs from `core.ts`
  * arrives through `ChartContext` in `plugin.ts` instead). */
 export interface Scales {

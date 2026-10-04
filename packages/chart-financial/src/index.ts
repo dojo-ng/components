@@ -1,5 +1,5 @@
 export * from "./indicators.js";
-// Only the frozen public surface (`candlestickPlugin`, `OhlcKeys`, `volumePlugin`) plus the two
+// Only the public surface (`candlestickPlugin`, `OhlcKeys`, `volumePlugin`) plus the two
 // named options interfaces genlib.py's catalog generator needs (`CandlestickPluginOptions`,
 // `VolumePluginOptions` — see the comments on each) are re-exported here. Each module's own
 // geometry helpers/constants stay internal — tested by importing the module directly, the same way

@@ -5,15 +5,15 @@ import { catOf, DEFAULT_UP_COLOR, DEFAULT_DOWN_COLOR, FORCED_COLORS_STYLE } from
 export const VOLUME_PANE_ID = "volume";
 export const DEFAULT_VOLUME_PANE_HEIGHT = 60;
 /** A bar with no candlestick data to read direction off of falls back to this — no dedicated
- * theme token for it (the frozen "New theme tokens" list is exactly the four Track F/L
- * introduces: up, down, crosshair, pane-gap), so it's a plain literal rather than a `var()`
+ * theme token for it (the financial plugins add exactly four: up, down, crosshair,
+ * pane-gap), so it's a plain literal rather than a `var()`
  * reference implying a customization point that doesn't exist yet. */
 export const NEUTRAL_VOLUME_COLOR = "#94a3b8";
 
 /** Volume bars read conventional `"open"`/`"close"` keys directly off each row to decide a day's
- * direction — NOT by asking a co-installed `candlestickPlugin` for its configured key names
- * (decision, F3: "determined by reading the rendered data, not by asking the other plugin, so the
- * two stay uncoupled"). `volumePlugin`'s own frozen options (`key`/`height?`/`label?`) have no slot
+ * direction — NOT by asking a co-installed `candlestickPlugin` for its configured key names.
+ * Reading the rendered data instead of asking the other plugin keeps the two uncoupled.
+ * `volumePlugin`'s own options (`key`/`height?`/`label?`) have no slot
  * for OHLC key names either, which is the other half of the reasoning: there is nowhere to
  * configure anything else. A row with no finite `open`/`close` pair (no candlestick present, or a
  * candlestick using differently-named keys) renders a neutral bar rather than guessing. */
@@ -45,7 +45,7 @@ export interface VolumeMark {
 
 /** Bar geometry for one pane, off `ctx.paneScale(pane.id)` — the SAME shared x scale (`xCenter`,
  * `xBand.bandwidth()`) the price chart and any candlestick plugin use, which is what makes the
- * volume column line up with the price column exactly rather than approximately (decision 14). */
+ * volume column line up with the price column exactly rather than approximately. */
 export function volumeMarks(ctx: ChartContext, paneId: string, key: string): VolumeMark[] {
 	const scale = ctx.paneScale(paneId);
 	if (!scale) return [];
@@ -78,8 +78,8 @@ function renderVolumeMarks(marks: VolumeMark[]) {
 	</g>`;
 }
 
-/** `volumePlugin`'s options — named (rather than the inline object literal the frozen API spec
- * shows) so `genlib.py`'s catalog generator can resolve an Options block for it, the same reason
+/** `volumePlugin`'s options — named (rather than an inline object literal) so `genlib.py`'s catalog
+ * generator can resolve an Options block for it, the same reason
  * `CandlestickPluginOptions` exists in `candlestick.ts`. */
 export interface VolumePluginOptions {
 	/** Row key for the day's volume. */
@@ -90,7 +90,7 @@ export interface VolumePluginOptions {
 	label?: string;
 }
 
-/** Volume as its own pane below the price chart (decision 19) — never a right-axis series, which
+/** Volume as its own pane below the price chart — never a right-axis series, which
  * would share the price chart's vertical space and make both harder to read. */
 export function volumePlugin(options: VolumePluginOptions): ChartPlugin {
 	const key = options.key;

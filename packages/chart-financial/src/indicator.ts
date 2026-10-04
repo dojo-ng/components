@@ -4,8 +4,9 @@ import { defineChartPlugin, type ChartContext, type ChartPlugin } from "@dojo-ng
 import { catOf } from "./shared.js";
 import { sma, ema, bollinger } from "./indicators.js";
 
-/** No dedicated theme token for an indicator overlay (the frozen tokens are up/down/crosshair/
- * pane-gap only) — ramp slot 5, unlikely to collide with a candlestick-only chart's own (typically
+/** No dedicated theme token for an indicator overlay (the financial plugins' tokens are
+ * up/down/crosshair/pane-gap only) — ramp slot 5, unlikely to collide with a candlestick-only
+ * chart's own (typically
  * empty) core series, which start from slot 1. */
 const DEFAULT_INDICATOR_COLOR = "var(--dj-chart-5, #7c3aed)";
 
@@ -60,8 +61,8 @@ function computedSeries(ctx: ChartContext, options: IndicatorPluginOptions): Arr
 }
 
 /** A moving-average or Bollinger-band overlay, drawn on the primary (price) axis via `renderOver`
- * (decision, F4: above the core series/candles). Pure functions from `@dojo-ng/chart-financial`
- * itself do the math (decision 18); this plugin only draws what they return. */
+ * (above the core series/candles). Pure functions from `@dojo-ng/chart-financial`
+ * itself do the math; this plugin only draws what they return. */
 export function indicatorPlugin(options: IndicatorPluginOptions): ChartPlugin {
 	const color = options.color ?? DEFAULT_INDICATOR_COLOR;
 	const label = options.label ?? defaultLabel(options);

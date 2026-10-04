@@ -53,7 +53,7 @@ const MARGIN: ChartMargin = { top: 8, right: 12, bottom: 28, left: 44 };
 // Right margin when a secondary axis is present, leaving room for its tick labels and title.
 const RIGHT_AXIS_MARGIN = 48;
 // Top margin when any series shows point labels, so a label on the domain's maximum has room to
-// draw without clipping against the SVG viewBox's top edge (Track M, decision "must not be clipped").
+// draw without clipping against the SVG viewBox's top edge.
 const LABEL_MARGIN_TOP = 22;
 // Matches --dj-chart-label-size's default below; used for the width/height estimate in placeLabels.
 const LABEL_FONT_SIZE = 11;
@@ -146,14 +146,13 @@ export class DjChart extends DojoElement {
 	 * instead of SVG nodes (axes, grid, legend, and tooltip stay SVG/DOM either way). Honored only
 	 * for `line`/`area`/`scatter` (not `bar`, `stacked`, pie/donut, `bubble`, or a combo where any
 	 * series overrides to `bar`) and only outside `forced-colors: active`; unsupported combinations
-	 * fall back to `svg` (a console warning for an unsupported type, none for forced-colors — see
-	 * the CV decisions). */
+	 * fall back to `svg` (a console warning for an unsupported type, none for forced-colors). */
 	@property({ reflect: true }) renderer: ChartRenderer = "svg";
 	/** How a missing (non-finite) cell is drawn. `"gap"` (the default) breaks the line/area and
 	 * omits the marker, bar, and point — the honest reading, since the alternative silently plots
 	 * a zero the data never gave. `"connect"` spans the hole in a line/area instead of breaking it
 	 * (bars, markers, and points are still omitted). `"zero"` treats it as a real zero — the
-	 * pre-Track-V behavior, kept as an escape hatch. Per-series override on `ChartSeries.missing`. */
+	 * behavior before `missing` existed, kept as an escape hatch. Per-series override on `ChartSeries.missing`. */
 	@property({ reflect: true }) missing: MissingMode = "gap";
 	/** Show a label at each plotted point/bar/slice (line, area, scatter, bar, pie/donut — not
 	 * horizontal bars). Per-series override on `ChartSeries.pointLabels`. No label is drawn for a
@@ -168,7 +167,7 @@ export class DjChart extends DojoElement {
 	@property({ attribute: false }) formatPoint?: (value: number, row: ChartDatum, series: ChartSeries) => string;
 	/** The value axis's scale — names the VALUE axis regardless of `orientation` (so it drives
 	 * horizontal bars' x-axis too), matching the existing `yLabel`/`fmtY` convention. `"log"` never
-	 * includes zero: a non-positive value has no position on it and is always a gap (decision 3),
+	 * includes zero: a non-positive value has no position on it and is always a gap,
 	 * even under `missing="zero"`. Refused together with `stacked` (a stacked segment's drawn height
 	 * on a log axis is a ratio, not a quantity) — falls back to `"linear"` with a console warning. */
 	@property({ attribute: "y-scale", reflect: true }) yScale: ScaleKind = "linear";
@@ -176,12 +175,12 @@ export class DjChart extends DojoElement {
 	 * combo works. */
 	@property({ attribute: "y-scale-right", reflect: true }) yScaleRight: ScaleKind = "linear";
 	/** Plugins draw extra marks (candlesticks, volume, an indicator) without the core knowing
-	 * anything about them (decision 10) — factories, not classes, no registry. Applies to the
+	 * anything about them — factories, not classes, no registry. Applies to the
 	 * vertical cartesian family only (line/area/bar, not stacked-plus-anything-else here beyond what
-	 * cartesian already means, and not xy/radial/horizontal — Track F's plugins are all cartesian).
+	 * cartesian already means, and not xy/radial/horizontal).
 	 * A `plugins` change disposes every previous plugin's `setup()` and runs the new array's, in an
-	 * ordinary reactive update (decision 11 — there is no creation-time constraint to guard, unlike
-	 * `rich-text`/`data-grid`'s plugin seams). Forces `renderer="svg"` (decision 12): mixing a canvas
+	 * ordinary reactive update (there is no creation-time constraint to guard, unlike
+	 * `rich-text`/`data-grid`'s plugin seams). Forces `renderer="svg"`: mixing a canvas
 	 * mark layer with plugin-drawn SVG would need a second draw protocol nobody has asked for.
 	 * Default `[]` — a chart with no plugins renders exactly as one with the property absent. */
 	@property({ attribute: false }) plugins: ChartPlugin[] = [];
@@ -203,7 +202,7 @@ export class DjChart extends DojoElement {
 	#warned = new Set<string>();
 	// The exact `plugins` array reference setup() last ran for — compared by IDENTITY, not deep
 	// equality, so replacing the array (even with equal-looking entries) disposes and re-runs
-	// (decision 11), while an ordinary re-render with the SAME array reference does neither.
+	// setup(), while an ordinary re-render with the SAME array reference does neither.
 	#pluginsSetupFor: ChartPlugin[] | null = null;
 	#pluginDisposers: Array<() => void> = [];
 	// Rows queued by appendData() awaiting the next scheduled flush.
@@ -230,8 +229,8 @@ export class DjChart extends DojoElement {
 	}
 
 	/** Counts real (non-missing) non-positive cells across `data`/`series` that fall on a
-	 * logarithmically-scaled axis, and `warnOnce`s with the count if there are any (decision 3,
-	 * L3) — `yOf` resolves a series index to its actual axis scale (primary or secondary), so a
+	 * logarithmically-scaled axis, and `warnOnce`s with the count if there are any. `yOf` resolves
+	 * a series index to its actual axis scale (primary or secondary), so a
 	 * combo where only one axis is log is counted correctly, and a chart with no log axis at all
 	 * costs one `isLogScale` check per series and nothing else. */
 	private warnLogNonPositive(data: ChartDatum[], series: ChartSeries[], yOf: (seriesIndex: number) => ValueScale): void {
@@ -337,7 +336,7 @@ export class DjChart extends DojoElement {
 		return s.pointLabels ?? this.pointLabels;
 	}
 	/** Extra top clearance when any series shows point labels, so a label on the domain's maximum
-	 * has room to draw without clipping (Track M). Cartesian-vertical and xy plots both use it via
+	 * has room to draw without clipping. Cartesian-vertical and xy plots both use it via
 	 * the shared `innerH`/`<g transform>` math; horizontal bars don't get point labels, so they keep
 	 * the plain margin regardless. */
 	private get topMargin(): number {
@@ -345,7 +344,7 @@ export class DjChart extends DojoElement {
 	}
 	/** `formatPoint(value, row, series)` results for every point-labeled, non-gap cell, computed
 	 * EXACTLY ONCE per render here and shared between the SVG label and the accessible table
-	 * (decision 29, Track M task M3) — the two can never independently drift because both read the
+	 * — the two can never independently drift because both read the
 	 * same precomputed string. Keyed by series key, then by the row's index in `this.data` (the
 	 * ORIGINAL, unbrushed array, so a lookup is valid regardless of whether the caller is iterating
 	 * the full data or a brush-narrowed slice of it). Empty — no calls at all — when `formatPoint`
@@ -372,7 +371,7 @@ export class DjChart extends DojoElement {
 	private labelText(rowIndex: number, value: number, s: ChartSeries, fpCache: Map<string, Map<number, string>>): string {
 		return fpCache.get(s.key)?.get(rowIndex) ?? this.fmtY(value);
 	}
-	/** The localized "no value" string (decision 23), for a missing cell's `aria-label`. */
+	/** The localized "no value" string, for a missing cell's `aria-label`. */
 	private noValueLabel(): string {
 		return messages.resolve("dj", this.#i18n.locale, "noValue") ?? "No value";
 	}
@@ -403,7 +402,7 @@ export class DjChart extends DojoElement {
 
 	/** The renderer actually in effect for this render: `canvas` only when requested, eligible,
 	 * `forced-colors: active` isn't (a canvas can't honor `CanvasText` on its own), and there are no
-	 * plugins (decision 12 — plugin marks are SVG only). */
+	 * plugins (plugin marks are SVG only). */
 	private get effectiveRendererNow(): ChartRenderer {
 		if (this.plugins.length > 0) return "svg";
 		const t = this.stacked || hasBars(this.series, this.type) ? "bar" : this.type;
@@ -475,10 +474,8 @@ export class DjChart extends DojoElement {
 	 *  true would just serialize the `sr-only` placeholder, or find no `svg[part="plot"]` at all).
 	 *  `series.length > 0 || plugins.length > 0`: a plugin-only chart (a candlestick chart has no
 	 *  `series` of its own — @dojo-ng/chart-financial's own doc comment) still has something to
-	 *  draw. Before Track P this was just `series.length > 0`, correctly, since nothing else could
-	 *  put a mark on the plot; found stale by chart-requests-spec.md's F5, whose own fixture
-	 *  (candles + volume + an indicator, zero core series) rendered nothing but the `sr-only`
-	 *  placeholder until this changed. */
+	 *  draw. Checking only `series.length > 0` would render a chart of candles, volume, and an
+	 *  indicator with zero core series as nothing but the `sr-only` placeholder. */
 	private get ready(): boolean {
 		return this.w > 0 && this.h > 0 && this.data.length > 0 && (this.series.length > 0 || this.plugins.length > 0);
 	}
@@ -490,16 +487,16 @@ export class DjChart extends DojoElement {
 		const accName = accessibleName(this.label, this.type, this.series, cats, centerForAria);
 		const ready = this.ready;
 		// Same reasoning as `ready` above: a plugin-only chart still has legend entries to show
-		// (decision 13 — a data-drawing plugin contributes to the legend), even with no core series.
+		// (a data-drawing plugin contributes to the legend), even with no core series.
 		const showLegend = this.showLegend && (this.series.length > 0 || this.plugins.length > 0);
 		// The .plot box is ALWAYS this same node (only its contents vary), so the
 		// ResizeObserver target stays stable across renders. The accessible table is always
 		// present, so content is never missing before first paint.
 		const canvasNow = ready && this.effectiveRendererNow === "canvas";
 		// Computed once per render and threaded to both the SVG labels and the table below, so a
-		// formatPoint result can never independently drift between the two (decision 29, Track M).
+		// formatPoint result can never independently drift between the two.
 		const fpCache = this.formatPointCache();
-		// `renderPlot` also resolves the Track P plugin layer (panes, domain merge) when the chart
+		// `renderPlot` also resolves the plugin layer (panes, domain merge) when the chart
 		// is ready and cartesian-vertical; `pluginCtx` is threaded to the legend and table below so
 		// a plugin's `legendItems`/`tableRows` land in the same render, never a stale prior one.
 		const plot = ready ? this.renderPlot(cats, accName, fpCache) : null;
@@ -515,7 +512,7 @@ export class DjChart extends DojoElement {
 		`;
 	}
 
-	/** The `<canvas>` overlay for series marks (see the CV decisions). Absolutely positioned over
+	/** The `<canvas>` overlay for series marks. Absolutely positioned over
 	 * the plot rect via CSS (`pointer-events: none`, so the SVG hit-bands beneath it keep handling
 	 * hover/tooltip). Sized and drawn in `#drawCanvas`, called from `updated()`. */
 	private renderCanvas(): TemplateResult {
@@ -531,7 +528,7 @@ export class DjChart extends DojoElement {
 		let innerH = Math.max(0, H - topMargin - MARGIN.bottom);
 		if (fam === "xy") return { template: this.renderXY(W, H, Math.max(0, W - MARGIN.left - MARGIN.right), innerH, accName, fpCache), pluginCtx: null };
 		// Horizontal bars are a separate render so the vertical path below stays byte-identical.
-		// (Track P's plugin seam is vertical-cartesian only — Track F's plugins are all cartesian.)
+		// (The plugin seam is vertical-cartesian only.)
 		if (this.isHBar) return { template: this.renderCartesianH(W, H, innerH, accName), pluginCtx: null };
 		// Cartesian. A secondary axis needs extra right margin for its tick labels.
 		const hasRight = this.series.some((s) => s.axis === "right");
@@ -541,7 +538,7 @@ export class DjChart extends DojoElement {
 		const data = this.brush && this.view ? this.data.slice(vs, ve + 1) : this.data;
 		const cats2 = categories(data, this.categoryKey);
 		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys, this.missing, this.yScale, this.yScaleRight);
-		// Plugins (Track P): resolves panes and merges domain() contributions BEFORE anything below
+		// Plugins: resolves panes and merges domain() contributions BEFORE anything below
 		// reads scales.y or innerH, since both are mutated/reassigned here when plugins are present.
 		const pluginLayer = this.buildPluginLayer(data, scales, innerW, innerH);
 		if (pluginLayer) innerH = pluginLayer.innerH;
@@ -568,7 +565,7 @@ export class DjChart extends DojoElement {
 				: groupedBars(data, this.categoryKey, this.series, scales, yOf, this.hiddenKeys, this.missing)
 			: [];
 
-		// Point labels (Track M): one candidate per plotted point/bar-end, across every labeled,
+		// Point labels: one candidate per plotted point/bar-end, across every labeled,
 		// visible series — `vs` converts a brush-local row index back to `this.data`'s own index, so
 		// a formatPointCache lookup (keyed by the ORIGINAL index) stays correct under a brush window.
 		const labelCandidates: PointLabel[] = [];
@@ -598,7 +595,7 @@ export class DjChart extends DojoElement {
 		});
 		const pointLabels = this.placedLabels(labelCandidates);
 
-		// Plugin marks (Track P): composed in array order, decision — renderUnder before the core
+		// Plugin marks: composed in array order: renderUnder before the core
 		// series in document order, renderOver after. Both draw inside the SAME translated group as
 		// the series, so a plugin's own xCenter()/scales coordinates match the core's exactly.
 		// Filtered to only the plugins that actually implement the hook — a bare `.map()` would leave
@@ -668,7 +665,7 @@ export class DjChart extends DojoElement {
 	}
 
 	/** Renders the labels {@link placedLabels} kept as `aria-hidden` `<text>` nodes — redundant with
-	 * the accessible table by design (decision 27), never the load-bearing accessible presentation. */
+	 * the accessible table by design, never the load-bearing accessible presentation. */
 	private renderPointLabels(labels: PointLabel[]) {
 		if (!labels.length) return nothing;
 		return svg`<g part="point-labels">${labels.map(
@@ -676,7 +673,7 @@ export class DjChart extends DojoElement {
 		)}</g>`;
 	}
 
-	// ---- plugin seam (Track P) ----
+	// ---- plugin seam ----
 
 	/** Reads `--dj-chart-pane-gap`, falling back to a sane default when unset or unparseable. */
 	#paneGapPx(): number {
@@ -685,8 +682,8 @@ export class DjChart extends DojoElement {
 	}
 
 	/** Resolves the vertical-cartesian plugin layer for this render: panes (shrinking the plot by
-	 * their total height plus one gap each, decision 14), each plugin's `domain()` contribution
-	 * merged into the primary y-domain (decision, P2), and the `ChartContext` every hook after this
+	 * their total height plus one gap each), each plugin's `domain()` contribution
+	 * merged into the primary y-domain, and the `ChartContext` every hook after this
 	 * point shares. `null` when there are no plugins — the common case costs one length check and
 	 * nothing else. Mutates `scales.y` IN PLACE (`.domain()`/`.range()` update and return the SAME
 	 * d3 scale) so every existing reader — ticks, grid, series, tooltip — automatically sees the
@@ -699,7 +696,7 @@ export class DjChart extends DojoElement {
 	): { ctx: ChartContext; innerH: number; panes: Array<{ pane: ChartPane; plugin: ChartPlugin; offset: number }> } | null {
 		if (!this.plugins.length) return null;
 		const paneScalesMap = new Map<string, ValueScale>();
-		// Panes are "resolved before layout" (decision 14): this ctx's `inner` is a documented
+		// Panes are "resolved before layout": this ctx's `inner` is a documented
 		// placeholder (the pre-pane-reduction height) that panes()/domain() must not rely on.
 		const layoutCtx: ChartContext = {
 			host: this,
@@ -717,7 +714,7 @@ export class DjChart extends DojoElement {
 		const paneEntries: Array<{ pane: ChartPane; plugin: ChartPlugin }> = [];
 		for (const plugin of this.plugins) {
 			for (const pane of plugin.panes?.(layoutCtx) ?? []) {
-				if (pane.height <= 0) continue; // ignored, not divided-by-zero (P3)
+				if (pane.height <= 0) continue; // ignored, not divided-by-zero
 				paneEntries.push({ pane, plugin });
 			}
 		}
@@ -725,7 +722,7 @@ export class DjChart extends DojoElement {
 		const reserved = paneEntries.reduce((sum, { pane }) => sum + pane.height + gap, 0);
 		const innerH = Math.max(0, innerHBeforePanes - reserved);
 
-		// Domain contributions, merged into the primary axis domain (decision, P2). `scales.y` was
+		// Domain contributions, merged into the primary axis domain. `scales.y` was
 		// already built (and .nice()'d) by buildScales against the core-only data; this reads that
 		// as the starting point, widens it with every plugin's own reach, then nices the COMBINED
 		// range exactly once — the single .nice() call that actually determines what renders.
@@ -769,8 +766,8 @@ export class DjChart extends DojoElement {
 	}
 
 	/** Disposes every plugin's previous `setup()` disposer and runs the CURRENT `plugins` array's,
-	 * but only when that array is a different reference from the one last set up for (decision 11 —
-	 * an ordinary reactive update, no rebuild machinery to guard). `ctx` reflects the fully-resolved
+	 * but only when that array is a different reference from the one last set up for (an ordinary
+	 * reactive update, no rebuild machinery to guard). `ctx` reflects the fully-resolved
 	 * layer (post-pane, post-domain-merge), matching what every other hook sees this render; `null`
 	 * only when `plugins` is empty, in which case there is nothing to set up anyway. */
 	private syncPluginSetups(ctx: ChartContext | null): void {
@@ -984,7 +981,7 @@ export class DjChart extends DojoElement {
 		const first = this.series[0];
 		const valueKey = first?.key ?? "";
 		const showLabels = !!first && this.pointLabelsOf(first);
-		// Reserve a ring outside the drawn slices for "outside the arc" labels (decision 25) so one
+		// Reserve a ring outside the drawn slices for "outside the arc" labels so one
 		// doesn't clip against the SVG viewBox edge.
 		const R = Math.max(0, Math.min(W, H) / 2 - 4 - (showLabels ? RADIAL_LABEL_PAD : 0));
 		const ratio = this.type === "donut" ? this.innerRadius ?? 0.6 : this.innerRadius ?? 0;
@@ -1130,7 +1127,7 @@ export class DjChart extends DojoElement {
 		</svg>`;
 	}
 
-	/** Plugin-contributed legend entries (decision 13, P4), appended AFTER the core series entries —
+	/** Plugin-contributed legend entries, appended AFTER the core series entries —
 	 * their marks aren't in `series`, so without this a candlestick chart's legend would silently
 	 * skip them. `[]` (nothing rendered) when there's no plugin context (radial/xy/horizontal, or no
 	 * plugins at all). */
@@ -1147,7 +1144,7 @@ export class DjChart extends DojoElement {
 
 	private renderLegend(pluginCtx: ChartContext | null = null): TemplateResult {
 		// Radial charts have no series; the legend lists categories (slices) instead. Plugins are
-		// vertical-cartesian only (Track P), so there's nothing to append here.
+		// vertical-cartesian only, so there's nothing to append here.
 		if (this.group() === "radial") {
 			const cats = categories(this.data, this.categoryKey);
 			return html`<div class="legend" part="legend">
@@ -1187,7 +1184,7 @@ export class DjChart extends DojoElement {
 		const left = MARGIN.left + xCenter(scales, c);
 		const style = `left:${left}px; top:${this.topMargin}px`;
 		// A plugin can replace the tooltip body for a category; the first non-undefined in array
-		// order wins, the core body otherwise (decision, P2).
+		// order wins, the core body otherwise.
 		if (pluginCtx) {
 			for (const p of this.plugins) {
 				const body = p.renderTooltip?.(c, pluginCtx);
@@ -1208,23 +1205,23 @@ export class DjChart extends DojoElement {
 		</div>`;
 	}
 
-	/** The extra `formatPoint` text `renderTable` mirrors into an "affected" cell (decision 29) —
+	/** The extra `formatPoint` text `renderTable` mirrors into an "affected" cell —
 	 * the raw value's own cell content is unchanged; this is appended after it, in its own span, so
 	 * a screen reader gets both the real number and whatever else `formatPoint` put on the chart.
 	 * `nothing` (byte-identical output) whenever this row/series pair wasn't in `fpCache`, which is
-	 * every row when `formatPoint` is unset at all — decision 29's "nothing changes... when it is
-	 * absent". */
+	 * every row when `formatPoint` is unset at all: nothing changes when it is absent. */
 	private pointLabelSpan(rowIndex: number, s: ChartSeries, fpCache: Map<string, Map<number, string>>) {
 		const text = fpCache.get(s.key)?.get(rowIndex);
 		return text !== undefined ? html`<span class="point-label-text">${text}</span>` : nothing;
 	}
 
-	/** Plugin-contributed table columns (decision 13, P4): a header plus one cell per row, flattened
+	/** Plugin-contributed table columns: a header plus one cell per row, flattened
 	 * across plugins in order. `[]` when there's no plugin context. Cells are indexed by row position
-	 * — a fine assumption for the vertical-cartesian-only, typically-brush-free charts Track F's
-	 * plugins target, but it means a `pluginCtx.data` narrowed by an active brush (a different length
-	 * than `this.data`, which the table always renders in full) would misalign; not exercised by any
-	 * spec'd combination, so not specially handled here. */
+	 * — a fine assumption for the vertical-cartesian-only, typically-brush-free charts the
+	 * financial plugins target, but it means a `pluginCtx.data` narrowed by an active brush (a
+	 * different length
+	 * than `this.data`, which the table always renders in full) would misalign; no supported
+	 * combination does that, so it is not specially handled here. */
 	private pluginTableColumns(pluginCtx: ChartContext | null): Array<{ header: string; cells: string[] }> {
 		return pluginCtx ? this.plugins.flatMap((p) => p.tableRows?.(pluginCtx) ?? []) : [];
 	}
@@ -1265,7 +1262,7 @@ export class DjChart extends DojoElement {
 		this.emit("dj-hover", { detail: { category: c } });
 	}
 
-	// ---- canvas escape hatch (see the CV decisions) ----
+	// ---- canvas escape hatch ----
 
 	// Redraws whenever the canvas is active and ANY property change re-renders (data, resize,
 	// legend toggle, and streamed appends all already go through a reactive property, so this
@@ -1328,7 +1325,7 @@ export class DjChart extends DojoElement {
 	}
 
 	/** Sizes the canvas bitmap ×devicePixelRatio for retina crispness (unverifiable in happy-dom;
-	 * confirmed in the browser per CV3) and draws the current marks via the pure {@link drawSeries}. */
+	 * confirmed in a real browser) and draws the current marks via the pure {@link drawSeries}. */
 	private drawCanvas(): void {
 		const canvas = this.#canvasEl;
 		if (!canvas || this.w <= 0 || this.h <= 0) return;

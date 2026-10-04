@@ -31,7 +31,7 @@ export default css`
 	   instead of sharing one bidi paragraph and clipping. */
 	.center-label { fill: var(--dj-color-text, #1f2937); font-weight: 600; unicode-bidi: isolate; }
 	.center-sub-label { fill: var(--dj-color-text-muted, #6b7280); font-weight: 400; unicode-bidi: isolate; }
-	/* Point labels (Track M): a halo (a wide, round-joined stroke painted BEFORE the fill, via
+	/* Point labels: a halo (a wide, round-joined stroke painted BEFORE the fill, via
 	   paint-order) keeps the text legible wherever it lands on top of a mark or the grid. */
 	.point-label {
 		font-size: var(--dj-chart-label-size, 0.6875rem);

@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Tabbed interface. `tabs` describes the buttons; the panels are slotted children in the same order (one per tab). The active panel is shown, the rest hidden. ARIA tablist/tab/tabpanel with roving arrow/Home/End keyboard. Local coordination of slotted panels — no store needed.
+`tabs` describes the buttons; the panels are slotted children in the same order (one per tab). The active panel is shown, the rest hidden. ARIA tablist/tab/tabpanel with roving arrow/Home/End keyboard. Local coordination of slotted panels — no store needed.
 
 ## Install
 
@@ -39,11 +39,20 @@ Provide `tabs`; slot one panel per tab in order.
 | `activeIndex` | active-index ↻ | `number` | `0` |
 | `alignButtons` | align-buttons ↻ | `"top" \| "bottom" \| "left" \| "right"` | `"top"` |
 
-**Slots:** default
+## Slots
 
-**Parts:** `tablist`, `tab`, `panels`
+- default slot
 
-**Events:** `change` (detail: active index), `dj-tab-close` (detail: index)
+## CSS parts
+
+- `tablist`
+- `tab`
+- `panels`
+
+## Events
+
+- `change`: Detail: active index.
+- `dj-tab-close`: Detail: index.
 
 ## Theming
 

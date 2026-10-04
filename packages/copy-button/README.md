@@ -4,7 +4,11 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-An icon-only button that copies text to the clipboard and flashes feedback. It composes `<dj-button>`, so focus, keyboard, and button ARIA come for free. Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form controls) or `textContent` (`value` wins when both are set). Copying uses `navigator.clipboard.writeText`, which requires a secure context (https or localhost); there is no legacy `execCommand` fallback. If the clipboard is unavailable or the write is rejected, the button shows an error state and emits `dj-error`. The icon swaps copy → check (success) → error for `feedback-duration` ms, then reverts, and the button's accessible name changes with it (Copy / Copied / Copy failed) so assistive tech hears the result.
+It composes `<dj-button>`, so focus, keyboard, and button ARIA come for free.
+
+Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form controls) or `textContent` (`value` wins when both are set). Copying uses `navigator.clipboard.writeText`, which requires a secure context (https or localhost); there is no legacy `execCommand` fallback. If the clipboard is unavailable or the write is rejected, the button shows an error state and emits `dj-error`.
+
+The icon swaps copy → check (success) → error for `feedback-duration` ms, then reverts, and the button's accessible name changes with it (Copy / Copied / Copy failed) so assistive tech hears the result.
 
 > Copies to the clipboard via `navigator.clipboard.writeText`, which requires a secure context (https or localhost) — there is no legacy fallback, so on plain http nothing is copied and the button shows its error state. Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form fields) or `textContent`; `value` wins when both are set. The icon flashes copy → check → error for `feedback-duration` ms and the accessible name changes with it (Copy / Copied / Copy failed). Listen for `dj-copy` (detail `{ value }`) and `dj-error`.
 
@@ -34,11 +38,18 @@ Flashes feedback; listen for `dj-copy`.
 | `from` | from | `string` | — |
 | `feedbackDuration` | feedback-duration | `number` | `2000` |
 
-**Parts:** `button` (the composed `<dj-button>`)
+## CSS parts
 
-**Events:** `dj-copy` (detail `{ value }`), `dj-error`
+- `button`: The composed `<dj-button>`.
 
-**Methods:** `focus(options: FocusOptions)`
+## Events
+
+- `dj-copy`: Detail `{ value }`.
+- `dj-error`
+
+## Methods
+
+- `focus(options: FocusOptions)`
 
 ## Examples
 

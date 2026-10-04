@@ -4,7 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Coordinates a set of `<dj-radio>` into a single-choice control. Provide choices either with the `options` array (rendered for you) or by slotting `<dj-radio>` children. The group owns selection (exclusivity), roving-arrow keyboard navigation, and form participation: it is the one form-associated element, submitting the selected `value` under `name`. Child radios should not carry their own `name`. This is local parent-child coordination, so it uses DOM, properties, and events — no external store needed.
+Provide choices either with the `options` array (rendered for you) or by slotting `<dj-radio>` children. The group owns selection (exclusivity), roving-arrow keyboard navigation, and form participation: it is the one form-associated element, submitting the selected `value` under `name`. Child radios should not carry their own `name`.
+
+This is local parent-child coordination, so it uses DOM, properties, and events — no external store needed.
 
 ## Install
 
@@ -42,13 +44,23 @@ Provide `options`; the group owns selection and form participation.
 | `disabled` | disabled ↻ | `boolean` | `false` |
 | `required` | required ↻ | `boolean` | `false` |
 
-**Slots:** default
+## Slots
 
-**Parts:** `group`, `label`
+- default slot
 
-**Events:** `change`
+## CSS parts
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`
+- `group`
+- `label`
+
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
 
 ## Theming
 

@@ -24,9 +24,17 @@ Slot `leading`, `center`, and `trailing` content.
 </dj-three-column-layout>
 ```
 
-**Slots:** `leading`, `center`, `trailing`
+## Slots
 
-**Parts:** `leading`, `center`, `trailing`
+- `leading`
+- `center`
+- `trailing`
+
+## CSS parts
+
+- `leading`
+- `center`
+- `trailing`
 
 ## Theming
 

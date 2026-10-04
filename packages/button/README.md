@@ -42,13 +42,27 @@ The `kind` property selects contained, outlined, or text styling.
 | `ariaPressed` | aria-pressed ↻ | `string \| null` | `null` |
 | `ariaExpanded` | aria-expanded ↻ | `string \| null` | `null` |
 
-**Slots:** default (the button label), `icon` (an icon, placed per `icon-position`)
+## Slots
 
-**Parts:** `base` (the native button), `label`, `icon`
+- default slot: The button label.
+- `icon`: An icon, placed per `icon-position`.
 
-**Methods:** `focus(options: FocusOptions)` (Move focus to the underlying native button.), `blur()` (Remove focus from the underlying native button.)
+## CSS parts
 
-**CSS properties:** `--dj-button-font-size-small` (default `var(--dj-font-size-small)`; Font size of a small button.), `--dj-button-font-size-medium` (default `var(--dj-font-size-medium)`; Font size of a medium button.), `--dj-button-font-size-large` (default `1.125rem`; Font size of a large button.)
+- `base`: The native button.
+- `label`
+- `icon`
+
+## Methods
+
+- `focus(options: FocusOptions)`: Move focus to the underlying native button.
+- `blur()`: Remove focus from the underlying native button.
+
+## CSS custom properties
+
+- `--dj-button-font-size-small`: Font size of a small button. Default `var(--dj-font-size-small)`.
+- `--dj-button-font-size-medium`: Font size of a medium button. Default `var(--dj-font-size-medium)`.
+- `--dj-button-font-size-large`: Font size of a large button. Default `1.125rem`.
 
 ## Examples
 

@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Content container. Slots: `header`, default (content), `actions`. Optional `title`/`subtitle`/`media-src`. `clickable` makes the body a button. Parts: `root`, `media`, `body`, `actions`.
+Slots: `header`, default (content), `actions`. Optional `title`/`subtitle`/`media-src`. `clickable` makes the body a button. Parts: `root`, `media`, `body`, `actions`.
 
 ## Install
 
@@ -41,9 +41,18 @@ Title, body, and an actions slot.
 | `mediaTitle` | media-title | `string` | — |
 | `clickable` | clickable | `boolean` | `false` |
 
-**Slots:** `header`, default (content), `actions`
+## Slots
 
-**Parts:** `root`, `media`, `body`, `actions`
+- `header`
+- default slot: Content.
+- `actions`
+
+## CSS parts
+
+- `root`
+- `media`
+- `body`
+- `actions`
 
 ## Theming
 

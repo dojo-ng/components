@@ -4,9 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Two resizable panes with a draggable divider between them. The `start` and `end` slots hold the panes; the divider is a shadow-side bar (put custom grip content in the optional `divider` slot). `position` is the start pane's share as a percent (0–100); the layout is a CSS grid whose start/end tracks are `position`fr and `(100 − position)`fr, so the panes always divide in that ratio. Minimum pane sizes come from CSS, not props: the tracks are `minmax(var(--dj-split-panel-min-start), …)` / `minmax(var(--dj-split-panel-min-end), …)`, so a consumer sets a floor in any length unit and the browser clamps the drag against it. The host needs a size (for `horizontal`, a height) since the panes fill it. `orientation="horizontal"` (default) puts the panes side by side with a vertical divider; `vertical` stacks them with a horizontal divider. Column order follows the host's writing direction, so in RTL the start pane sits on the right with no extra work. The divider is a `role="separator"` with `aria-valuenow/valuemin/valuemax` tracking `position` and `aria-orientation` set to the divider's own visual axis (vertical for a horizontal split). Dragging uses pointer events with pointer capture, so mouse, trackpad, and touch all work; the divider position is read from the pointer's offset within the host rect (RTL-mirrored for a horizontal split — a pointer at the visual left is 100%). Because dragging is a pointer gesture, WCAG 2.5.7 needs a non-drag path: the focused divider takes Arrow keys (±1, Shift = ±10) mapped through reading direction for horizontal and Up/Down for vertical, plus Home (0) and End (100). `dj-reposition` fires on settle: once on pointer-up for a drag, and once per keypress.
-
-> The host needs a size the panes can fill: for a horizontal split give it a height (width comes from the flow). Minimum pane sizes are CSS, not props — set `--dj-split-panel-min-start` and `--dj-split-panel-min-end` to any length and the browser clamps the drag against them. Dragging is a pointer gesture, so the divider also takes the keyboard for WCAG 2.5.7: focus it and use the arrow keys (Shift for a larger step), Home, and End. For a three-pane layout, nest one `dj-split-panel` inside a slot of another.
+Put the panes in the `start` and `end` slots. `position` is the start pane's share of the space, as a percent from 0 to 100. The host needs a size, because the panes fill it: for a horizontal split, give it a height.
 
 ## Install
 
@@ -18,7 +16,7 @@ npm install @dojo-ng/split-panel
 
 Import the package to register the custom element, then use the tag.
 
-Slot `start` and `end` panes; drag the divider or focus it and use the arrow keys. `position` is the start pane's percent share. `dj-reposition` fires with the settled `{ position }`. Min pane sizes come from the `--dj-split-panel-min-*` tokens, not props.
+A sidebar and content with minimum widths. `dj-reposition` reports the new position.
 
 ```html
 <dj-split-panel position="40"
@@ -33,6 +31,26 @@ Slot `start` and `end` panes; drag the divider or focus it and use the arrow key
 </script>
 ```
 
+## Layout
+
+- `orientation="horizontal"` (the default) puts the panes side by side with a vertical divider. `vertical` stacks them with a horizontal divider.
+- The panes always divide in the ratio `position` : (100 − `position`).
+- Minimum pane sizes come from CSS, not from properties: set `--dj-split-panel-min-start` and `--dj-split-panel-min-end` in any length unit, and dragging stops at that size.
+- The order follows the writing direction, so in a right-to-left page the start pane is on the right with no extra work.
+- The divider bar is drawn by the component. Put custom grip content in the optional `divider` slot.
+- For three panes, nest a second `dj-split-panel` inside a slot of the first.
+
+## Resizing
+
+- Drag the divider with a mouse, a trackpad, or touch.
+- Or focus the divider and use the keyboard, so resizing never requires dragging (WCAG 2.5.7): the arrow keys move it by 1 (Shift: by 10), Home moves it to 0, and End to 100. A horizontal split uses Left and Right in the reading direction; a vertical split uses Up and Down.
+- `dj-reposition` fires when the split settles: once when a drag ends, and once per key press.
+
+## Accessibility
+
+- The divider has `role="separator"`, with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax` tracking `position`.
+- Its `aria-orientation` is the divider's own direction, so a horizontal split has a vertical separator.
+
 ## Properties
 
 `↻` marks an attribute reflected to the DOM; a dash means the property is set in JavaScript only.
@@ -43,13 +61,28 @@ Slot `start` and `end` panes; drag the divider or focus it and use the arrow key
 | `position` | position ↻ | `number` | `50` |
 | `disabled` | disabled ↻ | `boolean` | `false` |
 
-**Slots:** `start`, `divider`, `end`
+## Slots
 
-**Parts:** `start`, `end`, `divider`
+- `start`
+- `divider`
+- `end`
 
-**Events:** `dj-reposition` (detail `{ position }`)
+## CSS parts
 
-**CSS properties:** `--dj-split-panel-min-start` (default `0`; Minimum size of the start pane (any length).), `--dj-split-panel-min-end` (default `0`; Minimum size of the end pane (any length).), `--dj-split-panel-divider-width` (default `4px`; Thickness of the divider bar.), `--dj-split-panel-divider-color` (default `var(--dj-color-border)`; Divider bar color.)
+- `start`
+- `end`
+- `divider`
+
+## Events
+
+- `dj-reposition`: Detail `{ position }`.
+
+## CSS custom properties
+
+- `--dj-split-panel-min-start`: Minimum size of the start pane (any length). Default `0`.
+- `--dj-split-panel-min-end`: Minimum size of the end pane (any length). Default `0`.
+- `--dj-split-panel-divider-width`: Thickness of the divider bar. Default `4px`.
+- `--dj-split-panel-divider-color`: Divider bar color. Default `var(--dj-color-border)`.
 
 ## Examples
 
@@ -71,7 +104,7 @@ Nest a splitter in a slot for a third pane. Here the end pane is itself a vertic
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.
 
-## Accessibility and i18n
+## Localization
 
 Follows the project's WCAG 2.2 AA and localization conventions.
 

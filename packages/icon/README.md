@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A presentational icon. Supply a glyph either by `type` (a name registered via `registerIcon`, resolved from the SVG icon registry) or by slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive tech; without it the icon is aria-hidden.
+Supply a glyph either by `type` (a name registered via `registerIcon`, resolved from the SVG icon registry) or by slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive tech; without it the icon is aria-hidden.
 
 > A registered SVG must carry a `viewBox`. dj-icon sizes a glyph by stretching it to fill the icon box, and an `<svg>` only scales its artwork when it has a `viewBox`; one without gets a correctly-sized box with clipped or unscaled artwork. `registerIcon`/`registerIcons` log a one-time console warning for any icon registered without a `viewBox`, and never rewrite it. Any `width` or `height` attributes on a registered SVG are overridden by dj-icon's own sizing. A slotted inline `<svg>` follows the same rule.
 
@@ -36,11 +36,17 @@ Slot an SVG; it inherits `currentColor` and sizing.
 | `size` | size ↻ | `IconSize` | — |
 | `altText` | alt-text | `string` | — |
 
-**Slots:** default
+## Slots
 
-**Parts:** `base`
+- default slot
 
-**CSS properties:** `--dj-icon-color` (default `currentColor`; Icon color.)
+## CSS parts
+
+- `base`
+
+## CSS custom properties
+
+- `--dj-icon-color`: Icon color. Default `currentColor`.
 
 ## Examples
 

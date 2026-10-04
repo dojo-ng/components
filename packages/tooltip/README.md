@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Shows tip content next to its trigger on hover/focus. The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown.
+The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown.
 
 ## Install
 
@@ -34,11 +34,18 @@ Wrap a trigger; content shows on hover/focus.
 | `open` | open | `boolean` | `false` |
 | `orientation` | orientation ↻ | `TooltipOrientation` | `"top"` |
 
-**Slots:** default, `content`
+## Slots
 
-**Parts:** `content`
+- default slot
+- `content`
 
-**CSS properties:** `--dj-tooltip-z-index` (default `950`; Stacking order of the tooltip.)
+## CSS parts
+
+- `content`
+
+## CSS custom properties
+
+- `--dj-tooltip-z-index`: Stacking order of the tooltip. Default `950`.
 
 ## Theming
 

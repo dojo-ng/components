@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A layout wrapper that gathers values from its named child controls and emits `dj-submit` with a `{ name: value }` object. `column` stacks fields. Because slotted fields live in light DOM (outside any shadow `<form>`), values are read from each named child's `value`. For full native form semantics, the controls are form-associated, so wrapping them in a real `<form>` also works.
+`column` stacks fields. Because slotted fields live in light DOM (outside any shadow `<form>`), values are read from each named child's `value`. For full native form semantics, the controls are form-associated, so wrapping them in a real `<form>` also works.
 
 ## Install
 
@@ -38,11 +38,19 @@ Wrap form-associated components; `dj-submit` carries the values.
 |---|---|---|---|
 | `column` | column | `boolean` | `false` |
 
-**Slots:** default
+## Slots
 
-**Events:** `dj-submit`, `dj-reset`
+- default slot
 
-**Methods:** `submit()`, `reset()`
+## Events
+
+- `dj-submit`
+- `dj-reset`
+
+## Methods
+
+- `submit()`
+- `reset()`
 
 ## Theming
 

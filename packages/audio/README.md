@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A themed audio player wrapping the native `HTMLAudioElement`. The `<audio>` element is ours (hidden in the shadow root); the UI is dj- controls: a play/pause `<dj-button>` whose icon and localized label follow the media's real `play`/`pause` events (not the click, so the button stays correct if the media is driven through `media()`), a seek `<dj-slider>` whose max is set from the media duration and whose value tracks playback, and a current/total time readout. No vendor engine — audio needs none.
+The `<audio>` element is ours (hidden in the shadow root); the UI is dj- controls: a play/pause `<dj-button>` whose icon and localized label follow the media's real `play`/`pause` events (not the click, so the button stays correct if the media is driven through `media()`), a seek `<dj-slider>` whose max is set from the media duration and whose value tracks playback, and a current/total time readout. No vendor engine — audio needs none.
 
 > Wraps the native `HTMLAudioElement` (no vendor engine — audio needs none): the `<audio>` is ours and hidden, the UI is dj- controls, so keyboard support comes free from the button and slider. Give it a `label` for an accessible name. The play/pause state follows the media's real `play`/`pause` events, not the button click, so it stays correct even if you drive playback through `media()`. `dj-time` is throttled to at most once per second; wire xAPI/analytics/resume-position as listeners on the events, not in the component. `media()` returns the raw audio element (advanced; no support implied).
 
@@ -39,11 +39,25 @@ Set `src` and a `label`. The play/pause button, seek slider, and time readout ar
 | `label` | label | `string` | — |
 | `preload` | preload | `string` | `"metadata"` |
 
-**Parts:** `bar` (the control row), `play` (the play/pause button), `seek` (the slider), `time`
+## CSS parts
 
-**Events:** `dj-play`, `dj-pause`, `dj-ended`, `dj-time`
+- `bar`: The control row.
+- `play`: The play/pause button.
+- `seek`: The slider.
+- `time`
 
-**Methods:** `play()` (Start playback.), `pause()` (Pause playback.), `media(): HTMLAudioElement | null` (The underlying `HTMLAudioElement`. Advanced escape hatch; no support implied.)
+## Events
+
+- `dj-play`
+- `dj-pause`
+- `dj-ended`
+- `dj-time`
+
+## Methods
+
+- `play()`: Start playback.
+- `pause()`: Pause playback.
+- `media(): HTMLAudioElement | null`: The underlying `HTMLAudioElement`. Advanced escape hatch; no support implied.
 
 ## Theming
 

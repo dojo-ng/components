@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Star rating (0..max). Form-associated. (Half-step `allowHalf` accepted; full-star core.)
+Form-associated. (Half-step `allowHalf` accepted; full-star core.)
 
 ## Install
 
@@ -35,11 +35,18 @@ Import the package to register the custom element, then use the tag.
 | `name` | name ↻ | `string` | — |
 | `label` | label | `string` | — |
 
-**Events:** `change`
+## Events
 
-**Methods:** `checkValidity()`, `restoreFormState(state: File | string | FormData | null)`
+- `change`
 
-**CSS properties:** `--dj-rate-size` (default `1.5rem`; Size of one star.)
+## Methods
+
+- `checkValidity()`
+- `restoreFormState(state: File | string | FormData | null)`
+
+## CSS custom properties
+
+- `--dj-rate-size`: Size of one star. Default `1.5rem`.
 
 ## Theming
 

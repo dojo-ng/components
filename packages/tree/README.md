@@ -1,12 +1,10 @@
 # @dojo-ng/tree
 
-`<dj-tree>` — A hierarchical tree from `nodes`.
+`<dj-tree>` — A hierarchical tree built from `nodes`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A hierarchical tree from `nodes`. Each node may carry an `icon` (a registered icon name) and a `count` (a trailing badge, e.g. an unread count). Selection is controlled by `value` (a node id) and emits `dj-select`; expansion is controlled by `expanded` (an array of node ids) and emits `dj-expand-change`. The component knows nothing about what the tree holds — a file tree, a mail folder list, or a MIME structure are all just nodes. A row click selects; the chevron expands. Set `expand-on-row-click` when the tree has rows that exist only to contain others, where selecting one means nothing and the click would be dead. Keyboard follows the APG tree pattern with a roving tabindex: exactly one row is tabbable (the selected row if visible, else the first visible row), and the arrow keys move focus without selecting. Down/Up walk the visible rows; Right expands a closed parent, steps into an open one, and does nothing on a leaf; Left collapses an open parent or moves to the parent row; Home/End jump to the first/last visible row; Enter or Space selects the focused row. Indentation is a logical `margin-inline-start`, so it flips in RTL, and the chevron mirrors with the reading direction. Deferred (not built): drag-drop, virtualization, checkboxes, lazy loading.
-
-> Selection and expansion are both controlled: `value` is the selected node id (emits `dj-select`) and `expanded` is an array of open node ids (emits `dj-expand-change` with `{ id, expanded, expandedIds }`). Node `icon` names must be registered with `registerIcon`/`registerIcons` from `@dojo-ng/icon`; `count` renders as a trailing badge. Keyboard is the APG tree pattern with a roving tabindex — only one row is ever a tab stop, arrows move focus without selecting (Right/Left expand/collapse or move in/out, Home/End jump), and Enter or Space selects. Style indentation with `--dj-tree-indent` and the count with `--dj-tree-count-color`. Not built yet: drag-drop, virtualization, checkboxes, lazy loading.
+The tree knows nothing about what it shows: a file tree, a mail folder list, and a MIME structure are all just nodes. Each node can carry an `icon` (a name registered with `registerIcon` or `registerIcons` from `@dojo-ng/icon`) and a `count`, shown as a trailing badge such as an unread count.
 
 ## Install
 
@@ -18,7 +16,7 @@ npm install @dojo-ng/tree
 
 Import the package to register the custom element, then use the tag.
 
-Each node can carry an `icon` (a registered icon name) and a `count` (a trailing badge, e.g. unread mail). `value` is the selected node id and `expanded` is the controlled array of open node ids; the tree emits `dj-select` and `dj-expand-change`. Keyboard is the APG tree pattern with a roving tabindex — arrows move focus (Right/Left expand/collapse), Enter selects.
+Folders with registered icons and unread counts. The tree reports selection with `dj-select` and opened folders with `dj-expand-change`.
 
 ```html
 <dj-tree id="folders" value="inbox"></dj-tree>
@@ -44,6 +42,33 @@ Each node can carry an `icon` (a registered icon name) and a `count` (a trailing
 </script>
 ```
 
+## Selection and expansion
+
+- Both are controlled. `value` is the selected node id, and the tree emits `dj-select`.
+- `expanded` is the array of open node ids, and the tree emits `dj-expand-change`.
+- Clicking a row selects it; clicking the chevron expands or collapses it.
+- Set `expand-on-row-click` to make a click on a parent row also expand or collapse it. Use it when some rows exist only to hold others, so a click on them does something visible.
+
+## Keyboard
+
+The tree follows the APG tree pattern. Only one row is a tab stop: the selected row if it is visible, otherwise the first visible row. The arrow keys move focus without selecting.
+
+- Down and Up move through the visible rows.
+- Right expands a closed parent, moves into an open one, and does nothing on a leaf.
+- Left collapses an open parent, or moves to the parent row.
+- Home and End jump to the first and last visible row.
+- Enter or Space selects the focused row.
+
+## Right-to-left
+
+- Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron points in the reading direction.
+
+## Not built
+
+- Drag and drop, virtualization, checkboxes, and lazy loading.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
+
 ## Properties
 
 `↻` marks an attribute reflected to the DOM; a dash means the property is set in JavaScript only.
@@ -55,13 +80,26 @@ Each node can carry an `icon` (a registered icon name) and a `count` (a trailing
 | `expanded` | expanded | `string[]` | `[]` |
 | `expandOnRowClick` | expand-on-row-click ↻ | `boolean` | `false` |
 
-**Slots:** `none` (content comes from `nodes`)
+## Slots
 
-**Parts:** `row` (a node's clickable line), `chevron`, `label`, `count`
+- `none`: Content comes from `nodes`.
 
-**Events:** `dj-expand-change` (detail `{ id, expanded, expandedIds }`), `dj-select` (detail `{ id }`)
+## CSS parts
 
-**CSS properties:** `--dj-tree-indent` (default `1.1rem`; Indentation added per nesting level.), `--dj-tree-count-color` (default `var(--dj-color-text-muted)`; Color of the trailing count badge.)
+- `row`: A node's clickable line.
+- `chevron`
+- `label`
+- `count`
+
+## Events
+
+- `dj-expand-change`: Detail `{ id, expanded, expandedIds }`.
+- `dj-select`: Detail `{ id }`.
+
+## CSS custom properties
+
+- `--dj-tree-indent`: Indentation added per nesting level. Default `1.1rem`.
+- `--dj-tree-count-color`: Color of the trailing count badge. Default `var(--dj-color-text-muted)`.
 
 ## Theming
 

@@ -4,7 +4,11 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form label. Content goes in the default slot. Note: native `for`/`id` association does not cross shadow boundaries, so associate by wrapping the control in the label's light DOM, or rely on the consuming field component to wire ARIA. `for-id` is still reflected for same-root cases. Deviates from the Dojo widget in one name: the visually-hidden flag is `visually-hidden` (not `hidden`) to avoid clobbering the native `hidden` attribute.
+Content goes in the default slot.
+
+Note: native `for`/`id` association does not cross shadow boundaries, so associate by wrapping the control in the label's light DOM, or rely on the consuming field component to wire ARIA. `for-id` is still reflected for same-root cases.
+
+Deviates from the Dojo widget in one name: the visually-hidden flag is `visually-hidden` (not `hidden`) to avoid clobbering the native `hidden` attribute.
 
 ## Install
 
@@ -38,9 +42,13 @@ Wrap the control in the label's light DOM for association.
 | `valid` | valid | `boolean` | — |
 | `forId` | for-id | `string` | — |
 
-**Slots:** default
+## Slots
 
-**Parts:** `base`
+- default slot
+
+## CSS parts
+
+- `base`
 
 ## Theming
 

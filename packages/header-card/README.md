@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A `<dj-card>` with a header row (avatar + title/subtitle). Slots: `avatar`, default (content), `actions`.
+Slots: `avatar`, default (content), `actions`.
 
 ## Install
 
@@ -35,7 +35,11 @@ Slot header content above the body.
 | `subtitle` | subtitle | `string` | `""` |
 | `kind` | kind | `"elevated" \| "outlined"` | `"elevated"` |
 
-**Slots:** `avatar`, default (content), `actions`
+## Slots
+
+- `avatar`
+- default slot: Content.
+- `actions`
 
 ## Theming
 

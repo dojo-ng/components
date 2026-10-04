@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated single-select combobox. A trigger shows the selected option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>` of `options`. Selecting sets `value`, closes, and returns focus. ARIA combobox/listbox. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.
+A trigger shows the selected option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>` of `options`. Selecting sets `value`, closes, and returns focus. ARIA combobox/listbox. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.
 
 ## Install
 
@@ -45,11 +45,21 @@ Provide `options`; read the choice from the `change` event.
 | `position` | position ↻ | `PopupPosition` | `"below"` |
 | `open` | open ↻ | `boolean` | `false` |
 
-**Parts:** `label`, `trigger`, `helper-text`
+## CSS parts
 
-**Events:** `change`
+- `label`
+- `trigger`
+- `helper-text`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(o: FocusOptions)`
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
+- `focus(o: FocusOptions)`
 
 ## Theming
 

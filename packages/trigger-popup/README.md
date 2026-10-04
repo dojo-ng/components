@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Clicking the trigger (default slot) opens a `<dj-popup>` anchored to it, holding the `content` slot. `match-width` sizes the popup to the trigger.
+`match-width` sizes the popup to the trigger.
 
 ## Install
 
@@ -36,9 +36,14 @@ The `trigger` slot toggles the default-slot content.
 | `matchWidth` | match-width | `boolean` | `true` |
 | `underlayVisible` | underlay-visible | `boolean` | `false` |
 
-**Slots:** default, `content`
+## Slots
 
-**Events:** `dj-open`
+- default slot
+- `content`
+
+## Events
+
+- `dj-open`
 
 ## Theming
 

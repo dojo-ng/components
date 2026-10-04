@@ -4,7 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-`<dj-theme theme="dark">` — scopes a theme to a subtree. It sets `data-dj-theme` on itself so the token rules in `theme.css` apply, and those tokens inherit through the slot into descendants and their shadow roots. `auto` removes the attribute so the subtree inherits the ambient theme (or the OS via prefers-color-scheme at the root). Requires `theme.css` to be loaded once at the page level.
+It sets `data-dj-theme` on itself so the token rules in `theme.css` apply, and those tokens inherit through the slot into descendants and their shadow roots. `auto` removes the attribute so the subtree inherits the ambient theme (or the OS via prefers-color-scheme at the root).
+
+Requires `theme.css` to be loaded once at the page level.
 
 ## Install
 
@@ -32,7 +34,9 @@ Force a theme for a subtree.
 |---|---|---|---|
 | `theme` | theme | `ThemeName` | `"auto"` |
 
-**Slots:** default
+## Slots
+
+- default slot
 
 ## Theming
 

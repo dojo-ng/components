@@ -31,9 +31,15 @@ Slot `leading` and `trailing` content.
 |---|---|---|---|
 | `bias` | bias | `"leading"\|"trailing"` | — |
 
-**Slots:** `leading`, `trailing`
+## Slots
 
-**Parts:** `leading`, `trailing`
+- `leading`
+- `trailing`
+
+## CSS parts
+
+- `leading`
+- `trailing`
 
 ## Theming
 

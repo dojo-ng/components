@@ -4,9 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `type` selects the mark: cartesian (`line`, `area`, `bar`) reads `category-key` for x; x/y (`scatter`, `bubble`) reads `x-key` for a numeric x (and `size-key` for bubble radius); radial (`pie`, `donut`) draws one series as slices by category. `stacked` stacks bars and areas; a series may override `type` for combos. Built on D3 math (scales, shapes) with the SVG owned here, so marks are themeable via `--dj-*` tokens (a `--dj-chart-1..8` ramp) and `::part()`, and the chart is real DOM for assistive tech. It exposes a visually-hidden data table as the accessible equivalent, carries `role="img"` with a generated summary, and honors reduced motion. Not a form control. `legend-toggle` makes legend items toggle series visibility; `brush` adds an overview strip below cartesian charts for selecting the visible category window (double-click resets). {@link appendData} appends rows for cheap live updates without rebuilding the `data` array; `max-points` bounds how much history it keeps.
-
-> Sizing: the chart fills its width and takes its height from the `--dj-chart-height` custom property (default `18rem`). Set that property to resize it; a fixed `height` on a wrapper element will not constrain the chart, and a wrapper shorter than the chart's height will let the legend overflow. The legend sits below the plot and is included in that height.
+Set `data` (an array of rows) and `series`. The chart is built on D3's scales and shapes, but the SVG is real DOM owned by the component, so you can theme it with `--dj-*` tokens and `::part()`, and assistive technology can read it. It is not a form control.
 
 ## Install
 
@@ -36,6 +34,36 @@ Set `data` (array of rows), `series` (one entry per plotted value), and `categor
   c.addEventListener("dj-hover", (e) => console.log(e.detail.category));
 </script>
 ```
+
+## Chart types
+
+`type` selects the mark:
+
+- Cartesian (`line`, `area`, `bar`) reads `category-key` for the x axis.
+- X/Y (`scatter`, `bubble`) reads `x-key` for a numeric x, and `size-key` for the bubble radius.
+- Radial (`pie`, `donut`) draws one series as slices by category.
+- `stacked` stacks bars and areas. A series can override `type` to make a combination chart.
+
+## Interaction
+
+- `legend-toggle` lets users show and hide a series from its legend item.
+- `brush` adds an overview strip below a cartesian chart for choosing the visible range of categories. Double-click the strip to reset it.
+
+## Live data
+
+- `appendData()` adds rows without rebuilding the `data` array, for cheap live updates. `max-points` limits how many rows it keeps.
+
+## Sizing
+
+- The chart fills its container's width and takes its height from `--dj-chart-height` (default `18rem`). Set that property to resize it.
+- A fixed `height` on a wrapper element does not limit the chart, and a wrapper shorter than the chart lets the legend overflow. The legend sits below the plot, inside that height.
+
+## Accessibility
+
+- A visually hidden data table is the accessible equivalent of the chart.
+- The chart has `role="img"` and a generated summary.
+- Animation follows `prefers-reduced-motion`.
+- The series colors are the `--dj-chart-1` to `--dj-chart-8` tokens.
 
 ## Properties
 
@@ -75,13 +103,51 @@ Set `data` (array of rows), `series` (one entry per plotted value), and `categor
 | `yScaleRight` | y-scale-right ↻ | `ScaleKind` | `"linear"` |
 | `plugins` | — | `ChartPlugin[]` | `[]` |
 
-**Parts:** `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`, `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`, `point-labels`, `point-label`
+## CSS parts
 
-**Events:** `dj-legend-toggle` (detail `{ key, hidden }`), `dj-hover` (detail `{ category }` or `null`; cartesian and radial)
+- `plot`
+- `axis`
+- `grid`
+- `series`
+- `bar`
+- `line`
+- `point`
+- `slice`
+- `legend`
+- `legend-item`
+- `brush-handle`
+- `tooltip`
+- `plot-canvas`
+- `center-label`
+- `center-sub-label`
+- `point-labels`
+- `point-label`
 
-**Methods:** `appendData(rows: ChartDatum[])` (Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).), `toSvg(): string` (Serializes the current plot as a standalone SVG string: presentational styles inlined (no external stylesheet or theme tokens needed to render it correctly elsewhere) and, when the canvas renderer is actually in effect (`effectiveRendererNow`, never the raw `renderer` property — they differ whenever a fallback applies, and a chart that asked for canvas but fell back must not get an empty bitmap composited over it), its drawn bitmap composited in at the same position and stacking it renders on screen. `""` when the chart isn't {@link ready} (no data, zero measured size) — the same gate `render()` uses for its placeholder.), `toPng(scale): Promise<Blob>` (Rasterizes {@link toSvg}'s output to a PNG `Blob` at `scale`× (default 2, for retina and for print). Rejects if the chart isn't {@link ready} ({@link toSvg} would return `""`).)
+## Events
 
-**CSS properties:** `--dj-chart-height` (default `18rem`; Overall chart height (width fills the container).), `--dj-chart-label-size` (default `0.6875rem`; Point-label font size.), `--dj-chart-label-color` (Point-label text color; defaults to `--dj-color-text`.), `--dj-chart-label-halo` (Point-label halo stroke; defaults to `--dj-color-background`.), `--dj-chart-1` (default `#2563eb`; Categorical series color 1.), `--dj-chart-2` (default `#16a34a`; Categorical series color 2.), `--dj-chart-3` (default `#d97706`; Categorical series color 3.), `--dj-chart-4` (default `#dc2626`; Categorical series color 4.), `--dj-chart-5` (default `#7c3aed`; Categorical series color 5.), `--dj-chart-6` (default `#0891b2`; Categorical series color 6.), `--dj-chart-7` (default `#db2777`; Categorical series color 7.), `--dj-chart-8` (default `#65a30d`; Categorical series color 8.)
+- `dj-legend-toggle`: Detail `{ key, hidden }`.
+- `dj-hover`: Detail `{ category }` or `null`; cartesian and radial.
+
+## Methods
+
+- `appendData(rows: ChartDatum[])`: Append rows without rebuilding `data` yourself: cheap live updates for streaming sources. Multiple calls within the same animation frame coalesce into a single `data` assignment. Trims from the front to `max-points` when set, and clears an active brush selection (its indices are into the pre-append data and would otherwise point at the wrong window).
+- `toSvg(): string`: Serializes the current plot as a standalone SVG string: presentational styles inlined (no external stylesheet or theme tokens needed to render it correctly elsewhere) and, when the canvas renderer is actually in effect (`effectiveRendererNow`, never the raw `renderer` property — they differ whenever a fallback applies, and a chart that asked for canvas but fell back must not get an empty bitmap composited over it), its drawn bitmap composited in at the same position and stacking it renders on screen. `""` when the chart isn't {@link ready} (no data, zero measured size) — the same gate `render()` uses for its placeholder.
+- `toPng(scale): Promise<Blob>`: Rasterizes {@link toSvg}'s output to a PNG `Blob` at `scale`× (default 2, for retina and for print). Rejects if the chart isn't {@link ready} ({@link toSvg} would return `""`).
+
+## CSS custom properties
+
+- `--dj-chart-height`: Overall chart height (width fills the container). Default `18rem`.
+- `--dj-chart-label-size`: Point-label font size. Default `0.6875rem`.
+- `--dj-chart-label-color`: Point-label text color; defaults to `--dj-color-text`.
+- `--dj-chart-label-halo`: Point-label halo stroke; defaults to `--dj-color-background`.
+- `--dj-chart-1`: Categorical series color 1. Default `#2563eb`.
+- `--dj-chart-2`: Categorical series color 2. Default `#16a34a`.
+- `--dj-chart-3`: Categorical series color 3. Default `#d97706`.
+- `--dj-chart-4`: Categorical series color 4. Default `#dc2626`.
+- `--dj-chart-5`: Categorical series color 5. Default `#7c3aed`.
+- `--dj-chart-6`: Categorical series color 6. Default `#0891b2`.
+- `--dj-chart-7`: Categorical series color 7. Default `#db2777`.
+- `--dj-chart-8`: Categorical series color 8. Default `#65a30d`.
 
 ## Examples
 
@@ -415,7 +481,7 @@ A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. 
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.
 
-## Accessibility and i18n
+## Localization
 
 Follows the project's WCAG 2.2 AA and localization conventions.
 

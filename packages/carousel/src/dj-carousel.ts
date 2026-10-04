@@ -18,28 +18,38 @@ const EN: Record<string, string> = {
 
 /**
  * `<dj-carousel>` — a slotted, swipeable carousel. Each top-level element in the default slot is
- * one item (cards, images, tiles — arbitrary content). The item strip is a native horizontal
- * scroll container with CSS scroll-snap, so touch and trackpad swiping is real scrolling: there
- * is no pointer/drag code and no WCAG 2.5.7 (dragging) concern — the prev/next buttons are the
- * non-drag path. `per-view` sizes items to show N at once (gap-adjusted); `dots` adds one dot per
- * navigable page (with `per-view` > 1 the trailing items can't lead, so pages = items − per-view +
- * 1); `nav` (default on) shows prev/next buttons that disable at the ends (no looping in v1).
+ * one item: a card, an image, a tile, or any other content.
  *
- * The settled index is detected from element rects (not `scrollLeft`, which is RTL-inconsistent),
- * debounced after scrolling. `next`/`previous`/`goTo` smooth-scroll the target into view and,
- * because a headless environment has no layout, update `index` and emit optimistically; the scroll
- * listener reconciles in a real browser (guarded so an unchanged index does not re-emit). Under
- * `prefers-reduced-motion` navigation jumps instantly (the composed `reducedMotion` snippet forces
- * `scroll-behavior: auto`, and button navigation passes `behavior: "auto"`).
+ * Swiping is native scrolling. The item strip is a horizontal scroll container with CSS
+ * scroll-snap, so touch and trackpad work with no drag code, and the prev/next buttons give a way
+ * to move that needs no dragging (WCAG 2.5.7). Give the carousel a `label` so the region has an
+ * accessible name.
  *
- * ARIA follows the APG carousel pattern: the region carries `aria-roledescription="carousel"` and
- * the `label`; each slotted item gets `role="group"`, `aria-roledescription="slide"`, and an
- * "{n} of {total}" label, reconciled on every `slotchange` and locale change. Keyboard: with the
- * viewport focused, ArrowRight/ArrowLeft move forward/back in the reading direction (RTL-aware).
+ * #### Layout
+ * - `per-view` shows that many items at once, sized to fit with the gap between them.
+ * - `dots` adds one dot per page. With `per-view` above 1, the last items cannot start a page, so
+ *   the number of pages is items − `per-view` + 1.
+ * - `nav` (on by default) shows prev/next buttons. They are disabled at the first and last page;
+ *   the carousel does not loop.
  *
- * Deferred (not built): `loop`, autoplay (an accessibility liability), and vertical orientation.
+ * #### Moving between items
+ * - `next()`, `previous()`, and `goTo(index)` scroll smoothly to the item.
+ * - Under `prefers-reduced-motion`, the carousel jumps to the item instead of scrolling.
+ * - `dj-slide-change` fires when the current item changes, from swiping, a button, a key, or a
+ *   method call.
  *
- * Slots: default — each top-level element is one carousel item.
+ * #### Accessibility
+ * - The carousel follows the APG carousel pattern. The region has
+ *   `aria-roledescription="carousel"` and the `label` as its name.
+ * - Each item gets `role="group"`, `aria-roledescription="slide"`, and an "{n} of {total}" label.
+ *   These update when items are added or removed and when the locale changes.
+ * - With the strip focused, ArrowRight and ArrowLeft move forward and back in the reading
+ *   direction, so they also work in right-to-left pages.
+ *
+ * #### Not built
+ * - Looping, autoplay (an accessibility problem), and vertical orientation.
+ *
+ * Slots: default (each top-level element is one carousel item).
  * Parts: `viewport` (the scroller), `prev`, `next`, `dots`, `dot`.
  * Events: `dj-slide-change` (detail `{ index }`) when the settled index changes, from any cause.
  *
@@ -196,7 +206,9 @@ export class DjCarousel extends DojoElement {
 	};
 
 	/** Current index = the item whose leading edge is nearest the scroller's leading edge. Uses
-	 * rects (not `scrollLeft`), and the reading direction for which edge is "leading". */
+	 * rects (not `scrollLeft`, which is inconsistent across browsers in RTL), and the reading
+	 * direction for which edge is "leading". Runs debounced after scrolling; `setIndex` does not
+	 * re-emit when the index is unchanged, so this reconciling with an optimistic `goTo` is quiet. */
 	private updateIndexFromRects() {
 		const scroller = this.viewport();
 		if (!scroller || this.#items.length === 0) return;

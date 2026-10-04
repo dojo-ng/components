@@ -4,7 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>`, selections render as removable `<dj-chip>`s. Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values). With `allow-new`, Enter on non-empty input text creates a chip from the literal trimmed value (a free-text tag), unless the popup has an active (highlighted) option — that keeps picking. New values respect `duplicates`, clear the input, and join the form value like picked ones. Only Enter commits; comma is left alone (it is a valid character in many locales).
+Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values).
+
+With `allow-new`, Enter on non-empty input text creates a chip from the literal trimmed value (a free-text tag), unless the popup has an active (highlighted) option — that keeps picking. New values respect `duplicates`, clear the input, and join the form value like picked ones. Only Enter commits; comma is left alone (it is a valid character in many locales).
 
 > By default only configured `options` can be chosen. Add `allow-new` for a tag editor: Enter on non-empty text that matches no option creates a chip from the literal value (respecting `duplicates`), while a highlighted popup option still picks the option. Only Enter commits — comma is left alone, since it is a valid character in many locales.
 
@@ -46,11 +48,20 @@ Selections render as removable chips; submits each value under `name`.
 | `allowNew` | allow-new ↻ | `boolean` | `false` |
 | `position` | position ↻ | `PopupPosition` | `"below"` |
 
-**Parts:** `label`, `box`
+## CSS parts
 
-**Events:** `change` (detail: selected values)
+- `label`
+- `box`
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
+## Events
+
+- `change`: Detail: selected values.
+
+## Methods
+
+- `checkValidity(): boolean`
+- `focus(o: FocusOptions)`
+- `restoreFormState(state: File | string | FormData | null)`
 
 ## Examples
 

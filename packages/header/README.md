@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-App header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`.
+`sticky` pins it. Slots: `leading`, default (title), `trailing`.
 
 ## Install
 
@@ -34,9 +34,15 @@ Slot `leading`/`trailing` content around the title; `sticky` pins it.
 |---|---|---|---|
 | `sticky` | sticky | `boolean` | `false` |
 
-**Slots:** `leading`, default (title), `trailing`
+## Slots
 
-**CSS properties:** `--dj-header-z-index` (default `700`; Stacking order of the header.)
+- `leading`
+- default slot: Title.
+- `trailing`
+
+## CSS custom properties
+
+- `--dj-header-z-index`: Stacking order of the header. Default `700`.
 
 ## Theming
 

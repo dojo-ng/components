@@ -4,7 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Positions slotted content as an overlay, flipping to the opposite side when there isn't room in the preferred position. Anchor it by setting the `anchor` property to an element, or supply viewport coordinates via the `x-*`/`y-*` attributes. While open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event. Content goes in the default slot.
+Anchor it by setting the `anchor` property to an element, or supply viewport coordinates via the `x-*`/`y-*` attributes.
+
+While open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event. Content goes in the default slot.
 
 ## Install
 
@@ -44,15 +46,28 @@ A low-level primitive; most apps use it through `trigger-popup`, `select`, and s
 | `xLeft` | x-left | `number` | `0` |
 | `xRight` | x-right | `number` | `0` |
 
-**Slots:** default
+## Slots
 
-**Parts:** `underlay`, `wrapper`, `layer`
+- default slot
 
-**Events:** `dj-close`
+## CSS parts
 
-**Methods:** `close()` (Close the popup and emit `dj-close`.)
+- `underlay`
+- `wrapper`
+- `layer`
 
-**CSS properties:** `--dj-popup-z-index` (default `901`; Stacking order of the popup.), `--dj-popup-underlay-z-index` (default `900`; Stacking order of the popup underlay.)
+## Events
+
+- `dj-close`
+
+## Methods
+
+- `close()`: Close the popup and emit `dj-close`.
+
+## CSS custom properties
+
+- `--dj-popup-z-index`: Stacking order of the popup. Default `901`.
+- `--dj-popup-underlay-z-index`: Stacking order of the popup underlay. Default `900`.
 
 ## Theming
 

@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated checkbox composing `<dj-label>`. Submits `value` (default "on") when checked, nothing when not. Mirrors required-validity to the host.
+Submits `value` (default "on") when checked, nothing when not. Mirrors required-validity to the host.
 
 ## Install
 
@@ -36,13 +36,25 @@ Slot the label; listen for `change`.
 | `required` | required ↻ | `boolean` | `false` |
 | `labelHidden` | label-hidden | `boolean` | `false` |
 
-**Slots:** default
+## Slots
 
-**Parts:** `control` (the box), `label`
+- default slot
 
-**Events:** `change`
+## CSS parts
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
+- `control`: The box.
+- `label`
+
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
+- `focus(options: FocusOptions)`
+- `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

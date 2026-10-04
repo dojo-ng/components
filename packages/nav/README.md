@@ -4,7 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A nav landmark that collapses into a trigger + panel below a threshold. The threshold is the `--dj-nav-collapsed` custom property (0 or 1), read via `TokenFlagController` rather than a `breakpoint` prop, so it lives in the existing `--dj-*` theme system and is container-aware: a nav inside a narrow sidebar on a wide screen collapses. One arrangement is ever in the DOM — never both, hidden: the plain `<nav>` when expanded, or the trigger plus (while open) a panel wrapping that same `<nav>` when collapsed. `panel` picks the collapsed presentation: `"drawer"` composes `<dj-slide-pane>` (its `align` follows the reading direction); `"dropdown"` and `"overlay"` are positioned in this component's own shadow DOM. This is a disclosure, not a menu button — the links are plain slotted `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree`, and the trigger carries no `aria-haspopup`.
+The threshold is the `--dj-nav-collapsed` custom property (0 or 1), read via `TokenFlagController` rather than a `breakpoint` prop, so it lives in the existing `--dj-*` theme system and is container-aware: a nav inside a narrow sidebar on a wide screen collapses. One arrangement is ever in the DOM — never both, hidden: the plain `<nav>` when expanded, or the trigger plus (while open) a panel wrapping that same `<nav>` when collapsed.
+
+`panel` picks the collapsed presentation: `"drawer"` composes `<dj-slide-pane>` (its `align` follows the reading direction); `"dropdown"` and `"overlay"` are positioned in this component's own shadow DOM. This is a disclosure, not a menu button — the links are plain slotted `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree`, and the trigger carries no `aria-haspopup`.
 
 > Also called a hamburger menu or navicon, and this is how you'd build responsive navigation with it — none of those words are in the API, because a permanent desktop hamburger is a first-class use here, not a mobile-only special case. The links are plain `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree` — this is a disclosure (APG terms), not a menu, so the trigger deliberately carries no `aria-haspopup`. `refresh()` exists because `ResizeObserver` only sees size changes: call it after a runtime pin, a theme switch, or a viewport media query crossing while the host's own width is unchanged — there is no cross-component theme-change watching built in, by design. Toolbar-style overflow (show what fits, collapse the rest into a menu) is a related but separate component, not this one.
 
@@ -41,15 +43,34 @@ The default slot is plain `<a>` elements inside a `<nav>` landmark. Below the `-
 | `triggerLabel` | trigger-label | `string` | — |
 | `collapsed` | collapsed ↻ | `boolean` | `false` |
 
-**Slots:** default (the links — plain `<a>` elements), `trigger`
+## Slots
 
-**Parts:** `trigger`, `panel`, `nav`
+- default slot: The links — plain `<a>` elements.
+- `trigger`
 
-**Events:** `dj-nav-collapse` (detail `{ collapsed }`), `dj-nav-toggle` (detail `{ open }`)
+## CSS parts
 
-**Methods:** `show()`, `hide()`, `toggle()`, `refresh()` (Delegates to `TokenFlagController` — the escape hatch for a runtime pin or theme switch that `ResizeObserver` cannot see (it only sees size changes).)
+- `trigger`
+- `panel`
+- `nav`
 
-**CSS properties:** `--dj-nav-collapsed` (default `1`; The threshold flag read by TokenFlagController; 0 keeps the inline arrangement, 1 collapses it. Any value a consumer sets (directly, inherited from `:root`, or from their own `@container`/`@media` rule) wins over the component's own 45rem default — set it directly for a permanent hamburger, set both branches to move the flip point, or set it to `initial` to release an inherited pin.), `--dj-nav-gap` (default `1rem`; Gap between links in the inline arrangement.), `--dj-slide-pane-size` (Passed through to the drawer presentation.)
+## Events
+
+- `dj-nav-collapse`: Detail `{ collapsed }`.
+- `dj-nav-toggle`: Detail `{ open }`.
+
+## Methods
+
+- `show()`
+- `hide()`
+- `toggle()`
+- `refresh()`: Delegates to `TokenFlagController` — the escape hatch for a runtime pin or theme switch that `ResizeObserver` cannot see (it only sees size changes).
+
+## CSS custom properties
+
+- `--dj-nav-collapsed`: The threshold flag read by TokenFlagController; 0 keeps the inline arrangement, 1 collapses it. Any value a consumer sets (directly, inherited from `:root`, or from their own `@container`/`@media` rule) wins over the component's own 45rem default — set it directly for a permanent hamburger, set both branches to move the flip point, or set it to `initial` to release an inherited pin. Default `1`.
+- `--dj-nav-gap`: Gap between links in the inline arrangement. Default `1rem`.
+- `--dj-slide-pane-size`: Passed through to the drawer presentation.
 
 ## Examples
 

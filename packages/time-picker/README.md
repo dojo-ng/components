@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A `HH:MM` time field with a popup list of options generated from `min`/`max`/`step` (seconds). `format` 24|12 controls option labels. Form-associated.
+`format` 24|12 controls option labels. Form-associated.
 
 ## Install
 
@@ -38,9 +38,13 @@ Import the package to register the custom element, then use the tag.
 | `disabled` | disabled | `boolean` | `false` |
 | `required` | required | `boolean` | `false` |
 
-**Events:** `change`
+## Events
 
-**Methods:** `checkValidity()`
+- `change`
+
+## Methods
+
+- `checkValidity()`
 
 ## Theming
 

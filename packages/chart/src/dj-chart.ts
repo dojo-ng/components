@@ -61,22 +61,39 @@ const LABEL_FONT_SIZE = 11;
 const RADIAL_LABEL_PAD = 16;
 
 /**
- * `<dj-chart>` — a themeable, accessible SVG chart. Set `data` (array of rows) and `series`.
- * `type` selects the mark: cartesian (`line`, `area`, `bar`) reads `category-key` for x; x/y
- * (`scatter`, `bubble`) reads `x-key` for a numeric x (and `size-key` for bubble radius); radial
- * (`pie`, `donut`) draws one series as slices by category. `stacked` stacks bars and areas; a
- * series may override `type` for combos.
+ * `<dj-chart>` — a themeable, accessible SVG chart.
  *
- * Built on D3 math (scales, shapes) with the SVG owned here, so marks are themeable via
- * `--dj-*` tokens (a `--dj-chart-1..8` ramp) and `::part()`, and the chart is real DOM for
- * assistive tech. It exposes a visually-hidden data table as the accessible equivalent, carries
- * `role="img"` with a generated summary, and honors reduced motion. Not a form control.
+ * Set `data` (an array of rows) and `series`. The chart is built on D3's scales and shapes, but
+ * the SVG is real DOM owned by the component, so you can theme it with `--dj-*` tokens and
+ * `::part()`, and assistive technology can read it. It is not a form control.
  *
- * `legend-toggle` makes legend items toggle series visibility; `brush` adds an overview strip
- * below cartesian charts for selecting the visible category window (double-click resets).
+ * #### Chart types
+ * `type` selects the mark:
+ * - Cartesian (`line`, `area`, `bar`) reads `category-key` for the x axis.
+ * - X/Y (`scatter`, `bubble`) reads `x-key` for a numeric x, and `size-key` for the bubble radius.
+ * - Radial (`pie`, `donut`) draws one series as slices by category.
+ * - `stacked` stacks bars and areas. A series can override `type` to make a combination chart.
  *
- * {@link appendData} appends rows for cheap live updates without rebuilding the `data` array;
- * `max-points` bounds how much history it keeps.
+ * #### Interaction
+ * - `legend-toggle` lets users show and hide a series from its legend item.
+ * - `brush` adds an overview strip below a cartesian chart for choosing the visible range of
+ *   categories. Double-click the strip to reset it.
+ *
+ * #### Live data
+ * - `appendData()` adds rows without rebuilding the `data` array, for cheap live updates.
+ *   `max-points` limits how many rows it keeps.
+ *
+ * #### Sizing
+ * - The chart fills its container's width and takes its height from `--dj-chart-height` (default
+ *   `18rem`). Set that property to resize it.
+ * - A fixed `height` on a wrapper element does not limit the chart, and a wrapper shorter than the
+ *   chart lets the legend overflow. The legend sits below the plot, inside that height.
+ *
+ * #### Accessibility
+ * - A visually hidden data table is the accessible equivalent of the chart.
+ * - The chart has `role="img"` and a generated summary.
+ * - Animation follows `prefers-reduced-motion`.
+ * - The series colors are the `--dj-chart-1` to `--dj-chart-8` tokens.
  *
  * Parts: `plot`, `axis`, `grid`, `series`, `bar`, `line`, `point`, `slice`, `legend`, `legend-item`,
  * `brush-handle`, `tooltip`, `plot-canvas`, `center-label`, `center-sub-label`, `point-labels`,

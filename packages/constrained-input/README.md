@@ -6,7 +6,7 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 Extends `DjTextInput` and inherits its properties and behavior.
 
-A text input with a custom `validator` function: `(value) => string | undefined` returning an error message (or undefined when valid). Applied through native constraint validation, so it participates in form validity. (Dojo's rule-DSL ValidationRules is deferred; supply a function for now.)
+Applied through native constraint validation, so it participates in form validity. (Dojo's rule-DSL ValidationRules is deferred; supply a function for now.)
 
 ## Install
 

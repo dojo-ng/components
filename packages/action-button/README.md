@@ -6,7 +6,7 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 Extends `DjButton` and inherits its properties and behavior.
 
-A button that inherits the surrounding theme rather than imposing its own. Mirrors the Dojo `action-button`, which renders `Button` with `variant="inherit"`. Because --dj-* tokens inherit through the shadow boundary, subclassing DjButton with no token overrides already yields inherited theming.
+Mirrors the Dojo `action-button`, which renders `Button` with `variant="inherit"`. Because --dj-* tokens inherit through the shadow boundary, subclassing DjButton with no token overrides already yields inherited theming.
 
 ## Install
 

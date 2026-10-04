@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Page navigation over `total` pages. Emits `dj-page` with the new page. Parts: `nav`, `page`.
+Emits `dj-page` with the new page. Parts: `nav`, `page`.
 
 ## Install
 
@@ -36,9 +36,14 @@ Set `total` pages and the current `page`; listen for `change`.
 | `page` | page | `number` | `1` |
 | `siblingCount` | sibling-count | `number` | `1` |
 
-**Parts:** `nav`, `page`
+## CSS parts
 
-**Events:** `dj-page`
+- `nav`
+- `page`
+
+## Events
+
+- `dj-page`
 
 ## Theming
 

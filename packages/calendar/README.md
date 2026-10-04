@@ -4,7 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated month-grid date picker. `value` is an ISO date (yyyy-mm-dd). Localizes month and weekday names via Intl (set `locale`). Keyboard: arrows move by day/week, PageUp/PageDown change month, Enter/Space select. `min`/`max` (ISO) bound selection. Composes `<dj-icon>` for navigation. Functional core; year-picker popup and range selection are deferred. Parts: `header`, `grid`, `day`.
+`value` is an ISO date (yyyy-mm-dd). Localizes month and weekday names via Intl (set `locale`). Keyboard: arrows move by day/week, PageUp/PageDown change month, Enter/Space select. `min`/`max` (ISO) bound selection. Composes `<dj-icon>` for navigation.
+
+Functional core; year-picker popup and range selection are deferred. Parts: `header`, `grid`, `day`.
 
 ## Install
 
@@ -35,11 +37,19 @@ Set `locale` to localize month and weekday names; listen for `change`.
 | `locale` | locale | `string` | — |
 | `firstDayOfWeek` | first-day-of-week | `number` | `0` |
 
-**Parts:** `header`, `grid`, `day`
+## CSS parts
 
-**Events:** `change`
+- `header`
+- `grid`
+- `day`
 
-**Methods:** `checkValidity(): boolean`
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
 
 ## Theming
 

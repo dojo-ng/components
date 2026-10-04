@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Clicking the trigger (default slot) opens a small confirm popup with the `content` slot and Confirm/Cancel buttons. Emits `dj-confirm` / `dj-cancel`.
+Emits `dj-confirm` / `dj-cancel`.
 
 ## Install
 
@@ -39,9 +39,15 @@ A trigger opens a small confirm popup; listen for `dj-confirm`.
 | `confirmLabel` | confirm-label | `string` | — |
 | `cancelLabel` | cancel-label | `string` | — |
 
-**Slots:** default, `content`
+## Slots
 
-**Events:** `dj-confirm`, `dj-cancel`
+- default slot
+- `content`
+
+## Events
+
+- `dj-confirm`
+- `dj-cancel`
 
 ## Theming
 

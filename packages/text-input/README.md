@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated text field that composes `<dj-label>` and `<dj-helper-text>`. It participates in native forms via ElementInternals: it sets its form value and mirrors the inner input's constraint validity to the host.
+It participates in native forms via ElementInternals: it sets its form value and mirrors the inner input's constraint validity to the host.
 
 ## Install
 
@@ -50,13 +50,29 @@ Set `label`, `required`, and read the value from the `input` event.
 | `minlength` | minlength | `number` | — |
 | `maxlength` | maxlength | `number` | — |
 
-**Slots:** `leading`, `trailing`
+## Slots
 
-**Parts:** `label`, `control`, `input`, `helper-text`
+- `leading`
+- `trailing`
 
-**Events:** `change`
+## CSS parts
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `setCustomValidity(message: string)`, `focus(options: FocusOptions)`, `blur()`
+- `label`
+- `control`
+- `input`
+- `helper-text`
+
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
+- `setCustomValidity(message: string)`
+- `focus(options: FocusOptions)`
+- `blur()`
 
 ## Examples
 

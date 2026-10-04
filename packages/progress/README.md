@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Determinate progress bar. value within min..max; `show-output` shows percent. Part: `bar`.
+Value within min..max; `show-output` shows percent. Part: `bar`.
 
 ## Install
 
@@ -34,9 +34,13 @@ Import the package to register the custom element, then use the tag.
 | `showOutput` | show-output | `boolean` | `false` |
 | `label` | label | `string` | — |
 
-**Parts:** `bar`
+## CSS parts
 
-**CSS properties:** `--dj-progress-height` (default `8px`; Thickness of the progress bar.)
+- `bar`
+
+## CSS custom properties
+
+- `--dj-progress-height`: Thickness of the progress bar. Default `8px`.
 
 ## Theming
 

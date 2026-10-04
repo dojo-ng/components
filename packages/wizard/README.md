@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Step progress indicator. `steps` describes each step; `active-step` derives statuses (before=complete, at=inProgress, after=pending) unless a step sets its own. When `clickable`, clicking a step emits `dj-step` with its index. Part: `step`.
+`steps` describes each step; `active-step` derives statuses (before=complete, at=inProgress, after=pending) unless a step sets its own. When `clickable`, clicking a step emits `dj-step` with its index. Part: `step`.
 
 ## Install
 
@@ -39,9 +39,13 @@ Provide `steps`; set `active-index` as the user progresses.
 | `direction` | direction ↻ | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `clickable` | clickable | `boolean` | `false` |
 
-**Parts:** `step`
+## CSS parts
 
-**Events:** `dj-step`
+- `step`
+
+## Events
+
+- `dj-step`
 
 ## Theming
 

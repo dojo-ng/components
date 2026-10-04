@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A status/result block with an icon, title, subtitle, content, and actions. `status` (success|error|alert|info) sets a default icon + color; override via the `icon` slot. Slots: `icon`, default (content), `actions`. Parts: `root`, `status`.
+`status` (success|error|alert|info) sets a default icon + color; override via the `icon` slot. Slots: `icon`, default (content), `actions`. Parts: `root`, `status`.
 
 ## Install
 
@@ -35,9 +35,16 @@ Compose a heading, message, and actions.
 | `subtitle` | subtitle | `string` | `""` |
 | `status` | status ↻ | `"alert" \| "error" \| "info" \| "success"` | — |
 
-**Slots:** `icon`, default (content), `actions`
+## Slots
 
-**Parts:** `root`, `status`
+- `icon`
+- default slot: Content.
+- `actions`
+
+## CSS parts
+
+- `root`
+- `status`
 
 ## Theming
 

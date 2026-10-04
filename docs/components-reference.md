@@ -65,7 +65,11 @@ A circular (or extended/pill) action button, optionally fixed to a screen positi
 
 ### `<dj-copy-button>` · `@dojo-ng/copy-button`
 
-An icon-only button that copies text to the clipboard and flashes feedback. It composes `<dj-button>`, so focus, keyboard, and button ARIA come for free. Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form controls) or `textContent` (`value` wins when both are set). Copying uses `navigator.clipboard.writeText`, which requires a secure context (https or localhost); there is no legacy `execCommand` fallback. If the clipboard is unavailable or the write is rejected, the button shows an error state and emits `dj-error`. The icon swaps copy → check (success) → error for `feedback-duration` ms, then reverts, and the button's accessible name changes with it (Copy / Copied / Copy failed) so assistive tech hears the result.
+An icon-only button that copies text to the clipboard and flashes feedback. It composes `<dj-button>`, so focus, keyboard, and button ARIA come for free.
+
+Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form controls) or `textContent` (`value` wins when both are set). Copying uses `navigator.clipboard.writeText`, which requires a secure context (https or localhost); there is no legacy `execCommand` fallback. If the clipboard is unavailable or the write is rejected, the button shows an error state and emits `dj-error`.
+
+The icon swaps copy → check (success) → error for `feedback-duration` ms, then reverts, and the button's accessible name changes with it (Copy / Copied / Copy failed) so assistive tech hears the result.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -82,7 +86,11 @@ An icon-only button that copies text to the clipboard and flashes feedback. It c
 
 ### `<dj-label>` · `@dojo-ng/label`
 
-A form label. Content goes in the default slot. Note: native `for`/`id` association does not cross shadow boundaries, so associate by wrapping the control in the label's light DOM, or rely on the consuming field component to wire ARIA. `for-id` is still reflected for same-root cases. Deviates from the Dojo widget in one name: the visually-hidden flag is `visually-hidden` (not `hidden`) to avoid clobbering the native `hidden` attribute.
+A form label. Content goes in the default slot.
+
+Note: native `for`/`id` association does not cross shadow boundaries, so associate by wrapping the control in the label's light DOM, or rely on the consuming field component to wire ARIA. `for-id` is still reflected for same-root cases.
+
+Deviates from the Dojo widget in one name: the visually-hidden flag is `visually-hidden` (not `hidden`) to avoid clobbering the native `hidden` attribute.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -292,7 +300,9 @@ An editable combobox: type to filter `options`, pick from a popup `<dj-list>`. `
 
 ### `<dj-chip-typeahead>` · `@dojo-ng/chip-typeahead`
 
-Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>`, selections render as removable `<dj-chip>`s. Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values). With `allow-new`, Enter on non-empty input text creates a chip from the literal trimmed value (a free-text tag), unless the popup has an active (highlighted) option — that keeps picking. New values respect `duplicates`, clear the input, and join the form value like picked ones. Only Enter commits; comma is left alone (it is a valid character in many locales).
+Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>`, selections render as removable `<dj-chip>`s. Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values).
+
+With `allow-new`, Enter on non-empty input text creates a chip from the literal trimmed value (a free-text tag), unless the popup has an active (highlighted) option — that keeps picking. New values respect `duplicates`, clear the input, and join the form value like picked ones. Only Enter commits; comma is left alone (it is a valid character in many locales).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -400,7 +410,9 @@ A form-associated radio composing `<dj-label>`. Radios sharing a `name` within t
 
 ### `<dj-radio-group>` · `@dojo-ng/radio-group`
 
-Coordinates a set of `<dj-radio>` into a single-choice control. Provide choices either with the `options` array (rendered for you) or by slotting `<dj-radio>` children. The group owns selection (exclusivity), roving-arrow keyboard navigation, and form participation: it is the one form-associated element, submitting the selected `value` under `name`. Child radios should not carry their own `name`. This is local parent-child coordination, so it uses DOM, properties, and events — no external store needed.
+Coordinates a set of `<dj-radio>` into a single-choice control. Provide choices either with the `options` array (rendered for you) or by slotting `<dj-radio>` children. The group owns selection (exclusivity), roving-arrow keyboard navigation, and form participation: it is the one form-associated element, submitting the selected `value` under `name`. Child radios should not carry their own `name`.
+
+This is local parent-child coordination, so it uses DOM, properties, and events — no external store needed.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -554,7 +566,9 @@ A `HH:MM` time field with a popup list of options generated from `min`/`max`/`st
 
 ### `<dj-color-picker>` · `@dojo-ng/color-picker`
 
-An inline color picker with a 2D saturation/brightness area, a hue slider, an optional opacity slider, a text field, and optional swatches. Form-associated: it submits the formatted color string under `name`. There is no built-in trigger or popup — compose `dj-popup` to make it a dropdown. The internal model is HSV + alpha; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`). Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.
+An inline color picker with a 2D saturation/brightness area, a hue slider, an optional opacity slider, a text field, and optional swatches. Form-associated: it submits the formatted color string under `name`. There is no built-in trigger or popup — compose `dj-popup` to make it a dropdown.
+
+The internal model is HSV + alpha; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`). Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -616,7 +630,9 @@ A layout wrapper that gathers values from its named child controls and emits `dj
 
 ### `<dj-popup>` · `@dojo-ng/popup`
 
-Positions slotted content as an overlay, flipping to the opposite side when there isn't room in the preferred position. Anchor it by setting the `anchor` property to an element, or supply viewport coordinates via the `x-*`/`y-*` attributes. While open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event. Content goes in the default slot.
+Positions slotted content as an overlay, flipping to the opposite side when there isn't room in the preferred position. Anchor it by setting the `anchor` property to an element, or supply viewport coordinates via the `x-*`/`y-*` attributes.
+
+While open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event. Content goes in the default slot.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -671,7 +687,9 @@ Right-click (contextmenu) on the trigger (default slot) opens a `<dj-popup>` at 
 
 ### `<dj-dropdown>` · `@dojo-ng/dropdown`
 
-The APG menu-button glue over the existing `<dj-popup>` and `<dj-list>`. Put the trigger (usually a `<dj-button>`) in the `trigger` slot and the content — typically one `<dj-list>` — in the default slot; the content renders in a `<dj-popup>` anchored to the trigger. Behavior: clicking the trigger toggles it. ArrowDown / Enter / Space open it; on open, if the content is a `<dj-list>`, its `menu` mode is switched on, it is focused, and its first item is activated. Escape closes and returns focus to the trigger; choosing an item (the list's `change` event) closes and refocuses too — the `change` event still reaches the consumer untouched. Non-list content is allowed as an arbitrary panel: then dj-dropdown only does open/close/Escape/focus-return, with no list steering.
+The APG menu-button glue over the existing `<dj-popup>` and `<dj-list>`. Put the trigger (usually a `<dj-button>`) in the `trigger` slot and the content — typically one `<dj-list>` — in the default slot; the content renders in a `<dj-popup>` anchored to the trigger.
+
+Behavior: clicking the trigger toggles it. ArrowDown / Enter / Space open it; on open, if the content is a `<dj-list>`, its `menu` mode is switched on, it is focused, and its first item is activated. Escape closes and returns focus to the trigger; choosing an item (the list's `change` event) closes and refocuses too — the `change` event still reaches the consumer untouched. Non-list content is allowed as an arbitrary panel: then dj-dropdown only does open/close/Escape/focus-return, with no list steering.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -845,7 +863,29 @@ Flex layout. direction/align/spacing/padding/stretch.
 
 ### `<dj-split-panel>` · `@dojo-ng/split-panel`
 
-Two resizable panes with a draggable divider between them. The `start` and `end` slots hold the panes; the divider is a shadow-side bar (put custom grip content in the optional `divider` slot). `position` is the start pane's share as a percent (0–100); the layout is a CSS grid whose start/end tracks are `position`fr and `(100 − position)`fr, so the panes always divide in that ratio. Minimum pane sizes come from CSS, not props: the tracks are `minmax(var(--dj-split-panel-min-start), …)` / `minmax(var(--dj-split-panel-min-end), …)`, so a consumer sets a floor in any length unit and the browser clamps the drag against it. The host needs a size (for `horizontal`, a height) since the panes fill it. `orientation="horizontal"` (default) puts the panes side by side with a vertical divider; `vertical` stacks them with a horizontal divider. Column order follows the host's writing direction, so in RTL the start pane sits on the right with no extra work. The divider is a `role="separator"` with `aria-valuenow/valuemin/valuemax` tracking `position` and `aria-orientation` set to the divider's own visual axis (vertical for a horizontal split). Dragging uses pointer events with pointer capture, so mouse, trackpad, and touch all work; the divider position is read from the pointer's offset within the host rect (RTL-mirrored for a horizontal split — a pointer at the visual left is 100%). Because dragging is a pointer gesture, WCAG 2.5.7 needs a non-drag path: the focused divider takes Arrow keys (±1, Shift = ±10) mapped through reading direction for horizontal and Up/Down for vertical, plus Home (0) and End (100). `dj-reposition` fires on settle: once on pointer-up for a drag, and once per keypress.
+Two resizable panes with a draggable divider between them.
+
+Put the panes in the `start` and `end` slots. `position` is the start pane's share of the space, as a percent from 0 to 100. The host needs a size, because the panes fill it: for a horizontal split, give it a height.
+
+#### Layout
+
+- `orientation="horizontal"` (the default) puts the panes side by side with a vertical divider. `vertical` stacks them with a horizontal divider.
+- The panes always divide in the ratio `position` : (100 − `position`).
+- Minimum pane sizes come from CSS, not from properties: set `--dj-split-panel-min-start` and `--dj-split-panel-min-end` in any length unit, and dragging stops at that size.
+- The order follows the writing direction, so in a right-to-left page the start pane is on the right with no extra work.
+- The divider bar is drawn by the component. Put custom grip content in the optional `divider` slot.
+- For three panes, nest a second `dj-split-panel` inside a slot of the first.
+
+#### Resizing
+
+- Drag the divider with a mouse, a trackpad, or touch.
+- Or focus the divider and use the keyboard, so resizing never requires dragging (WCAG 2.5.7): the arrow keys move it by 1 (Shift: by 10), Home moves it to 0, and End to 100. A horizontal split uses Left and Right in the reading direction; a vertical split uses Up and Down.
+- `dj-reposition` fires when the split settles: once when a drag ends, and once per key press.
+
+#### Accessibility
+
+- The divider has `role="separator"`, with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax` tracking `position`.
+- Its `aria-orientation` is the divider's own direction, so a horizontal split has a vertical separator.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -915,7 +955,33 @@ Coordinates slotted `<dj-title-pane>` children. With `exclusive`, opening one pa
 
 ### `<dj-carousel>` · `@dojo-ng/carousel`
 
-A slotted, swipeable carousel. Each top-level element in the default slot is one item (cards, images, tiles — arbitrary content). The item strip is a native horizontal scroll container with CSS scroll-snap, so touch and trackpad swiping is real scrolling: there is no pointer/drag code and no WCAG 2.5.7 (dragging) concern — the prev/next buttons are the non-drag path. `per-view` sizes items to show N at once (gap-adjusted); `dots` adds one dot per navigable page (with `per-view` &gt; 1 the trailing items can't lead, so pages = items − per-view + 1); `nav` (default on) shows prev/next buttons that disable at the ends (no looping in v1). The settled index is detected from element rects (not `scrollLeft`, which is RTL-inconsistent), debounced after scrolling. `next`/`previous`/`goTo` smooth-scroll the target into view and, because a headless environment has no layout, update `index` and emit optimistically; the scroll listener reconciles in a real browser (guarded so an unchanged index does not re-emit). Under `prefers-reduced-motion` navigation jumps instantly (the composed `reducedMotion` snippet forces `scroll-behavior: auto`, and button navigation passes `behavior: "auto"`). ARIA follows the APG carousel pattern: the region carries `aria-roledescription="carousel"` and the `label`; each slotted item gets `role="group"`, `aria-roledescription="slide"`, and an "{n} of {total}" label, reconciled on every `slotchange` and locale change. Keyboard: with the viewport focused, ArrowRight/ArrowLeft move forward/back in the reading direction (RTL-aware). Deferred (not built): `loop`, autoplay (an accessibility liability), and vertical orientation.
+A slotted, swipeable carousel. Each top-level element in the default slot is one item: a card, an image, a tile, or any other content.
+
+Swiping is native scrolling. The item strip is a horizontal scroll container with CSS scroll-snap, so touch and trackpad work with no drag code, and the prev/next buttons give a way to move that needs no dragging (WCAG 2.5.7). Give the carousel a `label` so the region has an accessible name.
+
+#### Layout
+
+- `per-view` shows that many items at once, sized to fit with the gap between them.
+- `dots` adds one dot per page. With `per-view` above 1, the last items cannot start a page, so the number of pages is items − `per-view` + 1.
+- `nav` (on by default) shows prev/next buttons. They are disabled at the first and last page; the carousel does not loop.
+
+#### Moving between items
+
+- `next()`, `previous()`, and `goTo(index)` scroll smoothly to the item.
+- Under `prefers-reduced-motion`, the carousel jumps to the item instead of scrolling.
+- `dj-slide-change` fires when the current item changes, from swiping, a button, a key, or a method call.
+
+#### Accessibility
+
+- The carousel follows the APG carousel pattern. The region has `aria-roledescription="carousel"` and the `label` as its name.
+- Each item gets `role="group"`, `aria-roledescription="slide"`, and an "{n} of {total}" label. These update when items are added or removed and when the locale changes.
+- With the strip focused, ArrowRight and ArrowLeft move forward and back in the reading direction, so they also work in right-to-left pages.
+
+#### Not built
+
+- Looping, autoplay (an accessibility problem), and vertical orientation.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -924,7 +990,7 @@ A slotted, swipeable carousel. Each top-level element in the default slot is one
 | `dots` | dots | `boolean` | `false` |
 | `label` | label | `string` | — |
 
-**Slots:** default
+**Slots:** default (each top-level element is one carousel item)
 
 **Parts:** `viewport` (the scroller), `prev`, `next`, `dots`, `dot`
 
@@ -964,7 +1030,9 @@ App header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`.
 
 ### `<dj-toolbar>` · `@dojo-ng/toolbar`
 
-A horizontal action bar. Slots: `leading` (logo, menu/back button), default (title or content), `actions` (primary action buttons, end-aligned). Secondary actions can collapse into an overflow menu: set the `overflow` property to a list of options and a `⋮` button renders a popup `<dj-list>` of them, emitting `dj-action` with the chosen value. `sticky` pins the bar to the top. `role="toolbar"`. Composes popup, list, icon. The overflow menu closes on selection, Escape, outside click, and on tab-out. (Automatic width-based collapsing of slotted actions is a future addition; for now the app decides which actions are primary and which go in `overflow`.)
+A horizontal action bar. Slots: `leading` (logo, menu/back button), default (title or content), `actions` (primary action buttons, end-aligned). Secondary actions can collapse into an overflow menu: set the `overflow` property to a list of options and a `⋮` button renders a popup `<dj-list>` of them, emitting `dj-action` with the chosen value. `sticky` pins the bar to the top. `role="toolbar"`.
+
+Composes popup, list, icon. The overflow menu closes on selection, Escape, outside click, and on tab-out. (Automatic width-based collapsing of slotted actions is a future addition; for now the app decides which actions are primary and which go in `overflow`.)
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1046,7 +1114,36 @@ A FAB that reveals slotted action buttons (`actions` slot) when open. Toggles on
 
 ### `<dj-tree>` · `@dojo-ng/tree`
 
-A hierarchical tree from `nodes`. Each node may carry an `icon` (a registered icon name) and a `count` (a trailing badge, e.g. an unread count). Selection is controlled by `value` (a node id) and emits `dj-select`; expansion is controlled by `expanded` (an array of node ids) and emits `dj-expand-change`. The component knows nothing about what the tree holds — a file tree, a mail folder list, or a MIME structure are all just nodes. A row click selects; the chevron expands. Set `expand-on-row-click` when the tree has rows that exist only to contain others, where selecting one means nothing and the click would be dead. Keyboard follows the APG tree pattern with a roving tabindex: exactly one row is tabbable (the selected row if visible, else the first visible row), and the arrow keys move focus without selecting. Down/Up walk the visible rows; Right expands a closed parent, steps into an open one, and does nothing on a leaf; Left collapses an open parent or moves to the parent row; Home/End jump to the first/last visible row; Enter or Space selects the focused row. Indentation is a logical `margin-inline-start`, so it flips in RTL, and the chevron mirrors with the reading direction. Deferred (not built): drag-drop, virtualization, checkboxes, lazy loading.
+A hierarchical tree built from `nodes`.
+
+The tree knows nothing about what it shows: a file tree, a mail folder list, and a MIME structure are all just nodes. Each node can carry an `icon` (a name registered with `registerIcon` or `registerIcons` from `@dojo-ng/icon`) and a `count`, shown as a trailing badge such as an unread count.
+
+#### Selection and expansion
+
+- Both are controlled. `value` is the selected node id, and the tree emits `dj-select`.
+- `expanded` is the array of open node ids, and the tree emits `dj-expand-change`.
+- Clicking a row selects it; clicking the chevron expands or collapses it.
+- Set `expand-on-row-click` to make a click on a parent row also expand or collapse it. Use it when some rows exist only to hold others, so a click on them does something visible.
+
+#### Keyboard
+
+The tree follows the APG tree pattern. Only one row is a tab stop: the selected row if it is visible, otherwise the first visible row. The arrow keys move focus without selecting.
+
+- Down and Up move through the visible rows.
+- Right expands a closed parent, moves into an open one, and does nothing on a leaf.
+- Left collapses an open parent, or moves to the parent row.
+- Home and End jump to the first and last visible row.
+- Enter or Space selects the focused row.
+
+#### Right-to-left
+
+- Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron points in the reading direction.
+
+#### Not built
+
+- Drag and drop, virtualization, checkboxes, and lazy loading.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1066,7 +1163,9 @@ A hierarchical tree from `nodes`. Each node may carry an `icon` (a registered ic
 
 ### `<dj-nav>` · `@dojo-ng/nav`
 
-A nav landmark that collapses into a trigger + panel below a threshold. The threshold is the `--dj-nav-collapsed` custom property (0 or 1), read via `TokenFlagController` rather than a `breakpoint` prop, so it lives in the existing `--dj-*` theme system and is container-aware: a nav inside a narrow sidebar on a wide screen collapses. One arrangement is ever in the DOM — never both, hidden: the plain `<nav>` when expanded, or the trigger plus (while open) a panel wrapping that same `<nav>` when collapsed. `panel` picks the collapsed presentation: `"drawer"` composes `<dj-slide-pane>` (its `align` follows the reading direction); `"dropdown"` and `"overlay"` are positioned in this component's own shadow DOM. This is a disclosure, not a menu button — the links are plain slotted `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree`, and the trigger carries no `aria-haspopup`.
+A nav landmark that collapses into a trigger + panel below a threshold. The threshold is the `--dj-nav-collapsed` custom property (0 or 1), read via `TokenFlagController` rather than a `breakpoint` prop, so it lives in the existing `--dj-*` theme system and is container-aware: a nav inside a narrow sidebar on a wide screen collapses. One arrangement is ever in the DOM — never both, hidden: the plain `<nav>` when expanded, or the trigger plus (while open) a panel wrapping that same `<nav>` when collapsed.
+
+`panel` picks the collapsed presentation: `"drawer"` composes `<dj-slide-pane>` (its `align` follows the reading direction); `"dropdown"` and `"overlay"` are positioned in this component's own shadow DOM. This is a disclosure, not a menu button — the links are plain slotted `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree`, and the trigger carries no `aria-haspopup`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1156,7 +1255,47 @@ A data grid from `columns` + `rows`. Click a sortable header to sort (emits `dj-
 
 ### `<dj-data-grid>` · `@dojo-ng/data-grid`
 
-A virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). Core scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]` behaves exactly as before. ARIA role=grid. `activation` separates opening a row from selecting rows: under `"click"` or `"double"` a plain click activates and emits `dj-activate` instead of toggling selection, Enter activates while Space still selects, and modifier-clicks stay reserved for selection. The default `"none"` keeps the original behavior, so this is purely additive. `dj-range-change` reports which rows are rendered, so a consumer can window its data or load more at the end of the list. The range INCLUDES the 8 overscan rows, so it is wider than what the user can see — hence `rendered`, not "visible".
+A virtualized, sortable, selectable data grid built on TanStack Table and TanStack Virtual.
+
+Give it `columns`, `data`, and a `height`. The core covers columns, in-memory data, sorting, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Everything else is a plugin. The grid has ARIA role `grid`.
+
+#### Plugins
+
+- Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail are plugins. Pass an array of plugin objects to the `plugins` property, from JavaScript only.
+- A recommended order: one structural plugin first (`treePlugin` or `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, and `formatsPlugin`, then the plugins that only add controls (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`).
+- Changing `plugins` rebuilds the table, so set it once, early.
+
+#### Opening rows: `activation`
+
+`activation` decides what a plain click or Enter means on a row.
+
+- `"none"` (the default): click, Space, and Enter all toggle selection.
+- `"click"` (the mail and preview-pane idiom) or `"double"` (the file-manager idiom): a plain click, or a double click, opens the row and emits `dj-activate` with `{ row, index }`, where `row` is the original row data. Selection does not change.
+- With activation on, Enter opens the row and Space selects it.
+- Modifier clicks always select and never open: Ctrl or Cmd-click toggles a row, and Shift-click selects a range.
+- `"double"` uses the browser's own `dblclick`, so the two clicks inside a double click never open the row on their own.
+- Activation works with any `selection-mode`, including `"none"`, so a read-only list can have clickable rows.
+- To open rows by clicking while the user also builds a set for bulk actions, combine `activation="click"`, `selection-mode="multiple"`, and the checkbox column from `@dojo-ng/data-grid-select`.
+
+#### Rendered rows: `dj-range-change`
+
+- `dj-range-change` fires when the window of rendered rows moves, so you can load data in and out, or load more at the end of the list.
+- The detail is `{ start, end, count, rendered }`: the first and last rendered row index (inclusive), the total number of rows, and the list of rendered indexes.
+- The range includes the 8 extra rows the grid renders beyond each edge of the viewport. It is what the grid has rendered, not what the user can see, so fetching this range never leaves a gap.
+- To load more at the end: `if (e.detail.end >= e.detail.count - 1) loadMore()`.
+- When nothing is rendered, `start` and `end` are -1 and `count` is the real count.
+- The event fires after rendering and only when `(start, end, count)` changes, so setting `data` in the handler is safe.
+
+#### Printing
+
+- When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and browsers repeat the header on each printed page. This does not apply to rows drawn by the detail plugin (`@dojo-ng/data-grid-detail`).
+- Safari does not repeat the table header on each printed page. This is a WebKit limitation with no reliable CSS fix.
+
+#### Not supported yet
+
+- A data set larger than `data`: the scrollbar is sized from `data.length`, so it cannot include rows that are not loaded.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1180,7 +1319,9 @@ the original row data)
 
 ### `<dj-calendar>` · `@dojo-ng/calendar`
 
-A form-associated month-grid date picker. `value` is an ISO date (yyyy-mm-dd). Localizes month and weekday names via Intl (set `locale`). Keyboard: arrows move by day/week, PageUp/PageDown change month, Enter/Space select. `min`/`max` (ISO) bound selection. Composes `<dj-icon>` for navigation. Functional core; year-picker popup and range selection are deferred. Parts: `header`, `grid`, `day`.
+A form-associated month-grid date picker. `value` is an ISO date (yyyy-mm-dd). Localizes month and weekday names via Intl (set `locale`). Keyboard: arrows move by day/week, PageUp/PageDown change month, Enter/Space select. `min`/`max` (ISO) bound selection. Composes `<dj-icon>` for navigation.
+
+Functional core; year-picker popup and range selection are deferred. Parts: `header`, `grid`, `day`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1218,7 +1359,11 @@ Circular/rounded/square avatar from an image `src` or slotted initials/icon. Par
 
 ### `<dj-badge>` · `@dojo-ng/badge`
 
-A small count or status label that decorates other content. Presentational: it carries no ARIA role. When a badge shows a count for a control (e.g. an unread count on a button), put the accessible name on the CONTROL — `aria-label="Notifications, 4 unread"` — not on the badge, so assistive tech reads the meaning rather than a bare number. Content is the default slot.
+A small count or status label that decorates other content.
+
+Presentational: it carries no ARIA role. When a badge shows a count for a control (e.g. an unread count on a button), put the accessible name on the CONTROL — `aria-label="Notifications, 4 unread"` — not on the badge, so assistive tech reads the meaning rather than a bare number.
+
+Content is the default slot.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1305,7 +1450,39 @@ Typographic wrapper. size/weight/uppercase/truncated/inverse. Part: `base`.
 
 ### `<dj-chart>` · `@dojo-ng/chart`
 
-A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `type` selects the mark: cartesian (`line`, `area`, `bar`) reads `category-key` for x; x/y (`scatter`, `bubble`) reads `x-key` for a numeric x (and `size-key` for bubble radius); radial (`pie`, `donut`) draws one series as slices by category. `stacked` stacks bars and areas; a series may override `type` for combos. Built on D3 math (scales, shapes) with the SVG owned here, so marks are themeable via `--dj-*` tokens (a `--dj-chart-1..8` ramp) and `::part()`, and the chart is real DOM for assistive tech. It exposes a visually-hidden data table as the accessible equivalent, carries `role="img"` with a generated summary, and honors reduced motion. Not a form control. `legend-toggle` makes legend items toggle series visibility; `brush` adds an overview strip below cartesian charts for selecting the visible category window (double-click resets). {@link appendData} appends rows for cheap live updates without rebuilding the `data` array; `max-points` bounds how much history it keeps.
+A themeable, accessible SVG chart.
+
+Set `data` (an array of rows) and `series`. The chart is built on D3's scales and shapes, but the SVG is real DOM owned by the component, so you can theme it with `--dj-*` tokens and `::part()`, and assistive technology can read it. It is not a form control.
+
+#### Chart types
+
+`type` selects the mark:
+
+- Cartesian (`line`, `area`, `bar`) reads `category-key` for the x axis.
+- X/Y (`scatter`, `bubble`) reads `x-key` for a numeric x, and `size-key` for the bubble radius.
+- Radial (`pie`, `donut`) draws one series as slices by category.
+- `stacked` stacks bars and areas. A series can override `type` to make a combination chart.
+
+#### Interaction
+
+- `legend-toggle` lets users show and hide a series from its legend item.
+- `brush` adds an overview strip below a cartesian chart for choosing the visible range of categories. Double-click the strip to reset it.
+
+#### Live data
+
+- `appendData()` adds rows without rebuilding the `data` array, for cheap live updates. `max-points` limits how many rows it keeps.
+
+#### Sizing
+
+- The chart fills its container's width and takes its height from `--dj-chart-height` (default `18rem`). Set that property to resize it.
+- A fixed `height` on a wrapper element does not limit the chart, and a wrapper shorter than the chart lets the legend overflow. The legend sits below the plot, inside that height.
+
+#### Accessibility
+
+- A visually hidden data table is the accessible equivalent of the chart.
+- The chart has `role="img"` and a generated summary.
+- Animation follows `prefers-reduced-motion`.
+- The series colors are the `--dj-chart-1` to `--dj-chart-8` tokens.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1352,7 +1529,18 @@ A themeable, accessible SVG chart. Set `data` (array of rows) and `series`. `typ
 
 ### `<dj-sparkline>` · `@dojo-ng/chart`
 
-A tiny inline chart: one numeric series, no axes, grid, legend, tooltip, brush, or margins. It shares its math with `@dojo-ng/chart`'s `core.ts` but is deliberately NOT a `dj-chart` mode — a sparkline's data shape (a plain `data` array of numbers) and render path are both much smaller. For a full chart with axes and interaction, use `<dj-chart>`. Set `label` to give it an accessible name (`role="img"` plus a generated "N points, min X, max Y, last Z" summary, localized through the ambient locale); without a label the sparkline is `aria-hidden`, which is the common case when adjacent text already states the value (a KPI row showing the number next to its trend). {@link push} appends one or more values for cheap live updates without rebuilding `data` yourself; `max-points` bounds how much history it keeps.
+A tiny inline chart of one numeric series, with no axes, grid, legend, tooltip, or margins.
+
+`data` is a plain array of numbers. For a full chart with axes and interaction, use `<dj-chart>`: the sparkline shares its math but is a separate, much smaller component.
+
+#### Live data
+
+- `push()` appends one or more values without rebuilding `data`, for cheap live updates. `max-points` limits how many values it keeps.
+
+#### Accessibility
+
+- With a `label`, the sparkline has `role="img"`, that name, and a generated summary ("N points, min X, max Y, last Z") in the page's locale.
+- Without a `label` it is `aria-hidden`. That is the common case, when text next to it already states the value, as in a row of key figures with a trend beside each number.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1376,7 +1564,11 @@ A tiny inline chart: one numeric series, no axes, grid, legend, tooltip, brush, 
 
 ### `<dj-rich-text>` · `@dojo-ng/rich-text`
 
-A form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM. The editor is a PLUGIN HOST: bold/italic/underline and undo/redo ship as the default plugin set (`default-plugins.ts`) and flow through the same {@link RichTextPlugin} API third-party plugins use. Foundational behavior (`registerRichText`, value sync, root-element setup) stays as core. Toolbar controls, node registration, and output formats all come from plugins. Constraint: Lexical needs node classes at creation, so a `plugins` change after creation rebuilds the editor (serialize → recreate → deserialize). Value is HTML by default; the `format` property selects an alternate serializer contributed by a plugin. Event: `dj-change`.
+A form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM.
+
+The editor is a PLUGIN HOST: bold/italic/underline and undo/redo ship as the default plugin set (`default-plugins.ts`) and flow through the same {@link RichTextPlugin} API third-party plugins use. Foundational behavior (`registerRichText`, value sync, root-element setup) stays as core. Toolbar controls, node registration, and output formats all come from plugins.
+
+Constraint: Lexical needs node classes at creation, so a `plugins` change after creation rebuilds the editor (serialize → recreate → deserialize). Value is HTML by default; the `format` property selects an alternate serializer contributed by a plugin. Event: `dj-change`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1400,7 +1592,9 @@ A form-associated WYSIWYG editor built on the Lexical core. The editable region 
 
 ### `<dj-alert>` · `@dojo-ng/alert`
 
-An inline status banner. It sits in the page flow (unlike the transient, floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a persistent state next to the content it concerns. An alert written in markup shows by default (`open`); closing it sets `open` false and it takes no space. Info/success announce politely (`role="status"`); warning/danger announce assertively (`role="alert"`).
+An inline status banner. It sits in the page flow (unlike the transient, floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a persistent state next to the content it concerns.
+
+An alert written in markup shows by default (`open`); closing it sets `open` false and it takes no space. Info/success announce politely (`role="status"`); warning/danger announce assertively (`role="alert"`).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1453,7 +1647,13 @@ A linear bar or circular spinner. `active` (default true) toggles visibility whi
 
 ### `<dj-skeleton>` · `@dojo-ng/skeleton`
 
-A loading placeholder that stands in for content while it loads. Shape and size come from consumer CSS on the host: it is `display: block` with a default height of `1em` and a token border-radius. Style the host to size each placeholder — a circular avatar is `border-radius: 50%`, a text line is a short height with a width. No shape prop is needed. Always `aria-hidden="true"`: the placeholder itself is decorative. Mark the region that is loading with `aria-busy="true"` until the real content lands, so assistive tech announces the loading state once for the whole region. `prefers-reduced-motion` disables the sheen regardless of `effect` (the shared reducedMotion snippet collapses the animation).
+A loading placeholder that stands in for content while it loads.
+
+Shape and size come from consumer CSS on the host: it is `display: block` with a default height of `1em` and a token border-radius. Style the host to size each placeholder — a circular avatar is `border-radius: 50%`, a text line is a short height with a width. No shape prop is needed.
+
+Always `aria-hidden="true"`: the placeholder itself is decorative. Mark the region that is loading with `aria-busy="true"` until the real content lands, so assistive tech announces the loading state once for the whole region.
+
+`prefers-reduced-motion` disables the sheen regardless of `effect` (the shared reducedMotion snippet collapses the animation).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1526,7 +1726,11 @@ A themed audio player wrapping the native `HTMLAudioElement`. The `<audio>` elem
 
 ### `<dj-video>` · `@dojo-ng/video`
 
-A themed video player wrapping video.js (the product's engine; v8, which bundles HLS). We own integration; video.js owns playback and renders its own control bar (`controls: true` — we do NOT rebuild video controls in v1). LIGHT DOM: this component renders its player region into light DOM (`createRenderRoot()` returns `this`, the dj-rich-text precedent) because video.js injects DOM, needs its global stylesheet, and its fullscreen/track menus misbehave inside a shadow root. video.js's stylesheet is a documented APP PREREQUISITE, loaded at document level (see the README's link tag) — the same arrangement as element-internals-polyfill. Test seam: the engine is only ever created through `protected createPlayer(el, options)`, which defaults to lazily importing the real video.js factory. Tests replace it with a stub player.
+A themed video player wrapping video.js (the product's engine; v8, which bundles HLS). We own integration; video.js owns playback and renders its own control bar (`controls: true` — we do NOT rebuild video controls in v1).
+
+LIGHT DOM: this component renders its player region into light DOM (`createRenderRoot()` returns `this`, the dj-rich-text precedent) because video.js injects DOM, needs its global stylesheet, and its fullscreen/track menus misbehave inside a shadow root. video.js's stylesheet is a documented APP PREREQUISITE, loaded at document level (see the README's link tag) — the same arrangement as element-internals-polyfill.
+
+Test seam: the engine is only ever created through `protected createPlayer(el, options)`, which defaults to lazily importing the real video.js factory. Tests replace it with a stub player.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|

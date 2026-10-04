@@ -4,7 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-An inline status banner. It sits in the page flow (unlike the transient, floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a persistent state next to the content it concerns. An alert written in markup shows by default (`open`); closing it sets `open` false and it takes no space. Info/success announce politely (`role="status"`); warning/danger announce assertively (`role="alert"`).
+It sits in the page flow (unlike the transient, floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a persistent state next to the content it concerns.
+
+An alert written in markup shows by default (`open`); closing it sets `open` false and it takes no space. Info/success announce politely (`role="status"`); warning/danger announce assertively (`role="alert"`).
 
 > An inline status banner that sits in the page flow — distinct from `dj-snackbar` (transient, floating) and `dj-result` (full-page). It shows by default (`open`); `close()` hides it and emits `dj-close`. info/success announce politely (`role="status"`), warning/danger assertively (`role="alert"`). Each variant has a default glyph; override it via the `icon` slot. Add `closable` for a dismiss button (its label is the localized `close` key). Variant colors reuse the theme's semantic tint/ink scales; override one alert with `--dj-alert-background` / `--dj-alert-color` / `--dj-alert-accent-color`.
 
@@ -37,15 +39,32 @@ Each variant has a default glyph and live-region role.
 | `closable` | closable | `boolean` | `false` |
 | `open` | open ↻ | `boolean` | `true` |
 
-**Slots:** default (the message), `icon` (replaces the default variant glyph)
+## Slots
 
-**Parts:** `base`, `icon`, `message`, `close`
+- default slot: The message.
+- `icon`: Replaces the default variant glyph.
 
-**Events:** `dj-close` (after the alert closes)
+## CSS parts
 
-**Methods:** `close()` (Close the alert: hides it and emits `dj-close` once. No-op if already closed.)
+- `base`
+- `icon`
+- `message`
+- `close`
 
-**CSS properties:** `--dj-alert-background` (default `per-variant tint`; Banner background; defaults to the variant's `--dj-color-*-100`.), `--dj-alert-color` (default `per-variant ink`; Text color; defaults to the variant's `--dj-color-*-700`.), `--dj-alert-accent-color` (default `per-variant accent`; Icon + leading-border color; defaults to the variant's `--dj-color-*-600`.), `--dj-alert-radius` (default `var(--dj-input-border-radius-medium)`; Corner radius.)
+## Events
+
+- `dj-close`: After the alert closes.
+
+## Methods
+
+- `close()`: Close the alert: hides it and emits `dj-close` once. No-op if already closed.
+
+## CSS custom properties
+
+- `--dj-alert-background`: Banner background; defaults to the variant's `--dj-color-*-100`. Default `per-variant tint`.
+- `--dj-alert-color`: Text color; defaults to the variant's `--dj-color-*-700`. Default `per-variant ink`.
+- `--dj-alert-accent-color`: Icon + leading-border color; defaults to the variant's `--dj-color-*-600`. Default `per-variant accent`.
+- `--dj-alert-radius`: Corner radius. Default `var(--dj-input-border-radius-medium)`.
 
 ## Examples
 

@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`.
+`open` shows it; `type` success/error tints; slots: default (message), `actions`.
 
 ## Install
 
@@ -33,9 +33,14 @@ Toggle `open`; `type` tints success/error.
 | `leading` | leading | `boolean` | `false` |
 | `stacked` | stacked | `boolean` | `false` |
 
-**Slots:** default, `actions`
+## Slots
 
-**CSS properties:** `--dj-snackbar-z-index` (default `960`; Stacking order of the snackbar.)
+- default slot
+- `actions`
+
+## CSS custom properties
+
+- `--dj-snackbar-z-index`: Stacking order of the snackbar. Default `960`.
 
 ## Theming
 

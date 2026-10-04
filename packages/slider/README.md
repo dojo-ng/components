@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated single-value range input with a themed track/fill/thumb and optional output, composing `<dj-label>`. Parts: `label`, `track`, `fill`, `input`, `output`.
+Parts: `label`, `track`, `fill`, `input`, `output`.
 
 ## Install
 
@@ -40,11 +40,23 @@ Import the package to register the custom element, then use the tag.
 | `required` | required ↻ | `boolean` | `false` |
 | `labelHidden` | label-hidden | `boolean` | `false` |
 
-**Parts:** `label`, `track`, `fill`, `input`, `output`
+## CSS parts
 
-**Events:** `change`
+- `label`
+- `track`
+- `fill`
+- `input`
+- `output`
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `focus(o: FocusOptions)`
+- `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

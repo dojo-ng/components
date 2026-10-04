@@ -39,9 +39,14 @@ Submits each checked value under `name`.
 | `orientation` | orientation | `"vertical"\|"horizontal"` | `"vertical"` |
 | `disabled` | disabled | `boolean` | `false` |
 
-**Events:** `change`
+## Events
 
-**Methods:** `checkValidity()`, `restoreFormState(state: File | string | FormData | null)`
+- `change`
+
+## Methods
+
+- `checkValidity()`
+- `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

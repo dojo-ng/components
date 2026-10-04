@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated radio composing `<dj-label>`. Radios sharing a `name` within the same form (or document) are mutually exclusive: checking one unchecks the others. Submits `value` when checked. Parts: `control`, `label`. Event: `change`.
+Radios sharing a `name` within the same form (or document) are mutually exclusive: checking one unchecks the others. Submits `value` when checked. Parts: `control`, `label`. Event: `change`.
 
 ## Install
 
@@ -37,13 +37,25 @@ Radios sharing a `name` are mutually exclusive. Prefer `dj-radio-group` for a ma
 | `labelHidden` | label-hidden | `boolean` | `false` |
 | `tabbable` | tabbable | `boolean` | `true` |
 
-**Slots:** default
+## Slots
 
-**Parts:** `control`, `label`
+- default slot
 
-**Events:** `change`
+## CSS parts
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
+- `control`
+- `label`
+
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
+- `focus(options: FocusOptions)`
+- `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

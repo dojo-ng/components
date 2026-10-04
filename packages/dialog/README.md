@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role="alertdialog"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close`. Parts: `underlay`, `dialog`, `title`, `close`, `content`, `actions`.
+Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role="alertdialog"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close`. Parts: `underlay`, `dialog`, `title`, `close`, `content`, `actions`.
 
 ## Install
 
@@ -49,15 +49,33 @@ Toggle `open`; listen for `dj-close`.
 | `role` | role ↻ | `"dialog" \| "alertdialog"` | `"dialog"` |
 | `closeText` | close-text | `string` | — |
 
-**Slots:** `title`, default (content), `actions`
+## Slots
 
-**Parts:** `underlay`, `dialog`, `title`, `close`, `content`, `actions`
+- `title`
+- default slot: Content.
+- `actions`
 
-**Events:** `dj-close`
+## CSS parts
 
-**Methods:** `close()`
+- `underlay`
+- `dialog`
+- `title`
+- `close`
+- `content`
+- `actions`
 
-**CSS properties:** `--dj-dialog-z-index` (default `941`; Stacking order of the dialog.), `--dj-dialog-underlay-z-index` (default `940`; Stacking order of the dialog underlay (scrim).)
+## Events
+
+- `dj-close`
+
+## Methods
+
+- `close()`
+
+## CSS custom properties
+
+- `--dj-dialog-z-index`: Stacking order of the dialog. Default `941`.
+- `--dj-dialog-underlay-z-index`: Stacking order of the dialog underlay (scrim). Default `940`.
 
 ## Theming
 

@@ -34,9 +34,13 @@ Provide `options`; listen for `dj-select`.
 |---|---|---|---|
 | `options` | options | `ListOption[]` | `[]` |
 
-**Slots:** default
+## Slots
 
-**Events:** `dj-select`
+- default slot
+
+## Events
+
+- `dj-select`
 
 ## Theming
 

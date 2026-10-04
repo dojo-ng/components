@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.
+Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.
 
 ## Install
 
@@ -42,15 +42,32 @@ Slides in from `align`; toggle `open`.
 | `underlay` | underlay | `boolean` | `true` |
 | `closeText` | close-text | `string` | — |
 
-**Slots:** `title`, default (content)
+## Slots
 
-**Parts:** `underlay`, `pane`, `title`, `close`, `content`
+- `title`
+- default slot: Content.
 
-**Events:** `dj-close`
+## CSS parts
 
-**Methods:** `close()`
+- `underlay`
+- `pane`
+- `title`
+- `close`
+- `content`
 
-**CSS properties:** `--dj-slide-pane-size` (default `320px`; Width (left/right) or height (top/bottom) of the pane.), `--dj-slide-pane-z-index` (default `931`; Stacking order of the pane.), `--dj-slide-pane-underlay-z-index` (default `930`; Stacking order of the pane underlay (scrim).)
+## Events
+
+- `dj-close`
+
+## Methods
+
+- `close()`
+
+## CSS custom properties
+
+- `--dj-slide-pane-size`: Width (left/right) or height (top/bottom) of the pane. Default `320px`.
+- `--dj-slide-pane-z-index`: Stacking order of the pane. Default `931`.
+- `--dj-slide-pane-underlay-z-index`: Stacking order of the pane underlay (scrim). Default `930`.
 
 ## Theming
 

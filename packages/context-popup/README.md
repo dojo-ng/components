@@ -31,9 +31,14 @@ The default slot is the trigger; `content` is shown on right-click.
 |---|---|---|---|
 | `open` | open ↻ | `boolean` | `false` |
 
-**Slots:** default, `content`
+## Slots
 
-**Events:** `dj-open`
+- default slot
+- `content`
+
+## Events
+
+- `dj-open`
 
 ## Theming
 

@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated on/off toggle (role="switch") composing `<dj-label>`. Modeled like a checkbox; the checked flag is `checked` (the Dojo widget called it `value` — renamed here for consistency with checkbox/radio). Parts: `control`, `label`.
+Modeled like a checkbox; the checked flag is `checked` (the Dojo widget called it `value` — renamed here for consistency with checkbox/radio). Parts: `control`, `label`.
 
 ## Install
 
@@ -35,13 +35,25 @@ Modeled like a checkbox; the flag is `checked`.
 | `readonly` | readonly ↻ | `boolean` | `false` |
 | `labelHidden` | label-hidden | `boolean` | `false` |
 
-**Slots:** default
+## Slots
 
-**Parts:** `control`, `label`
+- default slot
 
-**Events:** `change`
+## CSS parts
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `restoreFormState(state: File | string | FormData | null)`
+- `control`
+- `label`
+
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
+- `focus(options: FocusOptions)`
+- `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

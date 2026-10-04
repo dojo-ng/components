@@ -4,7 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A horizontal action bar. Slots: `leading` (logo, menu/back button), default (title or content), `actions` (primary action buttons, end-aligned). Secondary actions can collapse into an overflow menu: set the `overflow` property to a list of options and a `⋮` button renders a popup `<dj-list>` of them, emitting `dj-action` with the chosen value. `sticky` pins the bar to the top. `role="toolbar"`. Composes popup, list, icon. The overflow menu closes on selection, Escape, outside click, and on tab-out. (Automatic width-based collapsing of slotted actions is a future addition; for now the app decides which actions are primary and which go in `overflow`.)
+Slots: `leading` (logo, menu/back button), default (title or content), `actions` (primary action buttons, end-aligned). Secondary actions can collapse into an overflow menu: set the `overflow` property to a list of options and a `⋮` button renders a popup `<dj-list>` of them, emitting `dj-action` with the chosen value. `sticky` pins the bar to the top. `role="toolbar"`.
+
+Composes popup, list, icon. The overflow menu closes on selection, Escape, outside click, and on tab-out. (Automatic width-based collapsing of slotted actions is a future addition; for now the app decides which actions are primary and which go in `overflow`.)
 
 ## Install
 
@@ -43,13 +45,27 @@ Slot `leading`, a title (default), and `actions`; secondary actions collapse int
 | `overflow` | — | `ListOption[]` | `[]` |
 | `overflowPosition` | overflow-position ↻ | `PopupPosition` | `"below"` |
 
-**Slots:** `leading`, default, `actions`
+## Slots
 
-**Parts:** `bar`, `leading`, `title`, `actions`, `overflow`
+- `leading`
+- default slot
+- `actions`
 
-**Events:** `dj-action` (detail: `{ value }`)
+## CSS parts
 
-**CSS properties:** `--dj-toolbar-z-index` (default `700`; Stacking order when the toolbar is sticky.)
+- `bar`
+- `leading`
+- `title`
+- `actions`
+- `overflow`
+
+## Events
+
+- `dj-action`: Detail: `{ value }`.
+
+## CSS custom properties
+
+- `--dj-toolbar-z-index`: Stacking order when the toolbar is sticky. Default `700`.
 
 ## Theming
 

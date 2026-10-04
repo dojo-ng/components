@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-An ISO (yyyy-mm-dd) date field: type it, or pick from a popup `<dj-calendar>` opened by the trailing button. Form-associated. Composes text-input, calendar, popup, icon.
+Form-associated. Composes text-input, calendar, popup, icon.
 
 ## Install
 
@@ -36,9 +36,13 @@ Type `yyyy-mm-dd` or pick from the popup calendar.
 | `disabled` | disabled | `boolean` | `false` |
 | `required` | required | `boolean` | `false` |
 
-**Events:** `change`
+## Events
 
-**Methods:** `checkValidity()`
+- `change`
+
+## Methods
+
+- `checkValidity()`
 
 ## Theming
 

@@ -4,7 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-An inline color picker with a 2D saturation/brightness area, a hue slider, an optional opacity slider, a text field, and optional swatches. Form-associated: it submits the formatted color string under `name`. There is no built-in trigger or popup — compose `dj-popup` to make it a dropdown. The internal model is HSV + alpha; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`). Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.
+Form-associated: it submits the formatted color string under `name`. There is no built-in trigger or popup — compose `dj-popup` to make it a dropdown.
+
+The internal model is HSV + alpha; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`). Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.
 
 > An inline color picker: a 2D saturation/brightness area, a hue slider, an optional opacity slider (`alpha`), a text field, and optional `swatches`. Form-associated — it submits the formatted color string under `name`. There is no built-in trigger or popup by design; compose `dj-popup` to make a dropdown. The model is HSV internally; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`), so reading `value` after switching `format` returns the new representation. `swatches` is an array of color strings or `{ value, label }`. Emits `dj-change` (`{ value }`) on every user change, including during a drag (no separate input event). Named CSS colors are not parsed; alpha appears in the output only when the color is translucent or `alpha` is on. Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.
 
@@ -44,13 +46,30 @@ Set `format`, turn on `alpha` for opacity, and pass `swatches`. Listen for `dj-c
 | `disabled` | disabled ↻ | `boolean` | `false` |
 | `get` | get | `string` | — |
 
-**Parts:** `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`, `picker`, `label`
+## CSS parts
 
-**Events:** `dj-change` (`{ value }`)
+- `area`
+- `thumb`
+- `hue`
+- `alpha`
+- `input`
+- `swatches`
+- `swatch`
+- `picker`
+- `label`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`
+## Events
 
-**CSS properties:** `--dj-color-picker-width` (default `240px`; Overall width of the inline panel.)
+- `dj-change`: `{ value }`.
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
+
+## CSS custom properties
+
+- `--dj-color-picker-width`: Overall width of the inline panel. Default `240px`.
 
 ## Theming
 

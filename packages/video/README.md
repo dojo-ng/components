@@ -4,7 +4,11 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A themed video player wrapping video.js (the product's engine; v8, which bundles HLS). We own integration; video.js owns playback and renders its own control bar (`controls: true` — we do NOT rebuild video controls in v1). LIGHT DOM: this component renders its player region into light DOM (`createRenderRoot()` returns `this`, the dj-rich-text precedent) because video.js injects DOM, needs its global stylesheet, and its fullscreen/track menus misbehave inside a shadow root. video.js's stylesheet is a documented APP PREREQUISITE, loaded at document level (see the README's link tag) — the same arrangement as element-internals-polyfill. Test seam: the engine is only ever created through `protected createPlayer(el, options)`, which defaults to lazily importing the real video.js factory. Tests replace it with a stub player.
+We own integration; video.js owns playback and renders its own control bar (`controls: true` — we do NOT rebuild video controls in v1).
+
+LIGHT DOM: this component renders its player region into light DOM (`createRenderRoot()` returns `this`, the dj-rich-text precedent) because video.js injects DOM, needs its global stylesheet, and its fullscreen/track menus misbehave inside a shadow root. video.js's stylesheet is a documented APP PREREQUISITE, loaded at document level (see the README's link tag) — the same arrangement as element-internals-polyfill.
+
+Test seam: the engine is only ever created through `protected createPlayer(el, options)`, which defaults to lazily importing the real video.js factory. Tests replace it with a stub player.
 
 > Wraps video.js (the product's engine; v8, which bundles HLS): video.js owns playback and renders its own control bar, we own integration and theming. TWO app prerequisites, both loaded at document level (the component does not bundle them): video.js's stylesheet (a `<link>` in the page head) and video.js itself (resolved by your bundler or an import map). The player region renders in LIGHT DOM by design — video.js injects its own DOM/CSS and its fullscreen and track menus misbehave inside a shadow root. `src`/`sources`/`poster` update the live player; `muted`/`autoplay`/`loop`/`tracks`/`label` recreate it. `dj-time` is throttled to at most once per second. `player()` returns the raw video.js instance (advanced escape hatch; no support implied).
 
@@ -53,9 +57,18 @@ video.js needs its stylesheet loaded at the document level (an app prerequisite,
 | `tracks` | — | `unknown[]` | — |
 | `label` | label | `string` | — |
 
-**Events:** `dj-play`, `dj-pause`, `dj-ended`, `dj-time`
+## Events
 
-**Methods:** `play()` (Start playback.), `pause()` (Pause playback.), `player(): VideoJsPlayer | null` (The underlying video.js player instance. Advanced escape hatch; no support implied.)
+- `dj-play`
+- `dj-pause`
+- `dj-ended`
+- `dj-time`
+
+## Methods
+
+- `play()`: Start playback.
+- `pause()`: Pause playback.
+- `player(): VideoJsPlayer | null`: The underlying video.js player instance. Advanced escape hatch; no support implied.
 
 ## Theming
 

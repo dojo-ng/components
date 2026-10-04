@@ -150,8 +150,80 @@ def description(doc, tag):
     onto the end of the prose and shipped that way into the README and the manifest.
     Eight components read that way before this was fixed (2026-09-03)."""
     cut = re.split(r"\n\s*(?:Slots?:|Parts?:|Events?:|Methods?:|\*?\s*@\w+)", doc)[0]
-    t = " ".join(cut.split()).strip()
+    t = add_request_line(structured_md(cut))
     return re.sub(rf"^`?<{re.escape(tag)}>`?\s*[—\-–]\s*", "", t).strip()
+
+
+REQUEST_LINE = (
+    "Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an "
+    "issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues)."
+)
+
+
+def add_request_line(md):
+    """Append REQUEST_LINE to a `#### Not built` or `#### Not supported…` section, so every list
+    of missing features tells the reader where to ask for one. Added here, not in each class doc,
+    so the wording and links stay the same everywhere."""
+    blocks = md.split("\n\n") if md else []
+    out = []
+    for i, b in enumerate(blocks):
+        out.append(b)
+        heading = next((x for x in reversed(blocks[: i + 1]) if x.startswith("#### ")), "")
+        nxt = blocks[i + 1] if i + 1 < len(blocks) else "#### "
+        if re.match(r"#### Not (built|supported)", heading) and nxt.startswith("#### ") and not b.startswith("#### "):
+            out.append(REQUEST_LINE)
+    return "\n\n".join(out)
+
+
+def structured_md(text):
+    """Markdown with the class doc's structure kept: paragraphs (blank-line separated, wrapped
+    lines joined), `#### Heading` lines, and `- ` bullets (indented continuation lines joined
+    to their bullet). Blocks are separated by a blank line.
+
+    Before 2026-10-05 every description was collapsed onto one line, so a doc written in
+    paragraphs still shipped as one block of text in the manifest, the READMEs, and the API
+    reference. Consumers that place this under their own heading level shift the `####`
+    headings with `shift_headings()`."""
+    blocks, para, bullets = [], [], []
+
+    def flush():
+        if para:
+            blocks.append(" ".join(" ".join(para).split()))
+            para.clear()
+        if bullets:
+            blocks.append("\n".join("- " + " ".join(b.split()) for b in bullets))
+            bullets.clear()
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            flush()
+        elif stripped.startswith("#### "):
+            flush()
+            blocks.append("#### " + stripped[5:].strip())
+        elif stripped.startswith("- "):
+            if para:
+                flush()
+            bullets.append(stripped[2:])
+        elif bullets and line.startswith("  "):
+            bullets[-1] += " " + stripped
+        else:
+            if bullets:
+                flush()
+            para.append(stripped)
+    flush()
+    return "\n\n".join(blocks)
+
+
+def shift_headings(md, prefix):
+    """Replace the `#### ` heading marker that structured_md() writes with `prefix`
+    (for example `"## "` for a README, where the description sits at the top level)."""
+    return re.sub(r"(?m)^#### ", prefix, md)
+
+
+def first_paragraph(md):
+    """The description's lead paragraph only, for one-line uses (the gallery, a tagline)."""
+    return md.split("\n\n", 1)[0]
 
 
 def _section(doc, keyword):

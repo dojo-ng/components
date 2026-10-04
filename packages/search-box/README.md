@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A search field: free text plus typed `key:value` filters. Typing a configured `key:` enters token mode; keys with `options` open a suggestion popup (pick to commit), keys without take a free-typed value committed by Enter or the terminating space (values may be `"quoted"` to hold spaces). A committed filter becomes a closeable `<dj-chip>` before the input; an unconfigured `word:` stays plain text. Backspace with the caret at the start removes the last chip. Read-only `query` = `{ text, tokens }`; set it with `setQuery`. Not form-associated.
+Typing a configured `key:` enters token mode; keys with `options` open a suggestion popup (pick to commit), keys without take a free-typed value committed by Enter or the terminating space (values may be `"quoted"` to hold spaces). A committed filter becomes a closeable `<dj-chip>` before the input; an unconfigured `word:` stays plain text. Backspace with the caret at the start removes the last chip. Read-only `query` = `{ text, tokens }`; set it with `setQuery`. Not form-associated.
 
 > Free text plus typed `key:value` filters. Configure `keys`: a key with `options` opens a suggestion popup when you type `key:` (pick to commit), a key without takes a free-typed value committed by Enter or the terminating space, and values may be `"quoted"` to hold spaces. A committed filter becomes a closeable chip before the input; an unconfigured `word:` stays plain text — no popup, no chip, no error. Backspace with the caret at the start removes the last chip. Read `query` (`{ text, tokens }`) or listen for `dj-query-change`; `dj-search` fires on Enter outside token mode. `setQuery()` sets it programmatically without emitting. The tokenizer IS the exported `parseQuery`, so a backend can reuse the same grammar (`import { parseQuery, formatQuery } from "@dojo-ng/search-box"`). Not form-associated — search is app-driven.
 
@@ -54,13 +54,28 @@ Configure `keys`; `has` carries `options`, so typing `has:` opens a suggestion p
 | `position` | position ↻ | `PopupPosition` | `"below"` |
 | `disabled` | disabled ↻ | `boolean` | `false` |
 
-**Parts:** `box`, `input`, `chip`, `clear`, `label`
+## CSS parts
 
-**Events:** `dj-query-change` (`{ query }`), `dj-search` (`{ query }`)
+- `box`
+- `input`
+- `chip`
+- `clear`
+- `label`
 
-**Methods:** `setQuery(q: SearchQuery)` (Set the query programmatically, rendering its chips and text. Does not emit.), `clear()` (Clear all text and filters, emitting `dj-query-change`.), `focus(options: FocusOptions)`
+## Events
 
-**CSS properties:** `--dj-focus-ring` (Focus ring for the clear button (inherited token).)
+- `dj-query-change`: `{ query }`.
+- `dj-search`: `{ query }`.
+
+## Methods
+
+- `setQuery(q: SearchQuery)`: Set the query programmatically, rendering its chips and text. Does not emit.
+- `clear()`: Clear all text and filters, emitting `dj-query-change`.
+- `focus(options: FocusOptions)`
+
+## CSS custom properties
+
+- `--dj-focus-ring`: Focus ring for the clear button (inherited token).
 
 ## Examples
 

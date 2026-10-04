@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated file selector with a button (opens the OS picker) and a focusable drop zone. Files arrive by picker, drop, paste (a screenshot pasted while the drop zone has focus), or the public `addFiles` method; all four route through one intake that applies `accept` + `multiple` + max-size. Selected files are copied into component state, shown as a removable list; the element only SELECTS files (no upload/preview). Form value: a single `File` normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`, `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.
+Files arrive by picker, drop, paste (a screenshot pasted while the drop zone has focus), or the public `addFiles` method; all four route through one intake that applies `accept` + `multiple` + max-size. Selected files are copied into component state, shown as a removable list; the element only SELECTS files (no upload/preview). Form value: a single `File` normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`, `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.
 
 > A form-associated file selector: a `dj-button` opens the OS picker and the host doubles as a drop zone. Selected files are copied into component state and listed with their size and a remove button; the component only SELECTS files — it does no uploading or preview. `accept` filters both the picker and drops (extension, exact MIME, or `type/*`); `multiple` allows more than one (otherwise a new pick replaces the current file); `max-size` (bytes, per file) rejects an oversize file and sets a `fileTooLarge` validity error, cleared on the next change; `required` with no files reports `valueMissing`. Form value is a single `File`, or a `FormData` with one entry per file under `name` when `multiple`. Read `files` (read-only) for the current selection; call `clear()` to empty it. Emits `dj-change` (`{ files }`) on add and remove. Files arrive four ways, all through one intake (which applies `accept` + `multiple` + `max-size`): the picker, a drop, a paste, and the public `addFiles(files: File[] | FileList)` method — the app-integration seam for forwarding files captured elsewhere (a paste into a compose body, a drop on a whole pane). The drop zone is focusable and shows a focus ring; pasting a file (e.g. a screenshot) while it has focus adds the file. Parts: `button`, `dropzone`, `list`, `item`, `remove`.
 
@@ -42,11 +42,26 @@ Set `accept` and `multiple`; read the selection from `dj-change` or the `files` 
 | `name` | name ↻ | `string` | — |
 | `disabled` | disabled ↻ | `boolean` | `false` |
 
-**Parts:** `button`, `dropzone`, `list`, `item`, `remove`, `label`
+## CSS parts
 
-**Events:** `dj-change` (`{ files }`)
+- `button`
+- `dropzone`
+- `list`
+- `item`
+- `remove`
+- `label`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`, `clear()` (Remove all selected files (no `dj-change`).), `addFiles(incoming: File[] | FileList)` (Add files from any source, applying `accept` + `multiple` + `max-size`; appends, or replaces when not `multiple`. Emits `dj-change`. This is the single intake path — the picker, drop, and paste all route through it, and the app can call it to forward files captured elsewhere (e.g. a paste into the compose body or a drop on the whole pane).)
+## Events
+
+- `dj-change`: `{ files }`.
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
+- `focus(options: FocusOptions)`
+- `clear()`: Remove all selected files (no `dj-change`).
+- `addFiles(incoming: File[] | FileList)`: Add files from any source, applying `accept` + `multiple` + `max-size`; appends, or replaces when not `multiple`. Emits `dj-change`. This is the single intake path — the picker, drop, and paste all route through it, and the app can call it to forward files captured elsewhere (e.g. a paste into the compose body or a drop on the whole pane).
 
 ## Examples
 

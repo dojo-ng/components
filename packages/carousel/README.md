@@ -4,9 +4,9 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A slotted, swipeable carousel. Each top-level element in the default slot is one item (cards, images, tiles — arbitrary content). The item strip is a native horizontal scroll container with CSS scroll-snap, so touch and trackpad swiping is real scrolling: there is no pointer/drag code and no WCAG 2.5.7 (dragging) concern — the prev/next buttons are the non-drag path. `per-view` sizes items to show N at once (gap-adjusted); `dots` adds one dot per navigable page (with `per-view` &gt; 1 the trailing items can't lead, so pages = items − per-view + 1); `nav` (default on) shows prev/next buttons that disable at the ends (no looping in v1). The settled index is detected from element rects (not `scrollLeft`, which is RTL-inconsistent), debounced after scrolling. `next`/`previous`/`goTo` smooth-scroll the target into view and, because a headless environment has no layout, update `index` and emit optimistically; the scroll listener reconciles in a real browser (guarded so an unchanged index does not re-emit). Under `prefers-reduced-motion` navigation jumps instantly (the composed `reducedMotion` snippet forces `scroll-behavior: auto`, and button navigation passes `behavior: "auto"`). ARIA follows the APG carousel pattern: the region carries `aria-roledescription="carousel"` and the `label`; each slotted item gets `role="group"`, `aria-roledescription="slide"`, and an "{n} of {total}" label, reconciled on every `slotchange` and locale change. Keyboard: with the viewport focused, ArrowRight/ArrowLeft move forward/back in the reading direction (RTL-aware). Deferred (not built): `loop`, autoplay (an accessibility liability), and vertical orientation.
+Each top-level element in the default slot is one item: a card, an image, a tile, or any other content.
 
-> Swiping is native scroll-snap, so touch and trackpad work with no drag code and no WCAG 2.5.7 concern; the prev/next buttons are the non-drag path. `loop`, autoplay, and vertical orientation are intentionally not built (autoplay is an accessibility liability). Under `prefers-reduced-motion` button navigation jumps instantly instead of smooth-scrolling. Give the carousel a `label` so the region has an accessible name.
+Swiping is native scrolling. The item strip is a horizontal scroll container with CSS scroll-snap, so touch and trackpad work with no drag code, and the prev/next buttons give a way to move that needs no dragging (WCAG 2.5.7). Give the carousel a `label` so the region has an accessible name.
 
 ## Install
 
@@ -18,7 +18,7 @@ npm install @dojo-ng/carousel
 
 Import the package to register the custom element, then use the tag.
 
-Each top-level slotted element is one item. `per-view` shows N at once (gap-adjusted), `dots` adds a dot per navigable page (pages = items − per-view + 1), and `nav` (default) shows prev/next buttons that disable at the ends. Swiping is native scroll-snap. `dj-slide-change` fires with the settled `{ index }`. Give it a `label` for the region.
+Two items per view, with page dots. `dj-slide-change` reports the new index.
 
 ```html
 <dj-carousel label="Featured" per-view="2" dots>
@@ -34,6 +34,30 @@ Each top-level slotted element is one item. `per-view` shows N at once (gap-adju
 </script>
 ```
 
+## Layout
+
+- `per-view` shows that many items at once, sized to fit with the gap between them.
+- `dots` adds one dot per page. With `per-view` above 1, the last items cannot start a page, so the number of pages is items − `per-view` + 1.
+- `nav` (on by default) shows prev/next buttons. They are disabled at the first and last page; the carousel does not loop.
+
+## Moving between items
+
+- `next()`, `previous()`, and `goTo(index)` scroll smoothly to the item.
+- Under `prefers-reduced-motion`, the carousel jumps to the item instead of scrolling.
+- `dj-slide-change` fires when the current item changes, from swiping, a button, a key, or a method call.
+
+## Accessibility
+
+- The carousel follows the APG carousel pattern. The region has `aria-roledescription="carousel"` and the `label` as its name.
+- Each item gets `role="group"`, `aria-roledescription="slide"`, and an "{n} of {total}" label. These update when items are added or removed and when the locale changes.
+- With the strip focused, ArrowRight and ArrowLeft move forward and back in the reading direction, so they also work in right-to-left pages.
+
+## Not built
+
+- Looping, autoplay (an accessibility problem), and vertical orientation.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
+
 ## Properties
 
 `↻` marks an attribute reflected to the DOM; a dash means the property is set in JavaScript only.
@@ -45,21 +69,37 @@ Each top-level slotted element is one item. `per-view` shows N at once (gap-adju
 | `dots` | dots | `boolean` | `false` |
 | `label` | label | `string` | — |
 
-**Slots:** default
+## Slots
 
-**Parts:** `viewport` (the scroller), `prev`, `next`, `dots`, `dot`
+- default slot: Each top-level element is one carousel item.
 
-**Events:** `dj-slide-change` (detail `{ index }`)
+## CSS parts
 
-**Methods:** `next()`, `previous()`, `goTo(index: number)`
+- `viewport`: The scroller.
+- `prev`
+- `next`
+- `dots`
+- `dot`
 
-**CSS properties:** `--dj-carousel-gap` (default `1rem`; Gap between items (also subtracted from the per-view basis).)
+## Events
+
+- `dj-slide-change`: Detail `{ index }`.
+
+## Methods
+
+- `next()`
+- `previous()`
+- `goTo(index: number)`
+
+## CSS custom properties
+
+- `--dj-carousel-gap`: Gap between items (also subtracted from the per-view basis). Default `1rem`.
 
 ## Theming
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.
 
-## Accessibility and i18n
+## Localization
 
 Follows the project's WCAG 2.2 AA and localization conventions.
 

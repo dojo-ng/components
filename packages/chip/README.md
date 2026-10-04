@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Compact label/tag. Label in the default slot, optional icon in the `icon` slot. `clickable` wraps the body in a real `<button>` (native Enter/Space; the click bubbles from the host); `closeable` shows a separate close `<button>` that emits `dj-close`. The two are siblings, never nested, so a clickable + closeable chip stays valid ARIA. Parts: `root`, `action`, `close`.
+Label in the default slot, optional icon in the `icon` slot. `clickable` wraps the body in a real `<button>` (native Enter/Space; the click bubbles from the host); `closeable` shows a separate close `<button>` that emits `dj-close`. The two are siblings, never nested, so a clickable + closeable chip stays valid ARIA. Parts: `root`, `action`, `close`.
 
 ## Install
 
@@ -34,11 +34,20 @@ Import the package to register the custom element, then use the tag.
 | `closeable` | closeable | `boolean` | `false` |
 | `closeLabel` | close-label | `string` | — |
 
-**Slots:** `icon`, default
+## Slots
 
-**Parts:** `root`, `action`, `close`
+- `icon`
+- default slot
 
-**Events:** `dj-close`
+## CSS parts
+
+- `root`
+- `action`
+- `close`
+
+## Events
+
+- `dj-close`
 
 ## Theming
 

@@ -21,18 +21,21 @@ const H = 30;
 export type SparklineType = "line" | "area" | "bar";
 
 /**
- * `<dj-sparkline>` — a tiny inline chart: one numeric series, no axes, grid, legend, tooltip,
- * brush, or margins. It shares its math with `@dojo-ng/chart`'s `core.ts` but is deliberately
- * NOT a `dj-chart` mode — a sparkline's data shape (a plain `data` array of numbers) and render
- * path are both much smaller. For a full chart with axes and interaction, use `<dj-chart>`.
+ * `<dj-sparkline>` — a tiny inline chart of one numeric series, with no axes, grid, legend,
+ * tooltip, or margins.
  *
- * Set `label` to give it an accessible name (`role="img"` plus a generated "N points, min X,
- * max Y, last Z" summary, localized through the ambient locale); without a label the sparkline
- * is `aria-hidden`, which is the common case when adjacent text already states the value (a KPI
- * row showing the number next to its trend).
+ * `data` is a plain array of numbers. For a full chart with axes and interaction, use
+ * `<dj-chart>`: the sparkline shares its math but is a separate, much smaller component.
  *
- * {@link push} appends one or more values for cheap live updates without rebuilding `data`
- * yourself; `max-points` bounds how much history it keeps.
+ * #### Live data
+ * - `push()` appends one or more values without rebuilding `data`, for cheap live updates.
+ *   `max-points` limits how many values it keeps.
+ *
+ * #### Accessibility
+ * - With a `label`, the sparkline has `role="img"`, that name, and a generated summary
+ *   ("N points, min X, max Y, last Z") in the page's locale.
+ * - Without a `label` it is `aria-hidden`. That is the common case, when text next to it already
+ *   states the value, as in a row of key figures with a trend beside each number.
  *
  * Parts: `base`, `marker`.
  *

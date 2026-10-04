@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A breadcrumb trail from `items`. Part: `list`.
+Part: `list`.
 
 ## Install
 
@@ -36,7 +36,9 @@ Provide `items`; the last is the current page.
 |---|---|---|---|
 | `items` | items | `Crumb[]` | `[]` |
 
-**Parts:** `list`
+## CSS parts
+
+- `list`
 
 ## Theming
 

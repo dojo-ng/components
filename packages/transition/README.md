@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Runs an enter/leave effect when `show` toggles. It defines no effects itself: it reflects a `state` attribute (`entering` | `entered` | `leaving` | `left`) on the host, and the consumer's page CSS attaches the animation to `dj-transition[state="entering"]` / `dj-transition[state="leaving"]`. Enter effects must be `@keyframes` animations (enter-by-transition is not supported in v1); leave effects may be an animation or transitioned properties. The wrapper stays mounted through the leave effect, then hides via `display: none` at `state="left"`. Rapid toggling cancels the in-flight phase cleanly and fires no event for it.
+It defines no effects itself: it reflects a `state` attribute (`entering` | `entered` | `leaving` | `left`) on the host, and the consumer's page CSS attaches the animation to `dj-transition[state="entering"]` / `dj-transition[state="leaving"]`. Enter effects must be `@keyframes` animations (enter-by-transition is not supported in v1); leave effects may be an animation or transitioned properties. The wrapper stays mounted through the leave effect, then hides via `display: none` at `state="left"`. Rapid toggling cancels the in-flight phase cleanly and fires no event for it.
 
 > The component defines no effects itself: it reflects a `state` attribute you animate with page CSS. Enter effects must be `@keyframes` animations on `dj-transition[state="entering"]`; enter-by-transition is not supported. Leave effects may be an animation on `[state="leaving"]` or transitioned properties.
 
@@ -49,9 +49,14 @@ Toggle `show`; the component reflects a `state` attribute that your page CSS ani
 | `appear` | appear ↻ | `boolean` | `false` |
 | `state` | state ↻ | `"entering" \| "entered" \| "leaving" \| "left"` | — |
 
-**Slots:** default
+## Slots
 
-**Events:** `dj-after-enter`, `dj-after-leave`
+- default slot
+
+## Events
+
+- `dj-after-enter`
+- `dj-after-leave`
 
 ## Theming
 

@@ -6,7 +6,7 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 Extends `DjConstrainedInput` and inherits its properties and behavior.
 
-A password field with a show/hide toggle in the trailing slot. Inherits `<dj-constrained-input>`, so it also accepts a custom `validator`.
+Inherits `<dj-constrained-input>`, so it also accepts a custom `validator`.
 
 ## Install
 

@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A data grid from `columns` + `rows`. Click a sortable header to sort (emits `dj-sort`). Functional core: no virtualization, paging, editing, or column resize yet. Part: `table`.
+Click a sortable header to sort (emits `dj-sort`). Functional core: no virtualization, paging, editing, or column resize yet. Part: `table`.
 
 ## Install
 
@@ -37,9 +37,13 @@ Provide `columns` and `rows`.
 | `columns` | columns | `GridColumn[]` | `[]` |
 | `rows` | rows | `Record<string, unknown>[]` | `[]` |
 
-**Parts:** `table`
+## CSS parts
 
-**Events:** `dj-sort`
+- `table`
+
+## Events
+
+- `dj-sort`
 
 ## Theming
 

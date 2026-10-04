@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A collapsible panel with a title bar. Content goes in the default slot. Click the title (when `closeable`) to toggle; emits `dj-toggle` with `{ open }`.
+Content goes in the default slot. Click the title (when `closeable`) to toggle; emits `dj-toggle` with `{ open }`.
 
 ## Install
 
@@ -35,11 +35,19 @@ Toggle `open`; the title is the trigger.
 | `closeable` | closeable | `boolean` | `true` |
 | `headingLevel` | heading-level | `number` | — |
 
-**Slots:** default
+## Slots
 
-**Parts:** `title`, `button`, `content`
+- default slot
 
-**Events:** `dj-toggle`
+## CSS parts
+
+- `title`
+- `button`
+- `content`
+
+## Events
+
+- `dj-toggle`
 
 ## Theming
 

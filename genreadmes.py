@@ -36,14 +36,10 @@ INFRA_DOC = {
 NOTES = {
     "typeahead": "Coming from Dojo's **ComboBox**? Typeahead is its successor: an editable field that filters a list. For multi-select, see [`@dojo-ng/chip-typeahead`](../chip-typeahead/README.md).",
     "list": "Coming from Dojo's **Listbox**? Use this component: it provides the selectable listbox role and keyboard model that Listbox did. Set `reorderable` to let items be reordered by drag or keyboard (space to grab, arrows to move, space to drop, escape to cancel); it is controlled — the list emits `dj-reorder` and you reorder `options`.",
-    "chart": "Sizing: the chart fills its width and takes its height from the `--dj-chart-height` custom property (default `18rem`). Set that property to resize it; a fixed `height` on a wrapper element will not constrain the chart, and a wrapper shorter than the chart's height will let the legend overflow. The legend sits below the plot and is included in that height.",
     "transition": "The component defines no effects itself: it reflects a `state` attribute you animate with page CSS. Enter effects must be `@keyframes` animations on `dj-transition[state=\"entering\"]`; enter-by-transition is not supported. Leave effects may be an animation on `[state=\"leaving\"]` or transitioned properties.",
     "transition-group": "Coordinates slotted `dj-transition` children only (v1 is stagger, no list-move animation). The effects live on the children; the group just drives their `show` with a delay. Set `appear` on the children directly.",
-    "carousel": "Swiping is native scroll-snap, so touch and trackpad work with no drag code and no WCAG 2.5.7 concern; the prev/next buttons are the non-drag path. `loop`, autoplay, and vertical orientation are intentionally not built (autoplay is an accessibility liability). Under `prefers-reduced-motion` button navigation jumps instantly instead of smooth-scrolling. Give the carousel a `label` so the region has an accessible name.",
-    "split-panel": "The host needs a size the panes can fill: for a horizontal split give it a height (width comes from the flow). Minimum pane sizes are CSS, not props — set `--dj-split-panel-min-start` and `--dj-split-panel-min-end` to any length and the browser clamps the drag against them. Dragging is a pointer gesture, so the divider also takes the keyboard for WCAG 2.5.7: focus it and use the arrow keys (Shift for a larger step), Home, and End. For a three-pane layout, nest one `dj-split-panel` inside a slot of another.",
     "chip-typeahead": "By default only configured `options` can be chosen. Add `allow-new` for a tag editor: Enter on non-empty text that matches no option creates a chip from the literal value (respecting `duplicates`), while a highlighted popup option still picks the option. Only Enter commits — comma is left alone, since it is a valid character in many locales.",
     "icon": "A registered SVG must carry a `viewBox`. dj-icon sizes a glyph by stretching it to fill the icon box, and an `<svg>` only scales its artwork when it has a `viewBox`; one without gets a correctly-sized box with clipped or unscaled artwork. `registerIcon`/`registerIcons` log a one-time console warning for any icon registered without a `viewBox`, and never rewrite it. Any `width` or `height` attributes on a registered SVG are overridden by dj-icon's own sizing. A slotted inline `<svg>` follows the same rule.",
-    "tree": "Selection and expansion are both controlled: `value` is the selected node id (emits `dj-select`) and `expanded` is an array of open node ids (emits `dj-expand-change` with `{ id, expanded, expandedIds }`). Node `icon` names must be registered with `registerIcon`/`registerIcons` from `@dojo-ng/icon`; `count` renders as a trailing badge. Keyboard is the APG tree pattern with a roving tabindex — only one row is ever a tab stop, arrows move focus without selecting (Right/Left expand/collapse or move in/out, Home/End jump), and Enter or Space selects. Style indentation with `--dj-tree-indent` and the count with `--dj-tree-count-color`. Not built yet: drag-drop, virtualization, checkboxes, lazy loading.",
     "badge": "Presentational only — a badge has no ARIA role. When it shows a count for a control (an unread count on a button, say), put the accessible name on the CONTROL (`aria-label=\"Notifications, 4 unread\"`), not on the badge, so assistive tech reads the meaning rather than a bare number. Variant colors reuse the theme's semantic `--dj-color-*-600` scales; override a single badge with `--dj-badge-background` / `--dj-badge-color`.",
     "skeleton": "Size and shape come from your CSS on the host, not from props: give it a width/height for a text line, or a square plus `border-radius: 50%` for an avatar. The skeleton is always `aria-hidden`; mark the region that is loading with `aria-busy=\"true\"` until the real content lands so the loading state is announced once for the whole region, not per placeholder. `prefers-reduced-motion` stills the sheen automatically.",
     "alert": "An inline status banner that sits in the page flow — distinct from `dj-snackbar` (transient, floating) and `dj-result` (full-page). It shows by default (`open`); `close()` hides it and emits `dj-close`. info/success announce politely (`role=\"status\"`), warning/danger assertively (`role=\"alert\"`). Each variant has a default glyph; override it via the `icon` slot. Add `closable` for a dismiss button (its label is the localized `close` key). Variant colors reuse the theme's semantic tint/ink scales; override one alert with `--dj-alert-background` / `--dj-alert-color` / `--dj-alert-accent-color`.",
@@ -232,7 +228,7 @@ EXAMPLES = {
    '<dj-speed-dial id="sd"></dj-speed-dial>\n<script type="module">\n  import "@dojo-ng/speed-dial";\n  document.getElementById("sd").actions = [{ label: "Copy" }, { label: "Share" }];\n</script>'),
  ],
  "tree": [
-  ("Mail folder tree", "Each node can carry an `icon` (a registered icon name) and a `count` (a trailing badge, e.g. unread mail). `value` is the selected node id and `expanded` is the controlled array of open node ids; the tree emits `dj-select` and `dj-expand-change`. Keyboard is the APG tree pattern with a roving tabindex — arrows move focus (Right/Left expand/collapse), Enter selects.",
+  ("Mail folder tree", "Folders with registered icons and unread counts. The tree reports selection with `dj-select` and opened folders with `dj-expand-change`.",
    '<dj-tree id="folders" value="inbox"></dj-tree>\n<script type="module">\n  import "@dojo-ng/tree";\n  import { registerIcons } from "@dojo-ng/icon";\n  registerIcons({\n    inbox: \'<svg viewBox="0 0 24 24"><path d="M4 13h4l2 3h4l2-3h4M4 13V5h16v8M4 13v6h16v-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>\',\n    folder: \'<svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z" fill="none" stroke="currentColor" stroke-width="2"/></svg>\',\n  });\n  const t = document.getElementById("folders");\n  t.expanded = ["archive"];\n  t.nodes = [\n    { id: "inbox", label: "Inbox", icon: "inbox", count: 12 },\n    { id: "archive", label: "Archive", icon: "folder", children: [\n      { id: "y2025", label: "2025", icon: "folder" },\n      { id: "y2024", label: "2024", icon: "folder" },\n    ] },\n    { id: "trash", label: "Trash", icon: "folder" },\n  ];\n  t.addEventListener("dj-select", (e) => console.log("select", e.detail.id));\n  t.addEventListener("dj-expand-change", (e) => console.log("expanded", e.detail.expandedIds));\n</script>'),
  ],
  "list": [
@@ -382,11 +378,11 @@ EXAMPLES = {
    '<dj-stack>\n  <dj-button>One</dj-button>\n  <dj-button>Two</dj-button>\n</dj-stack>'),
  ],
  "carousel": [
-  ("Swipeable carousel", "Each top-level slotted element is one item. `per-view` shows N at once (gap-adjusted), `dots` adds a dot per navigable page (pages = items − per-view + 1), and `nav` (default) shows prev/next buttons that disable at the ends. Swiping is native scroll-snap. `dj-slide-change` fires with the settled `{ index }`. Give it a `label` for the region.",
+  ("Swipeable carousel", "Two items per view, with page dots. `dj-slide-change` reports the new index.",
    '<dj-carousel label="Featured" per-view="2" dots>\n  <dj-card>One</dj-card>\n  <dj-card>Two</dj-card>\n  <dj-card>Three</dj-card>\n</dj-carousel>\n<script type="module">\n  import "@dojo-ng/carousel";\n  import "@dojo-ng/card";\n  const c = document.querySelector("dj-carousel");\n  c.addEventListener("dj-slide-change", (e) => console.log("slide", e.detail.index));\n</script>'),
  ],
  "split-panel": [
-  ("Resizable split", "Slot `start` and `end` panes; drag the divider or focus it and use the arrow keys. `position` is the start pane's percent share. `dj-reposition` fires with the settled `{ position }`. Min pane sizes come from the `--dj-split-panel-min-*` tokens, not props.",
+  ("Resizable split", "A sidebar and content with minimum widths. `dj-reposition` reports the new position.",
    '<dj-split-panel position="40"\n  style="height: 300px; --dj-split-panel-min-start: 120px; --dj-split-panel-min-end: 160px">\n  <div slot="start">Sidebar</div>\n  <div slot="end">Content</div>\n</dj-split-panel>\n<script type="module">\n  import "@dojo-ng/split-panel";\n  const sp = document.querySelector("dj-split-panel");\n  sp.addEventListener("dj-reposition", (e) => console.log("position", e.detail.position));\n</script>'),
   ("Three panes (nested)", "Nest a splitter in a slot for a third pane. Here the end pane is itself a vertical split.",
    '<dj-split-panel style="height: 400px" position="30">\n  <nav slot="start">Files</nav>\n  <dj-split-panel slot="end" orientation="vertical" position="70">\n    <main slot="start">Editor</main>\n    <div slot="end">Terminal</div>\n  </dj-split-panel>\n</dj-split-panel>'),
@@ -493,6 +489,18 @@ def first_sentence(text):
     m = re.split(r"(?<=[.])\s", text, maxsplit=1)
     return m[0] if m else text
 
+def _list_item(name, description="", extra=""):
+    """`name`: Description. Extra. One README list line for a slot, part, event, method, or CSS
+    custom property."""
+    d = (description or "").strip()
+    if d:
+        d = d[0].upper() + d[1:]
+        if d[-1] not in ".!?":
+            d += "."
+    tail = " ".join(x for x in (d, extra) if x)
+    return f"{name}: {tail}" if tail else name
+
+
 def component_readme(pkg, s):
     tag = G.tag_of(pkg)
     doc = G.classdoc(s)
@@ -500,14 +508,22 @@ def component_readme(pkg, s):
     desc = (desc[0].upper() + desc[1:]) if desc else desc
     o = [f"# @dojo-ng/{pkg}\n"]
     sup = G.superclass(s)
-    tagline = f"`<{tag}>` — {first_sentence(desc)}" if desc else f"`<{tag}>`"
+    # The description keeps the class doc's structure (G.structured_md): lead paragraphs, then
+    # optional `#### Heading` sections. The lead goes at the top; the sections follow Usage as
+    # their own `##` sections, so the README reads summary, install, usage, details, API.
+    blocks = desc.split("\n\n") if desc else []
+    first_heading = next((i for i, b in enumerate(blocks) if b.startswith("#### ")), len(blocks))
+    lead, sections = blocks[:first_heading], blocks[first_heading:]
+    lead_text = "\n\n".join(lead)
+    tagline = f"`<{tag}>` — {first_sentence(lead_text)}" if lead_text else f"`<{tag}>`"
     o.append(G.md_safe(tagline) + "\n")
     o.append("Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.\n")
     if sup != "DojoElement":
         o.append(f"Extends `{sup}` and inherits its properties and behavior.\n")
-    # Full description, only when it adds more than the one-sentence tagline already shows.
-    if desc and desc.strip() != first_sentence(desc).strip():
-        o.append(G.md_safe(desc) + "\n")
+    # The rest of the lead, without repeating the sentence the tagline already shows.
+    rest = lead_text.strip()[len(first_sentence(lead_text).strip()):].strip() if lead_text else ""
+    if rest:
+        o.append(G.md_safe(rest[0].upper() + rest[1:]) + "\n")
     note = NOTES.get(pkg)
     if note:
         o.append("> " + note + "\n")
@@ -523,6 +539,8 @@ def component_readme(pkg, s):
         o.append("```html\n" + code0 + "\n```\n")
     else:
         o.append(f"```html\n<script type=\"module\">import \"@dojo-ng/{pkg}\";</script>\n<{tag}></{tag}>\n```\n")
+    if sections:
+        o.append(G.md_safe(G.shift_headings("\n\n".join(sections), "## ")) + "\n")
     ps = G.parse_props(s)
     if ps:
         o.append("## Properties\n")
@@ -534,17 +552,26 @@ def component_readme(pkg, s):
             default = ("`" + G.cell(p["default"]) + "`") if p["default"] else "—"
             o.append(f"| `{p['name']}` | {a} | `{G.cell(p['type'])}` | {default} |")
         o.append("")
+    # One list item per entry: a long comma-joined line of slots, parts, or events was as hard
+    # to scan as the old one-block description.
     for label, items in (("Slots", G.parse_slots(doc, s)),
-                         ("Parts", G.parse_parts(doc, s)),
+                         ("CSS parts", G.parse_parts(doc, s)),
                          ("Events", G.parse_events(doc, s))):
         if items:
-            o.append(f"**{label}:** {G.md_safe(G.fmt_named_md(items))}\n")
+            o.append(f"## {label}\n")
+            o.append("\n".join("- " + G.md_safe(_list_item(
+                "default slot" if it["name"] == "" else f"`{it['name']}`", it.get("description"))) for it in items) + "\n")
     methods = G.parse_methods(s)
     if methods:
-        o.append(f"**Methods:** {G.md_safe(G.fmt_methods_md(methods))}\n")
+        o.append("## Methods\n")
+        o.append("\n".join("- " + G.md_safe(_list_item(
+            "`" + G.fmt_methods_md([dict(m, description="")]).strip("`") + "`", m.get("description"))) for m in methods) + "\n")
     cssprops = G.parse_cssprops(doc)
     if cssprops:
-        o.append(f"**CSS properties:** {G.md_safe(G.fmt_cssprops_md(cssprops))}\n")
+        o.append("## CSS custom properties\n")
+        o.append("\n".join("- " + G.md_safe(_list_item(
+            f"`{c['name']}`", c.get("description"),
+            f"Default `{c['default']}`." if c.get("default") else "")) for c in cssprops) + "\n")
     if exs and len(exs) > 1:
         o.append("## Examples\n")
         for title, d, code in exs[1:]:
@@ -554,8 +581,12 @@ def component_readme(pkg, s):
             o.append("```html\n" + code + "\n```\n")
     o.append("## Theming\n")
     o.append("Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.\n")
-    o.append("## Accessibility and i18n\n")
-    o.append("Follows the project's WCAG 2.2 AA and localization conventions.\n")
+    if any(sec.startswith("#### Accessibility") for sec in sections):
+        o.append("## Localization\n")
+        o.append("Follows the project's WCAG 2.2 AA and localization conventions.\n")
+    else:
+        o.append("## Accessibility and i18n\n")
+        o.append("Follows the project's WCAG 2.2 AA and localization conventions.\n")
     o.append("## More\n")
     o.append("Live, interactive examples are at [play.dojo-ng.com](https://play.dojo-ng.com). For the full API reference, theming, accessibility, and localization guides, see the [Dojo NG documentation](../../README.md).\n")
     return "\n".join(o)
@@ -596,7 +627,6 @@ def infra_readme(pkg):
 NOTES.update({
  "board": "The board is CONTROLLED: it never changes `data`. Listen for `dj-card-move`, apply it (the exported `applyCardMove` makes that one line), and assign the new array — focus then follows the moved card and the move is announced. Explicit `lanes` are recommended over the derived fallback (they fix lane order, give labels, and include empty lanes). Set `draggable` to enable pointer and touch drag between lanes (built on `@dojo-ng/dnd`); it is progressive enhancement — the move menu and keyboard shortcuts remain the accessibility contract, so drag is never the only way to move a card.",
  "dnd": "The keyboard/menu path in a consuming component is the accessibility contract (WCAG 2.5.7); drag is enhancement layered on top. The pointer core works inside shadow roots and on touch, mouse, and pen alike, with no dependency. Drops are CONTROLLED: the zone calls `onMove` and the consumer applies the change.",
- "data-grid": "Activation — what a plain click or Enter MEANS on a row — is set by `activation`. The default `\"none\"` is the original behavior: click and Space/Enter all toggle selection, so nothing existing changes. Set `activation=\"click\"` (the mail/preview-pane idiom) or `\"double\"` (the file-manager idiom) and opening a row becomes a separate gesture from selecting rows: a plain click activates and emits `dj-activate` (detail `{ row, index }`, where `row` is the original row data) WITHOUT touching selection. Keyboard splits on the platform convention — Enter activates, Space selects. Modifier clicks are reserved for selection and never activate: Ctrl/Cmd-click toggles the clicked row, Shift-click is the range gesture. `\"double\"` uses the platform's own `dblclick`, so the two `click` events a double click also produces can never activate. Activation fires regardless of `selectionMode`, including `\"none\"` — a read-only list with clickable rows needs no selection enabled. To let a click OPEN a row while the user also picks a set for bulk actions, combine `activation=\"click\"` with `selection-mode=\"multiple\"` and the checkbox column from `@dojo-ng/data-grid-select`. Viewport reporting: `dj-range-change` (detail `{ start, end, count, rendered }`) fires whenever the rendered row window moves, so a consumer can page data in and out or load more at the end of the list. `start` and `end` are the inclusive first and last rendered row-model indices, `count` is the total row count, and `rendered` is the full index list. THE RANGE INCLUDES THE 8 OVERSCAN ROWS the virtualizer keeps beyond the viewport, so it is wider than what the user can actually see — it is what the grid has committed to rendering (hence `rendered`, not \"visible\"), which is why a consumer that fetches this range never renders a hole. Treating it as the visible set would be wrong by up to eight rows at each end. End-reached is a one-line derivation, `if (e.detail.end >= e.detail.count - 1) loadMore()`, so there is no separate event for it. Nothing is rendered means `start` and `end` are `-1` with the real `count`, so a consumer learns the list went empty. The event fires after the render is committed and is deduplicated on an unchanged `(start, end, count)`, so ordinary re-renders (a selection toggle, a flags patch) are silent and reacting to it by setting `data` is safe. NOT YET SUPPORTED: windowing a data set LARGER than `data` — the grid sizes its scrollbar from `data.length`, so it cannot render a scrollbar for rows you have not loaded. That needs a separate total-count/sparse-data change to the `data` contract. Plugins: pass an array of plugin objects via the `plugins` property (JavaScript only). Recommended order: structural first (`treePlugin` OR `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, `formatsPlugin`, then chrome-only plugins (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`). A `plugins` change rebuilds the table.",
  "data-grid-edit": "CONTROLLED editing: the plugin never writes to `data`. Listen for `dj-cell-commit`, update your store, and assign a new `data` array. Place this plugin first in the array so its editor wins the cell.",
  "data-grid-export": "Exports RAW cell values (formatting is presentation). Default set = filtered but unpaginated rows; `all: true` exports the pre-filter set. Synthetic `__` columns (like the detail expander) are skipped.",
  "data-grid-tree": "Use `treePlugin` OR `groupsPlugin` per grid, never both (they both own expansion).",

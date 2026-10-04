@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-An editable combobox: type to filter `options`, pick from a popup `<dj-list>`. `strict` (default true) requires the value to match an option. Composes text-input, popup, list. Form-associated. Event: `change`.
+`strict` (default true) requires the value to match an option. Composes text-input, popup, list. Form-associated. Event: `change`.
 
 > Coming from Dojo's **ComboBox**? Typeahead is its successor: an editable field that filters a list. For multi-select, see [`@dojo-ng/chip-typeahead`](../chip-typeahead/README.md).
 
@@ -47,9 +47,14 @@ Import the package to register the custom element, then use the tag.
 | `strict` | strict | `boolean` | `true` |
 | `position` | position ↻ | `PopupPosition` | `"below"` |
 
-**Events:** `change`
+## Events
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `focus(o: FocusOptions)`
 
 ## Theming
 

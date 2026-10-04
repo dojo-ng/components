@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A linear bar or circular spinner. `active` (default true) toggles visibility while preserving layout. Exposes role="progressbar".
+`active` (default true) toggles visibility while preserving layout. Exposes role="progressbar".
 
 ## Install
 
@@ -32,9 +32,13 @@ Pick a `type` (e.g. circular).
 | `type` | type ↻ | `LoadingType` | `"linear"` |
 | `label` | label | `string` | — |
 
-**Parts:** `base`
+## CSS parts
 
-**CSS properties:** `--dj-loading-linear-height` (default `4px`; Thickness of the linear (bar) indicator.)
+- `base`
+
+## CSS custom properties
+
+- `--dj-loading-linear-height`: Thickness of the linear (bar) indicator. Default `4px`.
 
 ## Theming
 

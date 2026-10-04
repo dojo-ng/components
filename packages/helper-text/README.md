@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Supporting text shown under a form control. Provide text via the `text` attribute, or slot richer content. `valid` (tri-state) tints the text.
+Provide text via the `text` attribute, or slot richer content. `valid` (tri-state) tints the text.
 
 ## Install
 
@@ -31,9 +31,14 @@ Import the package to register the custom element, then use the tag.
 | `text` | text | `string` | — |
 | `valid` | valid | `boolean` | — |
 
-**Slots:** default
+## Slots
 
-**Parts:** `base`, `text`
+- default slot
+
+## CSS parts
+
+- `base`
+- `text`
 
 ## Theming
 

@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Non-visual; attaches listeners to window/document for its lifetime. Set `windowListeners` / `documentListeners` (maps of event name → handler) as properties.
+Set `windowListeners` / `documentListeners` (maps of event name → handler) as properties.
 
 ## Install
 

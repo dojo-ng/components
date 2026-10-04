@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A Kanban board over plain records. Lanes are the values of one field (`group-by`); cards are the records of `data`, ordered within a lane by their order of appearance. The board is CONTROLLED: it never mutates `data` — every move (menu, keyboard) emits `dj-card-move` and the app applies it (the exported `applyCardMove` helper makes that one line); focus then follows the moved card and the move is announced to assistive tech once the app's data update lands. Card content comes from `renderCard`, rendered inside the component-owned accessible shell (so custom cards cannot regress accessibility), or defaults to a `dj-card` showing the `card-title` field. Keyboard: one tab stop (roving); arrows move between cards and lanes, Home/End within a lane, Enter activates, Space or M opens the move menu, and Ctrl/Cmd+arrows move the card itself. WIP limits are advisory (`n/limit` count and an over-limit style hook, never blocking).
+Lanes are the values of one field (`group-by`); cards are the records of `data`, ordered within a lane by their order of appearance. The board is CONTROLLED: it never mutates `data` — every move (menu, keyboard) emits `dj-card-move` and the app applies it (the exported `applyCardMove` helper makes that one line); focus then follows the moved card and the move is announced to assistive tech once the app's data update lands. Card content comes from `renderCard`, rendered inside the component-owned accessible shell (so custom cards cannot regress accessibility), or defaults to a `dj-card` showing the `card-title` field. Keyboard: one tab stop (roving); arrows move between cards and lanes, Home/End within a lane, Enter activates, Space or M opens the move menu, and Ctrl/Cmd+arrows move the card itself. WIP limits are advisory (`n/limit` count and an over-limit style hook, never blocking).
 
 > The board is CONTROLLED: it never changes `data`. Listen for `dj-card-move`, apply it (the exported `applyCardMove` makes that one line), and assign the new array — focus then follows the moved card and the move is announced. Explicit `lanes` are recommended over the derived fallback (they fix lane order, give labels, and include empty lanes). Set `draggable` to enable pointer and touch drag between lanes (built on `@dojo-ng/dnd`); it is progressive enhancement — the move menu and keyboard shortcuts remain the accessibility contract, so drag is never the only way to move a card.
 
@@ -57,16 +57,38 @@ Moves (menu, Ctrl/Cmd+arrows) emit `dj-card-move`; the app applies them with `ap
 | `renderCard` | — | `(card: Card) => TemplateResult` | — |
 | `draggable` | draggable ↻ | `boolean` | `false` |
 
-**Slots:** `none` (cards come from `data`)
+## Slots
 
-**Parts:** `board`, `lane`, `lane-over`, `lane-header`, `lane-title`, `lane-count`, `lane-body`, `card`, `move-button`, `lane${over`, `?`
+- `none`: Cards come from `data`.
 
-**Events:** `dj-card-move` (detail `{ card, key, from, to, fromIndex, toIndex }`; the board never
-applies it itself), `dj-card-click` (detail `{ card, key }`)
+## CSS parts
 
-**Methods:** `effectiveLanes(): BoardLane[]` (The lanes to display: the `lanes` property, or distinct `group-by` values in data order.)
+- `board`
+- `lane`
+- `lane-over`
+- `lane-header`
+- `lane-title`
+- `lane-count`
+- `lane-body`
+- `card`
+- `move-button`
+- `lane${over`
+- `?`
 
-**CSS properties:** `--dj-board-lane-width` (default `18rem`; Fixed width of each lane.), `--dj-board-gap` (default `1rem`; Gap between lanes.)
+## Events
+
+- `dj-card-move`: Detail `{ card, key, from, to, fromIndex, toIndex }`; the board never
+applies it itself.
+- `dj-card-click`: Detail `{ card, key }`.
+
+## Methods
+
+- `effectiveLanes(): BoardLane[]`: The lanes to display: the `lanes` property, or distinct `group-by` values in data order.
+
+## CSS custom properties
+
+- `--dj-board-lane-width`: Fixed width of each lane. Default `18rem`.
+- `--dj-board-gap`: Gap between lanes. Default `1rem`.
 
 ## Examples
 

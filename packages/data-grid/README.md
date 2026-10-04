@@ -1,12 +1,10 @@
 # @dojo-ng/data-grid
 
-`<dj-data-grid>` — A virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization).
+`<dj-data-grid>` — A virtualized, sortable, selectable data grid built on TanStack Table and TanStack Virtual.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A virtualized, sortable, selectable data grid built on TanStack Table (column/sort/selection model) and TanStack Virtual (row virtualization). Core scope: columns, in-memory `data`, sort, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail arrive as PLUGINS via the `plugins` property (plain objects from factory functions; see {@link DataGridPlugin}). A bare grid with `plugins=[]` behaves exactly as before. ARIA role=grid. `activation` separates opening a row from selecting rows: under `"click"` or `"double"` a plain click activates and emits `dj-activate` instead of toggling selection, Enter activates while Space still selects, and modifier-clicks stay reserved for selection. The default `"none"` keeps the original behavior, so this is purely additive. `dj-range-change` reports which rows are rendered, so a consumer can window its data or load more at the end of the list. The range INCLUDES the 8 overscan rows, so it is wider than what the user can see — hence `rendered`, not "visible".
-
-> Activation — what a plain click or Enter MEANS on a row — is set by `activation`. The default `"none"` is the original behavior: click and Space/Enter all toggle selection, so nothing existing changes. Set `activation="click"` (the mail/preview-pane idiom) or `"double"` (the file-manager idiom) and opening a row becomes a separate gesture from selecting rows: a plain click activates and emits `dj-activate` (detail `{ row, index }`, where `row` is the original row data) WITHOUT touching selection. Keyboard splits on the platform convention — Enter activates, Space selects. Modifier clicks are reserved for selection and never activate: Ctrl/Cmd-click toggles the clicked row, Shift-click is the range gesture. `"double"` uses the platform's own `dblclick`, so the two `click` events a double click also produces can never activate. Activation fires regardless of `selectionMode`, including `"none"` — a read-only list with clickable rows needs no selection enabled. To let a click OPEN a row while the user also picks a set for bulk actions, combine `activation="click"` with `selection-mode="multiple"` and the checkbox column from `@dojo-ng/data-grid-select`. Viewport reporting: `dj-range-change` (detail `{ start, end, count, rendered }`) fires whenever the rendered row window moves, so a consumer can page data in and out or load more at the end of the list. `start` and `end` are the inclusive first and last rendered row-model indices, `count` is the total row count, and `rendered` is the full index list. THE RANGE INCLUDES THE 8 OVERSCAN ROWS the virtualizer keeps beyond the viewport, so it is wider than what the user can actually see — it is what the grid has committed to rendering (hence `rendered`, not "visible"), which is why a consumer that fetches this range never renders a hole. Treating it as the visible set would be wrong by up to eight rows at each end. End-reached is a one-line derivation, `if (e.detail.end >= e.detail.count - 1) loadMore()`, so there is no separate event for it. Nothing is rendered means `start` and `end` are `-1` with the real `count`, so a consumer learns the list went empty. The event fires after the render is committed and is deduplicated on an unchanged `(start, end, count)`, so ordinary re-renders (a selection toggle, a flags patch) are silent and reacting to it by setting `data` is safe. NOT YET SUPPORTED: windowing a data set LARGER than `data` — the grid sizes its scrollbar from `data.length`, so it cannot render a scrollbar for rows you have not loaded. That needs a separate total-count/sparse-data change to the `data` contract. Plugins: pass an array of plugin objects via the `plugins` property (JavaScript only). Recommended order: structural first (`treePlugin` OR `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, `formatsPlugin`, then chrome-only plugins (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`). A `plugins` change rebuilds the table.
+Give it `columns`, `data`, and a `height`. The core covers columns, in-memory data, sorting, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Everything else is a plugin. The grid has ARIA role `grid`.
 
 ## Install
 
@@ -30,6 +28,44 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 </script>
 ```
 
+## Plugins
+
+- Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail are plugins. Pass an array of plugin objects to the `plugins` property, from JavaScript only.
+- A recommended order: one structural plugin first (`treePlugin` or `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, and `formatsPlugin`, then the plugins that only add controls (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`).
+- Changing `plugins` rebuilds the table, so set it once, early.
+
+## Opening rows: `activation`
+
+`activation` decides what a plain click or Enter means on a row.
+
+- `"none"` (the default): click, Space, and Enter all toggle selection.
+- `"click"` (the mail and preview-pane idiom) or `"double"` (the file-manager idiom): a plain click, or a double click, opens the row and emits `dj-activate` with `{ row, index }`, where `row` is the original row data. Selection does not change.
+- With activation on, Enter opens the row and Space selects it.
+- Modifier clicks always select and never open: Ctrl or Cmd-click toggles a row, and Shift-click selects a range.
+- `"double"` uses the browser's own `dblclick`, so the two clicks inside a double click never open the row on their own.
+- Activation works with any `selection-mode`, including `"none"`, so a read-only list can have clickable rows.
+- To open rows by clicking while the user also builds a set for bulk actions, combine `activation="click"`, `selection-mode="multiple"`, and the checkbox column from `@dojo-ng/data-grid-select`.
+
+## Rendered rows: `dj-range-change`
+
+- `dj-range-change` fires when the window of rendered rows moves, so you can load data in and out, or load more at the end of the list.
+- The detail is `{ start, end, count, rendered }`: the first and last rendered row index (inclusive), the total number of rows, and the list of rendered indexes.
+- The range includes the 8 extra rows the grid renders beyond each edge of the viewport. It is what the grid has rendered, not what the user can see, so fetching this range never leaves a gap.
+- To load more at the end: `if (e.detail.end >= e.detail.count - 1) loadMore()`.
+- When nothing is rendered, `start` and `end` are -1 and `count` is the real count.
+- The event fires after rendering and only when `(start, end, count)` changes, so setting `data` in the handler is safe.
+
+## Printing
+
+- When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and browsers repeat the header on each printed page. This does not apply to rows drawn by the detail plugin (`@dojo-ng/data-grid-detail`).
+- Safari does not repeat the table header on each printed page. This is a WebKit limitation with no reliable CSS fix.
+
+## Not supported yet
+
+- A data set larger than `data`: the scrollbar is sized from `data.length`, so it cannot include rows that are not loaded.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
+
 ## Properties
 
 `↻` marks an attribute reflected to the DOM; a dash means the property is set in JavaScript only.
@@ -44,14 +80,31 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 | `height` | height | `string` | `"20rem"` |
 | `plugins` | — | `DataGridPlugin[]` | `[]` |
 
-**Parts:** `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`, `detail`
+## CSS parts
 
-**Events:** `dj-sort`, `dj-selection-change`, `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
+- `grid`
+- `head`
+- `row`
+- `cell`
+- `chrome-top`
+- `chrome-bottom`
+- `subhead`
+- `detail`
+
+## Events
+
+- `dj-sort`
+- `dj-selection-change`
+- `dj-range-change`: Detail `{ start, end, count, rendered }` — inclusive
 first and last rendered row-model indices, the total row count, and the full index list; `start`
-and `end` are -1 when nothing is rendered), `dj-activate` (detail `{ row, index }`, where `row` is
-the original row data)
+and `end` are -1 when nothing is rendered.
+- `dj-activate`: Detail `{ row, index }`, where `row` is
+the original row data.
 
-**Methods:** `toggleAt(index: number)`, `activateAt(index: number)` (Emit `dj-activate` for a row-model index. Fires regardless of `selectionMode` (a read-only list with clickable rows is a real case) but never under `activation="none"`.)
+## Methods
+
+- `toggleAt(index: number)`
+- `activateAt(index: number)`: Emit `dj-activate` for a row-model index. Fires regardless of `selectionMode` (a read-only list with clickable rows is a real case) but never under `activation="none"`.
 
 ## Examples
 

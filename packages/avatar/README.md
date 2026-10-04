@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Circular/rounded/square avatar from an image `src` or slotted initials/icon. Part: `base`.
+Part: `base`.
 
 ## Install
 
@@ -36,9 +36,13 @@ Show an image, or fall back to initials.
 | `secondary` | secondary ↻ | `boolean` | `false` |
 | `outline` | outline ↻ | `boolean` | `false` |
 
-**Slots:** default
+## Slots
 
-**Parts:** `base`
+- default slot
+
+## CSS parts
+
+- `base`
 
 ## Theming
 

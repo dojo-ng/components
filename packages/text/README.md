@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Typographic wrapper. size/weight/uppercase/truncated/inverse. Part: `base`.
+Size/weight/uppercase/truncated/inverse. Part: `base`.
 
 ## Install
 
@@ -34,9 +34,13 @@ A small typography primitive.
 | `truncated` | truncated | `boolean` | `false` |
 | `uppercase` | uppercase | `boolean` | `false` |
 
-**Slots:** default
+## Slots
 
-**Parts:** `base`
+- default slot
+
+## CSS parts
+
+- `base`
 
 ## Theming
 

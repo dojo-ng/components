@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated wrapper over a native `<select>`, driven by an `options` array, composing `<dj-label>`, `<dj-helper-text>`, and a `<dj-icon>` chevron. A blank option is prepended while nothing is selected. Parts: `label`, `control`, `select`, `helper-text`.
+A blank option is prepended while nothing is selected. Parts: `label`, `control`, `select`, `helper-text`.
 
 ## Install
 
@@ -46,11 +46,23 @@ Drive the native select from an `options` array.
 | `placeholder` | placeholder | `string` | — |
 | `size` | size | `number` | — |
 
-**Parts:** `label`, `control`, `select`, `helper-text`, `arrow`
+## CSS parts
 
-**Events:** `change`
+- `label`
+- `control`
+- `select`
+- `helper-text`
+- `arrow`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(options: FocusOptions)`
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
+- `focus(options: FocusOptions)`
 
 ## Theming
 

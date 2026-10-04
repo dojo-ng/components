@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Coordinates slotted `<dj-title-pane>` children. With `exclusive`, opening one pane closes the others. Listens for each pane's `dj-toggle`.
+With `exclusive`, opening one pane closes the others. Listens for each pane's `dj-toggle`.
 
 ## Install
 
@@ -33,7 +33,9 @@ Compose title panes; set `exclusive` to allow only one open.
 |---|---|---|---|
 | `exclusive` | exclusive | `boolean` | `false` |
 
-**Slots:** default
+## Slots
+
+- default slot
 
 ## Theming
 

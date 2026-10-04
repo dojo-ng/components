@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated dual-thumb range. Two overlaid native ranges keep `valueMin <= valueMax`. Submits two form entries (`<name>_min`, `<name>_max`). `value` getter returns `{ min, max }`. Composes `<dj-label>`. Event: `change` (detail `{min,max}`).
+Two overlaid native ranges keep `valueMin <= valueMax`. Submits two form entries (`<name>_min`, `<name>_max`). `value` getter returns `{ min, max }`. Composes `<dj-label>`. Event: `change` (detail `{min,max}`).
 
 ## Install
 
@@ -39,11 +39,21 @@ Reads back as `{ min, max }`; submits `<name>_min` and `<name>_max`.
 | `disabled` | disabled ↻ | `boolean` | `false` |
 | `labelHidden` | label-hidden | `boolean` | `false` |
 
-**Parts:** `label`, `track`, `fill`, `output`
+## CSS parts
 
-**Events:** `change` (detail `{min,max}`)
+- `label`
+- `track`
+- `fill`
+- `output`
 
-**Methods:** `checkValidity(): boolean`, `restoreFormState(state: File | string | FormData | null)`
+## Events
+
+- `change`: Detail `{min,max}`.
+
+## Methods
+
+- `checkValidity(): boolean`
+- `restoreFormState(state: File | string | FormData | null)`
 
 ## Theming
 

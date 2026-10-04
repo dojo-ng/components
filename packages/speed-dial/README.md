@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A FAB that reveals slotted action buttons (`actions` slot) when open. Toggles on click. `direction` controls where actions expand. Emits `dj-toggle` {open}.
+Toggles on click. `direction` controls where actions expand. Emits `dj-toggle` {open}.
 
 ## Install
 
@@ -35,9 +35,13 @@ A FAB that reveals actions on open.
 | `open` | open | `boolean` | `false` |
 | `direction` | direction | `"up"\|"down"\|"left"\|"right"` | `"up"` |
 
-**Slots:** `actions`
+## Slots
 
-**Events:** `dj-toggle`
+- `actions`
+
+## Events
+
+- `dj-toggle`
 
 ## Theming
 

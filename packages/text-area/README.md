@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A form-associated multi-line text field, composing `<dj-label>` and `<dj-helper-text>`. Same form/validity model as `<dj-text-input>`.
+Same form/validity model as `<dj-text-input>`.
 
 ## Install
 
@@ -43,11 +43,24 @@ Set `rows` for the initial height.
 | `minlength` | minlength | `number` | — |
 | `maxlength` | maxlength | `number` | — |
 
-**Parts:** `label`, `control`, `input`, `helper-text`
+## CSS parts
 
-**Events:** `change`
+- `label`
+- `control`
+- `input`
+- `helper-text`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `setCustomValidity(message: string)`, `focus(options: FocusOptions)`, `blur()`
+## Events
+
+- `change`
+
+## Methods
+
+- `checkValidity(): boolean`
+- `reportValidity(): boolean`
+- `setCustomValidity(message: string)`
+- `focus(options: FocusOptions)`
+- `blur()`
 
 ## Theming
 

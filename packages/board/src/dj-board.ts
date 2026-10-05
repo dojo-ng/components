@@ -44,25 +44,41 @@ interface MenuContext {
 }
 
 /**
- * `<dj-board>` — a Kanban board over plain records. Lanes are the values of one field
- * (`group-by`); cards are the records of `data`, ordered within a lane by their order of
- * appearance. The board is CONTROLLED: it never mutates `data` — every move (menu, keyboard)
- * emits `dj-card-move` and the app applies it (the exported `applyCardMove` helper makes that
- * one line); focus then follows the moved card and the move is announced to assistive tech
- * once the app's data update lands. Card content comes from `renderCard`, rendered inside the
- * component-owned accessible shell (so custom cards cannot regress accessibility), or defaults
- * to a `dj-card` showing the `card-title` field. Keyboard: one tab stop (roving); arrows move
- * between cards and lanes, Home/End within a lane, Enter activates, Space or M opens the move
- * menu, and Ctrl/Cmd+arrows move the card itself. WIP limits are advisory (`n/limit` count and
- * an over-limit style hook, never blocking).
+ * `<dj-board>` — a Kanban board over plain records.
+ *
+ * Cards are the records in `data`. Lanes are the values of one field, named by `group-by`. Within
+ * a lane, cards keep their order in `data`.
+ *
+ * #### Moving cards
+ * - The board is controlled: it never changes `data`. Every move emits `dj-card-move`, and your
+ *   app applies it and assigns the new array. The exported `applyCardMove` does that in one line.
+ * - When the new data arrives, focus follows the moved card and the move is announced to assistive
+ *   technology.
+ * - Cards move with the move menu or the keyboard. Set `draggable` to also allow pointer and touch
+ *   drag between lanes. Drag is an extra: the menu and the keyboard stay available, so dragging is
+ *   never the only way to move a card.
+ *
+ * #### Lanes and cards
+ * - Set `lanes` explicitly when you can. It fixes the lane order, gives each lane a label, and shows
+ *   empty lanes. Without it, lanes come from the values found in `data`.
+ * - `renderCard` supplies the card content. The board draws it inside its own accessible card
+ *   shell, so a custom card cannot break accessibility. Without `renderCard`, each card is a
+ *   `dj-card` showing the `card-title` field.
+ * - Work-in-progress limits are advisory: the lane shows a count such as `3/5` and gets a style
+ *   hook when it is over the limit, but moves are never blocked.
+ *
+ * #### Keyboard
+ * The board is one tab stop.
+ * - The arrow keys move between cards and lanes; Home and End move within a lane.
+ * - Enter activates the card.
+ * - Space or M opens the move menu.
+ * - Ctrl+arrow (Cmd+arrow on a Mac) moves the card itself.
  *
  * Slots: none (cards come from `data`). Parts: `board`, `lane`, `lane-over`, `lane-header`,
  * `lane-title`, `lane-count`, `lane-body`, `card`, `move-button`.
  * Events: `dj-card-move` (detail `{ card, key, from, to, fromIndex, toIndex }`; the board never
  * applies it itself), `dj-card-click` (detail `{ card, key }`).
  *
- * @cssprop [--dj-board-lane-width=18rem] - Fixed width of each lane.
- * @cssprop [--dj-board-gap=1rem] - Gap between lanes.
  */
 export class DjBoard extends DojoElement {
 	static override styles = [styles, reducedMotion];

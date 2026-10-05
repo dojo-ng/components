@@ -1,16 +1,10 @@
 # @dojo-ng/video
 
-`<dj-video>` — A themed video player wrapping video.js (the product's engine; v8, which bundles HLS).
+`<dj-video>` — A themed video player built on video.js.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-We own integration; video.js owns playback and renders its own control bar (`controls: true` — we do NOT rebuild video controls in v1).
-
-LIGHT DOM: this component renders its player region into light DOM (`createRenderRoot()` returns `this`, the dj-rich-text precedent) because video.js injects DOM, needs its global stylesheet, and its fullscreen/track menus misbehave inside a shadow root. video.js's stylesheet is a documented APP PREREQUISITE, loaded at document level (see the README's link tag) — the same arrangement as element-internals-polyfill.
-
-Test seam: the engine is only ever created through `protected createPlayer(el, options)`, which defaults to lazily importing the real video.js factory. Tests replace it with a stub player.
-
-> Wraps video.js (the product's engine; v8, which bundles HLS): video.js owns playback and renders its own control bar, we own integration and theming. TWO app prerequisites, both loaded at document level (the component does not bundle them): video.js's stylesheet (a `<link>` in the page head) and video.js itself (resolved by your bundler or an import map). The player region renders in LIGHT DOM by design — video.js injects its own DOM/CSS and its fullscreen and track menus misbehave inside a shadow root. `src`/`sources`/`poster` update the live player; `muted`/`autoplay`/`loop`/`tracks`/`label` recreate it. `dj-time` is throttled to at most once per second. `player()` returns the raw video.js instance (advanced escape hatch; no support implied).
+Video.js (version 8, which includes HLS support) plays the video and draws its own control bar. The component handles setup, theming, and events.
 
 ## Install
 
@@ -22,7 +16,7 @@ npm install @dojo-ng/video
 
 Import the package to register the custom element, then use the tag.
 
-video.js needs its stylesheet loaded at the document level (an app prerequisite, like a polyfill) and the engine resolvable as `video.js`. Pass ordered `sources` (`{ src, type }`); video.js draws its own controls. `player()` is an advanced escape hatch onto the raw video.js instance — no support implied.
+Ordered `sources` (`{ src, type }`); video.js draws its own controls. Load the video.js stylesheet first.
 
 ```html
 <!-- App prerequisite: load video.js's stylesheet once, in the page head. -->
@@ -41,6 +35,34 @@ video.js needs its stylesheet loaded at the document level (an app prerequisite,
   // v.player().requestFullscreen();
 </script>
 ```
+
+## Before you use it
+
+Load two things at the document level, because the component does not bundle them:
+
+- The video.js stylesheet, with a `<link>` in the page head.
+- video.js itself, resolved by your bundler or an import map.
+
+## Changing properties
+
+- `src`, `sources`, and `poster` update the playing video.
+- `muted`, `autoplay`, `loop`, `tracks`, and `label` recreate the player.
+
+## Events and methods
+
+- `dj-play`, `dj-pause`, and `dj-ended` follow playback. `dj-time` reports `{ current, duration }` at most once per second.
+- Use these events for analytics, xAPI statements, or saving the playback position.
+- `play()` and `pause()` control playback. `player()` returns the video.js instance itself, for advanced use; the component does not support what you do with it.
+
+## Light DOM
+
+- The player renders in the light DOM, because video.js adds its own DOM and styles, and its fullscreen and track menus do not work well inside a shadow root.
+
+## Not built
+
+- Custom video controls. The video.js control bar is used as it is.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 ## Properties
 

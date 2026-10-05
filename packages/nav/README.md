@@ -1,14 +1,10 @@
 # @dojo-ng/nav
 
-`<dj-nav>` — A nav landmark that collapses into a trigger + panel below a threshold.
+`<dj-nav>` — A navigation landmark that collapses into a button and a panel when there is not enough room.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-The threshold is the `--dj-nav-collapsed` custom property (0 or 1), read via `TokenFlagController` rather than a `breakpoint` prop, so it lives in the existing `--dj-*` theme system and is container-aware: a nav inside a narrow sidebar on a wide screen collapses. One arrangement is ever in the DOM — never both, hidden: the plain `<nav>` when expanded, or the trigger plus (while open) a panel wrapping that same `<nav>` when collapsed.
-
-`panel` picks the collapsed presentation: `"drawer"` composes `<dj-slide-pane>` (its `align` follows the reading direction); `"dropdown"` and `"overlay"` are positioned in this component's own shadow DOM. This is a disclosure, not a menu button — the links are plain slotted `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree`, and the trigger carries no `aria-haspopup`.
-
-> Also called a hamburger menu or navicon, and this is how you'd build responsive navigation with it — none of those words are in the API, because a permanent desktop hamburger is a first-class use here, not a mobile-only special case. The links are plain `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree` — this is a disclosure (APG terms), not a menu, so the trigger deliberately carries no `aria-haspopup`. `refresh()` exists because `ResizeObserver` only sees size changes: call it after a runtime pin, a theme switch, or a viewport media query crossing while the host's own width is unchanged — there is no cross-component theme-change watching built in, by design. Toolbar-style overflow (show what fits, collapse the rest into a menu) is a related but separate component, not this one.
+This is the "hamburger menu" or "navicon" pattern. A menu button that stays collapsed on a wide desktop screen is a normal use too, not only a mobile layout. Put the links in the default slot as plain `<a>` elements.
 
 ## Install
 
@@ -20,7 +16,7 @@ npm install @dojo-ng/nav
 
 Import the package to register the custom element, then use the tag.
 
-The default slot is plain `<a>` elements inside a `<nav>` landmark. Below the `--dj-nav-collapsed` threshold (`45rem` by default) it swaps to a trigger button plus a `panel` (`drawer` by default) containing the same links — one arrangement is ever in the DOM, so resizing never duplicates the link set. Give it a `label` for the landmark.
+Plain links in a `<nav>` landmark. Give it a `label` for the landmark.
 
 ```html
 <dj-nav label="Site">
@@ -30,6 +26,29 @@ The default slot is plain `<a>` elements inside a `<nav>` landmark. Below the `-
   <a href="/about">About</a>
 </dj-nav>
 ```
+
+## When it collapses
+
+- By default the nav collapses when its container is narrower than 45rem.
+- To change that, set the `--dj-nav-collapsed` custom property on the element: 1 collapses, 0 expands. Because it is a theme token, not a breakpoint property, it can depend on the container: a nav in a narrow sidebar collapses even on a wide screen.
+- The component checks again when its own size changes. After a change that does not resize it, such as a theme switch or a media query on the viewport, call `refresh()`.
+- Only one arrangement is in the DOM at a time: the plain `<nav>` when expanded, or the button (and, while open, a panel around the same `<nav>`) when collapsed.
+
+## The panel
+
+- `panel="drawer"` (the default) uses `<dj-slide-pane>`, which opens from the side of the reading direction.
+- `panel="dropdown"` and `panel="overlay"` are drawn inside the component itself.
+- `dj-nav-toggle` fires when the panel opens or closes, and `dj-nav-collapse` when the arrangement changes.
+
+## Accessibility
+
+- This is a disclosure, not a menu (in APG terms): the links stay plain links in a `<nav>`, and the button has no `aria-haspopup`.
+
+## Not built
+
+- Toolbar-style overflow, which shows what fits and moves the rest into a menu. That is a separate component.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 ## Properties
 
@@ -65,12 +84,6 @@ The default slot is plain `<a>` elements inside a `<nav>` landmark. Below the `-
 - `hide()`
 - `toggle()`
 - `refresh()`: Delegates to `TokenFlagController` — the escape hatch for a runtime pin or theme switch that `ResizeObserver` cannot see (it only sees size changes).
-
-## CSS custom properties
-
-- `--dj-nav-collapsed`: The threshold flag read by TokenFlagController; 0 keeps the inline arrangement, 1 collapses it. Any value a consumer sets (directly, inherited from `:root`, or from their own `@container`/`@media` rule) wins over the component's own 45rem default — set it directly for a permanent hamburger, set both branches to move the flip point, or set it to `initial` to release an inherited pin. Default `1`.
-- `--dj-nav-gap`: Gap between links in the inline arrangement. Default `1rem`.
-- `--dj-slide-pane-size`: Passed through to the drawer presentation.
 
 ## Examples
 
@@ -109,7 +122,7 @@ Pin the token directly for a nav that is always collapsed, on any screen — no 
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.
 
-## Accessibility and i18n
+## Localization
 
 Follows the project's WCAG 2.2 AA and localization conventions.
 

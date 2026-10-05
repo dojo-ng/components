@@ -1,16 +1,10 @@
 # @dojo-ng/copy-button
 
-`<dj-copy-button>` — An icon-only button that copies text to the clipboard and flashes feedback.
+`<dj-copy-button>` — An icon-only button that copies text to the clipboard and shows whether it worked.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-It composes `<dj-button>`, so focus, keyboard, and button ARIA come for free.
-
-Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form controls) or `textContent` (`value` wins when both are set). Copying uses `navigator.clipboard.writeText`, which requires a secure context (https or localhost); there is no legacy `execCommand` fallback. If the clipboard is unavailable or the write is rejected, the button shows an error state and emits `dj-error`.
-
-The icon swaps copy → check (success) → error for `feedback-duration` ms, then reverts, and the button's accessible name changes with it (Copy / Copied / Copy failed) so assistive tech hears the result.
-
-> Copies to the clipboard via `navigator.clipboard.writeText`, which requires a secure context (https or localhost) — there is no legacy fallback, so on plain http nothing is copied and the button shows its error state. Copy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form fields) or `textContent`; `value` wins when both are set. The icon flashes copy → check → error for `feedback-duration` ms and the accessible name changes with it (Copy / Copied / Copy failed). Listen for `dj-copy` (detail `{ value }`) and `dj-error`.
+It is built on `<dj-button>`, so focus, keyboard use, and button semantics work as usual.
 
 ## Install
 
@@ -27,6 +21,21 @@ Flashes feedback; listen for `dj-copy`.
 ```html
 <dj-copy-button value="npm install @dojo-ng/button"></dj-copy-button>
 ```
+
+## What it copies
+
+- The literal `value`, or, with `from`, the element with that id in the same root: its `value` for a form control, otherwise its `textContent`.
+- When both `value` and `from` are set, `value` wins.
+
+## Feedback
+
+- After a click, the icon changes to a check mark (copied) or an error mark for `feedback-duration` milliseconds, then changes back.
+- The accessible name changes with it (Copy, Copied, Copy failed), so screen reader users hear the result.
+- `dj-copy` fires with `{ value }` on success, and `dj-error` on failure.
+
+## Requirements
+
+- Copying uses `navigator.clipboard.writeText`, which needs a secure context (https or localhost). There is no older fallback, so on plain http nothing is copied and the button shows its error state.
 
 ## Properties
 

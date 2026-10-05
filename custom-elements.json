@@ -633,7 +633,7 @@
           "name": "DjBoard",
           "customElement": true,
           "tagName": "dj-board",
-          "description": "a Kanban board over plain records. Lanes are the values of one field (`group-by`); cards are the records of `data`, ordered within a lane by their order of appearance. The board is CONTROLLED: it never mutates `data` \u2014 every move (menu, keyboard) emits `dj-card-move` and the app applies it (the exported `applyCardMove` helper makes that one line); focus then follows the moved card and the move is announced to assistive tech once the app's data update lands. Card content comes from `renderCard`, rendered inside the component-owned accessible shell (so custom cards cannot regress accessibility), or defaults to a `dj-card` showing the `card-title` field. Keyboard: one tab stop (roving); arrows move between cards and lanes, Home/End within a lane, Enter activates, Space or M opens the move menu, and Ctrl/Cmd+arrows move the card itself. WIP limits are advisory (`n/limit` count and an over-limit style hook, never blocking).",
+          "description": "a Kanban board over plain records.\n\nCards are the records in `data`. Lanes are the values of one field, named by `group-by`. Within a lane, cards keep their order in `data`.\n\n#### Moving cards\n\n- The board is controlled: it never changes `data`. Every move emits `dj-card-move`, and your app applies it and assigns the new array. The exported `applyCardMove` does that in one line.\n- When the new data arrives, focus follows the moved card and the move is announced to assistive technology.\n- Cards move with the move menu or the keyboard. Set `draggable` to also allow pointer and touch drag between lanes. Drag is an extra: the menu and the keyboard stay available, so dragging is never the only way to move a card.\n\n#### Lanes and cards\n\n- Set `lanes` explicitly when you can. It fixes the lane order, gives each lane a label, and shows empty lanes. Without it, lanes come from the values found in `data`.\n- `renderCard` supplies the card content. The board draws it inside its own accessible card shell, so a custom card cannot break accessibility. Without `renderCard`, each card is a `dj-card` showing the `card-title` field.\n- Work-in-progress limits are advisory: the lane shows a count such as `3/5` and gets a style hook when it is over the limit, but moves are never blocked.\n\n#### Keyboard\n\nThe board is one tab stop.\n\n- The arrow keys move between cards and lanes; Home and End move within a lane.\n- Enter activates the card.\n- Space or M opens the move menu.\n- Ctrl+arrow (Cmd+arrow on a Mac) moves the card itself.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -817,18 +817,6 @@
             {
               "name": "?",
               "description": ""
-            }
-          ],
-          "cssProperties": [
-            {
-              "name": "--dj-board-lane-width",
-              "default": "18rem",
-              "description": "Fixed width of each lane."
-            },
-            {
-              "name": "--dj-board-gap",
-              "default": "1rem",
-              "description": "Gap between lanes."
             }
           ],
           "events": [
@@ -3688,7 +3676,7 @@
           "name": "DjCopyButton",
           "customElement": true,
           "tagName": "dj-copy-button",
-          "description": "an icon-only button that copies text to the clipboard and flashes feedback. It composes `<dj-button>`, so focus, keyboard, and button ARIA come for free.\n\nCopy the literal `value`, or point `from` at an element id in the same root to copy that element's `value` (form controls) or `textContent` (`value` wins when both are set). Copying uses `navigator.clipboard.writeText`, which requires a secure context (https or localhost); there is no legacy `execCommand` fallback. If the clipboard is unavailable or the write is rejected, the button shows an error state and emits `dj-error`.\n\nThe icon swaps copy \u2192 check (success) \u2192 error for `feedback-duration` ms, then reverts, and the button's accessible name changes with it (Copy / Copied / Copy failed) so assistive tech hears the result.",
+          "description": "an icon-only button that copies text to the clipboard and shows whether it worked.\n\nIt is built on `<dj-button>`, so focus, keyboard use, and button semantics work as usual.\n\n#### What it copies\n\n- The literal `value`, or, with `from`, the element with that id in the same root: its `value` for a form control, otherwise its `textContent`.\n- When both `value` and `from` are set, `value` wins.\n\n#### Feedback\n\n- After a click, the icon changes to a check mark (copied) or an error mark for `feedback-duration` milliseconds, then changes back.\n- The accessible name changes with it (Copy, Copied, Copy failed), so screen reader users hear the result.\n- `dj-copy` fires with `{ value }` on success, and `dj-error` on failure.\n\n#### Requirements\n\n- Copying uses `navigator.clipboard.writeText`, which needs a secure context (https or localhost). There is no older fallback, so on plain http nothing is copied and the button shows its error state.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -6142,7 +6130,7 @@
           "name": "DjNav",
           "customElement": true,
           "tagName": "dj-nav",
-          "description": "a nav landmark that collapses into a trigger + panel below a threshold. The threshold is the `--dj-nav-collapsed` custom property (0 or 1), read via `TokenFlagController` rather than a `breakpoint` prop, so it lives in the existing `--dj-*` theme system and is container-aware: a nav inside a narrow sidebar on a wide screen collapses. One arrangement is ever in the DOM \u2014 never both, hidden: the plain `<nav>` when expanded, or the trigger plus (while open) a panel wrapping that same `<nav>` when collapsed.\n\n`panel` picks the collapsed presentation: `\"drawer\"` composes `<dj-slide-pane>` (its `align` follows the reading direction); `\"dropdown\"` and `\"overlay\"` are positioned in this component's own shadow DOM. This is a disclosure, not a menu button \u2014 the links are plain slotted `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree`, and the trigger carries no `aria-haspopup`.",
+          "description": "a navigation landmark that collapses into a button and a panel when there is not enough room.\n\nThis is the \"hamburger menu\" or \"navicon\" pattern. A menu button that stays collapsed on a wide desktop screen is a normal use too, not only a mobile layout. Put the links in the default slot as plain `<a>` elements.\n\n#### When it collapses\n\n- By default the nav collapses when its container is narrower than 45rem.\n- To change that, set the `--dj-nav-collapsed` custom property on the element: 1 collapses, 0 expands. Because it is a theme token, not a breakpoint property, it can depend on the container: a nav in a narrow sidebar collapses even on a wide screen.\n- The component checks again when its own size changes. After a change that does not resize it, such as a theme switch or a media query on the viewport, call `refresh()`.\n- Only one arrangement is in the DOM at a time: the plain `<nav>` when expanded, or the button (and, while open, a panel around the same `<nav>`) when collapsed.\n\n#### The panel\n\n- `panel=\"drawer\"` (the default) uses `<dj-slide-pane>`, which opens from the side of the reading direction.\n- `panel=\"dropdown\"` and `panel=\"overlay\"` are drawn inside the component itself.\n- `dj-nav-toggle` fires when the panel opens or closes, and `dj-nav-collapse` when the arrangement changes.\n\n#### Accessibility\n\n- This is a disclosure, not a menu (in APG terms): the links stay plain links in a `<nav>`, and the button has no `aria-haspopup`.\n\n#### Not built\n\n- Toolbar-style overflow, which shows what fits and moves the rest into a menu. That is a separate component.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
           "superclass": {
             "name": "DojoElement"
           },
@@ -6280,22 +6268,6 @@
             {
               "name": "nav",
               "description": ""
-            }
-          ],
-          "cssProperties": [
-            {
-              "name": "--dj-nav-collapsed",
-              "default": "1",
-              "description": "The threshold flag read by TokenFlagController; 0 keeps the inline arrangement, 1 collapses it. Any value a consumer sets (directly, inherited from `:root`, or from their own `@container`/`@media` rule) wins over the component's own 45rem default \u2014 set it directly for a permanent hamburger, set both branches to move the flip point, or set it to `initial` to release an inherited pin."
-            },
-            {
-              "name": "--dj-nav-gap",
-              "default": "1rem",
-              "description": "Gap between links in the inline arrangement."
-            },
-            {
-              "name": "--dj-slide-pane-size",
-              "description": "Passed through to the drawer presentation."
             }
           ],
           "events": [
@@ -7857,7 +7829,7 @@
           "name": "DjRichText",
           "customElement": true,
           "tagName": "dj-rich-text",
-          "description": "a form-associated WYSIWYG editor built on the Lexical core. The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM.\n\nThe editor is a PLUGIN HOST: bold/italic/underline and undo/redo ship as the default plugin set (`default-plugins.ts`) and flow through the same {@link RichTextPlugin} API third-party plugins use. Foundational behavior (`registerRichText`, value sync, root-element setup) stays as core. Toolbar controls, node registration, and output formats all come from plugins.\n\nConstraint: Lexical needs node classes at creation, so a `plugins` change after creation rebuilds the editor (serialize \u2192 recreate \u2192 deserialize). Value is HTML by default; the `format` property selects an alternate serializer contributed by a plugin. Event: `dj-change`.",
+          "description": "a form-associated WYSIWYG editor built on Lexical.\n\nThe value is HTML by default. Formatting, headings, lists, links, and other content types come from plugins, through the same plugin API that third-party plugins use.\n\n#### Plugins\n\n- Bold, italic, underline, undo, and redo are the default plugin set, `defaultPlugins`.\n- Setting `plugins` replaces the defaults, so spread `...defaultPlugins` to keep them.\n- Lexical needs its node types when the editor is created, so changing `plugins` later rebuilds the editor, keeping its content. Set `plugins` before `value`.\n- `format` selects another serializer that a plugin contributes, such as Markdown.\n\n#### The value\n\n- `value` can be read and written at any time. Writing it replaces the whole document, clears the selection and the undo history, and does not emit `dj-change`, like a native input's `value`.\n- `dj-change` fires when the user edits the content.\n\n#### Pasting\n\n- Pasted HTML is cleaned against an allowlist by default. Scripts, styles, event handlers, inline styles, and unsafe `javascript:` and `data:` URLs are removed. Unknown tags are removed but their text is kept.\n- Set `sanitizePaste = false` from JavaScript to turn this off, or set `pasteSanitizer` to your own `(html) => html` function. The default is exported as `sanitizeHtml`.\n- Plain-text pastes are not cleaned, since they contain no markup.\n\n#### Light DOM\n\n- The editable area renders in the light DOM, because Lexical's selection handling is not reliable inside a shadow root. `--dj-*` theme tokens still apply.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -11969,7 +11941,7 @@
           "name": "DjVideo",
           "customElement": true,
           "tagName": "dj-video",
-          "description": "a themed video player wrapping video.js (the product's engine; v8, which bundles HLS). We own integration; video.js owns playback and renders its own control bar (`controls: true` \u2014 we do NOT rebuild video controls in v1).\n\nLIGHT DOM: this component renders its player region into light DOM (`createRenderRoot()` returns `this`, the dj-rich-text precedent) because video.js injects DOM, needs its global stylesheet, and its fullscreen/track menus misbehave inside a shadow root. video.js's stylesheet is a documented APP PREREQUISITE, loaded at document level (see the README's link tag) \u2014 the same arrangement as element-internals-polyfill.\n\nTest seam: the engine is only ever created through `protected createPlayer(el, options)`, which defaults to lazily importing the real video.js factory. Tests replace it with a stub player.",
+          "description": "a themed video player built on video.js.\n\nvideo.js (version 8, which includes HLS support) plays the video and draws its own control bar. The component handles setup, theming, and events.\n\n#### Before you use it\n\nLoad two things at the document level, because the component does not bundle them:\n\n- The video.js stylesheet, with a `<link>` in the page head.\n- video.js itself, resolved by your bundler or an import map.\n\n#### Changing properties\n\n- `src`, `sources`, and `poster` update the playing video.\n- `muted`, `autoplay`, `loop`, `tracks`, and `label` recreate the player.\n\n#### Events and methods\n\n- `dj-play`, `dj-pause`, and `dj-ended` follow playback. `dj-time` reports `{ current, duration }` at most once per second.\n- Use these events for analytics, xAPI statements, or saving the playback position.\n- `play()` and `pause()` control playback. `player()` returns the video.js instance itself, for advanced use; the component does not support what you do with it.\n\n#### Light DOM\n\n- The player renders in the light DOM, because video.js adds its own DOM and styles, and its fullscreen and track menus do not work well inside a shadow root.\n\n#### Not built\n\n- Custom video controls. The video.js control bar is used as it is.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
           "superclass": {
             "name": "DojoElement"
           },

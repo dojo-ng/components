@@ -1,16 +1,10 @@
 # @dojo-ng/rich-text
 
-`<dj-rich-text>` — A form-associated WYSIWYG editor built on the Lexical core.
+`<dj-rich-text>` — A form-associated WYSIWYG editor built on Lexical.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-The editable region renders in LIGHT DOM (Lexical's selection handling is not reliable inside a shadow root yet), so this component overrides `createRenderRoot`; theming still works because `--dj-*` tokens cascade in light DOM.
-
-The editor is a PLUGIN HOST: bold/italic/underline and undo/redo ship as the default plugin set (`default-plugins.ts`) and flow through the same {@link RichTextPlugin} API third-party plugins use. Foundational behavior (`registerRichText`, value sync, root-element setup) stays as core. Toolbar controls, node registration, and output formats all come from plugins.
-
-Constraint: Lexical needs node classes at creation, so a `plugins` change after creation rebuilds the editor (serialize → recreate → deserialize). Value is HTML by default; the `format` property selects an alternate serializer contributed by a plugin. Event: `dj-change`.
-
-> Pasted HTML is sanitized against an allowlist by default (scripts, styles, event handlers, inline styles, and unsafe `javascript:`/`data:` URLs are stripped; unknown tags are unwrapped, keeping their text) — a security and consistency hook, not a nicety. Set `sanitizePaste = false` in JS to turn it off, or supply your own `pasteSanitizer(html) => html`. Plain-text pastes bypass it. The exported `sanitizeHtml(html)` is the default and can be reused. Formatting, headings/lists/links, and other node types come from plugins; setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep the basics. `value` is readable and writable at any time, not just at construction: assigning it replaces the whole document (discarding the selection and undo history) and emits no `dj-change`, the same as setting a native input's `value`.
+The value is HTML by default. Formatting, headings, lists, links, and other content types come from plugins, through the same plugin API that third-party plugins use.
 
 ## Install
 
@@ -31,6 +25,28 @@ Lexical-based; set and read `value` (HTML).
   document.getElementById("rt").value = "<p>Hello <strong>world</strong></p>";
 </script>
 ```
+
+## Plugins
+
+- Bold, italic, underline, undo, and redo are the default plugin set, `defaultPlugins`.
+- Setting `plugins` replaces the defaults, so spread `...defaultPlugins` to keep them.
+- Lexical needs its node types when the editor is created, so changing `plugins` later rebuilds the editor, keeping its content. Set `plugins` before `value`.
+- `format` selects another serializer that a plugin contributes, such as Markdown.
+
+## The value
+
+- `value` can be read and written at any time. Writing it replaces the whole document, clears the selection and the undo history, and does not emit `dj-change`, like a native input's `value`.
+- `dj-change` fires when the user edits the content.
+
+## Pasting
+
+- Pasted HTML is cleaned against an allowlist by default. Scripts, styles, event handlers, inline styles, and unsafe `javascript:` and `data:` URLs are removed. Unknown tags are removed but their text is kept.
+- Set `sanitizePaste = false` from JavaScript to turn this off, or set `pasteSanitizer` to your own `(html) => html` function. The default is exported as `sanitizeHtml`.
+- Plain-text pastes are not cleaned, since they contain no markup.
+
+## Light DOM
+
+- The editable area renders in the light DOM, because Lexical's selection handling is not reliable inside a shadow root. `--dj-*` theme tokens still apply.
 
 ## Properties
 

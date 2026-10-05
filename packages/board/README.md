@@ -4,9 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Lanes are the values of one field (`group-by`); cards are the records of `data`, ordered within a lane by their order of appearance. The board is CONTROLLED: it never mutates `data` — every move (menu, keyboard) emits `dj-card-move` and the app applies it (the exported `applyCardMove` helper makes that one line); focus then follows the moved card and the move is announced to assistive tech once the app's data update lands. Card content comes from `renderCard`, rendered inside the component-owned accessible shell (so custom cards cannot regress accessibility), or defaults to a `dj-card` showing the `card-title` field. Keyboard: one tab stop (roving); arrows move between cards and lanes, Home/End within a lane, Enter activates, Space or M opens the move menu, and Ctrl/Cmd+arrows move the card itself. WIP limits are advisory (`n/limit` count and an over-limit style hook, never blocking).
-
-> The board is CONTROLLED: it never changes `data`. Listen for `dj-card-move`, apply it (the exported `applyCardMove` makes that one line), and assign the new array — focus then follows the moved card and the move is announced. Explicit `lanes` are recommended over the derived fallback (they fix lane order, give labels, and include empty lanes). Set `draggable` to enable pointer and touch drag between lanes (built on `@dojo-ng/dnd`); it is progressive enhancement — the move menu and keyboard shortcuts remain the accessibility contract, so drag is never the only way to move a card.
+Cards are the records in `data`. Lanes are the values of one field, named by `group-by`. Within a lane, cards keep their order in `data`.
 
 ## Install
 
@@ -41,6 +39,27 @@ Moves (menu, Ctrl/Cmd+arrows) emit `dj-card-move`; the app applies them with `ap
   b.addEventListener("dj-card-click", (e) => console.log("open", e.detail.card));
 </script>
 ```
+
+## Moving cards
+
+- The board is controlled: it never changes `data`. Every move emits `dj-card-move`, and your app applies it and assigns the new array. The exported `applyCardMove` does that in one line.
+- When the new data arrives, focus follows the moved card and the move is announced to assistive technology.
+- Cards move with the move menu or the keyboard. Set `draggable` to also allow pointer and touch drag between lanes. Drag is an extra: the menu and the keyboard stay available, so dragging is never the only way to move a card.
+
+## Lanes and cards
+
+- Set `lanes` explicitly when you can. It fixes the lane order, gives each lane a label, and shows empty lanes. Without it, lanes come from the values found in `data`.
+- `renderCard` supplies the card content. The board draws it inside its own accessible card shell, so a custom card cannot break accessibility. Without `renderCard`, each card is a `dj-card` showing the `card-title` field.
+- Work-in-progress limits are advisory: the lane shows a count such as `3/5` and gets a style hook when it is over the limit, but moves are never blocked.
+
+## Keyboard
+
+The board is one tab stop.
+
+- The arrow keys move between cards and lanes; Home and End move within a lane.
+- Enter activates the card.
+- Space or M opens the move menu.
+- Ctrl+arrow (Cmd+arrow on a Mac) moves the card itself.
 
 ## Properties
 
@@ -84,11 +103,6 @@ applies it itself.
 ## Methods
 
 - `effectiveLanes(): BoardLane[]`: The lanes to display: the `lanes` property, or distinct `group-by` values in data order.
-
-## CSS custom properties
-
-- `--dj-board-lane-width`: Fixed width of each lane. Default `18rem`.
-- `--dj-board-gap`: Gap between lanes. Default `1rem`.
 
 ## Examples
 

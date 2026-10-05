@@ -24,18 +24,37 @@ const EN: Record<string, string> = {
 };
 
 /**
- * `<dj-nav>` — a nav landmark that collapses into a trigger + panel below a threshold. The
- * threshold is the `--dj-nav-collapsed` custom property (0 or 1), read via
- * `TokenFlagController` rather than a `breakpoint` prop, so it lives in the existing `--dj-*`
- * theme system and is container-aware: a nav inside a narrow sidebar on a wide screen collapses.
- * One arrangement is ever in the DOM — never both, hidden: the plain `<nav>` when expanded, or
- * the trigger plus (while open) a panel wrapping that same `<nav>` when collapsed.
+ * `<dj-nav>` — a navigation landmark that collapses into a button and a panel when there is not
+ * enough room.
  *
- * `panel` picks the collapsed presentation: `"drawer"` composes `<dj-slide-pane>` (its `align`
- * follows the reading direction); `"dropdown"` and `"overlay"` are positioned in this
- * component's own shadow DOM. This is a disclosure, not a menu button — the links are plain
- * slotted `<a>` elements in a `<nav>`, never `dj-list`/`dj-tree`, and the trigger carries no
- * `aria-haspopup`.
+ * This is the "hamburger menu" or "navicon" pattern. A menu button that stays collapsed on a wide
+ * desktop screen is a normal use too, not only a mobile layout. Put the links in the default slot
+ * as plain `<a>` elements.
+ *
+ * #### When it collapses
+ * - By default the nav collapses when its container is narrower than 45rem.
+ * - To change that, set the `--dj-nav-collapsed` custom property on the element: 1 collapses, 0
+ *   expands. Because it is a theme token, not a breakpoint property, it can depend on the
+ *   container: a nav in a narrow sidebar collapses even on a wide screen.
+ * - The component checks again when its own size changes. After a change that does not resize it,
+ *   such as a theme switch or a media query on the viewport, call `refresh()`.
+ * - Only one arrangement is in the DOM at a time: the plain `<nav>` when expanded, or the button
+ *   (and, while open, a panel around the same `<nav>`) when collapsed.
+ *
+ * #### The panel
+ * - `panel="drawer"` (the default) uses `<dj-slide-pane>`, which opens from the side of the reading
+ *   direction.
+ * - `panel="dropdown"` and `panel="overlay"` are drawn inside the component itself.
+ * - `dj-nav-toggle` fires when the panel opens or closes, and `dj-nav-collapse` when the
+ *   arrangement changes.
+ *
+ * #### Accessibility
+ * - This is a disclosure, not a menu (in APG terms): the links stay plain links in a `<nav>`, and
+ *   the button has no `aria-haspopup`.
+ *
+ * #### Not built
+ * - Toolbar-style overflow, which shows what fits and moves the rest into a menu. That is a
+ *   separate component.
  *
  * Slots: default (the links — plain `<a>` elements), `trigger` (optional, replaces the built-in
  * three-bar mark).
@@ -44,9 +63,6 @@ const EN: Record<string, string> = {
  *  - `dj-nav-toggle` (detail `{ open }`) — the panel opened or closed, from any cause.
  *  - `dj-nav-collapse` (detail `{ collapsed }`) — the arrangement flipped.
  *
- * @cssprop [--dj-nav-collapsed=1] - The threshold flag read by TokenFlagController; 0 keeps the inline arrangement, 1 collapses it. Any value a consumer sets (directly, inherited from `:root`, or from their own `@container`/`@media` rule) wins over the component's own 45rem default — set it directly for a permanent hamburger, set both branches to move the flip point, or set it to `initial` to release an inherited pin.
- * @cssprop [--dj-nav-gap=1rem] - Gap between links in the inline arrangement.
- * @cssprop --dj-slide-pane-size - Passed through to the drawer presentation.
  */
 export class DjNav extends DojoElement {
 	static override styles = [styles, reducedMotion];

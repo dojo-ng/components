@@ -4,25 +4,37 @@ import DojoElement from "@dojo-ng/dojo-element";
 import type { VideoJsOptions, VideoJsPlayer, VideoJsSource } from "video.js";
 
 /**
- * `<dj-video>` — a themed video player wrapping video.js (the product's engine; v8, which bundles
- * HLS). We own integration; video.js owns playback and renders its own control bar (`controls:
- * true` — we do NOT rebuild video controls in v1).
+ * `<dj-video>` — a themed video player built on video.js.
  *
- * LIGHT DOM: this component renders its player region into light DOM (`createRenderRoot()` returns
- * `this`, the dj-rich-text precedent) because video.js injects DOM, needs its global stylesheet,
- * and its fullscreen/track menus misbehave inside a shadow root. video.js's stylesheet is a
- * documented APP PREREQUISITE, loaded at document level (see the README's link tag) — the same
- * arrangement as element-internals-polyfill.
+ * video.js (version 8, which includes HLS support) plays the video and draws its own control bar.
+ * The component handles setup, theming, and events.
  *
- * Test seam: the engine is only ever created through `protected createPlayer(el, options)`, which
- * defaults to lazily importing the real video.js factory. Tests replace it with a stub player.
+ * #### Before you use it
+ * Load two things at the document level, because the component does not bundle them:
+ * - The video.js stylesheet, with a `<link>` in the page head.
+ * - video.js itself, resolved by your bundler or an import map.
+ *
+ * #### Changing properties
+ * - `src`, `sources`, and `poster` update the playing video.
+ * - `muted`, `autoplay`, `loop`, `tracks`, and `label` recreate the player.
+ *
+ * #### Events and methods
+ * - `dj-play`, `dj-pause`, and `dj-ended` follow playback. `dj-time` reports
+ *   `{ current, duration }` at most once per second.
+ * - Use these events for analytics, xAPI statements, or saving the playback position.
+ * - `play()` and `pause()` control playback. `player()` returns the video.js instance itself, for
+ *   advanced use; the component does not support what you do with it.
+ *
+ * #### Light DOM
+ * - The player renders in the light DOM, because video.js adds its own DOM and styles, and its
+ *   fullscreen and track menus do not work well inside a shadow root.
+ *
+ * #### Not built
+ * - Custom video controls. The video.js control bar is used as it is.
  *
  * Methods: `play()`, `pause()`, `player()` (the raw video.js instance; advanced, no support
  * implied). Events: `dj-play`, `dj-pause`, `dj-ended`, and `dj-time` `{ current, duration }`
- * throttled to at most once per second. xAPI/analytics/resume-position are app listeners on these.
- *
- * Prop changes after creation: `src`/`sources`/`poster` update the live player; the rest
- * (`muted`/`autoplay`/`loop`/`tracks`/`label`) recreate it (dispose → createPlayer).
+ * throttled to at most once per second.
  */
 export class DjVideo extends DojoElement {
 	static override version = "0.1.1";

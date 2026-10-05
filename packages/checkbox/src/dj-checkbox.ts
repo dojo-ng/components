@@ -19,6 +19,20 @@ export class DjCheckbox extends FormControl(DojoElement) implements Partial<Dojo
 	@query("input") private native!: HTMLInputElement;
 
 	@property({ type: Boolean, reflect: true }) checked = false;
+	/**
+	 * The checked state from the markup, which a form reset returns to (a native checkbox's
+	 * `defaultChecked`). `checked` reflects to the attribute, so the attribute cannot be read
+	 * at reset time; it is captured on first connect instead.
+	 */
+	#defaultChecked = false;
+	#defaultCaptured = false;
+	override connectedCallback() {
+		super.connectedCallback();
+		if (!this.#defaultCaptured) {
+			this.#defaultCaptured = true;
+			this.#defaultChecked = this.hasAttribute("checked");
+		}
+	}
 	@property() value = "on";
 	@property({ reflect: true }) name?: string;
 	@property({ type: Boolean, reflect: true }) disabled = false;
@@ -36,13 +50,15 @@ export class DjCheckbox extends FormControl(DojoElement) implements Partial<Dojo
 
 	override focus(options?: FocusOptions) { this.native?.focus(options); }
 
-	formResetCallback() { this.checked = this.hasAttribute("checked"); this.valid = undefined; this.sync(); }
+	formResetCallback() { this.checked = this.#defaultChecked; this.valid = undefined; this.sync(); }
 	override restoreFormState(state: File | string | FormData | null) { this.checked = state != null; }
 
 	private sync() {
 		this.#internals.setFormValue(this.checked ? this.value : null);
 		if (this.required && !this.checked) {
-			this.#internals.setValidity({ valueMissing: true }, "Please check this box.", this.native);
+			// The native checkbox inside has `required` too, so its message is the browser's own, in
+			// the browser's language, like the text inputs'.
+			this.#internals.setValidity({ valueMissing: true }, this.native?.validationMessage || "Please check this box.", this.native);
 		} else {
 			this.#internals.setValidity({});
 		}

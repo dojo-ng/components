@@ -183,8 +183,8 @@ EXAMPLES = {
    '<dj-calendar value="2026-06-15" locale="en-US"></dj-calendar>'),
  ],
  "form": [
-  ("Gather field values", "Wrap form-associated components; `dj-submit` carries the values.",
-   '<dj-form id="signup">\n  <dj-text-input name="email" label="Email" type="email" required></dj-text-input>\n  <dj-switch name="newsletter">Subscribe</dj-switch>\n  <dj-button type="submit">Sign up</dj-button>\n</dj-form>\n<script type="module">\n  import "@dojo-ng/form";\n  document.getElementById("signup").addEventListener("dj-submit", (e) => console.log(e.detail));\n</script>'),
+  ("Gather field values", "`submit()` checks the fields, then emits `dj-submit` with their values. Enter in a field also submits.",
+   '<dj-form id="signup" column>\n  <dj-text-input name="email" label="Email" type="email" required></dj-text-input>\n  <dj-switch name="newsletter">Subscribe</dj-switch>\n  <dj-button id="send">Sign up</dj-button>\n</dj-form>\n<script type="module">\n  import "@dojo-ng/form";\n  import "@dojo-ng/text-input";\n  import "@dojo-ng/switch";\n  import "@dojo-ng/button";\n  const form = document.getElementById("signup");\n  document.getElementById("send").addEventListener("click", () => form.submit());\n  form.addEventListener("dj-submit", (e) => console.log(e.detail.data)); // { email: "…" }\n</script>'),
  ],
  "dialog": [
   ("Open and close", "Toggle `open`; listen for `dj-close`.",

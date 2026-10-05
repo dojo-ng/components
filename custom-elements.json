@@ -2781,7 +2781,7 @@
           "name": "DjCheckboxGroup",
           "customElement": true,
           "tagName": "dj-checkbox-group",
-          "description": "multi-select group from `options`; submits each checked value under `name`.",
+          "description": "multi-select group from `options`; submits each checked value under `name`. With `required`, at least one option must be checked.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -2838,6 +2838,19 @@
               },
               "default": "false",
               "attribute": "disabled"
+            },
+            {
+              "kind": "field",
+              "name": "required",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "attribute": "required"
+            },
+            {
+              "kind": "method",
+              "name": "reportValidity"
             },
             {
               "kind": "method",
@@ -2898,6 +2911,13 @@
                 "text": "boolean"
               },
               "fieldName": "disabled"
+            },
+            {
+              "name": "required",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "required"
             }
           ],
           "events": [
@@ -4823,7 +4843,7 @@
           "name": "DjForm",
           "customElement": true,
           "tagName": "dj-form",
-          "description": "a layout wrapper that gathers values from its named child controls and emits `dj-submit` with a `{ name: value }` object. `column` stacks fields. Because slotted fields live in light DOM (outside any shadow `<form>`), values are read from each named child's `value`. For full native form semantics, the controls are form-associated, so wrapping them in a real `<form>` also works.",
+          "description": "a layout wrapper that gathers values from its named child controls and emits `dj-submit` with a `{ name: value }` object. `column` stacks fields.\n\n#### Submitting\n\n- `submit()` checks every named control first. When one is invalid, the browser shows its message on the first invalid control, `dj-submit` is not emitted, and `submit()` returns false. Set `novalidate` to skip the check.\n- Values follow the rules of a native form: a checkbox or switch counts only when it is checked, disabled controls are left out, and a name used by several checked controls gives an array.\n- Enter in a field submits, except in a text area or other multi-line editor, where Enter adds a new line.\n\n#### A native form instead\n\n- The controls are form-associated, so they also work in a native `<form>`, which adds posting to a URL, `FormData`, and reset buttons. A native form can sit inside `dj-form` for its layout.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -4838,8 +4858,24 @@
               "attribute": "column"
             },
             {
+              "kind": "field",
+              "name": "noValidate",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Skip the validity check in `submit()`, like a native form's `novalidate`.",
+              "attribute": "novalidate"
+            },
+            {
               "kind": "method",
-              "name": "submit"
+              "name": "submit",
+              "description": "Check the named controls, then emit `dj-submit`. Returns false when a control is invalid.",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
             },
             {
               "kind": "method",
@@ -4853,6 +4889,14 @@
                 "text": "boolean"
               },
               "fieldName": "column"
+            },
+            {
+              "name": "novalidate",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "noValidate",
+              "description": "Skip the validity check in `submit()`, like a native form's `novalidate`."
             }
           ],
           "slots": [
@@ -4867,7 +4911,7 @@
               "type": {
                 "text": "CustomEvent"
               },
-              "description": ""
+              "description": "`{ data }`"
             },
             {
               "name": "dj-reset",
@@ -10328,6 +10372,7 @@
             {
               "kind": "method",
               "name": "setCustomValidity",
+              "description": "Like a native input's: a non-empty message makes the field invalid until it is cleared with \"\".",
               "parameters": [
                 {
                   "name": "message",

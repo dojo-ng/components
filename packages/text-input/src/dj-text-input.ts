@@ -51,16 +51,24 @@ export class DjTextInput extends FormControl(DojoElement) implements Partial<Doj
 	constructor() {
 		super();
 		this.#internals = this.attachInternals();
+		// A failed form submit or checkValidity() fires `invalid` on the host. Show the error
+		// state then, as after an edit, so the field turns red and shows its message.
+		this.addEventListener("invalid", () => {
+			this.dirty = true;
+			this.syncValidity();
+		});
 	}
 
 	get validity(): ValidityState { return this.#internals.validity; }
 	get validationMessage(): string { return this.#internals.validationMessage; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
 	reportValidity(): boolean { return this.#internals.reportValidity(); }
+	/** Like a native input's: a non-empty message makes the field invalid until it is cleared with "". */
 	setCustomValidity(message: string) {
-		this.input.setCustomValidity(message);
+		this.#customMessage = message ?? "";
 		this.syncValidity();
 	}
+	#customMessage = "";
 
 	override focus(options?: FocusOptions) { this.input?.focus(options); }
 	override blur() { this.input?.blur(); }
@@ -75,7 +83,7 @@ export class DjTextInput extends FormControl(DojoElement) implements Partial<Doj
 	private syncValidity() {
 		const input = this.input;
 		if (!input) return;
-		input.setCustomValidity(this.customValidate(this.value));
+		input.setCustomValidity(this.customValidate(this.value) || this.#customMessage);
 		const v = input.validity;
 		this.#internals.setFormValue(this.value);
 		this.#internals.setValidity(

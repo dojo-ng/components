@@ -166,7 +166,7 @@ A form-associated text field that composes `<dj-label>` and `<dj-helper-text>`. 
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `setCustomValidity(message: string)`, `focus(options: FocusOptions)`, `blur()`
+**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `setCustomValidity(message: string)` (Like a native input's: a non-empty message makes the field invalid until it is cleared with "".), `focus(options: FocusOptions)`, `blur()`
 
 
 ### `<dj-email-input>` · `@dojo-ng/email-input`
@@ -417,7 +417,7 @@ A form-associated checkbox composing `<dj-label>`. Submits `value` (default "on"
 
 ### `<dj-checkbox-group>` · `@dojo-ng/checkbox-group`
 
-Multi-select group from `options`; submits each checked value under `name`.
+Multi-select group from `options`; submits each checked value under `name`. With `required`, at least one option must be checked.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -427,10 +427,11 @@ Multi-select group from `options`; submits each checked value under `name`.
 | `label` | label | `string` | — |
 | `orientation` | orientation | `"vertical"\|"horizontal"` | `"vertical"` |
 | `disabled` | disabled | `boolean` | `false` |
+| `required` | required | `boolean` | `false` |
 
 **Events:** `change`
 
-**Methods:** `checkValidity()`, `restoreFormState(state: File | string | FormData | null)`
+**Methods:** `reportValidity()`, `checkValidity()`, `restoreFormState(state: File | string | FormData | null)`
 
 
 ### `<dj-radio>` · `@dojo-ng/radio`
@@ -704,17 +705,28 @@ Files can arrive in four ways, and all of them go through the same checks:
 
 ### `<dj-form>` · `@dojo-ng/form`
 
-A layout wrapper that gathers values from its named child controls and emits `dj-submit` with a `{ name: value }` object. `column` stacks fields. Because slotted fields live in light DOM (outside any shadow `<form>`), values are read from each named child's `value`. For full native form semantics, the controls are form-associated, so wrapping them in a real `<form>` also works.
+A layout wrapper that gathers values from its named child controls and emits `dj-submit` with a `{ name: value }` object. `column` stacks fields.
+
+#### Submitting
+
+- `submit()` checks every named control first. When one is invalid, the browser shows its message on the first invalid control, `dj-submit` is not emitted, and `submit()` returns false. Set `novalidate` to skip the check.
+- Values follow the rules of a native form: a checkbox or switch counts only when it is checked, disabled controls are left out, and a name used by several checked controls gives an array.
+- Enter in a field submits, except in a text area or other multi-line editor, where Enter adds a new line.
+
+#### A native form instead
+
+- The controls are form-associated, so they also work in a native `<form>`, which adds posting to a URL, `FormData`, and reset buttons. A native form can sit inside `dj-form` for its layout.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `column` | column | `boolean` | `false` |
+| `noValidate` | novalidate | `boolean` | `false` |
 
 **Slots:** default
 
-**Events:** `dj-submit`, `dj-reset`
+**Events:** `dj-submit` (`{ data }`), `dj-reset`
 
-**Methods:** `submit()`, `reset()`
+**Methods:** `submit(): boolean` (Check the named controls, then emit `dj-submit`. Returns false when a control is invalid.), `reset()`
 
 
 ## Overlays

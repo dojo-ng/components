@@ -1,5 +1,6 @@
 import { html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
+import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import DojoElement, { DojoFormControl, FormControl } from "@dojo-ng/dojo-element";
 import "@dojo-ng/label";
 import "@dojo-ng/radio";
@@ -7,6 +8,8 @@ import type { DjRadio } from "@dojo-ng/radio";
 import styles from "./dj-radio-group.styles.js";
 
 export interface RadioOption { value: string; label?: string; disabled?: boolean; }
+
+registerDefaults("dj", { selectAnOption: "Please select an option." });
 
 /**
  * `<dj-radio-group>` — coordinates a set of `<dj-radio>` into a single-choice control.
@@ -27,6 +30,7 @@ export class DjRadioGroup extends FormControl(DojoElement) implements Partial<Do
 	static formAssociated = true;
 
 	#internals: ElementInternals;
+	#i18n = new LocaleController(this);
 
 	@property({ reflect: true }) name?: string;
 	@property() value = "";
@@ -69,7 +73,7 @@ export class DjRadioGroup extends FormControl(DojoElement) implements Partial<Do
 	private sync() {
 		this.#internals.setFormValue(this.value || null);
 		if (this.required && !this.value) {
-			this.#internals.setValidity({ valueMissing: true }, "Please select an option.", this);
+			this.#internals.setValidity({ valueMissing: true }, messages.resolve("dj", this.#i18n.locale, "selectAnOption") ?? "Please select an option.", this);
 		} else {
 			this.#internals.setValidity({});
 		}

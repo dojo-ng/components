@@ -19,6 +19,20 @@ export class DjRadio extends FormControl(DojoElement) implements Partial<DojoFor
 	@query("input") private native!: HTMLInputElement;
 
 	@property({ type: Boolean, reflect: true }) checked = false;
+	/**
+	 * The checked state from the markup, which a form reset returns to (a native checkbox's
+	 * `defaultChecked`). `checked` reflects to the attribute, so the attribute cannot be read
+	 * at reset time; it is captured on first connect instead.
+	 */
+	#defaultChecked = false;
+	#defaultCaptured = false;
+	override connectedCallback() {
+		super.connectedCallback();
+		if (!this.#defaultCaptured) {
+			this.#defaultCaptured = true;
+			this.#defaultChecked = this.hasAttribute("checked");
+		}
+	}
 	@property() value = "";
 	@property({ reflect: true }) name?: string;
 	@property({ type: Boolean, reflect: true }) disabled = false;
@@ -36,7 +50,7 @@ export class DjRadio extends FormControl(DojoElement) implements Partial<DojoFor
 	reportValidity(): boolean { return this.#internals.reportValidity(); }
 
 	override focus(options?: FocusOptions) { this.native?.focus(options); }
-	formResetCallback() { this.checked = this.hasAttribute("checked"); this.sync(); }
+	formResetCallback() { this.checked = this.#defaultChecked; this.sync(); }
 	override restoreFormState(state: File | string | FormData | null) { this.checked = state != null; }
 
 	private group(): DjRadio[] {

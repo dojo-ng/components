@@ -24,6 +24,11 @@ export interface FormControlMixinInterface {
 	formStateRestoreCallback(state: FormRestoreState, mode: string): void;
 	/** Restore submitted state (bfcache/autofill). Override for checked/number/array/range. */
 	restoreFormState(state: FormRestoreState): void;
+	/** The native validity API, read from the control's `ElementInternals`. */
+	readonly validity: ValidityState | undefined;
+	readonly validationMessage: string;
+	checkValidity(): boolean;
+	reportValidity(): boolean;
 }
 
 /**
@@ -85,6 +90,20 @@ export function FormControl<T extends Constructor<DojoElement>>(
 
 		get isDisabled(): boolean {
 			return this.disabled || this.formDisabled;
+		}
+		// The validity API, so every form control has it and form code can rely on it. A
+		// control that declares its own versions (several do) overrides these.
+		get validity(): ValidityState | undefined {
+			return this.#internals?.validity;
+		}
+		get validationMessage(): string {
+			return this.#internals?.validationMessage ?? "";
+		}
+		checkValidity(): boolean {
+			return this.#internals?.checkValidity() ?? true;
+		}
+		reportValidity(): boolean {
+			return this.#internals?.reportValidity() ?? true;
 		}
 
 		formDisabledCallback(disabled: boolean): void {

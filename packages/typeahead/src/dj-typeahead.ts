@@ -1,5 +1,6 @@
 import { html, nothing } from "lit";
 import { property, state, query } from "lit/decorators.js";
+import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import DojoElement, { DojoFormControl, dismissOnFocusOut, FormControl } from "@dojo-ng/dojo-element";
 import "@dojo-ng/text-input";
 import "@dojo-ng/popup";
@@ -7,6 +8,8 @@ import "@dojo-ng/list";
 import type { ListOption } from "@dojo-ng/list";
 import type { PopupPosition } from "@dojo-ng/popup";
 import styles from "./dj-typeahead.styles.js";
+
+registerDefaults("dj", { selectAnOption: "Please select an option." });
 
 /**
  * `<dj-typeahead>` — an editable combobox: type to filter `options`, pick from a popup
@@ -20,6 +23,7 @@ export class DjTypeahead extends FormControl(DojoElement) implements Partial<Doj
 	static formAssociated = true;
 
 	#internals: ElementInternals;
+	#i18n = new LocaleController(this);
 	@query("dj-text-input") private field!: HTMLElement & { value: string; focus(): void };
 
 	@property({ type: Array }) options: ListOption[] = [];
@@ -48,7 +52,7 @@ export class DjTypeahead extends FormControl(DojoElement) implements Partial<Doj
 
 	private sync() {
 		this.#internals.setFormValue(this.value || null);
-		if (this.required && !this.value) this.#internals.setValidity({ valueMissing: true }, "Please select an option.", this.field);
+		if (this.required && !this.value) this.#internals.setValidity({ valueMissing: true }, messages.resolve("dj", this.#i18n.locale, "selectAnOption") ?? "Please select an option.", this.field);
 		else this.#internals.setValidity({});
 	}
 	protected override updated(changed: Map<PropertyKey, unknown>) {

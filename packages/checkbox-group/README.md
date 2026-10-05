@@ -4,6 +4,8 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
+With `required`, at least one option must be checked.
+
 ## Install
 
 ```bash
@@ -38,6 +40,7 @@ Submits each checked value under `name`.
 | `label` | label | `string` | — |
 | `orientation` | orientation | `"vertical"\|"horizontal"` | `"vertical"` |
 | `disabled` | disabled | `boolean` | `false` |
+| `required` | required | `boolean` | `false` |
 
 ## Events
 
@@ -45,6 +48,7 @@ Submits each checked value under `name`.
 
 ## Methods
 
+- `reportValidity()`
 - `checkValidity()`
 - `restoreFormState(state: File | string | FormData | null)`
 

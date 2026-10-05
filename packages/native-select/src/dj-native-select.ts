@@ -46,7 +46,7 @@ export class DjNativeSelect extends FormControl(DojoElement) implements Partial<
 	private sync() {
 		this.#internals.setFormValue(this.value || null);
 		if (this.required && !this.value) {
-			this.#internals.setValidity({ valueMissing: true }, "Please select an option.", this.select);
+			this.#internals.setValidity({ valueMissing: true }, this.select?.validationMessage || "Please select an option.", this.select);
 		} else {
 			this.#internals.setValidity({});
 		}

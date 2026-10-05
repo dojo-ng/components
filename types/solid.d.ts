@@ -213,6 +213,7 @@ declare module "solid-js" {
         "label"?: DjCheckboxGroup["label"];
         "orientation"?: DjCheckboxGroup["orientation"];
         "disabled"?: DjCheckboxGroup["disabled"];
+        "required"?: DjCheckboxGroup["required"];
       };
       "dj-chip": JSX.HTMLAttributes<DjChip> & {
         "disabled"?: DjChip["disabled"];
@@ -304,6 +305,7 @@ declare module "solid-js" {
       };
       "dj-form": JSX.HTMLAttributes<DjForm> & {
         "column"?: DjForm["column"];
+        "novalidate"?: DjForm["noValidate"];
       };
       "dj-global-event": JSX.HTMLAttributes<DjGlobalEvent> & {
         "windowListeners"?: DjGlobalEvent["windowListeners"];

@@ -1,32 +1,52 @@
 import { html, css, nothing } from "lit"; import { property } from "lit/decorators.js";
+import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import DojoElement, { DojoFormControl, FormControl } from "@dojo-ng/dojo-element";
 import "@dojo-ng/checkbox"; import "@dojo-ng/label";
 export interface CheckboxOption { value: string; label?: string; disabled?: boolean; }
-/** `<dj-checkbox-group>` — multi-select group from `options`; submits each checked value under `name`. */
+registerDefaults("dj", { selectAtLeastOne: "Please select at least one option." });
+
+/**
+ * `<dj-checkbox-group>` — multi-select group from `options`; submits each checked value under
+ * `name`. With `required`, at least one option must be checked.
+ */
 export class DjCheckboxGroup extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override version="0.1.1";
 	static override focusable = true;
 	static formAssociated=true;
 	static override styles=css`:host{display:block;} .group{border:0;margin:0;padding:0;} .legend{margin-bottom:var(--dj-spacing-x-small,.5rem);} .items{display:flex;flex-direction:column;gap:var(--dj-spacing-x-small,.5rem);} :host([orientation="horizontal"]) .items{flex-direction:row;flex-wrap:wrap;}`;
 	#internals: ElementInternals;
+	#i18n = new LocaleController(this);
 	@property({type:Array}) options: CheckboxOption[] = [];
 	@property({type:Array}) value: string[] = [];
 	@property({ reflect: true }) name?: string;
 	@property() label?: string;
 	@property({reflect:true}) orientation:"vertical"|"horizontal"="vertical";
 	@property({type:Boolean,reflect:true}) disabled=false;
+	@property({type:Boolean,reflect:true}) required=false;
 	constructor(){ super(); this.#internals=this.attachInternals(); }
 	get validity(){ return this.#internals.validity; }
+	get validationMessage(){ return this.#internals.validationMessage; }
+	reportValidity(){ return this.#internals.reportValidity(); }
 	checkValidity(){ return this.#internals.checkValidity(); }
 	formResetCallback(){ this.value=[]; this.sync(); }
 	override restoreFormState(state: File | string | FormData | null) { const base = this.name ?? "values"; this.value = state instanceof FormData ? state.getAll(base).map(String) : []; }
-	private sync(){ const fd=new FormData(); const base=this.name??"values"; for(const v of this.value) fd.append(base,v); this.#internals.setFormValue(fd); }
+	private sync(){
+		const fd=new FormData(); const base=this.name??"values"; for(const v of this.value) fd.append(base,v); this.#internals.setFormValue(fd);
+		if (this.required && this.value.length === 0) {
+			const anchor = (this.renderRoot as ShadowRoot | undefined)?.querySelector?.("dj-checkbox") as HTMLElement | null;
+			this.#internals.setValidity({ valueMissing: true }, messages.resolve("dj", this.#i18n.locale, "selectAtLeastOne") ?? "Please select at least one option.", anchor ?? undefined);
+		} else {
+			this.#internals.setValidity({});
+		}
+	}
+	// A value, name, or required change from code must reach the form too, not only a click.
+	protected override updated(changed: Map<PropertyKey, unknown>){ if (changed.has("value") || changed.has("name") || changed.has("required")) this.sync(); }
 	protected override firstUpdated(){ this.sync(); this.renderRoot.addEventListener("change", this.onChange as EventListener); }
 	private onChange=(e:Event)=>{ const cb=e.composedPath().find((n)=>(n as Element).localName==="dj-checkbox") as (HTMLElement&{value:string;checked:boolean})|undefined; if(!cb) return; e.stopPropagation();
 		const set=new Set(this.value); if(cb.checked) set.add(cb.value); else set.delete(cb.value); this.value=[...set]; this.sync(); this.emit("change",{detail:this.value} as CustomEventInit); };
 	override render(){
 		return html`<fieldset class="group" role="group" aria-labelledby=${this.label?"lg":nothing}>
-			${this.label?html`<dj-label id="lg" class="legend" ?disabled=${this.isDisabled}>${this.label}</dj-label>`:nothing}
+			${this.label?html`<dj-label id="lg" class="legend" ?required=${this.required} ?disabled=${this.isDisabled}>${this.label}</dj-label>`:nothing}
 			<div class="items">${this.options.map(o=>html`<dj-checkbox value=${o.value} ?checked=${this.value.includes(o.value)} ?disabled=${this.isDisabled||!!o.disabled}>${o.label??o.value}</dj-checkbox>`)}</div>
 		</fieldset>`;
 	}

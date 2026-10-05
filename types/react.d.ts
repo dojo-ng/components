@@ -217,6 +217,7 @@ declare module "react" {
         "label"?: DjCheckboxGroup["label"];
         "orientation"?: DjCheckboxGroup["orientation"];
         "disabled"?: DjCheckboxGroup["disabled"];
+        "required"?: DjCheckboxGroup["required"];
       };
       "dj-chip": DjProps<DjChip> & {
         "disabled"?: DjChip["disabled"];
@@ -308,6 +309,7 @@ declare module "react" {
       };
       "dj-form": DjProps<DjForm> & {
         "column"?: DjForm["column"];
+        "novalidate"?: DjForm["noValidate"];
       };
       "dj-global-event": DjProps<DjGlobalEvent> & {
         "windowListeners"?: DjGlobalEvent["windowListeners"];

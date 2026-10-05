@@ -70,7 +70,7 @@ Set `label`, `required`, and read the value from the `input` event.
 
 - `checkValidity(): boolean`
 - `reportValidity(): boolean`
-- `setCustomValidity(message: string)`
+- `setCustomValidity(message: string)`: Like a native input's: a non-empty message makes the field invalid until it is cleared with "".
 - `focus(options: FocusOptions)`
 - `blur()`
 

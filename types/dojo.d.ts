@@ -219,6 +219,7 @@ declare module "@dojo-ng/framework" {
         "label"?: DjCheckboxGroup["label"];
         "orientation"?: DjCheckboxGroup["orientation"];
         "disabled"?: DjCheckboxGroup["disabled"];
+        "required"?: DjCheckboxGroup["required"];
       };
       "dj-chip": DjVNodeBase & {
         "disabled"?: DjChip["disabled"];
@@ -310,6 +311,7 @@ declare module "@dojo-ng/framework" {
       };
       "dj-form": DjVNodeBase & {
         "column"?: DjForm["column"];
+        "novalidate"?: DjForm["noValidate"];
       };
       "dj-global-event": DjVNodeBase & {
         "windowListeners"?: DjGlobalEvent["windowListeners"];

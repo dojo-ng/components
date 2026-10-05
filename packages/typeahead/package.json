@@ -17,9 +17,10 @@
   },
   "dependencies": {
     "@dojo-ng/dojo-element": "^0.1.2",
-    "@dojo-ng/text-input": "^0.1.1",
-    "@dojo-ng/popup": "^0.1.1",
+    "@dojo-ng/i18n": "^0.1.1",
     "@dojo-ng/list": "^0.1.2",
+    "@dojo-ng/popup": "^0.1.1",
+    "@dojo-ng/text-input": "^0.1.1",
     "lit": "^3.3.0"
   }
 }

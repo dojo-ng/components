@@ -11,7 +11,7 @@ import type { ListOption } from "@dojo-ng/list";
 import type { PopupPosition } from "@dojo-ng/popup";
 import styles from "./dj-select.styles.js";
 
-registerDefaults("dj", { selectPlaceholder: "Select…" });
+registerDefaults("dj", { selectPlaceholder: "Select…", selectAnOption: "Please select an option." });
 
 /**
  * `<dj-select>` — a form-associated single-select combobox. A trigger shows the selected
@@ -55,7 +55,7 @@ export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFo
 	private get selectedLabel() { const o = this.options.find((o) => o.value === this.value); return o ? (o.label ?? o.value) : ""; }
 	private sync() {
 		this.#internals.setFormValue(this.value || null);
-		if (this.required && !this.value) this.#internals.setValidity({ valueMissing: true }, "Please select an option.", this.trigger);
+		if (this.required && !this.value) this.#internals.setValidity({ valueMissing: true }, messages.resolve("dj", this.#i18n.locale, "selectAnOption") ?? "Please select an option.", this.trigger);
 		else this.#internals.setValidity({});
 	}
 	protected override firstUpdated() { this.sync(); }

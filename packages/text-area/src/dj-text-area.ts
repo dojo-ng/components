@@ -37,7 +37,13 @@ export class DjTextArea extends FormControl(DojoElement) implements Partial<Dojo
 	@property({ attribute: "maxlength", type: Number }) maxlength?: number;
 	@state() private valid?: boolean;
 
-	constructor() { super(); this.#internals = this.attachInternals(); }
+	constructor() {
+		super();
+		this.#internals = this.attachInternals();
+		// A failed form submit or checkValidity() fires `invalid` on the host: show the error
+		// state then, as after an edit.
+		this.addEventListener("invalid", () => { this.dirty = true; this.syncValidity(); });
+	}
 
 	get validity(): ValidityState { return this.#internals.validity; }
 	get validationMessage(): string { return this.#internals.validationMessage; }

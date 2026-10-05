@@ -2,5 +2,5 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "rootDir": "src", "outDir": "dist" },
   "include": ["src"],
-  "references": [{ "path": "../dojo-element" }, { "path": "../text-input" }, { "path": "../popup" }, { "path": "../list" }]
+  "references": [{ "path": "../dojo-element" }, { "path": "../i18n" }, { "path": "../text-input" }, { "path": "../popup" }, { "path": "../list" }]
 }

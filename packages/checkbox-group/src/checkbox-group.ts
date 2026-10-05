@@ -10,7 +10,7 @@ registerDefaults("dj", { selectAtLeastOne: "Please select at least one option." 
  * `name`. With `required`, at least one option must be checked.
  */
 export class DjCheckboxGroup extends FormControl(DojoElement) implements Partial<DojoFormControl> {
-	static override version="0.1.1";
+	static override version="0.1.2";
 	static override focusable = true;
 	static formAssociated=true;
 	static override styles=css`:host{display:block;} .group{border:0;margin:0;padding:0;} .legend{margin-bottom:var(--dj-spacing-x-small,.5rem);} .items{display:flex;flex-direction:column;gap:var(--dj-spacing-x-small,.5rem);} :host([orientation="horizontal"]) .items{flex-direction:row;flex-wrap:wrap;}`;

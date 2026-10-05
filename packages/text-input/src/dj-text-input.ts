@@ -19,7 +19,7 @@ export type TextInputType = "text" | "email" | "number" | "password" | "search" 
  */
 export class DjTextInput extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles: CSSResultGroup = [styles, reducedMotion];
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 	static override focusable = true;
 	static formAssociated = true;
 

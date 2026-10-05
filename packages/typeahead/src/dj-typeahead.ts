@@ -18,7 +18,7 @@ registerDefaults("dj", { selectAnOption: "Please select an option." });
  */
 export class DjTypeahead extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = styles;
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 	static override focusable = true;
 	static formAssociated = true;
 

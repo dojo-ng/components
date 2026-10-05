@@ -26,12 +26,29 @@ const CLEAR_ICON = html`<svg viewBox="0 0 24 24" width="1em" height="1em" aria-h
 const TOKEN_TAIL = /(^|\s)([^\s:"]+):("(?:[^"]*)"?|[^\s]*)$/;
 
 /**
- * `<dj-search-box>` — a search field: free text plus typed `key:value` filters. Typing a configured
- * `key:` enters token mode; keys with `options` open a suggestion popup (pick to commit), keys
- * without take a free-typed value committed by Enter or the terminating space (values may be
- * `"quoted"` to hold spaces). A committed filter becomes a closeable `<dj-chip>` before the input;
- * an unconfigured `word:` stays plain text. Backspace with the caret at the start removes the last
- * chip. Read-only `query` = `{ text, tokens }`; set it with `setQuery`. Not form-associated.
+ * `<dj-search-box>` — a search field for free text plus typed `key:value` filters.
+ *
+ * Configure the filters with `keys`. Typing a configured key and a colon, such as `status:`,
+ * starts a filter.
+ *
+ * #### Filters
+ * - A key with `options` opens a suggestion popup. Pick an option to commit the filter.
+ * - A key without `options` takes a typed value. Enter or a space commits it. Put the value in
+ *   quotes (`"in progress"`) to include spaces.
+ * - A committed filter becomes a chip before the input. Each chip has a close button.
+ * - A `word:` that is not a configured key stays plain text, with no popup, no chip, and no error.
+ * - Backspace with the caret at the start of the input removes the last chip.
+ *
+ * #### Reading and setting the query
+ * - `query` is read-only: `{ text, tokens }`.
+ * - `dj-query-change` fires when a filter or the committed text changes.
+ * - `dj-search` fires on Enter when no filter is being typed.
+ * - `setQuery()` sets the query from code. It does not emit an event.
+ * - The search box is not form-associated. Your app runs the search.
+ *
+ * #### The same grammar on a server
+ * - The tokenizer is the exported `parseQuery`, and `formatQuery` turns a query back into text.
+ *   A backend can import both and parse the same syntax.
  *
  * Parts: `box`, `input`, `chip`, `clear`, `label`. (No slots — content comes from `keys`/`query`.)
  * Events: `dj-query-change` (`{ query }`) on any token or committed-text change;

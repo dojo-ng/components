@@ -9,10 +9,18 @@ export type BadgeVariant = "neutral" | "info" | "success" | "warning" | "danger"
 /**
  * `<dj-badge>` — a small count or status label that decorates other content.
  *
- * Presentational: it carries no ARIA role. When a badge shows a count for a control
- * (e.g. an unread count on a button), put the accessible name on the CONTROL —
- * `aria-label="Notifications, 4 unread"` — not on the badge, so assistive tech reads
- * the meaning rather than a bare number.
+ * Put the content in the default slot. Set `variant` for the color and `pill` for fully
+ * rounded ends.
+ *
+ * #### Accessibility
+ * - A badge is presentational and has no ARIA role.
+ * - When a badge shows a count for a control, such as an unread count on a button, put the
+ *   accessible name on the control, not on the badge: `aria-label="Notifications, 4 unread"`.
+ *   Assistive technology then reads the meaning, not a bare number.
+ *
+ * #### Colors
+ * - Each variant uses the theme's semantic `--dj-color-*-600` scale.
+ * - To change one badge, set `--dj-badge-background` and `--dj-badge-color` on it.
  *
  * Content is the default slot.
  * Parts: `base` (the badge box).

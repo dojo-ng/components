@@ -4,12 +4,19 @@ import DojoElement from "@dojo-ng/dojo-element";
 import type { DjTransition } from "@dojo-ng/transition";
 
 /**
- * `<dj-transition-group>` — coordinates slotted `dj-transition` children, staggering
- * their `show` toggles. When the group's `show` changes it drives each child's `show`
- * in DOM order, child `i` after `i * stagger` ms, for both enter and leave. When every
- * child has completed its phase it emits one group `dj-after-enter` (or `dj-after-leave`).
- * v1 is stagger only: no FLIP/list-move animation and no `appear` forwarding (set
- * `appear` on the children directly). Non-`dj-transition` slotted elements are ignored.
+ * `<dj-transition-group>` — staggers the `show` of its `dj-transition` children.
+ *
+ * The effects live on the children. The group only sets each child's `show`, with a delay.
+ *
+ * #### How it works
+ * - When the group's `show` changes, it sets each child's `show` in DOM order. Child `i`
+ *   starts after `i * stagger` milliseconds, for both enter and leave.
+ * - When every child has finished, the group emits one `dj-after-enter` or `dj-after-leave`.
+ * - Slotted elements that are not `dj-transition` are ignored.
+ *
+ * #### Not built
+ * - List-move (FLIP) animation.
+ * - Forwarding `appear` to the children. Set `appear` on each child instead.
  *
  * Slots:
  *  - (default) — the `dj-transition` children to coordinate.

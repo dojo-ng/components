@@ -14,7 +14,7 @@ npm install @dojo-ng/rich-text-menu
 
 Inside a plugin's `setup(ctx)`, create a menu from a trigger config and drive it with `setOptions`. See `@dojo-ng/rich-text-mentions` for a complete plugin built on this.
 
-```html
+```js
 import { createEditorMenu } from "@dojo-ng/rich-text-menu";
 
 export const myPlugin = {

@@ -76,7 +76,7 @@ Compose the plugin with the default set, starting in suggestion mode: typed/dele
 
 The grammar is a plain string API — parse and resolve marks from a server, a build step, or a CLI, with no Lexical/DOM dependency at all.
 
-```html
+```js
 import { parseMarks, acceptAll, declineAll } from "@dojo-ng/rich-text-criticmarkup";
 
 const draft = "The {--old--}{++new++} plan is set.";

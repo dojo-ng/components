@@ -292,7 +292,8 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
 
 ### Interaction: legend toggle and brush
 
-`legend-toggle` turns legend items into buttons that show and hide their series (the axes rescale to the visible series). `brush` adds an overview strip below cartesian charts with two draggable, keyboard-focusable handles that set the visible category window; double-click the strip to reset. Emits `dj-legend-toggle` (detail `{ key, hidden }`).
+- `legend-toggle` turns legend items into buttons that show and hide their series. The axes rescale to the visible series. Each toggle emits `dj-legend-toggle` (`{ key, hidden }`).
+- `brush` adds an overview strip below a cartesian chart. Its two handles set the visible range of categories, by drag or by keyboard. Double-click the strip to reset it.
 
 ```html
 <div style="width: 520px; height: 300px">
@@ -313,7 +314,12 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
 
 ### Sparklines: a KPI table
 
-`<dj-sparkline>` is a separate, small element in this same package — a tiny inline chart with no axes, grid, legend, tooltip, or brush, for a trend next to a number. Set `data` (a plain array of numbers) and `type` (`line`/`area`/`bar`); `marker` dots the last point (`--dj-sparkline-marker-size`, default `0.25em`, and `::part(marker)` for anything more). It sizes via `--dj-sparkline-width`/`--dj-sparkline-height` (defaults `8em`/`1.5em`) and colors via `--dj-sparkline-color`, falling back to dj-chart's own `--dj-chart-1` token. Since the adjacent cell already states the value, these are left unlabeled (`aria-hidden`); set `label` on a standalone sparkline to give it its own accessible name instead.
+`<dj-sparkline>` is a second, small element in this package: a tiny inline chart for a trend next to a number. It has no axes, grid, legend, tooltip, or brush.
+
+- Set `data` (a plain array of numbers) and `type` (`line`, `area`, or `bar`).
+- `marker` adds a dot on the last point. Size it with `--dj-sparkline-marker-size` (default `0.25em`), and style it further with `::part(marker)`.
+- Size the sparkline with `--dj-sparkline-width` and `--dj-sparkline-height` (defaults `8em` and `1.5em`). Color it with `--dj-sparkline-color`, which falls back to `--dj-chart-1`.
+- A sparkline is hidden from assistive technology (`aria-hidden`), because the cell next to it already states the value. Set `label` on a sparkline that stands alone to give it an accessible name.
 
 ```html
 <table>
@@ -334,7 +340,11 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
 
 ### Streaming: appendData and push
 
-`appendData(rows)` on `<dj-chart>` (cartesian types) and `push(value)` on `<dj-sparkline>` append without rebuilding `data` yourself. Multiple calls within the same animation frame batch into one update. Set `max-points` so old points fall off the front as new ones arrive, sliding the window. A streamed `appendData` update skips the bar/enter transitions (a live append should snap into place, not animate); `<dj-sparkline>` has no transitions to begin with, so `push` needs no equivalent.
+`appendData(rows)` on `<dj-chart>` (cartesian types) and `push(value)` on `<dj-sparkline>` add new data without rebuilding `data` yourself.
+
+- Several calls in the same animation frame become one update.
+- Set `max-points` to drop old points from the front as new ones arrive, so the window slides.
+- Appended data snaps into place with no enter animation.
 
 ```html
 <div style="width: 480px; height: 220px">
@@ -359,7 +369,14 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
 
 ### Canvas escape hatch for very large series
 
-`renderer="canvas"` (default `svg`) draws series marks on a `<canvas>` instead of SVG nodes. Reach for it once a series runs into the thousands of points and SVG node count starts costing frame time — a guideline, not a hard threshold; try `svg` first and switch only if it's actually slow. Honored only for `line`, `area`, and `scatter`: `bar`, `stacked`, pie/donut, `bubble`, and a combo where any series overrides to `bar` all stay `svg` (one console warning if you ask for canvas on one of those). Axes, grid, legend, tooltip, and the brush strip are untouched either way — tooltips and legend-toggle keep working over a canvas chart. Under `forced-colors: active` the chart falls back to `svg` automatically (a canvas can't honor `CanvasText` on its own); that's a deliberate fallback, not a bug, so it warns nothing. Line and area get the real node-count win; scatter's hover is wired to its point marks, so canvas mode keeps those (now invisible) hit-target circles in the DOM even though canvas draws the visible dots — scatter's own node count isn't reduced yet. CAUTION: canvas only replaces the MARKS. `category-key` charts render one x-axis tick label and one invisible hit-band per UNIQUE category, unthinned, regardless of renderer — a series with tens of thousands of unique categories can make a browser tab unresponsive on that scaffolding alone, canvas or not. Keep unique-category counts in the low thousands; a numeric `x-key` chart (`scatter`) doesn't have this specific ceiling (its axis ticks are a fixed count either way), though it keeps per-point hit circles of its own.
+`renderer="canvas"` (the default is `svg`) draws the series marks on a `<canvas>` instead of as SVG elements. Try it when a series has thousands of points and drawing becomes slow. Start with `svg`, and switch only if you see a problem.
+
+- Only `line`, `area`, and `scatter` use canvas. `bar`, `stacked`, pie, donut, `bubble`, and a combo with a bar series stay `svg`, with one console warning.
+- Axes, grid, legend, tooltips, legend toggles, and the brush work the same with either renderer.
+- With `forced-colors: active`, the chart uses `svg`, because a canvas cannot follow the system colors. This fallback logs no warning.
+- Line and area charts gain the most. A scatter chart keeps one invisible hover target per point, so its element count does not go down.
+
+Canvas replaces only the marks. A `category-key` chart still renders one axis label and one invisible hover band for each unique category, with either renderer. Tens of thousands of unique categories can make the browser tab stop responding, so keep the count in the low thousands. A numeric `x-key` chart (`scatter`) does not have this limit.
 
 ```html
 <div style="width: 480px; height: 280px">
@@ -375,7 +392,15 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
 
 ### Plugin seam: extending the plot with your own marks
 
-`plugins` (default `[]`) lets code outside the package add marks, panes, tooltip content, legend entries, and accessible-table columns, with the core knowing nothing about any of it — build one with `defineChartPlugin` (also exported from `@dojo-ng/chart`). A plugin can draw inside the plot (`renderUnder`/`renderOver`, sharing the same scales and coordinate space the core series use), reserve a strip below the plot for its own value scale (`panes`), widen the y-domain to fit what it draws (`domain`), replace the tooltip body for a category, and contribute `legendItems`/`tableRows` so anything it draws stays as accessible as a built-in mark. A chart with NO core `series` at all is a fully supported shape — a candlestick chart draws everything through plugins; see [`@dojo-ng/chart-financial`](../chart-financial/README.md) for real candlestick, volume, indicator, and crosshair plugins built this way. `renderer="canvas"` and plugins don't mix (one console warning, falls back to `svg`), since a plugin's marks are SVG.
+`plugins` (default `[]`) lets your code add to a chart without changing the package. Build a plugin with `defineChartPlugin`, which `@dojo-ng/chart` also exports. A plugin can:
+
+- Draw inside the plot (`renderUnder` and `renderOver`), with the same scales the built-in series use.
+- Add a pane below the plot with its own value scale (`panes`).
+- Widen the value range to fit what it draws (`domain`).
+- Replace the tooltip content for a category.
+- Add legend entries (`legendItems`) and columns in the accessible data table (`tableRows`), so its marks are as accessible as the built-in ones.
+
+A chart with no built-in `series` at all is supported. [`@dojo-ng/chart-financial`](../chart-financial/README.md) draws candlesticks, volume, indicators, and a crosshair this way. Plugins draw SVG, so a chart with plugins ignores `renderer="canvas"` and logs one warning.
 
 ```html
 <div style="width: 480px; height: 280px">
@@ -405,7 +430,11 @@ A series can override `type` to combine marks (a line over bars), and set `axis:
 
 ### Missing values: gap, connect, or zero
 
-A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. `missing` (default `"gap"`, per-series override on `ChartSeries.missing`) controls how it draws: `"gap"` breaks the line/area and omits the marker, bar, and point at that spot (the category's hit-band and tooltip row still work there, showing an em dash with a localized "no value" label — never a silent 0); `"connect"` drops the row before the line/area is drawn, so the line spans the hole with one continuous segment (bars, markers, and points are still omitted, since there is no value to place one at); `"zero"` treats it as a real zero, which is what every chart did before this property existed. **This is a behavior change: a chart whose data already carries nulls or undefined cells now draws a gap where it used to silently draw a zero.** If you were relying on the old arithmetic, set `missing="zero"` and nothing else changes.
+A `null`, `undefined`, or non-numeric cell is a missing value, not a zero. `missing` sets how it is drawn. The default is `"gap"`, and each series can override it with `ChartSeries.missing`.
+
+- `"gap"` breaks the line or area and leaves out the marker, bar, or point. The tooltip still works there and shows a dash with a localized "no value" label.
+- `"connect"` draws the line or area straight across the hole. Bars, markers, and points are still left out, because there is no value to draw.
+- `"zero"` draws the value as zero. Charts did this before `missing` existed, so set `missing="zero"` if your chart depends on that.
 
 ```html
 <div style="width: 480px; height: 280px">
@@ -432,7 +461,13 @@ A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. 
 
 ### Point labels
 
-`point-labels` (per-series override on `ChartSeries.pointLabels`) draws a label at each plotted point/bar-end/slice: above the point for line, area, scatter, and bubble; above a grouped bar's end (below it for a negative value) or centered in a stacked segment; outside the arc for pie/donut. Label text is `fmtY(value)` by default, so `numberFormat`/`formatY` apply with no extra wiring — set `formatPoint(value, row, series)` for something else (a name from another column, a share of total); when set, the accessible table gets the same formatted text mirrored into the affected cells (in addition to the raw number, which stays first), since it would otherwise be sighted-only information. No label is drawn for a missing (gapped) value. Collision avoidance is an ESTIMATE, not real text measurement (`getBBox` costs a layout per label) — width from character count times a per-character factor, placed in category order, skipping anything that would overlap a label already placed; above roughly 150 labels the whole set is skipped rather than drawing an unreadable smear of overlapping numbers. Three tokens style the text: `--dj-chart-label-size`, `--dj-chart-label-color`, and `--dj-chart-label-halo` (the halo is a stroke painted behind the fill so a label stays legible over a colored mark or the grid).
+`point-labels` draws a value label at each point, bar end, or slice. Each series can override it with `ChartSeries.pointLabels`.
+
+- Line, area, scatter, and bubble: above the point. Grouped bars: past the end of the bar. Stacked bars: centered in the segment. Pie and donut: outside the slice.
+- The text uses the same formatting as the value axis, so `numberFormat` and `formatY` apply. For other text, such as a name from another column, set `formatPoint(value, row, series)`. The accessible data table then shows the same text after the raw number.
+- A missing value gets no label.
+- Labels that would overlap an earlier label are skipped. The overlap check estimates text width from the number of characters. Above about 150 labels, no labels are drawn.
+- Style the text with `--dj-chart-label-size`, `--dj-chart-label-color`, and `--dj-chart-label-halo`. The halo is an outline behind the text that keeps it readable over marks and grid lines.
 
 ```html
 <div style="width: 480px; height: 280px">
@@ -455,7 +490,14 @@ A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. 
 
 ### Logarithmic value scale
 
-`y-scale="log"` (a second, `y-scale-right`, does the same for the secondary axis) switches the value axis to `scaleLog` — it names the VALUE axis regardless of `orientation`, so it drives horizontal bars' x-axis too. A logarithmic axis never includes zero: its domain is `[smallest positive value, largest value]`, then `.nice()` (which snaps to the nearest DECADE, not an arbitrary round number). A zero or a negative value has no position on a log axis, so it's always a gap there — the line/area breaks, the bar is omitted, the marker is absent — even under `missing="zero"`, which cannot resurrect it; the value still shows as its real number in the tooltip and the accessible table, distinct from a true missing value's em dash. Tick labels are thinned decade-first: the decades within the domain always show, and the 2×/5× multiple of each is added only while every label still clears a 24px minimum gap, so a tall chart gets more ticks than a short one automatically. `stacked` and `y-scale="log"` together are refused (one console warning) and render linear instead — a stacked segment's drawn height on a log axis is a ratio, not a quantity, which defeats the one thing a stacked chart is for. Bars alone ARE allowed on log; a bar's length there reads as a ratio to the axis floor, not an absolute quantity, which is a documented reading rather than a limitation. Out of scope: `dj-sparkline` (no axis to read), the brush overview strip (its own local shape-only mapping), and a logarithmic x-axis for scatter/bubble.
+`y-scale="log"` makes the value axis logarithmic. `y-scale-right` does the same for the secondary axis. It always applies to the value axis, so on horizontal bars it changes the x-axis.
+
+- A log axis never includes zero. It runs from the smallest positive value to the largest value, rounded out to whole powers of 10.
+- Zero and negative values have no position on a log axis, so they are always drawn as gaps, even with `missing="zero"`. The tooltip and the data table still show the real number.
+- Tick labels show each power of 10 in the range. The 2 and 5 multiples are added when there is room, so a tall chart gets more ticks than a short one.
+- `stacked` with a log axis is not allowed. The chart logs one warning and uses a linear axis.
+- Bars are allowed. On a log axis, a bar's length shows a ratio to the bottom of the axis, not an amount.
+- Not supported: log scales on `dj-sparkline` and the brush strip, and a log x-axis for scatter and bubble charts.
 
 ```html
 <div style="width: 480px; height: 280px">

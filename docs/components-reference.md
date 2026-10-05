@@ -351,7 +351,29 @@ It is form-associated and submits each value under `name`. It is built from `dj-
 
 ### `<dj-search-box>` · `@dojo-ng/search-box`
 
-A search field: free text plus typed `key:value` filters. Typing a configured `key:` enters token mode; keys with `options` open a suggestion popup (pick to commit), keys without take a free-typed value committed by Enter or the terminating space (values may be `"quoted"` to hold spaces). A committed filter becomes a closeable `<dj-chip>` before the input; an unconfigured `word:` stays plain text. Backspace with the caret at the start removes the last chip. Read-only `query` = `{ text, tokens }`; set it with `setQuery`. Not form-associated.
+A search field for free text plus typed `key:value` filters.
+
+Configure the filters with `keys`. Typing a configured key and a colon, such as `status:`, starts a filter.
+
+#### Filters
+
+- A key with `options` opens a suggestion popup. Pick an option to commit the filter.
+- A key without `options` takes a typed value. Enter or a space commits it. Put the value in quotes (`"in progress"`) to include spaces.
+- A committed filter becomes a chip before the input. Each chip has a close button.
+- A `word:` that is not a configured key stays plain text, with no popup, no chip, and no error.
+- Backspace with the caret at the start of the input removes the last chip.
+
+#### Reading and setting the query
+
+- `query` is read-only: `{ text, tokens }`.
+- `dj-query-change` fires when a filter or the committed text changes.
+- `dj-search` fires on Enter when no filter is being typed.
+- `setQuery()` sets the query from code. It does not emit an event.
+- The search box is not form-associated. Your app runs the search.
+
+#### The same grammar on a server
+
+- The tokenizer is the exported `parseQuery`, and `formatQuery` turns a query back into text. A backend can import both and parse the same syntax.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -592,9 +614,29 @@ A `HH:MM` time field with a popup list of options generated from `min`/`max`/`st
 
 ### `<dj-color-picker>` · `@dojo-ng/color-picker`
 
-An inline color picker with a 2D saturation/brightness area, a hue slider, an optional opacity slider, a text field, and optional swatches. Form-associated: it submits the formatted color string under `name`. There is no built-in trigger or popup — compose `dj-popup` to make it a dropdown.
+An inline color picker.
 
-The internal model is HSV + alpha; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`). Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.
+It has a saturation and brightness area, a hue slider, an optional opacity slider (`alpha`), a text field, and optional `swatches`.
+
+#### Value and format
+
+- `value` is a color string in the `format` you choose: `hex`, `rgb`, or `hsl`.
+- The internal model is HSV plus alpha. After you change `format`, reading `value` returns the new representation.
+- Alpha appears in the output only when the color is translucent or `alpha` is on.
+- Named CSS colors, such as `rebeccapurple`, are not parsed.
+- `dj-change` (`{ value }`) fires on every change the user makes, including during a drag. There is no separate input event.
+
+#### Forms
+
+- The picker is form-associated. It submits the formatted color string under `name`.
+
+#### Swatches
+
+- `swatches` is an array of color strings or `{ value, label }` objects.
+
+#### Dropdowns
+
+- There is no built-in trigger button or popup. Put the picker in a `dj-popup` to make a dropdown.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1507,7 +1549,17 @@ Circular/rounded/square avatar from an image `src` or slotted initials/icon. Par
 
 A small count or status label that decorates other content.
 
-Presentational: it carries no ARIA role. When a badge shows a count for a control (e.g. an unread count on a button), put the accessible name on the CONTROL — `aria-label="Notifications, 4 unread"` — not on the badge, so assistive tech reads the meaning rather than a bare number.
+Put the content in the default slot. Set `variant` for the color and `pill` for fully rounded ends.
+
+#### Accessibility
+
+- A badge is presentational and has no ARIA role.
+- When a badge shows a count for a control, such as an unread count on a button, put the accessible name on the control, not on the badge: `aria-label="Notifications, 4 unread"`. Assistive technology then reads the meaning, not a bare number.
+
+#### Colors
+
+- Each variant uses the theme's semantic `--dj-color-*-600` scale.
+- To change one badge, set `--dj-badge-background` and `--dj-badge-color` on it.
 
 Content is the default slot.
 
@@ -1544,7 +1596,21 @@ Compact label/tag. Label in the default slot, optional icon in the `icon` slot. 
 
 ### `<dj-icon>` · `@dojo-ng/icon`
 
-A presentational icon. Supply a glyph either by `type` (a name registered via `registerIcon`, resolved from the SVG icon registry) or by slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive tech; without it the icon is aria-hidden.
+A presentational icon.
+
+Supply a glyph in one of two ways: set `type` to the name of an icon registered with `registerIcon` or `registerIcons`, or slot an inline `<svg>`.
+
+#### Accessibility
+
+- Set `alt-text` when the icon carries meaning. It becomes the accessible name.
+- Without `alt-text`, the icon is hidden from assistive technology (`aria-hidden`).
+
+#### SVG requirements
+
+- A registered SVG must have a `viewBox`. dj-icon sizes a glyph by stretching it to fill the icon box, and an `<svg>` scales its artwork only when it has a `viewBox`.
+- An SVG without a `viewBox` gets a box of the right size, but its artwork is clipped or not scaled. `registerIcon` and `registerIcons` log one console warning for each such icon, and they do not change the SVG.
+- dj-icon's own sizing overrides any `width` or `height` attributes on a registered SVG.
+- A slotted inline `<svg>` follows the same rules.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1758,9 +1824,22 @@ The value is HTML by default. Formatting, headings, lists, links, and other cont
 
 ### `<dj-alert>` · `@dojo-ng/alert`
 
-An inline status banner. It sits in the page flow (unlike the transient, floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a persistent state next to the content it concerns.
+An inline status banner.
 
-An alert written in markup shows by default (`open`); closing it sets `open` false and it takes no space. Info/success announce politely (`role="status"`); warning/danger announce assertively (`role="alert"`).
+It sits in the page flow, next to the content it concerns. For a short message that floats and goes away, use `dj-snackbar`. For a full-page outcome, use `dj-result`.
+
+#### Showing and closing
+
+- An alert in markup shows by default (`open` is true).
+- `close()` hides it and emits `dj-close`. A closed alert takes no space.
+- Add `closable` for a close button. Its label is the localized `close` message.
+
+#### Variants
+
+- `info` and `success` announce politely (`role="status"`).
+- `warning` and `danger` announce immediately (`role="alert"`).
+- Each variant has a default icon. Replace it with the `icon` slot.
+- Colors come from the theme's semantic scales. To change one alert, set `--dj-alert-background`, `--dj-alert-color`, and `--dj-alert-accent-color` on it.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1884,7 +1963,22 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 
 ### `<dj-transition-group>` · `@dojo-ng/transition-group`
 
-Coordinates slotted `dj-transition` children, staggering their `show` toggles. When the group's `show` changes it drives each child's `show` in DOM order, child `i` after `i * stagger` ms, for both enter and leave. When every child has completed its phase it emits one group `dj-after-enter` (or `dj-after-leave`). v1 is stagger only: no FLIP/list-move animation and no `appear` forwarding (set `appear` on the children directly). Non-`dj-transition` slotted elements are ignored.
+Staggers the `show` of its `dj-transition` children.
+
+The effects live on the children. The group only sets each child's `show`, with a delay.
+
+#### How it works
+
+- When the group's `show` changes, it sets each child's `show` in DOM order. Child `i` starts after `i * stagger` milliseconds, for both enter and leave.
+- When every child has finished, the group emits one `dj-after-enter` or `dj-after-leave`.
+- Slotted elements that are not `dj-transition` are ignored.
+
+#### Not built
+
+- List-move (FLIP) animation.
+- Forwarding `appear` to the children. Set `appear` on each child instead.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1899,7 +1993,25 @@ Coordinates slotted `dj-transition` children, staggering their `show` toggles. W
 
 ### `<dj-audio>` · `@dojo-ng/audio`
 
-A themed audio player wrapping the native `HTMLAudioElement`. The `<audio>` element is ours (hidden in the shadow root); the UI is dj- controls: a play/pause `<dj-button>` whose icon and localized label follow the media's real `play`/`pause` events (not the click, so the button stays correct if the media is driven through `media()`), a seek `<dj-slider>` whose max is set from the media duration and whose value tracks playback, and a current/total time readout. No vendor engine — audio needs none.
+A themed audio player.
+
+It wraps the native `HTMLAudioElement`, hidden in the shadow root, with Dojo NG controls: a play/pause button, a seek slider, and a readout of the current and total time. It needs no third-party player.
+
+#### Accessibility
+
+- Give the player a `label`. It becomes the accessible name.
+- Keyboard support comes from the button and the slider.
+
+#### Playback state
+
+- The play/pause button follows the media's real `play` and `pause` events, not the click. It stays correct when you control playback through `media()`.
+- The seek slider's maximum comes from the media duration, and its value follows playback.
+
+#### Events and analytics
+
+- `dj-time` fires at most once per second.
+- Put analytics, xAPI statements, and saved resume positions in your own event listeners, not in the component.
+- `media()` returns the raw audio element for advanced use. Code that uses it is not supported.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|

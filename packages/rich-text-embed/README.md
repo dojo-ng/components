@@ -58,7 +58,7 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 
 Pass `matchers` to support more hosts. A matcher is `{ kind, match(url) }` returning `{ kind, src, title? }` or undefined; `defaultMatchers` are the built-ins.
 
-```html
+```js
 import { createEmbedPlugin, defaultMatchers } from "@dojo-ng/rich-text-embed";
 
 const loom = {

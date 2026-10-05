@@ -1,12 +1,10 @@
 # @dojo-ng/search-box
 
-`<dj-search-box>` — A search field: free text plus typed `key:value` filters.
+`<dj-search-box>` — A search field for free text plus typed `key:value` filters.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Typing a configured `key:` enters token mode; keys with `options` open a suggestion popup (pick to commit), keys without take a free-typed value committed by Enter or the terminating space (values may be `"quoted"` to hold spaces). A committed filter becomes a closeable `<dj-chip>` before the input; an unconfigured `word:` stays plain text. Backspace with the caret at the start removes the last chip. Read-only `query` = `{ text, tokens }`; set it with `setQuery`. Not form-associated.
-
-Free text plus typed `key:value` filters. Configure `keys`: a key with `options` opens a suggestion popup when you type `key:` (pick to commit), a key without takes a free-typed value committed by Enter or the terminating space, and values may be `"quoted"` to hold spaces. A committed filter becomes a closeable chip before the input; an unconfigured `word:` stays plain text — no popup, no chip, no error. Backspace with the caret at the start removes the last chip. Read `query` (`{ text, tokens }`) or listen for `dj-query-change`; `dj-search` fires on Enter outside token mode. `setQuery()` sets it programmatically without emitting. The tokenizer IS the exported `parseQuery`, so a backend can reuse the same grammar (`import { parseQuery, formatQuery } from "@dojo-ng/search-box"`). Not form-associated — search is app-driven.
+Configure the filters with `keys`. Typing a configured key and a colon, such as `status:`, starts a filter.
 
 ## Install
 
@@ -41,6 +39,26 @@ Configure `keys`; `has` carries `options`, so typing `has:` opens a suggestion p
   box.addEventListener("dj-search", show);
 </script>
 ```
+
+## Filters
+
+- A key with `options` opens a suggestion popup. Pick an option to commit the filter.
+- A key without `options` takes a typed value. Enter or a space commits it. Put the value in quotes (`"in progress"`) to include spaces.
+- A committed filter becomes a chip before the input. Each chip has a close button.
+- A `word:` that is not a configured key stays plain text, with no popup, no chip, and no error.
+- Backspace with the caret at the start of the input removes the last chip.
+
+## Reading and setting the query
+
+- `query` is read-only: `{ text, tokens }`.
+- `dj-query-change` fires when a filter or the committed text changes.
+- `dj-search` fires on Enter when no filter is being typed.
+- `setQuery()` sets the query from code. It does not emit an event.
+- The search box is not form-associated. Your app runs the search.
+
+## The same grammar on a server
+
+- The tokenizer is the exported `parseQuery`, and `formatQuery` turns a query back into text. A backend can import both and parse the same syntax.
 
 ## Properties
 
@@ -83,7 +101,7 @@ Configure `keys`; `has` carries `options`, so typing `has:` opens a suggestion p
 
 The component's tokenizer is the exported pure parser, so the same query string parses identically outside the browser.
 
-```html
+```js
 import { parseQuery, formatQuery } from "@dojo-ng/search-box";
 
 const keys = [{ key: "from" }, { key: "has", options: [] }];

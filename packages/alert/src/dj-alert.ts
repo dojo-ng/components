@@ -19,17 +19,27 @@ const GLYPHS: Record<AlertVariant, TemplateResult> = {
 };
 
 /**
- * `<dj-alert>` — an inline status banner. It sits in the page flow (unlike the transient,
- * floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a
- * persistent state next to the content it concerns.
+ * `<dj-alert>` — an inline status banner.
  *
- * An alert written in markup shows by default (`open`); closing it sets `open` false and it
- * takes no space. Info/success announce politely (`role="status"`); warning/danger announce
- * assertively (`role="alert"`).
+ * It sits in the page flow, next to the content it concerns. For a short message that floats
+ * and goes away, use `dj-snackbar`. For a full-page outcome, use `dj-result`.
+ *
+ * #### Showing and closing
+ * - An alert in markup shows by default (`open` is true).
+ * - `close()` hides it and emits `dj-close`. A closed alert takes no space.
+ * - Add `closable` for a close button. Its label is the localized `close` message.
+ *
+ * #### Variants
+ * - `info` and `success` announce politely (`role="status"`).
+ * - `warning` and `danger` announce immediately (`role="alert"`).
+ * - Each variant has a default icon. Replace it with the `icon` slot.
+ * - Colors come from the theme's semantic scales. To change one alert, set
+ *   `--dj-alert-background`, `--dj-alert-color`, and `--dj-alert-accent-color` on it.
  *
  * Slots: default (the message), `icon` (replaces the default variant glyph).
  * Parts: `base`, `icon`, `message`, `close`.
- * Events: `dj-close` (after the alert closes). Method: `close()`.
+ * Events: `dj-close` (after the alert closes).
+ * Methods: `close()`.
  * @cssprop [--dj-alert-background=per-variant tint] - Banner background; defaults to the variant's `--dj-color-*-100`.
  * @cssprop [--dj-alert-color=per-variant ink] - Text color; defaults to the variant's `--dj-color-*-700`.
  * @cssprop [--dj-alert-accent-color=per-variant accent] - Icon + leading-border color; defaults to the variant's `--dj-color-*-600`.

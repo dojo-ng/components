@@ -1,12 +1,10 @@
 # @dojo-ng/audio
 
-`<dj-audio>` — A themed audio player wrapping the native `HTMLAudioElement`.
+`<dj-audio>` — A themed audio player.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-The `<audio>` element is ours (hidden in the shadow root); the UI is dj- controls: a play/pause `<dj-button>` whose icon and localized label follow the media's real `play`/`pause` events (not the click, so the button stays correct if the media is driven through `media()`), a seek `<dj-slider>` whose max is set from the media duration and whose value tracks playback, and a current/total time readout. No vendor engine — audio needs none.
-
-Wraps the native `HTMLAudioElement` (no vendor engine — audio needs none): the `<audio>` is ours and hidden, the UI is dj- controls, so keyboard support comes free from the button and slider. Give it a `label` for an accessible name. The play/pause state follows the media's real `play`/`pause` events, not the button click, so it stays correct even if you drive playback through `media()`. `dj-time` is throttled to at most once per second; wire xAPI/analytics/resume-position as listeners on the events, not in the component. `media()` returns the raw audio element (advanced; no support implied).
+It wraps the native `HTMLAudioElement`, hidden in the shadow root, with Dojo NG controls: a play/pause button, a seek slider, and a readout of the current and total time. It needs no third-party player.
 
 ## Install
 
@@ -28,6 +26,22 @@ Set `src` and a `label`. The play/pause button, seek slider, and time readout ar
   a.addEventListener("dj-time", (e) => console.log(e.detail.current, "/", e.detail.duration));
 </script>
 ```
+
+## Accessibility
+
+- Give the player a `label`. It becomes the accessible name.
+- Keyboard support comes from the button and the slider.
+
+## Playback state
+
+- The play/pause button follows the media's real `play` and `pause` events, not the click. It stays correct when you control playback through `media()`.
+- The seek slider's maximum comes from the media duration, and its value follows playback.
+
+## Events and analytics
+
+- `dj-time` fires at most once per second.
+- Put analytics, xAPI statements, and saved resume positions in your own event listeners, not in the component.
+- `media()` returns the raw audio element for advanced use. Code that uses it is not supported.
 
 ## Properties
 
@@ -63,7 +77,7 @@ Set `src` and a `label`. The play/pause button, seek slider, and time readout ar
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.
 
-## Accessibility and i18n
+## Localization
 
 Follows the project's WCAG 2.2 AA and localization conventions.
 

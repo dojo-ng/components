@@ -8,10 +8,23 @@ import { getIcon, onIconsChanged } from "./registry.js";
 export type IconSize = "small" | "medium" | "large";
 
 /**
- * `<dj-icon>` — a presentational icon. Supply a glyph either by `type` (a name
- * registered via `registerIcon`, resolved from the SVG icon registry) or by
- * slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive
- * tech; without it the icon is aria-hidden.
+ * `<dj-icon>` — a presentational icon.
+ *
+ * Supply a glyph in one of two ways: set `type` to the name of an icon registered with
+ * `registerIcon` or `registerIcons`, or slot an inline `<svg>`.
+ *
+ * #### Accessibility
+ * - Set `alt-text` when the icon carries meaning. It becomes the accessible name.
+ * - Without `alt-text`, the icon is hidden from assistive technology (`aria-hidden`).
+ *
+ * #### SVG requirements
+ * - A registered SVG must have a `viewBox`. dj-icon sizes a glyph by stretching it to fill
+ *   the icon box, and an `<svg>` scales its artwork only when it has a `viewBox`.
+ * - An SVG without a `viewBox` gets a box of the right size, but its artwork is clipped or
+ *   not scaled. `registerIcon` and `registerIcons` log one console warning for each such icon,
+ *   and they do not change the SVG.
+ * - dj-icon's own sizing overrides any `width` or `height` attributes on a registered SVG.
+ * - A slotted inline `<svg>` follows the same rules.
  *
  * Parts: `base`.
  *

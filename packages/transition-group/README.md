@@ -1,12 +1,10 @@
 # @dojo-ng/transition-group
 
-`<dj-transition-group>` — Coordinates slotted `dj-transition` children, staggering their `show` toggles.
+`<dj-transition-group>` — Staggers the `show` of its `dj-transition` children.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-When the group's `show` changes it drives each child's `show` in DOM order, child `i` after `i * stagger` ms, for both enter and leave. When every child has completed its phase it emits one group `dj-after-enter` (or `dj-after-leave`). v1 is stagger only: no FLIP/list-move animation and no `appear` forwarding (set `appear` on the children directly). Non-`dj-transition` slotted elements are ignored.
-
-Coordinates slotted `dj-transition` children only (v1 is stagger, no list-move animation). The effects live on the children; the group just drives their `show` with a delay. Set `appear` on the children directly.
+The effects live on the children. The group only sets each child's `show`, with a delay.
 
 ## Install
 
@@ -18,7 +16,7 @@ npm install @dojo-ng/transition-group
 
 Import the package to register the custom element, then use the tag.
 
-Wrap each item in a `dj-transition` and let the group drive them with a delay. The effect lives on the children; the group emits one `dj-after-enter` when all have finished.
+Wrap each item in a `dj-transition`. The group shows them one after another and emits one `dj-after-enter` when all have finished.
 
 ```html
 <style>
@@ -39,6 +37,19 @@ Wrap each item in a `dj-transition` and let the group drive them with a delay. T
   document.getElementById("reveal").addEventListener("click", () => (grp.show = !grp.show));
 </script>
 ```
+
+## How it works
+
+- When the group's `show` changes, it sets each child's `show` in DOM order. Child `i` starts after `i * stagger` milliseconds, for both enter and leave.
+- When every child has finished, the group emits one `dj-after-enter` or `dj-after-leave`.
+- Slotted elements that are not `dj-transition` are ignored.
+
+## Not built
+
+- List-move (FLIP) animation.
+- Forwarding `appear` to the children. Set `appear` on each child instead.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 ## Properties
 

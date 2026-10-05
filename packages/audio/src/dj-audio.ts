@@ -28,17 +28,31 @@ function formatTime(seconds: number): string {
 }
 
 /**
- * `<dj-audio>` — a themed audio player wrapping the native `HTMLAudioElement`. The `<audio>`
- * element is ours (hidden in the shadow root); the UI is dj- controls: a play/pause `<dj-button>`
- * whose icon and localized label follow the media's real `play`/`pause` events (not the click, so
- * the button stays correct if the media is driven through `media()`), a seek `<dj-slider>` whose
- * max is set from the media duration and whose value tracks playback, and a current/total time
- * readout. No vendor engine — audio needs none.
+ * `<dj-audio>` — a themed audio player.
+ *
+ * It wraps the native `HTMLAudioElement`, hidden in the shadow root, with Dojo NG controls: a
+ * play/pause button, a seek slider, and a readout of the current and total time. It needs no
+ * third-party player.
+ *
+ * #### Accessibility
+ * - Give the player a `label`. It becomes the accessible name.
+ * - Keyboard support comes from the button and the slider.
+ *
+ * #### Playback state
+ * - The play/pause button follows the media's real `play` and `pause` events, not the click.
+ *   It stays correct when you control playback through `media()`.
+ * - The seek slider's maximum comes from the media duration, and its value follows playback.
+ *
+ * #### Events and analytics
+ * - `dj-time` fires at most once per second.
+ * - Put analytics, xAPI statements, and saved resume positions in your own event listeners,
+ *   not in the component.
+ * - `media()` returns the raw audio element for advanced use. Code that uses it is not supported.
  *
  * Parts: `bar` (the control row), `play` (the play/pause button), `seek` (the slider), `time`.
  * Methods: `play()`, `pause()`, `media()` (the raw `HTMLAudioElement`; advanced, no support implied).
  * Events: `dj-play`, `dj-pause`, `dj-ended`, and `dj-time` `{ current, duration }` throttled to
- * at most once per second. xAPI/analytics/resume-position are app listeners on these events.
+ * at most once per second.
  */
 export class DjAudio extends DojoElement {
 	static override styles = [styles, reducedMotion];

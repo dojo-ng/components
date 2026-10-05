@@ -4,9 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Supply a glyph either by `type` (a name registered via `registerIcon`, resolved from the SVG icon registry) or by slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive tech; without it the icon is aria-hidden.
-
-A registered SVG must carry a `viewBox`. dj-icon sizes a glyph by stretching it to fill the icon box, and an `<svg>` only scales its artwork when it has a `viewBox`; one without gets a correctly-sized box with clipped or unscaled artwork. `registerIcon`/`registerIcons` log a one-time console warning for any icon registered without a `viewBox`, and never rewrite it. Any `width` or `height` attributes on a registered SVG are overridden by dj-icon's own sizing. A slotted inline `<svg>` follows the same rule.
+Supply a glyph in one of two ways: set `type` to the name of an icon registered with `registerIcon` or `registerIcons`, or slot an inline `<svg>`.
 
 ## Install
 
@@ -25,6 +23,18 @@ Slot an SVG; it inherits `currentColor` and sizing.
   <svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" fill="currentColor"/></svg>
 </dj-icon>
 ```
+
+## Accessibility
+
+- Set `alt-text` when the icon carries meaning. It becomes the accessible name.
+- Without `alt-text`, the icon is hidden from assistive technology (`aria-hidden`).
+
+## SVG requirements
+
+- A registered SVG must have a `viewBox`. dj-icon sizes a glyph by stretching it to fill the icon box, and an `<svg>` scales its artwork only when it has a `viewBox`.
+- An SVG without a `viewBox` gets a box of the right size, but its artwork is clipped or not scaled. `registerIcon` and `registerIcons` log one console warning for each such icon, and they do not change the SVG.
+- dj-icon's own sizing overrides any `width` or `height` attributes on a registered SVG.
+- A slotted inline `<svg>` follows the same rules.
 
 ## Properties
 
@@ -52,7 +62,7 @@ Slot an SVG; it inherits `currentColor` and sizing.
 
 ### Registered icons and the viewBox rule
 
-Register once (usually at startup), then reference a glyph by `type`. A registered SVG must include a `viewBox` so it scales to the icon size; one without is sized but its artwork is clipped, and the registry logs a one-time warning.
+Register icons once, usually at startup, then refer to a glyph by `type`. Each registered SVG needs a `viewBox`.
 
 ```html
 <dj-icon type="star" size="large" alt-text="Favorite"></dj-icon>
@@ -70,7 +80,7 @@ Register once (usually at startup), then reference a glyph by `type`. A register
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.
 
-## Accessibility and i18n
+## Localization
 
 Follows the project's WCAG 2.2 AA and localization conventions.
 

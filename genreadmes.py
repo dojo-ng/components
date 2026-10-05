@@ -23,23 +23,9 @@ def _roots():
 
 PKGS = _roots()
 
-# Infra packages: package dir -> the guide doc to point at.
-INFRA_DOC = {
-    "dojo-element": "component-conventions.md",
-    "theme": "theming-proposal.md",
-    "store": "state-and-framework-analysis.md",
-    "context": "state-and-framework-analysis.md",
-    "i18n": "i18n-guide.md",
-}
-
 # Migration pointers for Dojo widgets superseded by a differently-named component.
 NOTES = {
     "typeahead": "Coming from Dojo's **ComboBox**? Typeahead is its successor: an editable field that filters a list. For multi-select, see [`@dojo-ng/chip-typeahead`](../chip-typeahead/README.md).",
-    "transition-group": "Coordinates slotted `dj-transition` children only (v1 is stagger, no list-move animation). The effects live on the children; the group just drives their `show` with a delay. Set `appear` on the children directly.",
-    "icon": "A registered SVG must carry a `viewBox`. dj-icon sizes a glyph by stretching it to fill the icon box, and an `<svg>` only scales its artwork when it has a `viewBox`; one without gets a correctly-sized box with clipped or unscaled artwork. `registerIcon`/`registerIcons` log a one-time console warning for any icon registered without a `viewBox`, and never rewrite it. Any `width` or `height` attributes on a registered SVG are overridden by dj-icon's own sizing. A slotted inline `<svg>` follows the same rule.",
-    "badge": "Presentational only — a badge has no ARIA role. When it shows a count for a control (an unread count on a button, say), put the accessible name on the CONTROL (`aria-label=\"Notifications, 4 unread\"`), not on the badge, so assistive tech reads the meaning rather than a bare number. Variant colors reuse the theme's semantic `--dj-color-*-600` scales; override a single badge with `--dj-badge-background` / `--dj-badge-color`.",
-    "alert": "An inline status banner that sits in the page flow — distinct from `dj-snackbar` (transient, floating) and `dj-result` (full-page). It shows by default (`open`); `close()` hides it and emits `dj-close`. info/success announce politely (`role=\"status\"`), warning/danger assertively (`role=\"alert\"`). Each variant has a default glyph; override it via the `icon` slot. Add `closable` for a dismiss button (its label is the localized `close` key). Variant colors reuse the theme's semantic tint/ink scales; override one alert with `--dj-alert-background` / `--dj-alert-color` / `--dj-alert-accent-color`.",
-    "search-box": "Free text plus typed `key:value` filters. Configure `keys`: a key with `options` opens a suggestion popup when you type `key:` (pick to commit), a key without takes a free-typed value committed by Enter or the terminating space, and values may be `\"quoted\"` to hold spaces. A committed filter becomes a closeable chip before the input; an unconfigured `word:` stays plain text — no popup, no chip, no error. Backspace with the caret at the start removes the last chip. Read `query` (`{ text, tokens }`) or listen for `dj-query-change`; `dj-search` fires on Enter outside token mode. `setQuery()` sets it programmatically without emitting. The tokenizer IS the exported `parseQuery`, so a backend can reuse the same grammar (`import { parseQuery, formatQuery } from \"@dojo-ng/search-box\"`). Not form-associated — search is app-driven.",
     "data-grid-select": """
 A checkbox selection column for `<dj-data-grid>`, with select-all and range selection.
 
@@ -379,7 +365,7 @@ EXAMPLES = {
  "icon": [
   ("Inline SVG icon", "Slot an SVG; it inherits `currentColor` and sizing.",
    '<dj-icon>\n  <svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" fill="currentColor"/></svg>\n</dj-icon>'),
-  ("Registered icons and the viewBox rule", "Register once (usually at startup), then reference a glyph by `type`. A registered SVG must include a `viewBox` so it scales to the icon size; one without is sized but its artwork is clipped, and the registry logs a one-time warning.",
+  ("Registered icons and the viewBox rule", "Register icons once, usually at startup, then refer to a glyph by `type`. Each registered SVG needs a `viewBox`.",
    '<dj-icon type="star" size="large" alt-text="Favorite"></dj-icon>\n<script type="module">\n  import "@dojo-ng/icon";\n  import { registerIcon } from "@dojo-ng/icon";\n  // Good: has a viewBox, so the glyph scales to any size.\n  registerIcon("star", \'<svg viewBox="0 0 24 24"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z"/></svg>\');\n  // Bad: no viewBox, so the box is sized but the artwork is clipped, and this logs a console warning.\n  registerIcon("star-bad", \'<svg width="24" height="24"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z"/></svg>\');\n</script>'),
  ],
  "result": [
@@ -465,21 +451,21 @@ EXAMPLES = {
    '<div style="width: 360px; height: 280px">\n  <dj-chart id="dl" type="donut" category-key="region" label="Quota attainment" center-label="72%" center-sub-label="of goal"></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  const dl = document.getElementById("dl");\n  dl.series = [{ key: "value" }];\n  dl.data = [\n    { region: "Attained", value: 72 },\n    { region: "Remaining", value: 28 },\n  ];\n</script>'),
   ("Combo with a secondary axis", "A series can override `type` to combine marks (a line over bars), and set `axis: \"right\"` to plot on a secondary y-axis with its own scale. `y-label-right` titles that axis. Useful when two measures share categories but not units (revenue and growth %).",
    '<div style="width: 480px; height: 280px">\n  <dj-chart id="cm" type="bar" category-key="month" label="Revenue and growth" show-grid y-label="USD (k)" y-label-right="Growth %"></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  const cm = document.getElementById("cm");\n  cm.series = [\n    { key: "revenue", label: "Revenue" },\n    { key: "growth", label: "Growth %", type: "line", axis: "right" },\n  ];\n  cm.data = [\n    { month: "Jan", revenue: 42, growth: 4 },\n    { month: "Feb", revenue: 50, growth: 12 },\n    { month: "Mar", revenue: 47, growth: 8 },\n  ];\n</script>'),
-  ("Interaction: legend toggle and brush", "`legend-toggle` turns legend items into buttons that show and hide their series (the axes rescale to the visible series). `brush` adds an overview strip below cartesian charts with two draggable, keyboard-focusable handles that set the visible category window; double-click the strip to reset. Emits `dj-legend-toggle` (detail `{ key, hidden }`).",
+  ("Interaction: legend toggle and brush", "- `legend-toggle` turns legend items into buttons that show and hide their series. The axes rescale to the visible series. Each toggle emits `dj-legend-toggle` (`{ key, hidden }`).\n- `brush` adds an overview strip below a cartesian chart. Its two handles set the visible range of categories, by drag or by keyboard. Double-click the strip to reset it.",
    '<div style="width: 520px; height: 300px">\n  <dj-chart id="iv" type="line" markers legend-toggle brush category-key="month" label="Revenue vs target" show-grid y-label="USD (k)"></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  const iv = document.getElementById("iv");\n  iv.series = [{ key: "revenue", label: "Revenue" }, { key: "target", label: "Target" }];\n  iv.data = [\n    { month: "Jan", revenue: 42, target: 40 }, { month: "Feb", revenue: 50, target: 45 },\n    { month: "Mar", revenue: 47, target: 48 }, { month: "Apr", revenue: 61, target: 52 },\n    { month: "May", revenue: 58, target: 55 }, { month: "Jun", revenue: 70, target: 60 },\n  ];\n  iv.addEventListener("dj-legend-toggle", (e) => console.log(e.detail));\n</script>'),
-  ("Sparklines: a KPI table", "`<dj-sparkline>` is a separate, small element in this same package — a tiny inline chart with no axes, grid, legend, tooltip, or brush, for a trend next to a number. Set `data` (a plain array of numbers) and `type` (`line`/`area`/`bar`); `marker` dots the last point (`--dj-sparkline-marker-size`, default `0.25em`, and `::part(marker)` for anything more). It sizes via `--dj-sparkline-width`/`--dj-sparkline-height` (defaults `8em`/`1.5em`) and colors via `--dj-sparkline-color`, falling back to dj-chart's own `--dj-chart-1` token. Since the adjacent cell already states the value, these are left unlabeled (`aria-hidden`); set `label` on a standalone sparkline to give it its own accessible name instead.",
+  ("Sparklines: a KPI table", "`<dj-sparkline>` is a second, small element in this package: a tiny inline chart for a trend next to a number. It has no axes, grid, legend, tooltip, or brush.\n\n- Set `data` (a plain array of numbers) and `type` (`line`, `area`, or `bar`).\n- `marker` adds a dot on the last point. Size it with `--dj-sparkline-marker-size` (default `0.25em`), and style it further with `::part(marker)`.\n- Size the sparkline with `--dj-sparkline-width` and `--dj-sparkline-height` (defaults `8em` and `1.5em`). Color it with `--dj-sparkline-color`, which falls back to `--dj-chart-1`.\n- A sparkline is hidden from assistive technology (`aria-hidden`), because the cell next to it already states the value. Set `label` on a sparkline that stands alone to give it an accessible name.",
    '<table>\n  <thead><tr><th>Metric</th><th>Trend</th><th>Value</th></tr></thead>\n  <tbody>\n    <tr><td>Revenue</td><td><dj-sparkline id="rev" type="area" marker></dj-sparkline></td><td>$74k</td></tr>\n    <tr><td>Signups</td><td><dj-sparkline id="signups" type="bar"></dj-sparkline></td><td>1,204</td></tr>\n    <tr><td>Churn</td><td><dj-sparkline id="churn" style="--dj-sparkline-color: var(--dj-color-danger-600, #dc2626)"></dj-sparkline></td><td>2.1%</td></tr>\n  </tbody>\n</table>\n<script type="module">\n  import "@dojo-ng/chart";\n  document.getElementById("rev").data = [42, 50, 47, 61, 58, 70, 74];\n  document.getElementById("signups").data = [180, 240, 90, 310, 260, 340, 300];\n  document.getElementById("churn").data = [3.4, 3.1, 2.9, 2.6, 2.4, 2.2, 2.1];\n</script>'),
-  ("Streaming: appendData and push", "`appendData(rows)` on `<dj-chart>` (cartesian types) and `push(value)` on `<dj-sparkline>` append without rebuilding `data` yourself. Multiple calls within the same animation frame batch into one update. Set `max-points` so old points fall off the front as new ones arrive, sliding the window. A streamed `appendData` update skips the bar/enter transitions (a live append should snap into place, not animate); `<dj-sparkline>` has no transitions to begin with, so `push` needs no equivalent.",
+  ("Streaming: appendData and push", "`appendData(rows)` on `<dj-chart>` (cartesian types) and `push(value)` on `<dj-sparkline>` add new data without rebuilding `data` yourself.\n\n- Several calls in the same animation frame become one update.\n- Set `max-points` to drop old points from the front as new ones arrive, so the window slides.\n- Appended data snaps into place with no enter animation.",
    '<div style="width: 480px; height: 220px">\n  <dj-chart id="live" type="line" category-key="t" label="Live requests/sec" max-points="20" show-grid y-label="req/s"></dj-chart>\n</div>\n<dj-sparkline id="spark" max-points="20" label="Live requests/sec"></dj-sparkline>\n<script type="module">\n  import "@dojo-ng/chart";\n  const live = document.getElementById("live");\n  const spark = document.getElementById("spark");\n  live.series = [{ key: "value", label: "req/s" }];\n  live.data = [];\n  let t = 0;\n  const timer = setInterval(() => {\n    const value = 40 + Math.round(Math.random() * 20);\n    live.appendData([{ t: t++, value }]);\n    spark.push(value);\n  }, 1000);\n  // clearInterval(timer) to stop.\n</script>'),
-  ("Canvas escape hatch for very large series", "`renderer=\"canvas\"` (default `svg`) draws series marks on a `<canvas>` instead of SVG nodes. Reach for it once a series runs into the thousands of points and SVG node count starts costing frame time — a guideline, not a hard threshold; try `svg` first and switch only if it's actually slow. Honored only for `line`, `area`, and `scatter`: `bar`, `stacked`, pie/donut, `bubble`, and a combo where any series overrides to `bar` all stay `svg` (one console warning if you ask for canvas on one of those). Axes, grid, legend, tooltip, and the brush strip are untouched either way — tooltips and legend-toggle keep working over a canvas chart. Under `forced-colors: active` the chart falls back to `svg` automatically (a canvas can't honor `CanvasText` on its own); that's a deliberate fallback, not a bug, so it warns nothing. Line and area get the real node-count win; scatter's hover is wired to its point marks, so canvas mode keeps those (now invisible) hit-target circles in the DOM even though canvas draws the visible dots — scatter's own node count isn't reduced yet. CAUTION: canvas only replaces the MARKS. `category-key` charts render one x-axis tick label and one invisible hit-band per UNIQUE category, unthinned, regardless of renderer — a series with tens of thousands of unique categories can make a browser tab unresponsive on that scaffolding alone, canvas or not. Keep unique-category counts in the low thousands; a numeric `x-key` chart (`scatter`) doesn't have this specific ceiling (its axis ticks are a fixed count either way), though it keeps per-point hit circles of its own.",
+  ("Canvas escape hatch for very large series", "`renderer=\"canvas\"` (the default is `svg`) draws the series marks on a `<canvas>` instead of as SVG elements. Try it when a series has thousands of points and drawing becomes slow. Start with `svg`, and switch only if you see a problem.\n\n- Only `line`, `area`, and `scatter` use canvas. `bar`, `stacked`, pie, donut, `bubble`, and a combo with a bar series stay `svg`, with one console warning.\n- Axes, grid, legend, tooltips, legend toggles, and the brush work the same with either renderer.\n- With `forced-colors: active`, the chart uses `svg`, because a canvas cannot follow the system colors. This fallback logs no warning.\n- Line and area charts gain the most. A scatter chart keeps one invisible hover target per point, so its element count does not go down.\n\nCanvas replaces only the marks. A `category-key` chart still renders one axis label and one invisible hover band for each unique category, with either renderer. Tens of thousands of unique categories can make the browser tab stop responding, so keep the count in the low thousands. A numeric `x-key` chart (`scatter`) does not have this limit.",
    '<div style="width: 480px; height: 280px">\n  <dj-chart id="cv" type="line" category-key="i" label="2,000-point line" renderer="canvas" show-grid></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  const cv = document.getElementById("cv");\n  cv.series = [{ key: "v", label: "Value" }];\n  cv.data = Array.from({ length: 2000 }, (_, i) => ({ i, v: Math.sin(i / 200) * 50 + 50 }));\n</script>'),
-  ("Plugin seam: extending the plot with your own marks", "`plugins` (default `[]`) lets code outside the package add marks, panes, tooltip content, legend entries, and accessible-table columns, with the core knowing nothing about any of it — build one with `defineChartPlugin` (also exported from `@dojo-ng/chart`). A plugin can draw inside the plot (`renderUnder`/`renderOver`, sharing the same scales and coordinate space the core series use), reserve a strip below the plot for its own value scale (`panes`), widen the y-domain to fit what it draws (`domain`), replace the tooltip body for a category, and contribute `legendItems`/`tableRows` so anything it draws stays as accessible as a built-in mark. A chart with NO core `series` at all is a fully supported shape — a candlestick chart draws everything through plugins; see [`@dojo-ng/chart-financial`](../chart-financial/README.md) for real candlestick, volume, indicator, and crosshair plugins built this way. `renderer=\"canvas\"` and plugins don't mix (one console warning, falls back to `svg`), since a plugin's marks are SVG.",
+  ("Plugin seam: extending the plot with your own marks", "`plugins` (default `[]`) lets your code add to a chart without changing the package. Build a plugin with `defineChartPlugin`, which `@dojo-ng/chart` also exports. A plugin can:\n\n- Draw inside the plot (`renderUnder` and `renderOver`), with the same scales the built-in series use.\n- Add a pane below the plot with its own value scale (`panes`).\n- Widen the value range to fit what it draws (`domain`).\n- Replace the tooltip content for a category.\n- Add legend entries (`legendItems`) and columns in the accessible data table (`tableRows`), so its marks are as accessible as the built-in ones.\n\nA chart with no built-in `series` at all is supported. [`@dojo-ng/chart-financial`](../chart-financial/README.md) draws candlesticks, volume, indicators, and a crosshair this way. Plugins draw SVG, so a chart with plugins ignores `renderer=\"canvas\"` and logs one warning.",
    '<div style="width: 480px; height: 280px">\n  <dj-chart id="pg" type="line" category-key="day" label="Reading with an alert threshold" show-grid y-label="Value"></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  import { defineChartPlugin } from "@dojo-ng/chart";\n  import { svg } from "lit";\n  const thresholdPlugin = (value, label) => defineChartPlugin({\n    name: "threshold",\n    domain: () => [value, value],\n    renderOver: (ctx) => svg`<line x1="0" y1="${ctx.scales.y(value)}" x2="${ctx.inner.width}" y2="${ctx.scales.y(value)}" stroke="var(--dj-color-danger-600, #dc2626)" stroke-dasharray="4 2"></line>`,\n    legendItems: () => [{ label, color: "var(--dj-color-danger-600, #dc2626)" }],\n  });\n  const pg = document.getElementById("pg");\n  pg.series = [{ key: "reading", label: "Reading" }];\n  pg.plugins = [thresholdPlugin(80, "Alert threshold")];\n  pg.data = [\n    { day: "Mon", reading: 42 },\n    { day: "Tue", reading: 65 },\n    { day: "Wed", reading: 88 },\n    { day: "Thu", reading: 71 },\n  ];\n</script>'),
-  ("Missing values: gap, connect, or zero", "A `null`, `undefined`, or non-numeric cell is a MISSING value, not a real zero. `missing` (default `\"gap\"`, per-series override on `ChartSeries.missing`) controls how it draws: `\"gap\"` breaks the line/area and omits the marker, bar, and point at that spot (the category's hit-band and tooltip row still work there, showing an em dash with a localized \"no value\" label — never a silent 0); `\"connect\"` drops the row before the line/area is drawn, so the line spans the hole with one continuous segment (bars, markers, and points are still omitted, since there is no value to place one at); `\"zero\"` treats it as a real zero, which is what every chart did before this property existed. **This is a behavior change: a chart whose data already carries nulls or undefined cells now draws a gap where it used to silently draw a zero.** If you were relying on the old arithmetic, set `missing=\"zero\"` and nothing else changes.",
+  ("Missing values: gap, connect, or zero", "A `null`, `undefined`, or non-numeric cell is a missing value, not a zero. `missing` sets how it is drawn. The default is `\"gap\"`, and each series can override it with `ChartSeries.missing`.\n\n- `\"gap\"` breaks the line or area and leaves out the marker, bar, or point. The tooltip still works there and shows a dash with a localized \"no value\" label.\n- `\"connect\"` draws the line or area straight across the hole. Bars, markers, and points are still left out, because there is no value to draw.\n- `\"zero\"` draws the value as zero. Charts did this before `missing` existed, so set `missing=\"zero\"` if your chart depends on that.",
    '<div style="width: 480px; height: 280px">\n  <dj-chart id="mv" type="line" markers category-key="day" label="Sensor reading" show-grid y-label="Value"></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  const mv = document.getElementById("mv");\n  mv.series = [{ key: "reading", label: "Reading" }];\n  // day 3\'s sensor dropped out: null, not a real 0. The default missing="gap" breaks the\n  // line there instead of drawing a false reading; missing="connect" would span it with a\n  // straight segment; missing="zero" restores the older behavior of plotting it as 0.\n  mv.data = [\n    { day: "Mon", reading: 42 },\n    { day: "Tue", reading: 45 },\n    { day: "Wed", reading: null },\n    { day: "Thu", reading: 48 },\n    { day: "Fri", reading: 50 },\n  ];\n  // mv.missing = "connect";\n  // mv.missing = "zero"; // the old behavior, if some consumer depended on it\n</script>'),
-  ("Point labels", "`point-labels` (per-series override on `ChartSeries.pointLabels`) draws a label at each plotted point/bar-end/slice: above the point for line, area, scatter, and bubble; above a grouped bar's end (below it for a negative value) or centered in a stacked segment; outside the arc for pie/donut. Label text is `fmtY(value)` by default, so `numberFormat`/`formatY` apply with no extra wiring — set `formatPoint(value, row, series)` for something else (a name from another column, a share of total); when set, the accessible table gets the same formatted text mirrored into the affected cells (in addition to the raw number, which stays first), since it would otherwise be sighted-only information. No label is drawn for a missing (gapped) value. Collision avoidance is an ESTIMATE, not real text measurement (`getBBox` costs a layout per label) — width from character count times a per-character factor, placed in category order, skipping anything that would overlap a label already placed; above roughly 150 labels the whole set is skipped rather than drawing an unreadable smear of overlapping numbers. Three tokens style the text: `--dj-chart-label-size`, `--dj-chart-label-color`, and `--dj-chart-label-halo` (the halo is a stroke painted behind the fill so a label stays legible over a colored mark or the grid).",
+  ("Point labels", "`point-labels` draws a value label at each point, bar end, or slice. Each series can override it with `ChartSeries.pointLabels`.\n\n- Line, area, scatter, and bubble: above the point. Grouped bars: past the end of the bar. Stacked bars: centered in the segment. Pie and donut: outside the slice.\n- The text uses the same formatting as the value axis, so `numberFormat` and `formatY` apply. For other text, such as a name from another column, set `formatPoint(value, row, series)`. The accessible data table then shows the same text after the raw number.\n- A missing value gets no label.\n- Labels that would overlap an earlier label are skipped. The overlap check estimates text width from the number of characters. Above about 150 labels, no labels are drawn.\n- Style the text with `--dj-chart-label-size`, `--dj-chart-label-color`, and `--dj-chart-label-halo`. The halo is an outline behind the text that keeps it readable over marks and grid lines.",
    '<div style="width: 480px; height: 280px">\n  <dj-chart id="pl" type="bar" point-labels category-key="month" label="Revenue" show-grid y-label="USD (k)"></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  const pl = document.getElementById("pl");\n  pl.series = [{ key: "revenue", label: "Revenue" }];\n  pl.data = [\n    { month: "Jan", revenue: 42 },\n    { month: "Feb", revenue: 50 },\n    { month: "Mar", revenue: 47 },\n    { month: "Apr", revenue: 61 },\n  ];\n  // A name instead of the number, mirrored into the accessible table automatically:\n  // pl.formatPoint = (value, row) => row.month + " revenue";\n</script>'),
-  ("Logarithmic value scale", "`y-scale=\"log\"` (a second, `y-scale-right`, does the same for the secondary axis) switches the value axis to `scaleLog` — it names the VALUE axis regardless of `orientation`, so it drives horizontal bars' x-axis too. A logarithmic axis never includes zero: its domain is `[smallest positive value, largest value]`, then `.nice()` (which snaps to the nearest DECADE, not an arbitrary round number). A zero or a negative value has no position on a log axis, so it's always a gap there — the line/area breaks, the bar is omitted, the marker is absent — even under `missing=\"zero\"`, which cannot resurrect it; the value still shows as its real number in the tooltip and the accessible table, distinct from a true missing value's em dash. Tick labels are thinned decade-first: the decades within the domain always show, and the 2×/5× multiple of each is added only while every label still clears a 24px minimum gap, so a tall chart gets more ticks than a short one automatically. `stacked` and `y-scale=\"log\"` together are refused (one console warning) and render linear instead — a stacked segment's drawn height on a log axis is a ratio, not a quantity, which defeats the one thing a stacked chart is for. Bars alone ARE allowed on log; a bar's length there reads as a ratio to the axis floor, not an absolute quantity, which is a documented reading rather than a limitation. Out of scope: `dj-sparkline` (no axis to read), the brush overview strip (its own local shape-only mapping), and a logarithmic x-axis for scatter/bubble.",
+  ("Logarithmic value scale", "`y-scale=\"log\"` makes the value axis logarithmic. `y-scale-right` does the same for the secondary axis. It always applies to the value axis, so on horizontal bars it changes the x-axis.\n\n- A log axis never includes zero. It runs from the smallest positive value to the largest value, rounded out to whole powers of 10.\n- Zero and negative values have no position on a log axis, so they are always drawn as gaps, even with `missing=\"zero\"`. The tooltip and the data table still show the real number.\n- Tick labels show each power of 10 in the range. The 2 and 5 multiples are added when there is room, so a tall chart gets more ticks than a short one.\n- `stacked` with a log axis is not allowed. The chart logs one warning and uses a linear axis.\n- Bars are allowed. On a log axis, a bar's length shows a ratio to the bottom of the axis, not an amount.\n- Not supported: log scales on `dj-sparkline` and the brush strip, and a log x-axis for scatter and bubble charts.",
    '<div style="width: 480px; height: 280px">\n  <dj-chart id="lg" type="line" markers category-key="day" label="Sensor reading" show-grid y-label="Value" y-scale="log"></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  const lg = document.getElementById("lg");\n  lg.series = [{ key: "reading", label: "Reading" }];\n  // day 3 read exactly 0 — not a missing value, but a real reading with no position on a log\n  // axis, so it draws as a gap here too (distinct from a missing cell in the accessible table).\n  lg.data = [\n    { day: "Mon", reading: 4 },\n    { day: "Tue", reading: 40 },\n    { day: "Wed", reading: 0 },\n    { day: "Thu", reading: 400 },\n    { day: "Fri", reading: 4000 },\n  ];\n</script>'),
  ],
  "three-column-layout": [
@@ -507,7 +493,7 @@ EXAMPLES = {
    '<style>\n  dj-transition[state="entering"] { animation: fade-in 200ms both; }\n  dj-transition[state="leaving"]  { animation: fade-out 200ms both; }\n  @keyframes fade-in  { from { opacity: 0; transform: translateY(4px); } }\n  @keyframes fade-out { to   { opacity: 0; } }\n</style>\n<button id="toggle">Toggle</button>\n<dj-transition id="panel" show>\n  <section>Now you see me.</section>\n</dj-transition>\n<script type="module">\n  import "@dojo-ng/transition";\n  const panel = document.getElementById("panel");\n  document.getElementById("toggle").addEventListener("click", () => (panel.show = !panel.show));\n  panel.addEventListener("dj-after-leave", () => console.log("left"));\n</script>'),
  ],
  "transition-group": [
-  ("Stagger a list in", "Wrap each item in a `dj-transition` and let the group drive them with a delay. The effect lives on the children; the group emits one `dj-after-enter` when all have finished.",
+  ("Stagger a list in", "Wrap each item in a `dj-transition`. The group shows them one after another and emits one `dj-after-enter` when all have finished.",
    '<style>\n  dj-transition[state="entering"] { animation: fade-in 200ms both; }\n  @keyframes fade-in { from { opacity: 0; transform: translateY(6px); } }\n</style>\n<button id="reveal">Reveal</button>\n<ul>\n  <dj-transition-group id="grp" stagger="80">\n    <dj-transition><li>One</li></dj-transition>\n    <dj-transition><li>Two</li></dj-transition>\n    <dj-transition><li>Three</li></dj-transition>\n  </dj-transition-group>\n</ul>\n<script type="module">\n  import "@dojo-ng/transition"; import "@dojo-ng/transition-group";\n  const grp = document.getElementById("grp");\n  document.getElementById("reveal").addEventListener("click", () => (grp.show = !grp.show));\n</script>'),
  ],
 }
@@ -546,6 +532,13 @@ def _list_item(name, description="", extra=""):
     return f"{name}: {tail}" if tail else name
 
 
+def _fence(code):
+    """A fenced code block for an example: `html` when the code is markup, `js` when it is a
+    plain module (the dnd, store, i18n, and similar examples)."""
+    lang = "html" if code.lstrip().startswith("<") else "js"
+    return f"```{lang}\n{code}\n```\n"
+
+
 def component_readme(pkg, s):
     tag = G.tag_of(pkg)
     doc = G.classdoc(s)
@@ -582,7 +575,7 @@ def component_readme(pkg, s):
         _, d0, code0 = exs[0]
         if d0:
             o.append(d0 + "\n")
-        o.append("```html\n" + code0 + "\n```\n")
+        o.append(_fence(code0))
     else:
         o.append(f"```html\n<script type=\"module\">import \"@dojo-ng/{pkg}\";</script>\n<{tag}></{tag}>\n```\n")
     if sections or note_sections:
@@ -624,7 +617,7 @@ def component_readme(pkg, s):
             o.append(f"### {title}\n")
             if d:
                 o.append(d + "\n")
-            o.append("```html\n" + code + "\n```\n")
+            o.append(_fence(code))
     o.append("## Theming\n")
     o.append("Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.\n")
     if any(sec.startswith("#### Accessibility") for sec in sections):
@@ -661,7 +654,7 @@ def infra_readme(pkg):
         _, d0, code0 = exs[0]
         if d0:
             o.append(d0 + "\n")
-        o.append("```html\n" + code0 + "\n```\n")
+        o.append(_fence(code0))
     if note_sections:
         o.append(G.md_safe(G.shift_headings("\n\n".join(note_sections), "## ")) + "\n")
     if exs:
@@ -671,16 +664,26 @@ def infra_readme(pkg):
                 o.append(f"### {title}\n")
                 if d:
                     o.append(d + "\n")
-                o.append("```html\n" + code + "\n```\n")
-    doc = INFRA_DOC.get(pkg)
-    if doc:
-        o.append(f"## Usage\n\nSee the [Dojo NG documentation](../../README.md) ({doc}) for design and usage details.\n")
+                o.append(_fence(code))
     return "\n".join(o)
 
 
 # Data-grid plugin packages: notes + worked examples (support packages, rendered by infra_readme).
 NOTES.update({
- "dnd": "The keyboard/menu path in a consuming component is the accessibility contract (WCAG 2.5.7); drag is enhancement layered on top. The pointer core works inside shadow roots and on touch, mouse, and pen alike, with no dependency. Drops are CONTROLLED: the zone calls `onMove` and the consumer applies the change.",
+ "dnd": """
+Drag and drop for Dojo NG components, built on pointer events.
+
+#### How it works
+- It works inside shadow roots and with touch, mouse, and pen. It has no dependencies.
+- Drops are controlled: the zone calls `onMove`, and your code applies the change.
+- Zones that share a `group` accept items from each other.
+
+#### Accessibility
+- Drag is an enhancement. A component that uses dnd must also offer a keyboard or menu way
+  to move items, as WCAG 2.5.7 requires.
+- For a component with no move controls of its own, `keyboardGrabMode` adds keyboard moves.
+  See the example below.
+""",
  "data-grid-edit": """
 Inline cell editing for `<dj-data-grid>`.
 
@@ -801,7 +804,7 @@ Custom cell content for `<dj-data-grid>`: a column can render any Lit content, s
 })
 EXAMPLES.update({
  "dnd": [
-  ("Add a drag zone to a component", "In a Lit component, construct a `DragZoneController` over the item container. Drops are controlled — apply the change in `onMove`. Zones sharing a `group` accept transfers from each other.",
+  ("Add a drag zone to a component", "In a Lit component, create a `DragZoneController` over the item container, and apply each move in `onMove`.",
    """import { DragZoneController } from "@dojo-ng/dnd";
 
 class MyList extends LitElement {
@@ -815,7 +818,7 @@ class MyList extends LitElement {
     },
   });
 }"""),
-  ("Keyboard grab mode", "For components without their own move UI, wire `keyboardGrabMode` to a keydown handler: space grabs the focused item, arrows move it, space drops, escape cancels. Announcements go through your callback.",
+  ("Keyboard grab mode", "Connect `keyboardGrabMode` to a keydown handler. Your `announce` callback receives the messages for a live region.\n\n- Space picks up the focused item, and the arrow keys move it.\n- Space drops the item, and Escape cancels the move.",
    """import { keyboardGrabMode } from "@dojo-ng/dnd";
 
 const onKeydown = keyboardGrabMode({
@@ -1081,7 +1084,6 @@ const onKeydown = keyboardGrabMode({
 })
 
 NOTES.update({
- "audio": "Wraps the native `HTMLAudioElement` (no vendor engine — audio needs none): the `<audio>` is ours and hidden, the UI is dj- controls, so keyboard support comes free from the button and slider. Give it a `label` for an accessible name. The play/pause state follows the media's real `play`/`pause` events, not the button click, so it stays correct even if you drive playback through `media()`. `dj-time` is throttled to at most once per second; wire xAPI/analytics/resume-position as listeners on the events, not in the component. `media()` returns the raw audio element (advanced; no support implied).",
 })
 EXAMPLES.update({
  "audio": [
@@ -1449,7 +1451,6 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "color-picker": "An inline color picker: a 2D saturation/brightness area, a hue slider, an optional opacity slider (`alpha`), a text field, and optional `swatches`. Form-associated — it submits the formatted color string under `name`. There is no built-in trigger or popup by design; compose `dj-popup` to make a dropdown. The model is HSV internally; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`), so reading `value` after switching `format` returns the new representation. `swatches` is an array of color strings or `{ value, label }`. Emits `dj-change` (`{ value }`) on every user change, including during a drag (no separate input event). Named CSS colors are not parsed; alpha appears in the output only when the color is translucent or `alpha` is on. Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.",
 })
 EXAMPLES.update({
  "color-picker": [
@@ -1657,6 +1658,233 @@ EXAMPLES.update({
    '<dj-rich-text id="editor" label="Draft"></dj-rich-text>\n<script type="module">\n  import "@dojo-ng/rich-text";\n  import { defaultPlugins } from "@dojo-ng/rich-text";\n  import { createCriticMarkupPlugin } from "@dojo-ng/rich-text-criticmarkup";\n  const el = document.getElementById("editor");\n  el.plugins = [...defaultPlugins, createCriticMarkupPlugin({ suggesting: true })];\n  el.value = "The quick brown fox.";\n</script>'),
   ("Resolve CriticMarkup with no editor", "The grammar is a plain string API — parse and resolve marks from a server, a build step, or a CLI, with no Lexical/DOM dependency at all.",
    'import { parseMarks, acceptAll, declineAll } from "@dojo-ng/rich-text-criticmarkup";\n\nconst draft = "The {--old--}{++new++} plan is set.";\nacceptAll(draft);                        // "The new plan is set."\ndeclineAll(draft);                       // "The old plan is set."\nparseMarks(draft).map((m) => m.kind);    // ["deletion", "insertion"]'),
+ ],
+})
+
+# Foundation packages (store, context, i18n, dojo-element): what each one is for, and how to use it.
+NOTES.update({
+ "store": """
+Connects Lit components to an external store, so a component re-renders when the state it uses
+changes.
+
+#### What is in the package
+- `StoreController`: a Lit reactive controller. Pass a store and a selector. The host re-renders
+  only when the selected value changes (compared with `Object.is`).
+- `createStore`: re-exported from Zustand's vanilla build, for an app that does not have a store yet.
+- `ReadableStore`: the type the controller needs. Any object with `getState()` and
+  `subscribe(listener)` works, so you can use Zustand, Valtio, Nano Stores (with a small adapter),
+  or your own store.
+
+#### Observable interop
+- These helpers are for apps that already use RxJS or another library that follows the
+  `Symbol.observable` protocol. Nothing in this package needs RxJS.
+- `toObservable(store)`: an observable that emits the current state at once, then every change.
+- `fromObservable(input, initial)`: a `ReadableStore` that follows an observable. `initial` is
+  required, because an observable has no current value until it emits.
+- `ObservableController`: re-renders the host on every value from an observable.
+""",
+ "context": """
+Typed keys for sharing values down the DOM tree with the Context Protocol.
+
+A provider and its consumers import the same key, so they connect even when they come from
+different packages or bundles. The keys use `Symbol.for`, so each key is the same everywhere.
+
+#### Keys
+- `storeContext`: the app's shared store, as a `ReadableStore` from `@dojo-ng/store`. Consumers
+  cast it to their own state type.
+- `localeContext`: the current BCP 47 locale string, such as `fr-CA`.
+
+#### Also exported
+- `createContext`, `ContextProvider`, `ContextConsumer`, `consume`, and `provide`, re-exported
+  from `@lit/context`, so you can import everything from one place.
+""",
+ "i18n": """
+Locale, formatting, and translated messages for Dojo NG components.
+
+There is no provider element. A component reads `lang` and `dir` from its nearest ancestor that
+sets them, then from the document, then from the default locale.
+
+#### Locale and direction
+- `getLocale(el)` and `getDir(el)` return the locale and direction that apply to an element.
+  They also look outside shadow roots.
+- `LocaleController` keeps a Lit component's `locale` and `dir` current, and re-renders the
+  component when either one changes.
+- `setDefaultLocale()` sets the locale to use when no `lang` is found. The default is `en`.
+- Only changes to `lang` and `dir` in the light DOM are observed. That is where they are usually set.
+
+#### Formatting
+- `formatDate`, `formatNumber`, `formatList`, and `plural` use the native `Intl` APIs and take
+  an explicit locale.
+- The `Intl` objects are cached by locale and options, because they are slow to create.
+- `format(template, params)` fills `{name}` placeholders.
+
+#### Messages
+- `messages` is the shared `MessageStore`. It keeps message bundles by namespace and locale.
+- A lookup tries the locale, then its base language, then the default locale, then `en`. For
+  example, `fr-CA` tries `fr-ca`, then `fr`, then `en`.
+- Every component registers its English strings under `en`, so it always has labels, even with
+  no translations loaded.
+- The built-in component strings use the `dj` namespace.
+- Register translations before the components render, or before you change `lang`. Registering
+  messages does not re-render components that are already on the page.
+
+#### Loaders
+- `staticLoader(data)` serves bundles that you include at build time.
+- `fetchLoader(pattern)` fetches one JSON file for each namespace and locale. The default pattern
+  is `/i18n/{ns}.{locale}.json`.
+- For your own transport or cache, write an object with a `load(namespace, locale)` method that
+  returns a promise of messages.
+""",
+ "dojo-element": """
+The base class for every Dojo NG component, plus shared helpers for building your own.
+
+#### DojoElement
+- It extends `LitElement`. Import it as the default export.
+- `emit(name, options)` dispatches a `CustomEvent` that bubbles and crosses shadow boundaries
+  (`composed`) by default.
+- `static define(tag)` registers the element. Registering the same tag again does nothing. If the
+  versions differ, it logs a warning instead of throwing an error.
+- `static dependencies` lists child elements to register when the element is created.
+
+#### Form controls
+- `FormControl(DojoElement)` is a mixin for form-associated controls.
+- A control inside a disabled `<fieldset>` or form is disabled too.
+- State is restored after back and forward navigation and after autofill.
+- Validity is mirrored onto the host as `data-dj-required`, `data-dj-valid`, `data-dj-invalid`,
+  `data-dj-user-valid`, and `data-dj-user-invalid`. The `user-` states turn on only after the
+  user has interacted with the control.
+
+#### Helpers
+- Focus: `trapTabKey`, `collectFocusables`, `firstFocusable`, `isFocusable`,
+  `deepActiveElement`, `isFocusWithin`, and `dismissOnFocusOut`.
+- `lockBodyScroll()` stops the page from scrolling behind a modal and returns a function that
+  unlocks it. Nested locks are counted.
+- `TokenFlagController` reads a true or false flag from a `--dj-*` custom property. The value
+  `1` means true.
+- `baseStyles` and `reducedMotion` are shared styles for component shadow roots.
+""",
+})
+EXAMPLES.update({
+ "store": [
+  ("Re-render on part of a store", "Create a store, then select the value a component uses.",
+   """import { LitElement, html } from "lit";
+import { createStore, StoreController } from "@dojo-ng/store";
+
+export const counter = createStore((set) => ({
+  count: 0,
+  increment: () => set((s) => ({ count: s.count + 1 })),
+}));
+
+class CountButton extends LitElement {
+  // Re-renders only when `count` changes.
+  #count = new StoreController(this, counter, (s) => s.count);
+
+  render() {
+    return html`<button @click=${() => counter.getState().increment()}>
+      Clicked ${this.#count.value} times
+    </button>`;
+  }
+}
+customElements.define("count-button", CountButton);"""),
+  ("Bridge to RxJS", "Turn an observable into a store, or a store into an observable.",
+   """import { from, interval } from "rxjs";
+import { fromObservable, toObservable } from "@dojo-ng/store";
+import { counter } from "./counter.js";
+
+// An observable as a store. Use it with StoreController or the context registry.
+const ticks = fromObservable(interval(1000), 0);
+ticks.getState(); // 0 until the first tick
+
+// A store as an observable. Use it with RxJS operators.
+from(toObservable(counter)).subscribe((state) => console.log(state.count));"""),
+ ],
+ "context": [
+  ("Share a store with descendants", "Provide the store once near the top of the page. Any descendant can consume it with the same key.",
+   """import { LitElement, html } from "lit";
+import { ContextProvider, ContextConsumer, storeContext } from "@dojo-ng/context";
+import { createStore, StoreController } from "@dojo-ng/store";
+
+const store = createStore(() => ({ user: "Ada" }));
+
+class AppShell extends LitElement {
+  #provider = new ContextProvider(this, { context: storeContext, initialValue: store });
+  render() {
+    return html`<user-name></user-name>`;
+  }
+}
+
+class UserName extends LitElement {
+  #user;
+  #consumer = new ContextConsumer(this, {
+    context: storeContext,
+    callback: (store) => {
+      this.#user = new StoreController(this, store, (s) => s.user);
+    },
+  });
+  render() {
+    return html`${this.#user?.value}`;
+  }
+}
+
+customElements.define("app-shell", AppShell);
+customElements.define("user-name", UserName);"""),
+ ],
+ "i18n": [
+  ("Translate the built-in strings", "Register French strings for the `dj` namespace, then set `lang`. Components on the page re-render in French.",
+   """<dj-alert closable>Enregistré.</dj-alert>
+<script type="module">
+  import "@dojo-ng/alert";
+  import { messages } from "@dojo-ng/i18n";
+  messages.register("dj", "fr", { close: "Fermer" });
+  document.documentElement.lang = "fr";
+</script>"""),
+  ("Load translations from JSON files", "Set a loader, load the bundle, then switch `lang`.",
+   """import { messages, fetchLoader } from "@dojo-ng/i18n";
+
+messages.setLoader(fetchLoader("/i18n/{ns}.{locale}.json"));
+await messages.load("dj", "de"); // fetches /i18n/dj.de.json
+document.documentElement.lang = "de";"""),
+  ("Format in your own component", "`LocaleController` gives the component its locale and re-renders it when `lang` changes.",
+   """import { LitElement, html } from "lit";
+import { LocaleController, formatDate, plural } from "@dojo-ng/i18n";
+
+class VisitSummary extends LitElement {
+  static properties = { when: { attribute: false }, count: { type: Number } };
+  #i18n = new LocaleController(this);
+
+  render() {
+    const { locale } = this.#i18n;
+    return html`${formatDate(this.when, locale, { dateStyle: "medium" })}:
+      ${plural(locale, this.count, { one: "{count} visit", other: "{count} visits" })}`;
+  }
+}
+customElements.define("visit-summary", VisitSummary);"""),
+ ],
+ "dojo-element": [
+  ("Build a component on DojoElement", "Extend the base class, emit events with `emit()`, and register the tag with `define()`.",
+   """import DojoElement from "@dojo-ng/dojo-element";
+import { html } from "lit";
+
+export class MyGreeting extends DojoElement {
+  static properties = { name: {} };
+
+  render() {
+    return html`<button @click=${() => this.emit("my-greet", { detail: { name: this.name } })}>
+      Hello, ${this.name}
+    </button>`;
+  }
+}
+MyGreeting.define("my-greeting");"""),
+  ("Style invalid fields", "Form controls mirror their validity onto the host, so page CSS can react to it. Here a hint turns red after the user leaves the field invalid.",
+   """<style>
+  .field:has(dj-text-input[data-dj-user-invalid]) .hint {
+    color: var(--dj-color-danger-600);
+  }
+</style>
+<div class="field">
+  <dj-text-input label="Email" type="email" required></dj-text-input>
+  <p class="hint">Enter an address like name@example.com.</p>
+</div>"""),
  ],
 })
 

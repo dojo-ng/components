@@ -22,14 +22,32 @@ export type Swatch = string | { value: string; label?: string };
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, n));
 
 /**
- * `<dj-color-picker>` — an inline color picker with a 2D saturation/brightness area, a hue slider,
- * an optional opacity slider, a text field, and optional swatches. Form-associated: it submits the
- * formatted color string under `name`. There is no built-in trigger or popup — compose `dj-popup`
- * to make it a dropdown.
+ * `<dj-color-picker>` — an inline color picker.
  *
- * The internal model is HSV + alpha; `value` is a color STRING formatted through `format`
- * (`hex`/`rgb`/`hsl`). Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.
- * Event: `dj-change` (`{ value }`) on every user-initiated change, including during a drag.
+ * It has a saturation and brightness area, a hue slider, an optional opacity slider (`alpha`),
+ * a text field, and optional `swatches`.
+ *
+ * #### Value and format
+ * - `value` is a color string in the `format` you choose: `hex`, `rgb`, or `hsl`.
+ * - The internal model is HSV plus alpha. After you change `format`, reading `value` returns
+ *   the new representation.
+ * - Alpha appears in the output only when the color is translucent or `alpha` is on.
+ * - Named CSS colors, such as `rebeccapurple`, are not parsed.
+ * - `dj-change` (`{ value }`) fires on every change the user makes, including during a drag.
+ *   There is no separate input event.
+ *
+ * #### Forms
+ * - The picker is form-associated. It submits the formatted color string under `name`.
+ *
+ * #### Swatches
+ * - `swatches` is an array of color strings or `{ value, label }` objects.
+ *
+ * #### Dropdowns
+ * - There is no built-in trigger button or popup. Put the picker in a `dj-popup` to make a
+ *   dropdown.
+ *
+ * Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.
+ * Events: `dj-change` (`{ value }`) on every user-initiated change, including during a drag.
  *
  * @cssprop [--dj-color-picker-width=240px] - Overall width of the inline panel.
  */

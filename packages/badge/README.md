@@ -4,11 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Presentational: it carries no ARIA role. When a badge shows a count for a control (e.g. an unread count on a button), put the accessible name on the CONTROL — `aria-label="Notifications, 4 unread"` — not on the badge, so assistive tech reads the meaning rather than a bare number.
-
-Content is the default slot.
-
-Presentational only — a badge has no ARIA role. When it shows a count for a control (an unread count on a button, say), put the accessible name on the CONTROL (`aria-label="Notifications, 4 unread"`), not on the badge, so assistive tech reads the meaning rather than a bare number. Variant colors reuse the theme's semantic `--dj-color-*-600` scales; override a single badge with `--dj-badge-background` / `--dj-badge-color`.
+Put the content in the default slot. Set `variant` for the color and `pill` for fully rounded ends.
 
 ## Install
 
@@ -29,6 +25,18 @@ Import the package to register the custom element, then use the tag.
 <dj-badge variant="warning">Warning</dj-badge>
 <dj-badge variant="danger" pill>3</dj-badge>
 ```
+
+## Accessibility
+
+- A badge is presentational and has no ARIA role.
+- When a badge shows a count for a control, such as an unread count on a button, put the accessible name on the control, not on the badge: `aria-label="Notifications, 4 unread"`. Assistive technology then reads the meaning, not a bare number.
+
+## Colors
+
+- Each variant uses the theme's semantic `--dj-color-*-600` scale.
+- To change one badge, set `--dj-badge-background` and `--dj-badge-color` on it.
+
+Content is the default slot.
 
 ## Properties
 
@@ -70,7 +78,7 @@ Put the accessible name on the control, not the badge.
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.
 
-## Accessibility and i18n
+## Localization
 
 Follows the project's WCAG 2.2 AA and localization conventions.
 

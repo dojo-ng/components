@@ -4,11 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-It sits in the page flow (unlike the transient, floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a persistent state next to the content it concerns.
-
-An alert written in markup shows by default (`open`); closing it sets `open` false and it takes no space. Info/success announce politely (`role="status"`); warning/danger announce assertively (`role="alert"`).
-
-An inline status banner that sits in the page flow — distinct from `dj-snackbar` (transient, floating) and `dj-result` (full-page). It shows by default (`open`); `close()` hides it and emits `dj-close`. info/success announce politely (`role="status"`), warning/danger assertively (`role="alert"`). Each variant has a default glyph; override it via the `icon` slot. Add `closable` for a dismiss button (its label is the localized `close` key). Variant colors reuse the theme's semantic tint/ink scales; override one alert with `--dj-alert-background` / `--dj-alert-color` / `--dj-alert-accent-color`.
+It sits in the page flow, next to the content it concerns. For a short message that floats and goes away, use `dj-snackbar`. For a full-page outcome, use `dj-result`.
 
 ## Install
 
@@ -28,6 +24,19 @@ Each variant has a default glyph and live-region role.
 <dj-alert variant="warning">Your trial ends in 3 days.</dj-alert>
 <dj-alert variant="danger">Payment failed. Update your card.</dj-alert>
 ```
+
+## Showing and closing
+
+- An alert in markup shows by default (`open` is true).
+- `close()` hides it and emits `dj-close`. A closed alert takes no space.
+- Add `closable` for a close button. Its label is the localized `close` message.
+
+## Variants
+
+- `info` and `success` announce politely (`role="status"`).
+- `warning` and `danger` announce immediately (`role="alert"`).
+- Each variant has a default icon. Replace it with the `icon` slot.
+- Colors come from the theme's semantic scales. To change one alert, set `--dj-alert-background`, `--dj-alert-color`, and `--dj-alert-accent-color` on it.
 
 ## Properties
 

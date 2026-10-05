@@ -5,12 +5,14 @@ import DojoElement from "@dojo-ng/dojo-element";
 export type ThemeName = "light" | "dark" | "auto";
 
 /**
- * `<dj-theme theme="dark">` — scopes a theme to a subtree. It sets `data-dj-theme` on
- * itself so the token rules in `theme.css` apply, and those tokens inherit through the
- * slot into descendants and their shadow roots. `auto` removes the attribute so the
- * subtree inherits the ambient theme (or the OS via prefers-color-scheme at the root).
+ * `<dj-theme>` — scopes a theme to part of the page.
  *
- * Requires `theme.css` to be loaded once at the page level.
+ * Set `theme` to `light` or `dark`. dj-theme sets `data-dj-theme` on itself, so the token rules
+ * in `theme.css` apply, and the tokens inherit into descendants and their shadow roots.
+ *
+ * - `auto` removes the attribute. The subtree then follows the surrounding theme, or the
+ *   operating system setting at the page root.
+ * - Load `theme.css` once for the page.
  */
 export class DjTheme extends DojoElement {
 	static override styles = css`

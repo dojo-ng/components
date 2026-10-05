@@ -91,7 +91,7 @@
           "name": "DjAlert",
           "customElement": true,
           "tagName": "dj-alert",
-          "description": "an inline status banner. It sits in the page flow (unlike the transient, floating `dj-snackbar`, and unlike the full-page `dj-result`); use it to call out a persistent state next to the content it concerns.\n\nAn alert written in markup shows by default (`open`); closing it sets `open` false and it takes no space. Info/success announce politely (`role=\"status\"`); warning/danger announce assertively (`role=\"alert\"`).",
+          "description": "an inline status banner.\n\nIt sits in the page flow, next to the content it concerns. For a short message that floats and goes away, use `dj-snackbar`. For a full-page outcome, use `dj-result`.\n\n#### Showing and closing\n\n- An alert in markup shows by default (`open` is true).\n- `close()` hides it and emits `dj-close`. A closed alert takes no space.\n- Add `closable` for a close button. Its label is the localized `close` message.\n\n#### Variants\n\n- `info` and `success` announce politely (`role=\"status\"`).\n- `warning` and `danger` announce immediately (`role=\"alert\"`).\n- Each variant has a default icon. Replace it with the `icon` slot.\n- Colors come from the theme's semantic scales. To change one alert, set `--dj-alert-background`, `--dj-alert-color`, and `--dj-alert-accent-color` on it.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -241,7 +241,7 @@
           "name": "DjAudio",
           "customElement": true,
           "tagName": "dj-audio",
-          "description": "a themed audio player wrapping the native `HTMLAudioElement`. The `<audio>` element is ours (hidden in the shadow root); the UI is dj- controls: a play/pause `<dj-button>` whose icon and localized label follow the media's real `play`/`pause` events (not the click, so the button stays correct if the media is driven through `media()`), a seek `<dj-slider>` whose max is set from the media duration and whose value tracks playback, and a current/total time readout. No vendor engine \u2014 audio needs none.",
+          "description": "a themed audio player.\n\nIt wraps the native `HTMLAudioElement`, hidden in the shadow root, with Dojo NG controls: a play/pause button, a seek slider, and a readout of the current and total time. It needs no third-party player.\n\n#### Accessibility\n\n- Give the player a `label`. It becomes the accessible name.\n- Keyboard support comes from the button and the slider.\n\n#### Playback state\n\n- The play/pause button follows the media's real `play` and `pause` events, not the click. It stays correct when you control playback through `media()`.\n- The seek slider's maximum comes from the media duration, and its value follows playback.\n\n#### Events and analytics\n\n- `dj-time` fires at most once per second.\n- Put analytics, xAPI statements, and saved resume positions in your own event listeners, not in the component.\n- `media()` returns the raw audio element for advanced use. Code that uses it is not supported.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -531,7 +531,7 @@
           "name": "DjBadge",
           "customElement": true,
           "tagName": "dj-badge",
-          "description": "a small count or status label that decorates other content.\n\nPresentational: it carries no ARIA role. When a badge shows a count for a control (e.g. an unread count on a button), put the accessible name on the CONTROL \u2014 `aria-label=\"Notifications, 4 unread\"` \u2014 not on the badge, so assistive tech reads the meaning rather than a bare number.\n\nContent is the default slot.",
+          "description": "a small count or status label that decorates other content.\n\nPut the content in the default slot. Set `variant` for the color and `pill` for fully rounded ends.\n\n#### Accessibility\n\n- A badge is presentational and has no ARIA role.\n- When a badge shows a count for a control, such as an unread count on a button, put the accessible name on the control, not on the badge: `aria-label=\"Notifications, 4 unread\"`. Assistive technology then reads the meaning, not a bare number.\n\n#### Colors\n\n- Each variant uses the theme's semantic `--dj-color-*-600` scale.\n- To change one badge, set `--dj-badge-background` and `--dj-badge-color` on it.\n\nContent is the default slot.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -3306,7 +3306,7 @@
           "name": "DjColorPicker",
           "customElement": true,
           "tagName": "dj-color-picker",
-          "description": "an inline color picker with a 2D saturation/brightness area, a hue slider, an optional opacity slider, a text field, and optional swatches. Form-associated: it submits the formatted color string under `name`. There is no built-in trigger or popup \u2014 compose `dj-popup` to make it a dropdown.\n\nThe internal model is HSV + alpha; `value` is a color STRING formatted through `format` (`hex`/`rgb`/`hsl`). Parts: `area`, `thumb`, `hue`, `alpha`, `input`, `swatches`, `swatch`.",
+          "description": "an inline color picker.\n\nIt has a saturation and brightness area, a hue slider, an optional opacity slider (`alpha`), a text field, and optional `swatches`.\n\n#### Value and format\n\n- `value` is a color string in the `format` you choose: `hex`, `rgb`, or `hsl`.\n- The internal model is HSV plus alpha. After you change `format`, reading `value` returns the new representation.\n- Alpha appears in the output only when the color is translucent or `alpha` is on.\n- Named CSS colors, such as `rebeccapurple`, are not parsed.\n- `dj-change` (`{ value }`) fires on every change the user makes, including during a drag. There is no separate input event.\n\n#### Forms\n\n- The picker is form-associated. It submits the formatted color string under `name`.\n\n#### Swatches\n\n- `swatches` is an array of color strings or `{ value, label }` objects.\n\n#### Dropdowns\n\n- There is no built-in trigger button or popup. Put the picker in a `dj-popup` to make a dropdown.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -5258,7 +5258,7 @@
           "name": "DjIcon",
           "customElement": true,
           "tagName": "dj-icon",
-          "description": "a presentational icon. Supply a glyph either by `type` (a name registered via `registerIcon`, resolved from the SVG icon registry) or by slotting an inline `<svg>`. `alt-text` makes the icon meaningful to assistive tech; without it the icon is aria-hidden.",
+          "description": "a presentational icon.\n\nSupply a glyph in one of two ways: set `type` to the name of an icon registered with `registerIcon` or `registerIcons`, or slot an inline `<svg>`.\n\n#### Accessibility\n\n- Set `alt-text` when the icon carries meaning. It becomes the accessible name.\n- Without `alt-text`, the icon is hidden from assistive technology (`aria-hidden`).\n\n#### SVG requirements\n\n- A registered SVG must have a `viewBox`. dj-icon sizes a glyph by stretching it to fill the icon box, and an `<svg>` scales its artwork only when it has a `viewBox`.\n- An SVG without a `viewBox` gets a box of the right size, but its artwork is clipped or not scaled. `registerIcon` and `registerIcons` log one console warning for each such icon, and they do not change the SVG.\n- dj-icon's own sizing overrides any `width` or `height` attributes on a registered SVG.\n- A slotted inline `<svg>` follows the same rules.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -8022,7 +8022,7 @@
           "name": "DjSearchBox",
           "customElement": true,
           "tagName": "dj-search-box",
-          "description": "a search field: free text plus typed `key:value` filters. Typing a configured `key:` enters token mode; keys with `options` open a suggestion popup (pick to commit), keys without take a free-typed value committed by Enter or the terminating space (values may be `\"quoted\"` to hold spaces). A committed filter becomes a closeable `<dj-chip>` before the input; an unconfigured `word:` stays plain text. Backspace with the caret at the start removes the last chip. Read-only `query` = `{ text, tokens }`; set it with `setQuery`. Not form-associated.",
+          "description": "a search field for free text plus typed `key:value` filters.\n\nConfigure the filters with `keys`. Typing a configured key and a colon, such as `status:`, starts a filter.\n\n#### Filters\n\n- A key with `options` opens a suggestion popup. Pick an option to commit the filter.\n- A key without `options` takes a typed value. Enter or a space commits it. Put the value in quotes (`\"in progress\"`) to include spaces.\n- A committed filter becomes a chip before the input. Each chip has a close button.\n- A `word:` that is not a configured key stays plain text, with no popup, no chip, and no error.\n- Backspace with the caret at the start of the input removes the last chip.\n\n#### Reading and setting the query\n\n- `query` is read-only: `{ text, tokens }`.\n- `dj-query-change` fires when a filter or the committed text changes.\n- `dj-search` fires on Enter when no filter is being typed.\n- `setQuery()` sets the query from code. It does not emit an event.\n- The search box is not form-associated. Your app runs the search.\n\n#### The same grammar on a server\n\n- The tokenizer is the exported `parseQuery`, and `formatQuery` turns a query back into text. A backend can import both and parse the same syntax.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -10534,7 +10534,7 @@
           "name": "DjTheme",
           "customElement": true,
           "tagName": "dj-theme",
-          "description": "`<dj-theme theme=\"dark\">` \u2014 scopes a theme to a subtree. It sets `data-dj-theme` on itself so the token rules in `theme.css` apply, and those tokens inherit through the slot into descendants and their shadow roots. `auto` removes the attribute so the subtree inherits the ambient theme (or the OS via prefers-color-scheme at the root).\n\nRequires `theme.css` to be loaded once at the page level.",
+          "description": "scopes a theme to part of the page.\n\nSet `theme` to `light` or `dark`. dj-theme sets `data-dj-theme` on itself, so the token rules in `theme.css` apply, and the tokens inherit into descendants and their shadow roots.\n\n- `auto` removes the attribute. The subtree then follows the surrounding theme, or the operating system setting at the page root.\n- Load `theme.css` once for the page.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -11282,7 +11282,7 @@
           "name": "DjTransitionGroup",
           "customElement": true,
           "tagName": "dj-transition-group",
-          "description": "coordinates slotted `dj-transition` children, staggering their `show` toggles. When the group's `show` changes it drives each child's `show` in DOM order, child `i` after `i * stagger` ms, for both enter and leave. When every child has completed its phase it emits one group `dj-after-enter` (or `dj-after-leave`). v1 is stagger only: no FLIP/list-move animation and no `appear` forwarding (set `appear` on the children directly). Non-`dj-transition` slotted elements are ignored.",
+          "description": "staggers the `show` of its `dj-transition` children.\n\nThe effects live on the children. The group only sets each child's `show`, with a delay.\n\n#### How it works\n\n- When the group's `show` changes, it sets each child's `show` in DOM order. Child `i` starts after `i * stagger` milliseconds, for both enter and leave.\n- When every child has finished, the group emits one `dj-after-enter` or `dj-after-leave`.\n- Slotted elements that are not `dj-transition` are ignored.\n\n#### Not built\n\n- List-move (FLIP) animation.\n- Forwarding `appear` to the children. Set `appear` on each child instead.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
           "superclass": {
             "name": "DojoElement"
           },

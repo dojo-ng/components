@@ -1,12 +1,13 @@
 # @dojo-ng/theme
 
-`<dj-theme>` — `<dj-theme theme="dark">` — scopes a theme to a subtree.
+`<dj-theme>` — Scopes a theme to part of the page.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-It sets `data-dj-theme` on itself so the token rules in `theme.css` apply, and those tokens inherit through the slot into descendants and their shadow roots. `auto` removes the attribute so the subtree inherits the ambient theme (or the OS via prefers-color-scheme at the root).
+Set `theme` to `light` or `dark`. dj-theme sets `data-dj-theme` on itself, so the token rules in `theme.css` apply, and the tokens inherit into descendants and their shadow roots.
 
-Requires `theme.css` to be loaded once at the page level.
+- `auto` removes the attribute. The subtree then follows the surrounding theme, or the operating system setting at the page root.
+- Load `theme.css` once for the page.
 
 ## Install
 

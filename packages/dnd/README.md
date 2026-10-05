@@ -1,10 +1,8 @@
 # @dojo-ng/dnd
 
-Dojo NG drag-and-drop primitive (pointer-events core: shadow DOM + touch, no dependency)
+Drag and drop for Dojo NG components, built on pointer events.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-The keyboard/menu path in a consuming component is the accessibility contract (WCAG 2.5.7); drag is enhancement layered on top. The pointer core works inside shadow roots and on touch, mouse, and pen alike, with no dependency. Drops are CONTROLLED: the zone calls `onMove` and the consumer applies the change.
 
 ## Install
 
@@ -14,9 +12,9 @@ npm install @dojo-ng/dnd
 
 ## Usage
 
-In a Lit component, construct a `DragZoneController` over the item container. Drops are controlled — apply the change in `onMove`. Zones sharing a `group` accept transfers from each other.
+In a Lit component, create a `DragZoneController` over the item container, and apply each move in `onMove`.
 
-```html
+```js
 import { DragZoneController } from "@dojo-ng/dnd";
 
 class MyList extends LitElement {
@@ -32,13 +30,27 @@ class MyList extends LitElement {
 }
 ```
 
+## How it works
+
+- It works inside shadow roots and with touch, mouse, and pen. It has no dependencies.
+- Drops are controlled: the zone calls `onMove`, and your code applies the change.
+- Zones that share a `group` accept items from each other.
+
+## Accessibility
+
+- Drag is an enhancement. A component that uses dnd must also offer a keyboard or menu way to move items, as WCAG 2.5.7 requires.
+- For a component with no move controls of its own, `keyboardGrabMode` adds keyboard moves. See the example below.
+
 ## Examples
 
 ### Keyboard grab mode
 
-For components without their own move UI, wire `keyboardGrabMode` to a keydown handler: space grabs the focused item, arrows move it, space drops, escape cancels. Announcements go through your callback.
+Connect `keyboardGrabMode` to a keydown handler. Your `announce` callback receives the messages for a live region.
 
-```html
+- Space picks up the focused item, and the arrow keys move it.
+- Space drops the item, and Escape cancels the move.
+
+```js
 import { keyboardGrabMode } from "@dojo-ng/dnd";
 
 const onKeydown = keyboardGrabMode({

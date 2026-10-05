@@ -15,7 +15,7 @@ export type LoadingType = "linear" | "circular-small" | "circular-medium" | "cir
  */
 export class DjLoadingIndicator extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 
 	@property({ type: Boolean, reflect: true }) active = true;
 	@property({ reflect: true }) type: LoadingType = "linear";

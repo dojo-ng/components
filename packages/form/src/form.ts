@@ -7,7 +7,7 @@ import { html, css } from "lit"; import { property } from "lit/decorators.js"; i
  * in a real `<form>` also works.
  */
 export class DjForm extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles=css`:host{display:flex;flex-wrap:wrap;gap:var(--dj-spacing-medium,1rem);} :host([column]){flex-direction:column;}`;
 	@property({type:Boolean,reflect:true}) column=false;
 

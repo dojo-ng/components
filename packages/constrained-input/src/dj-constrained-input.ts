@@ -7,7 +7,7 @@ import DjTextInput from "@dojo-ng/text-input";
  * (Dojo's rule-DSL ValidationRules is deferred; supply a function for now.)
  */
 export class DjConstrainedInput extends DjTextInput {
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	/** Custom validator; return an error message, or undefined/empty when valid. */
 	@property({ attribute: false }) validator?: (value: string) => string | undefined;
 	protected override customValidate(value: string): string {

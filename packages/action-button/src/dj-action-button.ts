@@ -7,7 +7,7 @@ import DjButton from "@dojo-ng/button";
  * subclassing DjButton with no token overrides already yields inherited theming.
  */
 export class DjActionButton extends DjButton {
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 }
 
 export default DjActionButton;

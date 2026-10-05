@@ -56,7 +56,7 @@ function formatTime(seconds: number): string {
  */
 export class DjAudio extends DojoElement {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 
 	/** Media source URL. */
 	@property() src?: string;

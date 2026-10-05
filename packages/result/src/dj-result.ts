@@ -16,7 +16,7 @@ const PATHS: Record<string, string> = {
  */
 export class DjResult extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	@property() title = "";
 	@property() subtitle = "";
 	@property({ reflect: true }) status?: "alert" | "error" | "info" | "success";

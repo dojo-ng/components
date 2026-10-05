@@ -5,7 +5,7 @@ import styles from "./dj-avatar.styles.js";
 /** `<dj-avatar>` — circular/rounded/square avatar from an image `src` or slotted initials/icon. Part: `base`. */
 export class DjAvatar extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	@property({ reflect: true }) type: "circle" | "square" | "rounded" = "circle";
 	@property({ reflect: true }) size: "small" | "medium" | "large" = "medium";
 	@property() src?: string;

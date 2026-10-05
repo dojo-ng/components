@@ -1,7 +1,7 @@
 import { html, css } from "lit"; import { property } from "lit/decorators.js"; import DojoElement from "@dojo-ng/dojo-element";
 /** `<dj-text>` — typographic wrapper. size/weight/uppercase/truncated/inverse. Part: `base`. */
 export class DjText extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles = css`
 		:host{display:inline;} :host([truncated]){display:block;}
 		.base{font-family:var(--dj-font-family,inherit);color:var(--dj-color-text,#1f2937);}

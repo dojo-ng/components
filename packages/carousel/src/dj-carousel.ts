@@ -57,7 +57,7 @@ const EN: Record<string, string> = {
  */
 export class DjCarousel extends DojoElement {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 
 	/** Items shown at once; each item gets `1/n` of the viewport, gap-adjusted. */
 	@property({ attribute: "per-view", type: Number }) perView = 1;

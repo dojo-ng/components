@@ -19,7 +19,7 @@ export interface TabItem { name: string; disabled?: boolean; closeable?: boolean
  */
 export class DjTabContainer extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 
 	@property({ type: Array }) tabs: TabItem[] = [];

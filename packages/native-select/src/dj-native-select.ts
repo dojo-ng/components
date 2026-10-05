@@ -15,7 +15,7 @@ export interface MenuOption { value: string; label?: string; disabled?: boolean;
  */
 export class DjNativeSelect extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 	static formAssociated = true;
 

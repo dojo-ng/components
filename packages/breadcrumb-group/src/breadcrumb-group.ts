@@ -2,7 +2,7 @@ import { html, css, nothing } from "lit"; import { property } from "lit/decorato
 export interface Crumb { label: string; href?: string; current?: boolean; }
 /** `<dj-breadcrumb-group>` — a breadcrumb trail from `items`. Part: `list`. */
 export class DjBreadcrumbGroup extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles = css`
 		:host{display:block;} ol{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:var(--dj-spacing-2x-small,.25rem);margin:0;padding:0;}
 		a{color:var(--dj-color-primary-600,#2563eb);text-decoration:none;border-radius:2px;} a:hover{text-decoration:underline;}

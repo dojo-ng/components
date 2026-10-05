@@ -25,7 +25,7 @@ const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.g
  */
 export class DjCalendar extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = styles;
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 	static override focusable = true;
 	static formAssociated = true;
 

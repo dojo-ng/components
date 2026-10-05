@@ -20,7 +20,7 @@ export type PopupPosition = "above" | "below" | "left" | "right";
  */
 export class DjPopup extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 
 	@property({ type: Boolean, reflect: true }) open = false;
 	@property({ reflect: true }) position: PopupPosition = "below";

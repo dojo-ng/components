@@ -48,7 +48,7 @@ const KEY: Record<CopyState, string> = { idle: "copy", success: "copied", error:
  */
 export class DjCopyButton extends DojoElement {
 	static override styles: CSSResultGroup = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 
 	/** The literal text to copy. Wins over `from` when both are set. */

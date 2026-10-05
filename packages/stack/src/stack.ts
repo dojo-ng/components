@@ -1,7 +1,7 @@
 import { html, css } from "lit"; import { property } from "lit/decorators.js"; import DojoElement from "@dojo-ng/dojo-element";
 /** `<dj-stack>` — flex layout. direction/align/spacing/padding/stretch. */
 export class DjStack extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles = css`
 		:host{display:block;} .stack{display:flex;}
 		:host([direction="vertical"]) .stack{flex-direction:column;}

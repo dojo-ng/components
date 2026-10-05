@@ -26,7 +26,7 @@ import type { DjTransition } from "@dojo-ng/transition";
  *  - `dj-after-leave` — fired once after all children finish leaving.
  */
 export class DjTransitionGroup extends DojoElement {
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override styles = css`
 		:host { display: block; }
 	`;

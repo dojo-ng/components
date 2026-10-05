@@ -42,7 +42,7 @@ const KEBAB = html`<dj-icon><svg viewBox="0 0 24 24" aria-hidden="true"><circle 
  */
 export class DjToolbar extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 
 	#i18n = new LocaleController(this);

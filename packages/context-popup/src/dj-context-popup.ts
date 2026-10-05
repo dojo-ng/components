@@ -9,7 +9,7 @@ import "@dojo-ng/popup";
  */
 export class DjContextPopup extends DojoElement {
 	static override styles = css`:host { display: inline-block; }`;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	@property({ type: Boolean, reflect: true }) open = false;
 	@state() private x = 0;
 	@state() private y = 0;

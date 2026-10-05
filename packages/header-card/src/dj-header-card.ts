@@ -13,7 +13,7 @@ export class DjHeaderCard extends DojoElement {
 		.title { margin: 0; font-size: 1.1rem; }
 		.subtitle { margin: 0.1rem 0 0; font-size: 0.9rem; color: var(--dj-color-text-muted, #6b7280); }
 	`;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	@property() title = "";
 	@property() subtitle = "";
 	@property() kind: "elevated" | "outlined" = "elevated";

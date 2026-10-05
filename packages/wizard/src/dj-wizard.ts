@@ -15,7 +15,7 @@ export interface Step { title?: string; subTitle?: string; description?: string;
  */
 export class DjWizard extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	@property({ type: Array }) steps: Step[] = [];
 	@property({ attribute: "active-step", type: Number }) activeStep?: number;
 	@property({ reflect: true }) direction: "horizontal" | "vertical" = "horizontal";

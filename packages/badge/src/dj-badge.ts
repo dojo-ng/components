@@ -31,7 +31,7 @@ export type BadgeVariant = "neutral" | "info" | "success" | "warning" | "danger"
  */
 export class DjBadge extends DojoElement {
 	static override styles: CSSResultGroup = [baseStyles, styles];
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 
 	/** Semantic color. Reflected so `:host([variant="…"])` and page CSS can target it. */
 	@property({ reflect: true }) variant: BadgeVariant = "neutral";

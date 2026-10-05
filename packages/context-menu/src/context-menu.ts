@@ -3,7 +3,7 @@ import DojoElement from "@dojo-ng/dojo-element"; import "@dojo-ng/context-popup"
 import type { ListOption } from "@dojo-ng/list";
 /** `<dj-context-menu>` — right-click the trigger (default slot) to open a menu of `options`; emits `dj-select` with the value. */
 export class DjContextMenu extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles=css`:host{display:inline-block;}`;
 	@property({type:Array}) options: ListOption[] = [];
 	@query("dj-context-popup") private cp!: HTMLElement & { open: boolean };

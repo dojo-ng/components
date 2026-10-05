@@ -2,7 +2,7 @@ import { html, css, nothing } from "lit"; import { property } from "lit/decorato
 import DojoElement from "@dojo-ng/dojo-element"; import "@dojo-ng/icon";
 /** `<dj-pagination>` — page navigation over `total` pages. Emits `dj-page` with the new page. Parts: `nav`, `page`. */
 export class DjPagination extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles=css`
 		:host{display:block;} .nav{display:flex;align-items:center;gap:.15rem;}
 		button{min-width:2rem;height:2rem;border:1px solid var(--dj-color-border,#d1d5db);background:var(--dj-color-background,#fff);color:var(--dj-color-text,#1f2937);border-radius:var(--dj-input-border-radius-small,.1875rem);cursor:pointer;font:inherit;}

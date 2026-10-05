@@ -26,7 +26,7 @@ export type SkeletonEffect = "sheen" | "none";
  */
 export class DjSkeleton extends DojoElement {
 	static override styles: CSSResultGroup = [baseStyles, styles, reducedMotion];
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 
 	/** Loading animation: a sweeping `sheen`, or `none` for a static placeholder. */
 	@property({ reflect: true }) effect: SkeletonEffect = "sheen";

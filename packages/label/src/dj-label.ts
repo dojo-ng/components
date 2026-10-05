@@ -17,7 +17,7 @@ import styles from "./dj-label.styles.js";
  */
 export class DjLabel extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 
 	@property({ type: Boolean, reflect: true }) disabled = false;
 	@property({ type: Boolean, reflect: true }) focused = false;

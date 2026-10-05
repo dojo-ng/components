@@ -21,7 +21,7 @@ registerDefaults("dj", { selectPlaceholder: "Select…" });
  */
 export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 	static formAssociated = true;
 

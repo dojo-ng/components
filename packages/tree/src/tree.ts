@@ -61,7 +61,7 @@ interface VisRow {
  * @cssprop [--dj-tree-count-color=var(--dj-color-text-muted)] - Color of the trailing count badge.
  */
 export class DjTree extends DojoElement {
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 	static override styles = [
 		css`

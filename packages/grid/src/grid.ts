@@ -6,7 +6,7 @@ export interface GridColumn { id: string; title: string; sortable?: boolean; }
  * `dj-sort`). Functional core: no virtualization, paging, editing, or column resize yet. Part: `table`.
  */
 export class DjGrid extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles=css`
 		:host{display:block;overflow:auto;} table{border-collapse:collapse;width:100%;font-size:var(--dj-font-size-medium,1rem);}
 		th,td{text-align:start;padding:var(--dj-spacing-x-small,.5rem) var(--dj-spacing-small,.75rem);border-bottom:1px solid var(--dj-color-border,#d1d5db);}

@@ -37,7 +37,7 @@ import type { VideoJsOptions, VideoJsPlayer, VideoJsSource } from "video.js";
  * throttled to at most once per second.
  */
 export class DjVideo extends DojoElement {
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 
 	/** Ordered source list (`{ src, type }`). Takes precedence over `src`. */
 	@property({ attribute: false }) sources?: VideoJsSource[];

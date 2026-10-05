@@ -11,7 +11,7 @@ const pad = (n: number) => String(n).padStart(2,"0");
  * `min`/`max`/`step` (seconds). `format` 24|12 controls option labels. Form-associated.
  */
 export class DjTimePicker extends FormControl(DojoElement) implements Partial<DojoFormControl> {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override focusable = true;
 	static formAssociated=true;
 	static override styles=css`:host{display:block;}`;

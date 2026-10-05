@@ -16,7 +16,7 @@ const EYE_OFF = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l1
  * Inherits `<dj-constrained-input>`, so it also accepts a custom `validator`.
  */
 export class DjPasswordInput extends DjConstrainedInput {
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override styles: CSSResultGroup = [
 		DjConstrainedInput.styles,
 		css`.pw-toggle { display: inline-flex; align-items: center; justify-content: center; min-width: 1.5rem; min-height: 1.5rem; border: none; background: transparent; cursor: pointer; color: var(--dj-color-text-muted, #6b7280); padding: 0 0.25rem; }

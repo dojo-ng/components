@@ -82,7 +82,7 @@ interface MenuContext {
  */
 export class DjBoard extends DojoElement {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 
 	/** The cards (plain records). Lane order = order of appearance. Set in JavaScript. */

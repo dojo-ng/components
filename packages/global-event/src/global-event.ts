@@ -5,7 +5,7 @@ type Listeners = Record<string, (e: Event) => void>;
  * Set `windowListeners` / `documentListeners` (maps of event name → handler) as properties.
  */
 export class DjGlobalEvent extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	@property({attribute:false}) windowListeners: Listeners = {};
 	@property({attribute:false}) documentListeners: Listeners = {};
 	#win: Listeners = {}; #doc: Listeners = {};

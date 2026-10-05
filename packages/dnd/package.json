@@ -1,6 +1,6 @@
 {
   "name": "@dojo-ng/dnd",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "BSD-3-Clause",
   "description": "Dojo NG drag-and-drop primitive (pointer-events core: shadow DOM + touch, no dependency)",
   "type": "module",

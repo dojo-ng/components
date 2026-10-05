@@ -10,7 +10,7 @@ registerDefaults("dj", { openCalendar: "Open calendar" });
  * calendar, popup, icon.
  */
 export class DjDateInput extends FormControl(DojoElement) implements Partial<DojoFormControl> {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override focusable = true;
 	static formAssociated=true;
 	static override styles=css`:host{display:block;} .cal-btn{display:inline-flex;align-items:center;justify-content:center;min-width:1.5rem;min-height:1.5rem;border:none;background:transparent;cursor:pointer;color:var(--dj-color-text-muted,#6b7280);padding:0 .25rem;border-radius:2px;} .cal-btn:focus-visible{outline:var(--dj-focus-ring,2px solid currentColor);outline-offset:2px;}`;

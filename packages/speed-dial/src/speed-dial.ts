@@ -5,7 +5,7 @@ import DojoElement from "@dojo-ng/dojo-element"; import "@dojo-ng/floating-actio
  * Toggles on click. `direction` controls where actions expand. Emits `dj-toggle` {open}.
  */
 export class DjSpeedDial extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles=css`
 		:host{display:inline-block;position:relative;}
 		.actions{display:flex;gap:var(--dj-spacing-x-small,.5rem);position:absolute;}

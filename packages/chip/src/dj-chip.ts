@@ -12,7 +12,7 @@ import styles from "./dj-chip.styles.js";
  */
 export class DjChip extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 	@property({ type: Boolean, reflect: true }) disabled = false;
 	@property({ type: Boolean, reflect: true }) checked = false;

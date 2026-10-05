@@ -18,7 +18,7 @@ export class DjTheme extends DojoElement {
 	static override styles = css`
 		:host { display: contents; }
 	`;
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 
 	@property() theme: ThemeName = "auto";
 

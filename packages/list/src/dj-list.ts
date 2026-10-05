@@ -52,7 +52,7 @@ const EN_REORDER: Record<string, string> = {
  */
 export class DjList extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = styles;
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 	static override focusable = true;
 	static formAssociated = true;
 

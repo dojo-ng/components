@@ -11,7 +11,7 @@ import styles from "./dj-helper-text.styles.js";
  */
 export class DjHelperText extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 
 	@property() text?: string;
 	/** Tri-state validity: true (valid), false (invalid), undefined (neutral). */

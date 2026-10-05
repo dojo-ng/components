@@ -5,7 +5,7 @@ import "@dojo-ng/title-pane";
  * one pane closes the others. Listens for each pane's `dj-toggle`.
  */
 export class DjAccordion extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles = css`:host{display:flex;flex-direction:column;gap:var(--dj-spacing-2x-small,.25rem);}`;
 	@property({type:Boolean}) exclusive=false;
 	constructor(){ super(); this.addEventListener("dj-toggle", this.onToggle as EventListener); }

@@ -11,7 +11,7 @@ import styles from "./dj-slider.styles.js";
  */
 export class DjSlider extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 	static formAssociated = true;
 

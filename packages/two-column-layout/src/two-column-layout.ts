@@ -1,7 +1,7 @@
 import { html, css } from "lit"; import { property } from "lit/decorators.js"; import DojoElement from "@dojo-ng/dojo-element";
 /** `<dj-two-column-layout>` — leading + trailing slots; collapses to one column on narrow containers (container query). */
 export class DjTwoColumnLayout extends DojoElement {
-	static override version="0.1.0";
+	static override version="0.1.1";
 	static override styles = css`
 		:host{display:block;container-type:inline-size;}
 		.grid{display:grid;gap:var(--dj-spacing-medium,1rem);grid-template-columns:1fr 1fr;}

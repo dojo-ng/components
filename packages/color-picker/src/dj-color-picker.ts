@@ -53,7 +53,7 @@ const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.m
  */
 export class DjColorPicker extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles: CSSResultGroup = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 	static formAssociated = true;
 

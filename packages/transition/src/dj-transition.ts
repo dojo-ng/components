@@ -33,7 +33,7 @@ import { awaitMotion } from "./motion.js";
  *  - `dj-after-leave` — fired when a leave phase completes (never when interrupted).
  */
 export class DjTransition extends DojoElement {
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override styles = css`
 		:host { display: block; }
 		:host([state="left"]) { display: none; }

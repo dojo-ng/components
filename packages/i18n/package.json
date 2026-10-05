@@ -1,12 +1,21 @@
 {
   "name": "@dojo-ng/i18n",
-  "version": "0.1.0", "license": "BSD-3-Clause",
+  "version": "0.1.1",
+  "license": "BSD-3-Clause",
   "description": "Dojo NG internationalization: locale signal, Intl formatting, message resolver, pluggable loader",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "!dist/**/*.map"],
-  "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
-  "dependencies": { "lit": "^3.3.0" }
+  "files": [
+    "dist",
+    "!dist/**/*.map"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "lit": "^3.3.0"
+  }
 }

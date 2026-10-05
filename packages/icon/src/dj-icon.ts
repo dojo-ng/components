@@ -32,7 +32,7 @@ export type IconSize = "small" | "medium" | "large";
  */
 export class DjIcon extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 
 	/** Registered icon name; resolved to an inline SVG from the icon registry. */
 	@property() type = "";

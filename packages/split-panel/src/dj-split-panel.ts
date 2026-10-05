@@ -53,7 +53,7 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
  */
 export class DjSplitPanel extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	/** The divider is a keyboard focus stop, so the focus trap counts it. */
 	static override focusable = true;
 

@@ -53,7 +53,7 @@ const CLOSE_ICON = html`<svg viewBox="0 0 24 24" width="1em" height="1em" aria-h
  */
 export class DjFileInput extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles: CSSResultGroup = styles;
-	static override version = "0.1.0";
+	static override version = "0.1.1";
 	static override focusable = true;
 	static formAssociated = true;
 

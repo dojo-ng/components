@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-emoji
 
-Emoji picker + shortcode plugin for @dojo-ng/rich-text
+An emoji picker and `:shortcode:` replacement for `<dj-rich-text>`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element; contributes NO nodes — emoji are plain text). Adds a toolbar button opening a searchable 8-column emoji picker (filter by name/shortcode/keyword, arrow-key roving, click or Enter to insert); the popup stays open for multi-insert and closes on Escape/outside click, returning focus to the editor. With `shortcodes` on (default), typing a GitHub-style `:name:` for a known shortcode replaces it with the character; unknown shortcodes are left literal. Exports `emojiPlugin`, `createEmojiPlugin({ shortcodes?, set? })`, `EMOJI` (~170 curated single-grapheme entries across smileys, people, hearts, animals, food, activities, objects, symbols), the pure `filterEmoji(set, query)` helper, and the `EmojiEntry` type. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Note: the native OS emoji picker (macOS Ctrl-Cmd-Space, Windows Win-.) already works in the editor — this adds a discoverable, cross-platform path, not the only one. RELATED PATTERN: to highlight hashtags or other tokens, build a node on the public plugin API the way `@dojo-ng/rich-text-mentions` builds `MentionNode` (hashtags are intentionally not shipped). DEFERRED: skin-tone variants, recently-used, category headers, a `:shortcode:` typeahead menu, custom image sets.
 
 ## Install
 
@@ -25,3 +23,26 @@ Compose the emoji plugin with the default set. The toolbar gains an emoji button
   document.getElementById("editor").plugins = [...defaultPlugins, emojiPlugin];
 </script>
 ```
+
+## Picker
+
+- The toolbar button opens a searchable emoji picker, eight columns wide. Search by name, shortcode, or keyword; move with the arrow keys; insert with a click or Enter.
+- The picker stays open so you can insert several, and closes on Escape or a click outside. Focus returns to the editor.
+- The system emoji picker (Ctrl+Cmd+Space on macOS, Win+. on Windows) also works in the editor. This adds a visible picker that works the same on every platform.
+
+## Shortcodes
+
+- With `shortcodes` on (the default), typing a GitHub-style `:name:` replaces it with the emoji. Unknown shortcodes stay as typed.
+
+## Setup
+
+- Exports `emojiPlugin`, `createEmojiPlugin({ shortcodes?, set? })`, `EMOJI` (about 170 emoji across smileys, people, hearts, animals, food, activities, objects, and symbols), the `filterEmoji(set, query)` helper, and the `EmojiEntry` type.
+- Emoji are plain text, so the plugin adds no node types.
+- For hashtags or other highlighted tokens, build a node the way `@dojo-ng/rich-text-mentions` builds its mention node. Hashtags are not included on purpose.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.
+
+## Not built
+
+- Skin-tone variants, recently used emoji, category headings, a `:shortcode:` suggestion menu, and custom image sets.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).

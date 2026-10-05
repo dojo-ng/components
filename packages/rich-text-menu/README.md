@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-menu
 
-Caret-anchored menu machinery for @dojo-ng/rich-text plugins
+The caret menu that the mentions and slash-command plugins are built on. It is not a plugin you load directly.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-Internal plumbing for `@dojo-ng/rich-text` caret-anchored menus (used by the mentions and slash-command plugins) — not a custom element and not a plugin you load directly. Exports `createEditorMenu(ctx, config)` plus the `EditorMenuConfig`/`MenuMatch` types and the pure `computeMatch(textBeforeCaret, matchFn)` helper. You give it a `config` with `match(textBeforeCaret) => { start, query } | null` (locate the trigger + query in the caret's text), `onQueryChange(query)` (fetch/filter, then call the returned menu's `setOptions(options, loading?)`), and `onPick(option)` (called AFTER the trigger text has been removed). The menu owns a `dj-popup` + `dj-list` positioned at the caret, arrow/Enter/Tab/Escape navigation, a polite live region, and light-dismiss (outside click, Escape, or blur). Positioning and the interactive feel are browser-verified; the matcher is unit-testable via `computeMatch`.
 
 ## Install
 
@@ -31,3 +29,19 @@ export const myPlugin = {
   },
 };
 ```
+
+## What it does
+
+- It shows a `dj-popup` and a `dj-list` at the caret, with arrow, Enter, Tab, and Escape navigation, a polite live region, and closing on a click outside, Escape, or blur.
+
+## Using it
+
+Call `createEditorMenu(ctx, config)`. The `config` has three functions:
+
+- `match(textBeforeCaret)` finds the trigger and the query, and returns `{ start, query }` or `null`.
+- `onQueryChange(query)` fetches or filters, then calls the menu's `setOptions(options, loading?)`.
+- `onPick(option)` runs after the trigger text has been removed.
+
+## Also exported
+
+- The the `EditorMenuConfig` and `MenuMatch` types, and `computeMatch(textBeforeCaret, matchFn)` for testing a matcher without a browser.

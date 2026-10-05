@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-autolink
 
-Auto-link (URL/email) plugin for @dojo-ng/rich-text
+Automatic links for `<dj-rich-text>`: URLs and email addresses become links as you type.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element, no toolbar, no CSS). A `TextNode` transform detects URLs and emails as you type and wraps them in `AutoLinkNode`s; editing the text so it no longer matches unwraps the link, and editing it to a different URL updates the href. It contributes `AutoLinkNode` AND `LinkNode` so the exported `<a>` re-imports on the `value` path even without the links plugin (loading both `rich-text-links` and this is harmless — the core de-duplicates node classes). Manual links are never touched. Exports `autolinkPlugin`, `createAutoLinkPlugin({ matchers? })`, `defaultMatchers`, and the `AutoLinkMatcher = { regex, url(matched) }` type (regex is NON-global; earliest match wins; `www.` URLs get `https://`, bare emails get `mailto:`). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Pair it with `rich-text-links` for manual link editing. OUT OF SCOPE (v1): URLs split across formatting boundaries, un-autolinking via a toolbar, click-to-open in the editor.
 
 ## Install
 
@@ -25,3 +23,23 @@ Compose the autolink plugin with the default set; typing a URL or email followed
   document.getElementById("editor").plugins = [...defaultPlugins, autolinkPlugin];
 </script>
 ```
+
+## How it works
+
+- A text transform finds URLs and email addresses as you type and wraps them in links.
+- Editing the text so it no longer matches removes the link; editing it to a different URL updates the address. Links you made by hand are never changed.
+- `www.` addresses get `https://`, and plain email addresses get `mailto:`.
+
+## Setup
+
+- Exports `autolinkPlugin`, `createAutoLinkPlugin({ matchers? })`, and `defaultMatchers`.
+- A matcher is `{ regex, url(matched) }`. The regex must not be global, and the earliest match wins.
+- It also registers the link node, so exported `<a>` elements import again through `value` even without `rich-text-links`. Loading both is fine.
+- Pair it with `rich-text-links` for editing links by hand.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.
+
+## Not built
+
+- URLs split across formatting, removing an automatic link from a toolbar, and opening a link by clicking it in the editor.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).

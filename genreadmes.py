@@ -1096,7 +1096,28 @@ EXAMPLES.update({
 NOTES.update({
 })
 NOTES.update({
- "rich-text-headings": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Contributes the `HeadingNode`/`QuoteNode` classes and one toolbar control: a paragraph-style `<select>` that shows the current block's type (Paragraph, Heading 1–3, Quote) and converts the selection's block(s) to the chosen type on change, returning focus to the editor afterward. FOUNDATIONAL, not optional in practice: Lexical needs node classes registered at editor creation, so without this plugin loaded, headings and quotes cannot exist in the document by any path — pasted or `value`-set `<h1>`–`<h3>`/`<blockquote>` markup degrades to plain paragraphs on import (the same rule `rich-text-table` documents for tables), `rich-text-markdown`'s `# `/`> ` shortcuts have nothing to convert into, and `rich-text-slash`'s Heading/Quote menu items silently do nothing. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. Exports `headingsPlugin` as a ready-made instance — unlike most rich-text plugins there is no `createHeadingsPlugin`/options, since there is nothing to configure. Also contributes five slash-menu inserts (Paragraph, Heading 1–3, Quote), picked up automatically when `rich-text-slash` is loaded alongside it.",
+ "rich-text-headings": """
+Headings (levels 1 to 3) and block quotes for `<dj-rich-text>`.
+
+#### Using it
+- The toolbar gets a paragraph-style menu that shows the current block's type (Paragraph,
+  Heading 1 to 3, or Quote) and changes the selected blocks to the chosen type. Focus returns to
+  the editor.
+- With `rich-text-slash` loaded, the slash menu also offers Paragraph, Heading 1 to 3, and Quote.
+
+#### Why you need it
+Lexical needs its node types when the editor is created. Without this plugin, headings and quotes
+cannot exist in the document at all:
+- Pasted or `value`-set `<h1>` to `<h3>` and `<blockquote>` become plain paragraphs.
+- `rich-text-markdown`'s `# ` and `> ` shortcuts have nothing to convert into.
+- `rich-text-slash`'s Heading and Quote items do nothing.
+
+#### Setup
+- Exports `headingsPlugin`, ready to use. There is no `createHeadingsPlugin`, because there is
+  nothing to configure.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+""",
 })
 EXAMPLES.update({
  "rich-text-headings": [
@@ -1105,7 +1126,21 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-links": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. The one toolbar button reflects whether the selection is a link (`aria-pressed`) and, on click, asks for a URL — an empty value removes the link, a new value sets or updates it, cancelling changes nothing. The default URL prompt is `window.prompt`; pass your own via `createLinksPlugin({ promptForUrl })` (it may be async — return a Promise) to drive it from an overlay. Auto-linking on paste/typing is a later addition.",
+ "rich-text-links": """
+Links for `<dj-rich-text>`: add, change, and remove a link on the selection.
+
+#### Using it
+- The toolbar button shows whether the selection is a link (`aria-pressed`). Clicking it asks for
+  a URL.
+- An empty URL removes the link, a new URL sets or changes it, and Cancel changes nothing.
+
+#### Setup
+- The default prompt is `window.prompt`. Pass your own with
+  `createLinksPlugin({ promptForUrl })`; it may return a Promise, so it can open your own dialog.
+- For links made automatically while typing, add `rich-text-autolink`.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+""",
 })
 EXAMPLES.update({
  "rich-text-links": [
@@ -1114,7 +1149,30 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-lists": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes the `ListNode`/`ListItemNode` classes, installs Lexical's list behaviour, and adds three toolbar buttons that toggle the current block into and out of a bulleted, numbered, or check list. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Exports `listsPlugin`. CHECKLISTS: the installed `@lexical/list` does not export `registerCheckList`, so the plugin owns the interaction — it registers `INSERT_CHECK_LIST_COMMAND` (via `insertList(editor, \"check\")`), reflects each check item's state onto its `<li>` as `data-dj-checked=\"true|false\"` plus `role=\"checkbox\"` and `aria-checked` (theme-independent, keyed by CSS), toggles on a click in the ~1.6em marker zone (LTR left edge, RTL right edge — clicking the text just places the caret), and toggles on Space at the start of an item. Checked state round-trips through the `value` HTML on Lexical 0.21's native list export/import (the emitted markup is `<ul __lexicallisttype=\"check\"><li role=\"checkbox\" aria-checked=\"true|false\">…</li></ul>`), so no serialization overrides are needed; consuming sites can style the exported `data-dj-checked`/`aria-checked` attributes themselves. DEFERRED: nested-checklist indent styling beyond what lists already do, and read-only interactive checkboxes outside the editor.",
+ "rich-text-lists": """
+Bulleted, numbered, and check lists for `<dj-rich-text>`.
+
+#### Using it
+- Three toolbar buttons turn the current block into a bulleted, numbered, or check list, or back.
+
+#### Check lists
+- Each check item's state is on its `<li>` as `data-dj-checked="true|false"`, with `role="checkbox"`
+  and `aria-checked`, so you can style it with CSS.
+- A click in the marker area at the start of the item (the left edge, or the right edge in a
+  right-to-left page) toggles it. A click on the text only places the caret.
+- Space at the start of an item also toggles it.
+- The checked state survives the `value` round trip in the HTML that Lexical exports, so a site can
+  style the exported `data-dj-checked` and `aria-checked` attributes.
+
+#### Setup
+- Exports `listsPlugin`. With `rich-text-slash` loaded, the slash menu also offers the three list
+  types.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+
+#### Not built
+- Extra indent styling for nested check lists, and clickable checkboxes outside the editor.
+""",
 })
 EXAMPLES.update({
  "rich-text-lists": [
@@ -1123,7 +1181,29 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-table": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes the three `@lexical/table` node classes (`TableNode`, `TableRowNode`, `TableCellNode`), registers `INSERT_TABLE_COMMAND` and Lexical's grid mouse-selection + Tab/arrow cell navigation, and adds two toolbar controls. \"Insert table\" opens an 8×8 grid picker (hover to size, click to insert); \"Table menu\" is enabled only when the caret is inside a table and offers insert row above/below, insert column left/right, delete row, delete column, toggle header row, and delete table. Exports `tablePlugin` and `createTablePlugin()`. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. PASTE: with this plugin loaded a pasted `<table>` imports as a real table (the paste sanitizer allowlists table markup); WITHOUT the plugin, pasted table elements degrade to paragraphs. DEFERRED: merge/split cells, column widths/resizing, caption UI (the tag survives paste, nothing more), nested-table styling beyond level 1.",
+ "rich-text-table": """
+Tables for `<dj-rich-text>`: insert a table, then add or remove rows and columns.
+
+#### Using it
+- Insert table opens an 8 by 8 grid: point to choose the size, click to insert.
+- The table menu is available when the caret is in a table. It inserts a row above or below or a
+  column left or right, deletes a row, a column, or the table, and turns the header row on or off.
+- Select cells with the mouse; Tab and the arrow keys move between cells.
+
+#### Pasting
+- With this plugin loaded, a pasted `<table>` becomes a real table. Without it, pasted tables become
+  paragraphs.
+
+#### Setup
+- Exports `tablePlugin` and `createTablePlugin()`. With `rich-text-slash` loaded, the slash menu
+  also offers Table.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+
+#### Not built
+- Merging and splitting cells, column widths and resizing, editing captions (a pasted caption is
+  kept, nothing more), and styling for tables inside tables.
+""",
 })
 EXAMPLES.update({
  "rich-text-table": [
@@ -1132,7 +1212,25 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-menu": "Internal plumbing for `@dojo-ng/rich-text` caret-anchored menus (used by the mentions and slash-command plugins) — not a custom element and not a plugin you load directly. Exports `createEditorMenu(ctx, config)` plus the `EditorMenuConfig`/`MenuMatch` types and the pure `computeMatch(textBeforeCaret, matchFn)` helper. You give it a `config` with `match(textBeforeCaret) => { start, query } | null` (locate the trigger + query in the caret's text), `onQueryChange(query)` (fetch/filter, then call the returned menu's `setOptions(options, loading?)`), and `onPick(option)` (called AFTER the trigger text has been removed). The menu owns a `dj-popup` + `dj-list` positioned at the caret, arrow/Enter/Tab/Escape navigation, a polite live region, and light-dismiss (outside click, Escape, or blur). Positioning and the interactive feel are browser-verified; the matcher is unit-testable via `computeMatch`.",
+ "rich-text-menu": """
+The caret menu that the mentions and slash-command plugins are built on. It is not a plugin you load
+directly.
+
+#### What it does
+- It shows a `dj-popup` and a `dj-list` at the caret, with arrow, Enter, Tab, and Escape
+  navigation, a polite live region, and closing on a click outside, Escape, or blur.
+
+#### Using it
+Call `createEditorMenu(ctx, config)`. The `config` has three functions:
+- `match(textBeforeCaret)` finds the trigger and the query, and returns `{ start, query }` or
+  `null`.
+- `onQueryChange(query)` fetches or filters, then calls the menu's `setOptions(options, loading?)`.
+- `onPick(option)` runs after the trigger text has been removed.
+
+#### Also exported
+- The the `EditorMenuConfig` and `MenuMatch` types, and `computeMatch(textBeforeCaret,
+  matchFn)` for testing a matcher without a browser.
+""",
 })
 EXAMPLES.update({
  "rich-text-menu": [
@@ -1141,7 +1239,33 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-mentions": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Typing the trigger (default `@`) opens a caret-anchored menu (built on `@dojo-ng/rich-text-menu`); ArrowUp/Down move the highlight, Enter/Tab or a click inserts an atomic `MentionNode` (`@label`, `segmented` mode so it deletes as a unit) plus a trailing space, Escape closes. Exports `createMentionsPlugin({ source, trigger? })`, `MentionNode`, `$createMentionNode`, `$isMentionNode`, and `DEFAULT_MENTION_TRIGGER` — there is NO default `mentionsPlugin` because `source` is app-owned and REQUIRED: `source(query) => Promise<Array<{ id, label }>>` (called debounced, with a stale-response guard and a loading spinner). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Mentions survive the `value` round-trip via the node's own `importDOM` (`<span data-dj-mention=\"id\">@label</span>`). PASTE CAVEAT: the sanitizer keeps `span` but strips its attributes, so a pasted mention degrades to plain `@label` text. DEFERRED: multiple trigger characters, hover-cards, in-place editing, SSR guidance.",
+ "rich-text-mentions": """
+@mentions for `<dj-rich-text>`: type `@` and pick a person from a menu.
+
+#### Using it
+- Typing the trigger (`@` by default) opens a menu at the caret. ArrowUp and ArrowDown move the
+  highlight; Enter, Tab, or a click inserts the mention and a space; Escape closes the menu.
+- A mention is one unit: it shows as `@label` and Backspace deletes it whole.
+
+#### Setup
+- `source` is required and comes from your app: `source(query) => Promise<Array<{ id, label }>>`.
+  It is called after a short delay, older answers are ignored, and a spinner shows while it loads.
+- Because `source` is required, there is no ready-made `mentionsPlugin`. Use
+  `createMentionsPlugin({ source, trigger? })`.
+- Also exports `MentionNode`, `$createMentionNode`, `$isMentionNode`, and
+  `DEFAULT_MENTION_TRIGGER`.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+
+#### HTML and pasting
+- Mentions survive the `value` round trip as `<span data-dj-mention="id">@label</span>`.
+- Paste cleaning keeps the `span` but removes its attributes, so a pasted mention becomes plain
+  `@label` text.
+
+#### Not built
+- More than one trigger character, hover cards, editing a mention in place, and guidance for
+  server-side rendering.
+""",
 })
 EXAMPLES.update({
  "rich-text-mentions": [
@@ -1150,7 +1274,39 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-embed": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes an `EmbedNode` and an `INSERT_EMBED_COMMAND`, and adds a toolbar button that opens a `dj-dialog` for pasting a media URL. The URL is run through matchers, tried in order: YouTube (watch/`youtu.be`/shorts/embed URLs) and Vimeo render as privacy-enhanced iframes (`youtube-nocookie.com`, `player.vimeo.com`); a direct video file (`.mp4/.webm/.m3u8/.mov`) renders via `dj-video` and a direct audio file (`.mp3/.m4a/.ogg/.wav/.flac`) via `dj-audio`. An unsupported link shows an inline error and keeps the dialog open. Exports `embedPlugin`, `createEmbedPlugin({ matchers? })`, `EmbedNode`, `$createEmbedNode`, `$isEmbedNode`, `INSERT_EMBED_COMMAND`, `defaultMatchers`, and the `EmbedMatcher`/`EmbedPayload` types. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. NO generic-iframe matcher ships (arbitrary iframes are a consumer decision — add your own matcher via `matchers`). APP PREREQUISITE: `dj-video` needs video.js's stylesheet + engine loaded at the document level. HTML/round-trip: an embed exports as `<div data-dj-embed data-src [data-title]>` wrapping a fallback `<a href>` (the canonical watch URL for youtube/vimeo), so a consuming site can render from the data attributes or fall back to the link; embeds survive the `value` round-trip via the node's own importDOM. PASTE: the sanitizer removes `iframe` and strips the embed div's attributes, so a pasted embed degrades to a plain link — embeds enter via the dialog, the command, or `value`. DEFERRED: oEmbed/metadata (titles, thumbnails), autoplay options, generic iframe matcher, resize/alignment UI.",
+ "rich-text-embed": """
+Embedded media for `<dj-rich-text>`: YouTube and Vimeo videos, and video or audio files, from a
+pasted URL.
+
+#### Inserting
+- The toolbar button opens a dialog for a media URL. An unsupported link shows an error and the
+  dialog stays open.
+- Matchers are tried in order. YouTube (watch, `youtu.be`, shorts, and embed URLs) and Vimeo become
+  privacy-enhanced iframes (`youtube-nocookie.com`, `player.vimeo.com`).
+- A video file (`.mp4`, `.webm`, `.m3u8`, `.mov`) uses `dj-video`, and an audio file (`.mp3`,
+  `.m4a`, `.ogg`, `.wav`, `.flac`) uses `dj-audio`.
+- `dj-video` needs the video.js stylesheet and video.js loaded at the document level.
+
+#### Setup
+- Exports `embedPlugin`, `createEmbedPlugin({ matchers? })`, `EmbedNode`, `$createEmbedNode`,
+  `$isEmbedNode`, `INSERT_EMBED_COMMAND`, `defaultMatchers`, and the `EmbedMatcher` and
+  `EmbedPayload` types.
+- There is no matcher for any iframe. Whether to allow other iframes is your decision: add your own
+  matcher with `matchers`.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+
+#### HTML and pasting
+- An embed exports as `<div data-dj-embed data-src [data-title]>` around a plain `<a href>`, so a
+  site can render it from the data attributes or show the link.
+- Embeds survive the `value` round trip.
+- Paste cleaning removes iframes and the embed's attributes, so a pasted embed becomes a plain link.
+  Embeds come in through the dialog, the command, or `value`.
+
+#### Not built
+- Titles and thumbnails (oEmbed), autoplay options, a matcher for any iframe, and resizing or
+  alignment.
+""",
 })
 EXAMPLES.update({
  "rich-text-embed": [
@@ -1161,7 +1317,28 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-autolink": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element, no toolbar, no CSS). A `TextNode` transform detects URLs and emails as you type and wraps them in `AutoLinkNode`s; editing the text so it no longer matches unwraps the link, and editing it to a different URL updates the href. It contributes `AutoLinkNode` AND `LinkNode` so the exported `<a>` re-imports on the `value` path even without the links plugin (loading both `rich-text-links` and this is harmless — the core de-duplicates node classes). Manual links are never touched. Exports `autolinkPlugin`, `createAutoLinkPlugin({ matchers? })`, `defaultMatchers`, and the `AutoLinkMatcher = { regex, url(matched) }` type (regex is NON-global; earliest match wins; `www.` URLs get `https://`, bare emails get `mailto:`). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Pair it with `rich-text-links` for manual link editing. OUT OF SCOPE (v1): URLs split across formatting boundaries, un-autolinking via a toolbar, click-to-open in the editor.",
+ "rich-text-autolink": """
+Automatic links for `<dj-rich-text>`: URLs and email addresses become links as you type.
+
+#### How it works
+- A text transform finds URLs and email addresses as you type and wraps them in links.
+- Editing the text so it no longer matches removes the link; editing it to a different URL updates
+  the address. Links you made by hand are never changed.
+- `www.` addresses get `https://`, and plain email addresses get `mailto:`.
+
+#### Setup
+- Exports `autolinkPlugin`, `createAutoLinkPlugin({ matchers? })`, and `defaultMatchers`.
+- A matcher is `{ regex, url(matched) }`. The regex must not be global, and the earliest match wins.
+- It also registers the link node, so exported `<a>` elements import again through `value` even
+  without `rich-text-links`. Loading both is fine.
+- Pair it with `rich-text-links` for editing links by hand.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+
+#### Not built
+- URLs split across formatting, removing an automatic link from a toolbar, and opening a link by
+  clicking it in the editor.
+""",
 })
 EXAMPLES.update({
  "rich-text-autolink": [
@@ -1170,7 +1347,35 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-emoji": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element; contributes NO nodes — emoji are plain text). Adds a toolbar button opening a searchable 8-column emoji picker (filter by name/shortcode/keyword, arrow-key roving, click or Enter to insert); the popup stays open for multi-insert and closes on Escape/outside click, returning focus to the editor. With `shortcodes` on (default), typing a GitHub-style `:name:` for a known shortcode replaces it with the character; unknown shortcodes are left literal. Exports `emojiPlugin`, `createEmojiPlugin({ shortcodes?, set? })`, `EMOJI` (~170 curated single-grapheme entries across smileys, people, hearts, animals, food, activities, objects, symbols), the pure `filterEmoji(set, query)` helper, and the `EmojiEntry` type. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Note: the native OS emoji picker (macOS Ctrl-Cmd-Space, Windows Win-.) already works in the editor — this adds a discoverable, cross-platform path, not the only one. RELATED PATTERN: to highlight hashtags or other tokens, build a node on the public plugin API the way `@dojo-ng/rich-text-mentions` builds `MentionNode` (hashtags are intentionally not shipped). DEFERRED: skin-tone variants, recently-used, category headers, a `:shortcode:` typeahead menu, custom image sets.",
+ "rich-text-emoji": """
+An emoji picker and `:shortcode:` replacement for `<dj-rich-text>`.
+
+#### Picker
+- The toolbar button opens a searchable emoji picker, eight columns wide. Search by name, shortcode,
+  or keyword; move with the arrow keys; insert with a click or Enter.
+- The picker stays open so you can insert several, and closes on Escape or a click outside. Focus
+  returns to the editor.
+- The system emoji picker (Ctrl+Cmd+Space on macOS, Win+. on Windows) also works in the editor.
+  This adds a visible picker that works the same on every platform.
+
+#### Shortcodes
+- With `shortcodes` on (the default), typing a GitHub-style `:name:` replaces it with the emoji.
+  Unknown shortcodes stay as typed.
+
+#### Setup
+- Exports `emojiPlugin`, `createEmojiPlugin({ shortcodes?, set? })`, `EMOJI` (about 170 emoji
+  across smileys, people, hearts, animals, food, activities, objects, and symbols), the
+  `filterEmoji(set, query)` helper, and the `EmojiEntry` type.
+- Emoji are plain text, so the plugin adds no node types.
+- For hashtags or other highlighted tokens, build a node the way `@dojo-ng/rich-text-mentions`
+  builds its mention node. Hashtags are not included on purpose.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+
+#### Not built
+- Skin-tone variants, recently used emoji, category headings, a `:shortcode:` suggestion menu, and
+  custom image sets.
+""",
 })
 EXAMPLES.update({
  "rich-text-emoji": [
@@ -1179,7 +1384,30 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-slash": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Typing `/` at the start of a block or after whitespace opens a caret-anchored command menu (built on `@dojo-ng/rich-text-menu`); ArrowUp/Down move the highlight, Enter/Tab or a click runs the item, Escape closes. The menu's items are aggregated from every loaded plugin's `inserts` plus any `extra` you pass, so it reflects whatever plugins you compose: headings contribute Paragraph/Heading 1–3/Quote, lists contribute Bulleted/Numbered/Checklist, image contributes Image, table contributes Table. Picking an item removes the `/query` text, then runs the item's `run(ctx)` (convert the block, insert a table, open the image dialog, …). The menu never opens when no plugin contributes an insert, and a query that matches nothing hides it. Exports `slashPlugin`, `createSlashPlugin({ extra? })`, `DEFAULT_SLASH_TRIGGER`, and the pure `aggregateInserts`/`filterInserts` helpers. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. To expose block/insert actions from your own plugin, add an `inserts` array (or `(ctx) => items`) of `{ id, label, keywords?, run(ctx) }`.",
+ "rich-text-slash": """
+A `/` command menu for `<dj-rich-text>`: type `/` to insert headings, lists, tables, images, and
+more.
+
+#### Using it
+- Typing `/` at the start of a block or after a space opens a menu at the caret. ArrowUp and
+  ArrowDown move the highlight; Enter, Tab, or a click runs the item; Escape closes the menu.
+- Choosing an item removes the `/query` text, then runs the item.
+- A query that matches nothing hides the menu.
+
+#### What is in the menu
+- The items come from every loaded plugin's `inserts`, plus any `extra` you pass. Headings adds
+  Paragraph, Heading 1 to 3, and Quote; lists adds the three list types; image adds Image; table
+  adds Table.
+- The menu never opens when no plugin adds an item.
+- To add actions from your own plugin, give it an `inserts` array (or a function `(ctx) => items`)
+  of `{ id, label, keywords?, run(ctx) }`.
+
+#### Setup
+- Exports `slashPlugin`, `createSlashPlugin({ extra? })`, `DEFAULT_SLASH_TRIGGER`, and the
+  `aggregateInserts` and `filterInserts` helpers.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+""",
 })
 EXAMPLES.update({
  "rich-text-slash": [
@@ -1190,7 +1418,29 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-markdown": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes no nodes and no toolbar: it adds a `markdown` output format (set `format=\"markdown\"` on `dj-rich-text` and the `value` getter emits Markdown, the setter parses it) and, by default, registers type-a-shortcut behaviour (`# ` for a heading, `- ` for a list, `**bold**`, and so on) even when the output format stays HTML. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. Markdown coverage follows the node-contributing plugins that are loaded: transformers whose node classes are not registered are dropped, so pair this with `rich-text-headings`, `rich-text-lists`, and `rich-text-links` for headings, lists, and links. Without the headings plugin, `# ` stays literal text. `createMarkdownPlugin({ shortcuts, transformers })` turns shortcuts off or supplies a custom transformer set; `usableTransformers(editor, transformers)` is exported for inspection. Requires the `@lexical/markdown` dependency. Note: pasted Markdown-looking text is not converted; Markdown enters via the `value` property or the shortcuts.",
+ "rich-text-markdown": """
+Markdown for `<dj-rich-text>`: a Markdown value format and typing shortcuts.
+
+#### Markdown value
+- Set `format="markdown"` on `dj-rich-text`: `value` then returns Markdown, and setting it parses
+  Markdown.
+- Coverage follows the plugins that add content types. Pair it with `rich-text-headings`,
+  `rich-text-lists`, and `rich-text-links` for headings, lists, and links. Without the headings
+  plugin, `# ` stays as typed.
+- Pasted text that looks like Markdown is not converted. Markdown comes in through `value` or the
+  shortcuts.
+
+#### Shortcuts
+- By default, typing `# ` makes a heading, `- ` a list, `**bold**` bold text, and so on, even when
+  the value format stays HTML.
+
+#### Setup
+- `createMarkdownPlugin({ shortcuts, transformers })` turns the shortcuts off or sets your own
+  transformers. `usableTransformers(editor, transformers)` shows which ones apply.
+- Requires the `@lexical/markdown` package.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+""",
 })
 EXAMPLES.update({
  "rich-text-markdown": [
@@ -1218,7 +1468,27 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-color": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Color is an inline `TextNode` style, so it contributes no nodes: it patches `color` (or `background-color`) on the selection via `$patchStyleText`. Exports `colorPlugin` (text color), `backgroundColorPlugin`, and `createColorPlugin({ styleProperty, label, swatches })`. The toolbar control is a `dj-button` whose icon is a swatch chip of the selection's current color; clicking it opens a `dj-popup` with a `dj-color-picker` and a Remove color button. The picker applies live (a preview during a drag) without stealing focus; the popup light-dismisses (outside click / Escape) and focus returns to the editor. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. PASTE CAVEAT: the default paste sanitizer strips inline `style`, so pasted colored text loses its color — color round-trips through the `value` property (which does not pass the paste sanitizer); a trusted app can supply its own `pasteSanitizer`.",
+ "rich-text-color": """
+Text color and highlight color for `<dj-rich-text>`.
+
+#### Setup
+- Exports `colorPlugin` (text color), `backgroundColorPlugin`, and
+  `createColorPlugin({ styleProperty, label, swatches })`.
+- Color is an inline style on the text, so the plugin adds no node types.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+
+#### Using it
+- The toolbar button shows the current color as a swatch. Clicking it opens a `dj-color-picker` and
+  a Remove color button.
+- The picker applies the color live while you drag, without moving focus.
+- The popup closes on a click outside or on Escape, and focus returns to the editor.
+
+#### Pasting
+- The default paste cleaning removes inline styles, so pasted colored text loses its color.
+- Color is kept through `value`, which is not cleaned. A trusted app can set its own
+  `pasteSanitizer`.
+""",
 })
 EXAMPLES.update({
  "rich-text-color": [
@@ -1227,19 +1497,153 @@ EXAMPLES.update({
  ],
 })
 NOTES.update({
- "rich-text-image": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes an `ImageNode` (a decorator node rendering an `<img>`) plus an `INSERT_IMAGE_COMMAND`, and a toolbar button that opens a `dj-dialog` for inserting an image from a file (`dj-file-input`) or a URL — the most recent source wins. Alt text is REQUIRED: the insert button stays disabled until it is non-empty, because the accessible name is mandatory. Exports `imagePlugin`, `createImagePlugin({ upload })`, `ImageNode`, `$createImageNode`, `$isImageNode`, and `INSERT_IMAGE_COMMAND`. Clicking an image selects it (a NodeSelection); Backspace/Delete then removes it (handled by Lexical). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. DATA-URL CAVEAT: the default `upload` reads the file to a data URL, which bloats the HTML value — pass your own `upload(file) => Promise<string>` in production to host the file and return a URL. There is no size limit by default; pass `createImagePlugin({ maxSize })` (bytes) to cap the picker's file input. PASTE CAVEAT: the default paste sanitizer drops `<img>` tags, so images enter via the dialog or the `value` property, not paste. DEFERRED: resize/crop, captions, drag/paste insertion, alignment.",
- "rich-text-criticmarkup": "An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Tracks changes in CriticMarkup, the five-mark plain-text convention: `{++inserted++}`, `{--deleted--}`, `{~~old~>new~~}` (a substitution — imported as a deletion immediately followed by an insertion, and resolved as that pair, never as a lone half), `{>>comment<<}` (bare, or anchored right after a highlight), and `{==highlighted==}` (an annotation, kept on both accept and decline). Turn suggestion mode on with `setSuggestionMode(editor, true)` (or `createCriticMarkupPlugin({ suggesting: true })`): typed/deleted text is wrapped as marks instead of applied directly. Resolve one mark with `markAtSelection`/`acceptMark`/`declineMark`, or the whole document with `acceptAllMarks`/`declineAllMarks` — a bare comment is left standing either way, and a highlight's own anchored comment goes with it, since it is state on the node, not a separate mark. A paragraph split or merge proposed in suggestion mode is carried as a token (`¶`) inside a ONE-LINE mark rather than a real newline, because `@lexical/markdown` splits the document on `\\n` before any transformer runs and a mark spanning that split could never be seen on import; `structuralEdits` (plugin option, default `\"mark\"`) controls this — `\"annotate\"` lets the edit happen untracked and drops a bare comment at the boundary instead, `\"block\"` refuses it outright, `\"apply\"` allows it silently. THE PARAGRAPH TOKEN IS A DIALECT, NOT CRITICMARKUP: no other CriticMarkup tool knows it, so a document written this way shows a literal `¶` to anything else — call `toPortableCriticMarkup(value)` to convert back to plain CriticMarkup before handing it to another tool (splitting a multi-paragraph mark into one mark per block, at the cost of a blank line left behind on decline — the price of interop), or set `structuralEdits: \"annotate\"` so this plugin never emits the token at all. A LITERAL PILCROW AN AUTHOR TYPES IS WRITTEN DOUBLED (`¶¶`) so it round-trips as itself rather than a break. A mark nested inside another (same kind or different) is detected and refused as its own node — masked to a private-use sentinel on import, unmasked back to literal delimiter text on export, rather than mangled the way a naive regex import would mangle it — firing `dj-criticmarkup-refused`. The grammar (`parseMarks`, `accept`/`decline`/`acceptAll`/`declineAll`, `stripComments`, the token functions) is a standalone string API with no Lexical import anywhere in it, for a consumer with markdown in hand and no editor — a build step, a server, a CLI; `fixtures/conformance.json` ships in the package so a second-language port of the same grammar (this plugin's own origin: a clean-room port of NovelMaker's Python `critic.py`) can run the identical cases. Comments are authored in the editor: `insertComment(editor, text)` inserts bare at a collapsed caret or anchors `{==selection==}{>>note<<}` over a range, `editComment` changes an existing note, and the two deletes are separately labeled because they are genuinely different — `removeComment` drops just the note and leaves the highlight, `removeHighlight` drops both. A NOTE BODY CANNOT CONTAIN `<<}` OR `{>>` (either would break its own mark on the next round trip); `isValidCommentText` checks this against the same grammar the string API uses, and an invalid save is refused inline, naming the offending sequence. To recognize CriticMarkup inside `@dojo-ng/rich-text-markdown`'s own general markdown format, compose `criticMarkupTransformers` into its transformer set; this plugin also registers its own `criticmarkup` format (`format=\"criticmarkup\"`) so tracked changes work with no markdown plugin loaded at all. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo.",
+ "rich-text-image": """
+Images for `<dj-rich-text>`, inserted from a file or a URL, with required alt text.
+
+#### Inserting
+- The toolbar button opens a dialog with a `dj-file-input` and a URL field. The source used most
+  recently wins.
+- Alt text is required: the Insert button stays disabled until it is filled in, because an image
+  must have an accessible name.
+- Click an image to select it; Backspace or Delete then removes it.
+
+#### Setup
+- Exports `imagePlugin`, `createImagePlugin({ upload, maxSize })`, `ImageNode`,
+  `$createImageNode`, `$isImageNode`, and `INSERT_IMAGE_COMMAND`.
+- The default `upload` turns the file into a data URL, which makes the HTML value large. In
+  production, pass your own `upload(file) => Promise<string>` that stores the file and returns
+  its URL.
+- There is no size limit by default. `maxSize` (bytes) limits the file input.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+
+#### Pasting
+- Paste cleaning removes `<img>` tags, so images come in through the dialog or `value`, not by
+  pasting.
+
+#### Not built
+- Resizing and cropping, captions, inserting by drag or paste, and alignment.
+""",
+ "rich-text-criticmarkup": """
+Track changes for `<dj-rich-text>` in CriticMarkup, a plain-text convention for suggested edits and
+comments.
+
+#### The five marks
+- `{++inserted++}` and `{--deleted--}`.
+- `{~~old~>new~~}`, a substitution. It is imported as a deletion followed by an insertion, and
+  accepted or declined as that pair, never one half alone.
+- `{>>comment<<}`, on its own or attached right after a highlight.
+- `{==highlighted==}`, a note on the text. It is kept on both accept and decline.
+
+#### Suggestion mode
+- Turn it on with `setSuggestionMode(editor, true)`, or start with
+  `createCriticMarkupPlugin({ suggesting: true })`. Typed and deleted text then becomes marks
+  instead of changing the text directly.
+- Resolve one mark with `markAtSelection`, `acceptMark`, and `declineMark`, or the whole document
+  with `acceptAllMarks` and `declineAllMarks`.
+- A comment on its own stays either way. A highlight's attached comment goes with the highlight.
+
+#### Comments
+- `insertComment(editor, text)` adds a comment at a collapsed caret, or highlights a selection and
+  attaches the comment to it. `editComment` changes a comment.
+- `removeComment` removes only the comment and keeps the highlight; `removeHighlight` removes both.
+- A comment cannot contain `<<}` or `{>>`, because either would break the mark the next time the
+  text is read. `isValidCommentText` checks this, and an invalid comment is refused with a message
+  that names the problem.
+
+#### Splitting and joining paragraphs
+- A paragraph split or join suggested in suggestion mode is stored as a `¶` token inside a one-line
+  mark, not as a real line break, so it survives Markdown import.
+- The `structuralEdits` option (default `"mark"`) controls this. `"annotate"` makes the edit
+  without tracking it and leaves a comment at the boundary, `"block"` refuses the edit, and
+  `"apply"` makes it silently.
+- The `¶` token is an extension, not standard CriticMarkup: other tools show it as a literal `¶`.
+  Call `toPortableCriticMarkup(value)` before handing a document to another tool. It splits a
+  multi-paragraph mark into one mark per paragraph, which can leave a blank line behind on decline.
+  Or set `structuralEdits: "annotate"` so the token is never written.
+- A `¶` that the author types is written doubled (`¶¶`) so it stays a character.
+
+#### Nested marks
+- A mark inside another mark is refused as its own node instead of being garbled. It is kept as
+  literal text, and `dj-criticmarkup-refused` fires.
+
+#### Formats
+- The plugin adds its own `criticmarkup` format (`format="criticmarkup"`), so it works without the
+  Markdown plugin.
+- To read CriticMarkup inside `@dojo-ng/rich-text-markdown`'s format, add `criticMarkupTransformers`
+  to its transformer set.
+
+#### Without an editor
+- The grammar functions (`parseMarks`, `accept`, `decline`, `acceptAll`, `declineAll`,
+  `stripComments`, and the token functions) are plain string functions with no Lexical import. Use
+  them in a build step, on a server, or in a command-line tool.
+- `fixtures/conformance.json` is included, so a port to another language can run the same test
+  cases.
+
+#### Setup
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold,
+  italic, underline, undo, and redo.
+""",
 })
 NOTES.update({
- "chart-financial": "Opt-in candlestick/OHLC-bar, volume, indicator, and crosshair plugins for `@dojo-ng/chart` (not a custom element — push them onto `<dj-chart>`'s own `plugins` property, built with `defineChartPlugin`). A candlestick chart has no `series` of its own: `candlestickPlugin({ open, high, low, close, style?, upColor?, downColor?, label? })` reads four row keys directly and draws candle bodies (open→close, a doji still gets a visible minimum-height body rather than vanishing) with wicks (low→high), or `style: \"bar\"` for OHLC ticks instead — same data, same tooltip, same table rows, just a different mark. Up/down default to the `--dj-chart-up`/`--dj-chart-down` theme tokens; under `forced-colors: active` up renders hollow and down solid (a real candlestick-platform convention), since forced-colors flattens computed color regardless of what those tokens resolve to. `volumePlugin({ key, height?, label? })` is a PANE below the price chart (never a right-axis series — it would share the price chart's vertical space), sharing the exact same x scale so its columns line up with the price chart's exactly; it colors bars by reading conventional `\"open\"`/`\"close\"` keys directly off each row — NOT by asking a co-installed `candlestickPlugin` what keys it was configured with, so pairing it with a candlestick plugin that uses different key names falls back to neutral bars, a documented limitation rather than a silent mismatch. `indicatorPlugin({ key, kind: \"sma\"|\"ema\"|\"bollinger\", period, k?, color?, label? })` draws a moving-average or Bollinger-band overlay computed by this package's own exported `sma`/`ema`/`bollinger` (plain array functions, usable with no chart at all); a position before the window fills is a real gap in the line, never a drop to zero, the same convention `@dojo-ng/chart`'s own `missing` property uses. `crosshairPlugin({ snap? })` draws a vertical guide at the hovered category and a horizontal guide at the pointer's value, both with axis labels; `snap: true` locks the vertical guide to the nearest category center instead of following the pointer continuously (the horizontal guide always follows the raw pointer value — snapping it to an exact price would need an OHLC key name this plugin doesn't have, the same uncoupling `volumePlugin` already accepts). THE X AXIS STAYS ORDINAL, ON PURPOSE: `categoryKey` holds the date as a plain string, one slot per row, not a continuous `scaleTime` axis — a real time scale reserves visible width for weekends and holidays a market never traded on, which is a worse chart, not a more precise one. `tradingDayTicks(categories, pixels, locale)` thins the ordinal labels to month or (once month starts don't clear a 24px gap) quarter boundaries, keeping the first and last category always visible; wire it through `dj-chart`'s EXISTING `formatX` property (`chart.formatX = (c) => keepSet.has(c) ? label(c) : \"\"`) — the core needs no change at all to support it. GUIDANCE CAP, MEASURED, NOT ENFORCED: a candlestick + volume + indicator chart (the heaviest realistic combination) renders in well under 200ms measured at 2,000 categories and stays close to linear out to tens of thousands — comfortably fast through roughly 10,000 categories on the hardware this was measured on. Aggregate above that regardless: the per-category axis tick label and hit-band `@dojo-ng/chart` itself draws (not this package, and not the candles) is the actual cost driver, the same one a very wide plain line chart pays.",
+ "chart-financial": """
+Candlestick, volume, indicator, and crosshair plugins for `<dj-chart>`, for stock and other
+price charts.
+
+These are plugins, not a custom element: put them in `<dj-chart>`'s `plugins` property. A
+candlestick chart has no series of its own (`series: []`); the plugins draw everything.
+
+#### Candlesticks
+- `candlestickPlugin({ open, high, low, close, style?, upColor?, downColor?, label? })` reads four
+  row keys and draws candle bodies (open to close) with wicks (low to high).
+- A candle where open equals close still gets a thin visible body.
+- `style: "bar"` draws OHLC bars instead, with the same data, tooltip, and table rows.
+- Up and down colors come from the `--dj-chart-up` and `--dj-chart-down` tokens. Under
+  `forced-colors: active`, up candles are hollow and down candles solid, because forced colors
+  replace the token colors.
+
+#### Volume
+- `volumePlugin({ key, height?, label? })` draws volume in its own pane below the price chart, not
+  as a second axis, so it does not take space from the prices. Its columns line up exactly with the
+  candles.
+- It colors each bar by reading `open` and `close` keys from the row, not by asking the candlestick
+  plugin. With a candlestick plugin that uses other key names, the bars fall back to a neutral color.
+
+#### Indicators
+- `indicatorPlugin({ key, kind, period, k?, color?, label? })` draws a moving average or Bollinger
+  bands, where `kind` is `"sma"`, `"ema"`, or `"bollinger"`.
+- The math comes from the package's own `sma`, `ema`, and `bollinger` functions, which work on plain
+  arrays without a chart.
+- Before the window is full, the line has a gap, never a drop to zero, the same as `dj-chart`'s
+  `missing` property.
+
+#### Crosshair
+- `crosshairPlugin({ snap? })` draws a vertical guide at the hovered category and a horizontal guide
+  at the pointer's value, both labeled on the axes.
+- `snap: true` locks the vertical guide to the nearest category. The horizontal guide always
+  follows the pointer.
+
+#### Dates on the x axis
+- The x axis stays one slot per row, with the date as a plain string in `category-key`. A real time
+  axis would leave empty space for weekends and holidays when the market was closed.
+- `tradingDayTicks(categories, pixels, locale)` thins the labels to month starts, or quarter starts
+  when months do not fit, and always keeps the first and last date. Use it through `dj-chart`'s
+  `formatX`: `chart.formatX = (c) => keep.has(c) ? label(c) : ""`.
+
+#### Performance
+- A chart with candles, volume, and an indicator renders in well under 200 ms at 2,000 categories,
+  and stays fast up to about 10,000 categories on the hardware it was measured on.
+- Above that, aggregate the data. The cost comes from the axis labels and hover areas that
+  `dj-chart` draws for each category, not from the candles.
+""",
 })
 EXAMPLES.update({
  "chart-financial": [
-  ("Candlestick chart with a volume pane", "`series: []` on `<dj-chart>` — the candlestick and volume plugins draw everything; there is no core series to configure. `y-scale=\"log\"` is the natural axis for a price chart spanning a wide range. The volume pane colors its bars by reading the SAME `open`/`close` keys the candlestick plugin was given, since it always reads those two conventional key names off the row rather than asking the other plugin what it was configured with.",
+  ("Candlestick chart with a volume pane", "Candles and a volume pane, with no core series. `y-scale=\"log\"` suits prices that span a wide range.",
    '<div style="width: 560px; height: 360px">\n  <dj-chart id="candles" type="line" category-key="date" label="AAPL, Jan-Mar 2024" y-scale="log"></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  import { candlestickPlugin, volumePlugin } from "@dojo-ng/chart-financial";\n  const el = document.getElementById("candles");\n  el.series = [];\n  el.plugins = [\n    candlestickPlugin({ open: "open", high: "high", low: "low", close: "close" }),\n    volumePlugin({ key: "volume", height: 70 }),\n  ];\n  el.data = [\n    { date: "2024-01-02", open: 185.6, high: 186.9, low: 184.2, close: 186.1, volume: 82_000_000 },\n    { date: "2024-01-03", open: 186.1, high: 186.4, low: 183.4, close: 184.3, volume: 79_000_000 },\n    { date: "2024-01-04", open: 184.3, high: 185.9, low: 182.7, close: 183.0, volume: 91_000_000 },\n    { date: "2024-01-05", open: 183.0, high: 183.9, low: 181.8, close: 182.7, volume: 88_000_000 },\n    { date: "2024-01-08", open: 182.7, high: 186.2, low: 182.1, close: 185.9, volume: 84_000_000 },\n  ];\n</script>'),
-  ("Adding a moving-average indicator", "`indicatorPlugin` overlays a computed series on the SAME price axis the candles use. The leading run before the window fills is a real gap in the line (not a drop to zero) — visible here as no line at all until day 3 with `period: 3`. `sma`/`ema`/`bollinger` are also exported as plain functions with no chart dependency, for computing the same numbers outside a chart entirely.",
+  ("Adding a moving-average indicator", "A 3-day moving average on the price axis. The line starts on day 3, when the window is full.",
    '<div style="width: 560px; height: 360px">\n  <dj-chart id="withIndicator" type="line" category-key="date" label="AAPL with a 3-day SMA" y-scale="log"></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  import { candlestickPlugin, indicatorPlugin, sma } from "@dojo-ng/chart-financial";\n  const el = document.getElementById("withIndicator");\n  el.series = [];\n  el.data = [\n    { date: "2024-01-02", open: 185.6, high: 186.9, low: 184.2, close: 186.1 },\n    { date: "2024-01-03", open: 186.1, high: 186.4, low: 183.4, close: 184.3 },\n    { date: "2024-01-04", open: 184.3, high: 185.9, low: 182.7, close: 183.0 },\n    { date: "2024-01-05", open: 183.0, high: 183.9, low: 181.8, close: 182.7 },\n    { date: "2024-01-08", open: 182.7, high: 186.2, low: 182.1, close: 185.9 },\n  ];\n  el.plugins = [\n    candlestickPlugin({ open: "open", high: "high", low: "low", close: "close" }),\n    indicatorPlugin({ key: "close", kind: "sma", period: 3, label: "SMA(3)" }),\n  ];\n  // The same numbers with no chart at all:\n  // sma(el.data.map((d) => d.close), 3); // [null, null, 184.47..., 183.33..., 183.87...]\n</script>'),
-  ("Trading-day tick labels on the ordinal axis", "The x axis stays ordinal — one slot per date string, not a continuous time scale that would reserve width for the weekends this market never traded on. `tradingDayTicks` picks which categories to label (month starts, falling back to quarter starts once month starts would crowd), wired through `dj-chart`'s own `formatX` — the core needs no change to support it.",
+  ("Trading-day tick labels on the ordinal axis", "Month-start labels from `tradingDayTicks`, applied through `formatX`.",
    '<div style="width: 560px; height: 220px">\n  <dj-chart id="ticks" type="line" category-key="date" label="Two years of daily closes" show-grid></dj-chart>\n</div>\n<script type="module">\n  import "@dojo-ng/chart";\n  import { tradingDayTicks } from "@dojo-ng/chart-financial";\n  const el = document.getElementById("ticks");\n  el.series = [{ key: "close", label: "Close" }];\n  el.data = Array.from({ length: 500 }, (_, i) => {\n    const d = new Date(Date.UTC(2024, 0, 2) + i * 86400000);\n    return { date: d.toISOString().slice(0, 10), close: 150 + Math.sin(i / 20) * 15 };\n  });\n  const keep = new Set(tradingDayTicks(el.data.map((d) => d.date), el.clientWidth, document.documentElement.lang || "en-US"));\n  el.formatX = (category) => (keep.has(category) ? category : "");\n</script>'),
  ],
 })

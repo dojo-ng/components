@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-color
 
-Text/background color plugin for @dojo-ng/rich-text
+Text color and highlight color for `<dj-rich-text>`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Color is an inline `TextNode` style, so it contributes no nodes: it patches `color` (or `background-color`) on the selection via `$patchStyleText`. Exports `colorPlugin` (text color), `backgroundColorPlugin`, and `createColorPlugin({ styleProperty, label, swatches })`. The toolbar control is a `dj-button` whose icon is a swatch chip of the selection's current color; clicking it opens a `dj-popup` with a `dj-color-picker` and a Remove color button. The picker applies live (a preview during a drag) without stealing focus; the popup light-dismisses (outside click / Escape) and focus returns to the editor. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. PASTE CAVEAT: the default paste sanitizer strips inline `style`, so pasted colored text loses its color — color round-trips through the `value` property (which does not pass the paste sanitizer); a trusted app can supply its own `pasteSanitizer`.
 
 ## Install
 
@@ -25,3 +23,20 @@ Compose the color plugins with the default set. `createColorPlugin` customizes t
   document.getElementById("editor").plugins = [...defaultPlugins, colorPlugin, backgroundColorPlugin];
 </script>
 ```
+
+## Setup
+
+- Exports `colorPlugin` (text color), `backgroundColorPlugin`, and `createColorPlugin({ styleProperty, label, swatches })`.
+- Color is an inline style on the text, so the plugin adds no node types.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.
+
+## Using it
+
+- The toolbar button shows the current color as a swatch. Clicking it opens a `dj-color-picker` and a Remove color button.
+- The picker applies the color live while you drag, without moving focus.
+- The popup closes on a click outside or on Escape, and focus returns to the editor.
+
+## Pasting
+
+- The default paste cleaning removes inline styles, so pasted colored text loses its color.
+- Color is kept through `value`, which is not cleaned. A trusted app can set its own `pasteSanitizer`.

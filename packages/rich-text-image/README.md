@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-image
 
-Image insert plugin for @dojo-ng/rich-text
+Images for `<dj-rich-text>`, inserted from a file or a URL, with required alt text.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes an `ImageNode` (a decorator node rendering an `<img>`) plus an `INSERT_IMAGE_COMMAND`, and a toolbar button that opens a `dj-dialog` for inserting an image from a file (`dj-file-input`) or a URL — the most recent source wins. Alt text is REQUIRED: the insert button stays disabled until it is non-empty, because the accessible name is mandatory. Exports `imagePlugin`, `createImagePlugin({ upload })`, `ImageNode`, `$createImageNode`, `$isImageNode`, and `INSERT_IMAGE_COMMAND`. Clicking an image selects it (a NodeSelection); Backspace/Delete then removes it (handled by Lexical). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. DATA-URL CAVEAT: the default `upload` reads the file to a data URL, which bloats the HTML value — pass your own `upload(file) => Promise<string>` in production to host the file and return a URL. There is no size limit by default; pass `createImagePlugin({ maxSize })` (bytes) to cap the picker's file input. PASTE CAVEAT: the default paste sanitizer drops `<img>` tags, so images enter via the dialog or the `value` property, not paste. DEFERRED: resize/crop, captions, drag/paste insertion, alignment.
 
 ## Install
 
@@ -26,3 +24,26 @@ Compose the image plugin with the default set. Pass `createImagePlugin({ upload 
   document.getElementById("editor").plugins = [...defaultPlugins, imagePlugin];
 </script>
 ```
+
+## Inserting
+
+- The toolbar button opens a dialog with a `dj-file-input` and a URL field. The source used most recently wins.
+- Alt text is required: the Insert button stays disabled until it is filled in, because an image must have an accessible name.
+- Click an image to select it; Backspace or Delete then removes it.
+
+## Setup
+
+- Exports `imagePlugin`, `createImagePlugin({ upload, maxSize })`, `ImageNode`, `$createImageNode`, `$isImageNode`, and `INSERT_IMAGE_COMMAND`.
+- The default `upload` turns the file into a data URL, which makes the HTML value large. In production, pass your own `upload(file) => Promise<string>` that stores the file and returns its URL.
+- There is no size limit by default. `maxSize` (bytes) limits the file input.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.
+
+## Pasting
+
+- Paste cleaning removes `<img>` tags, so images come in through the dialog or `value`, not by pasting.
+
+## Not built
+
+- Resizing and cropping, captions, inserting by drag or paste, and alignment.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).

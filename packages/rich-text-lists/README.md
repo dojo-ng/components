@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-lists
 
-Bulleted/numbered/checklist plugin for @dojo-ng/rich-text
+Bulleted, numbered, and check lists for `<dj-rich-text>`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes the `ListNode`/`ListItemNode` classes, installs Lexical's list behaviour, and adds three toolbar buttons that toggle the current block into and out of a bulleted, numbered, or check list. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Exports `listsPlugin`. CHECKLISTS: the installed `@lexical/list` does not export `registerCheckList`, so the plugin owns the interaction — it registers `INSERT_CHECK_LIST_COMMAND` (via `insertList(editor, "check")`), reflects each check item's state onto its `<li>` as `data-dj-checked="true|false"` plus `role="checkbox"` and `aria-checked` (theme-independent, keyed by CSS), toggles on a click in the ~1.6em marker zone (LTR left edge, RTL right edge — clicking the text just places the caret), and toggles on Space at the start of an item. Checked state round-trips through the `value` HTML on Lexical 0.21's native list export/import (the emitted markup is `<ul __lexicallisttype="check"><li role="checkbox" aria-checked="true|false">…</li></ul>`), so no serialization overrides are needed; consuming sites can style the exported `data-dj-checked`/`aria-checked` attributes themselves. DEFERRED: nested-checklist indent styling beyond what lists already do, and read-only interactive checkboxes outside the editor.
 
 ## Install
 
@@ -25,3 +23,25 @@ Compose the lists plugin with the default set; the toolbar gains bulleted, numbe
   document.getElementById("editor").plugins = [...defaultPlugins, listsPlugin];
 </script>
 ```
+
+## Using it
+
+- Three toolbar buttons turn the current block into a bulleted, numbered, or check list, or back.
+
+## Check lists
+
+- Each check item's state is on its `<li>` as `data-dj-checked="true|false"`, with `role="checkbox"` and `aria-checked`, so you can style it with CSS.
+- A click in the marker area at the start of the item (the left edge, or the right edge in a right-to-left page) toggles it. A click on the text only places the caret.
+- Space at the start of an item also toggles it.
+- The checked state survives the `value` round trip in the HTML that Lexical exports, so a site can style the exported `data-dj-checked` and `aria-checked` attributes.
+
+## Setup
+
+- Exports `listsPlugin`. With `rich-text-slash` loaded, the slash menu also offers the three list types.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.
+
+## Not built
+
+- Extra indent styling for nested check lists, and clickable checkboxes outside the editor.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).

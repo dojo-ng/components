@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-markdown
 
-Markdown input/output plugin for @dojo-ng/rich-text
+Markdown for `<dj-rich-text>`: a Markdown value format and typing shortcuts.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes no nodes and no toolbar: it adds a `markdown` output format (set `format="markdown"` on `dj-rich-text` and the `value` getter emits Markdown, the setter parses it) and, by default, registers type-a-shortcut behaviour (`# ` for a heading, `- ` for a list, `**bold**`, and so on) even when the output format stays HTML. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. Markdown coverage follows the node-contributing plugins that are loaded: transformers whose node classes are not registered are dropped, so pair this with `rich-text-headings`, `rich-text-lists`, and `rich-text-links` for headings, lists, and links. Without the headings plugin, `# ` stays literal text. `createMarkdownPlugin({ shortcuts, transformers })` turns shortcuts off or supplies a custom transformer set; `usableTransformers(editor, transformers)` is exported for inspection. Requires the `@lexical/markdown` dependency. Note: pasted Markdown-looking text is not converted; Markdown enters via the `value` property or the shortcuts.
 
 ## Install
 
@@ -30,3 +28,19 @@ Compose the markdown plugin with the default set (plus headings/lists/links for 
   el.value = "# Title\n\nSome **bold** text.";
 </script>
 ```
+
+## Markdown value
+
+- Set `format="markdown"` on `dj-rich-text`: `value` then returns Markdown, and setting it parses Markdown.
+- Coverage follows the plugins that add content types. Pair it with `rich-text-headings`, `rich-text-lists`, and `rich-text-links` for headings, lists, and links. Without the headings plugin, `# ` stays as typed.
+- Pasted text that looks like Markdown is not converted. Markdown comes in through `value` or the shortcuts.
+
+## Shortcuts
+
+- By default, typing `# ` makes a heading, `- ` a list, `**bold**` bold text, and so on, even when the value format stays HTML.
+
+## Setup
+
+- `createMarkdownPlugin({ shortcuts, transformers })` turns the shortcuts off or sets your own transformers. `usableTransformers(editor, transformers)` shows which ones apply.
+- Requires the `@lexical/markdown` package.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.

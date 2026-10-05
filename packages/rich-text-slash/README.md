@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-slash
 
-Slash-command menu plugin for @dojo-ng/rich-text
+A `/` command menu for `<dj-rich-text>`: type `/` to insert headings, lists, tables, images, and more.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Typing `/` at the start of a block or after whitespace opens a caret-anchored command menu (built on `@dojo-ng/rich-text-menu`); ArrowUp/Down move the highlight, Enter/Tab or a click runs the item, Escape closes. The menu's items are aggregated from every loaded plugin's `inserts` plus any `extra` you pass, so it reflects whatever plugins you compose: headings contribute Paragraph/Heading 1–3/Quote, lists contribute Bulleted/Numbered/Checklist, image contributes Image, table contributes Table. Picking an item removes the `/query` text, then runs the item's `run(ctx)` (convert the block, insert a table, open the image dialog, …). The menu never opens when no plugin contributes an insert, and a query that matches nothing hides it. Exports `slashPlugin`, `createSlashPlugin({ extra? })`, `DEFAULT_SLASH_TRIGGER`, and the pure `aggregateInserts`/`filterInserts` helpers. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. To expose block/insert actions from your own plugin, add an `inserts` array (or `(ctx) => items`) of `{ id, label, keywords?, run(ctx) }`.
 
 ## Install
 
@@ -28,6 +26,23 @@ Compose the slash plugin with the default set and the node-contributing plugins 
   document.getElementById("editor").plugins = [...defaultPlugins, headingsPlugin, listsPlugin, imagePlugin, slashPlugin];
 </script>
 ```
+
+## Using it
+
+- Typing `/` at the start of a block or after a space opens a menu at the caret. ArrowUp and ArrowDown move the highlight; Enter, Tab, or a click runs the item; Escape closes the menu.
+- Choosing an item removes the `/query` text, then runs the item.
+- A query that matches nothing hides the menu.
+
+## What is in the menu
+
+- The items come from every loaded plugin's `inserts`, plus any `extra` you pass. Headings adds Paragraph, Heading 1 to 3, and Quote; lists adds the three list types; image adds Image; table adds Table.
+- The menu never opens when no plugin adds an item.
+- To add actions from your own plugin, give it an `inserts` array (or a function `(ctx) => items`) of `{ id, label, keywords?, run(ctx) }`.
+
+## Setup
+
+- Exports `slashPlugin`, `createSlashPlugin({ extra? })`, `DEFAULT_SLASH_TRIGGER`, and the `aggregateInserts` and `filterInserts` helpers.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.
 
 ## Examples
 

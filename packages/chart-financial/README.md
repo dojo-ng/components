@@ -1,10 +1,10 @@
 # @dojo-ng/chart-financial
 
-Candlestick, volume, and indicator plugins for @dojo-ng/chart (OHLC support package, no custom element)
+Candlestick, volume, indicator, and crosshair plugins for `<dj-chart>`, for stock and other price charts.
+
+These are plugins, not a custom element: put them in `<dj-chart>`'s `plugins` property. A candlestick chart has no series of its own (`series: []`); the plugins draw everything.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-Opt-in candlestick/OHLC-bar, volume, indicator, and crosshair plugins for `@dojo-ng/chart` (not a custom element — push them onto `<dj-chart>`'s own `plugins` property, built with `defineChartPlugin`). A candlestick chart has no `series` of its own: `candlestickPlugin({ open, high, low, close, style?, upColor?, downColor?, label? })` reads four row keys directly and draws candle bodies (open→close, a doji still gets a visible minimum-height body rather than vanishing) with wicks (low→high), or `style: "bar"` for OHLC ticks instead — same data, same tooltip, same table rows, just a different mark. Up/down default to the `--dj-chart-up`/`--dj-chart-down` theme tokens; under `forced-colors: active` up renders hollow and down solid (a real candlestick-platform convention), since forced-colors flattens computed color regardless of what those tokens resolve to. `volumePlugin({ key, height?, label? })` is a PANE below the price chart (never a right-axis series — it would share the price chart's vertical space), sharing the exact same x scale so its columns line up with the price chart's exactly; it colors bars by reading conventional `"open"`/`"close"` keys directly off each row — NOT by asking a co-installed `candlestickPlugin` what keys it was configured with, so pairing it with a candlestick plugin that uses different key names falls back to neutral bars, a documented limitation rather than a silent mismatch. `indicatorPlugin({ key, kind: "sma"|"ema"|"bollinger", period, k?, color?, label? })` draws a moving-average or Bollinger-band overlay computed by this package's own exported `sma`/`ema`/`bollinger` (plain array functions, usable with no chart at all); a position before the window fills is a real gap in the line, never a drop to zero, the same convention `@dojo-ng/chart`'s own `missing` property uses. `crosshairPlugin({ snap? })` draws a vertical guide at the hovered category and a horizontal guide at the pointer's value, both with axis labels; `snap: true` locks the vertical guide to the nearest category center instead of following the pointer continuously (the horizontal guide always follows the raw pointer value — snapping it to an exact price would need an OHLC key name this plugin doesn't have, the same uncoupling `volumePlugin` already accepts). THE X AXIS STAYS ORDINAL, ON PURPOSE: `categoryKey` holds the date as a plain string, one slot per row, not a continuous `scaleTime` axis — a real time scale reserves visible width for weekends and holidays a market never traded on, which is a worse chart, not a more precise one. `tradingDayTicks(categories, pixels, locale)` thins the ordinal labels to month or (once month starts don't clear a 24px gap) quarter boundaries, keeping the first and last category always visible; wire it through `dj-chart`'s EXISTING `formatX` property (`chart.formatX = (c) => keepSet.has(c) ? label(c) : ""`) — the core needs no change at all to support it. GUIDANCE CAP, MEASURED, NOT ENFORCED: a candlestick + volume + indicator chart (the heaviest realistic combination) renders in well under 200ms measured at 2,000 categories and stays close to linear out to tens of thousands — comfortably fast through roughly 10,000 categories on the hardware this was measured on. Aggregate above that regardless: the per-category axis tick label and hit-band `@dojo-ng/chart` itself draws (not this package, and not the candles) is the actual cost driver, the same one a very wide plain line chart pays.
 
 ## Install
 
@@ -14,7 +14,7 @@ npm install @dojo-ng/chart-financial
 
 ## Usage
 
-`series: []` on `<dj-chart>` — the candlestick and volume plugins draw everything; there is no core series to configure. `y-scale="log"` is the natural axis for a price chart spanning a wide range. The volume pane colors its bars by reading the SAME `open`/`close` keys the candlestick plugin was given, since it always reads those two conventional key names off the row rather than asking the other plugin what it was configured with.
+Candles and a volume pane, with no core series. `y-scale="log"` suits prices that span a wide range.
 
 ```html
 <div style="width: 560px; height: 360px">
@@ -39,11 +39,44 @@ npm install @dojo-ng/chart-financial
 </script>
 ```
 
+## Candlesticks
+
+- `candlestickPlugin({ open, high, low, close, style?, upColor?, downColor?, label? })` reads four row keys and draws candle bodies (open to close) with wicks (low to high).
+- A candle where open equals close still gets a thin visible body.
+- `style: "bar"` draws OHLC bars instead, with the same data, tooltip, and table rows.
+- Up and down colors come from the `--dj-chart-up` and `--dj-chart-down` tokens. Under `forced-colors: active`, up candles are hollow and down candles solid, because forced colors replace the token colors.
+
+## Volume
+
+- `volumePlugin({ key, height?, label? })` draws volume in its own pane below the price chart, not as a second axis, so it does not take space from the prices. Its columns line up exactly with the candles.
+- It colors each bar by reading `open` and `close` keys from the row, not by asking the candlestick plugin. With a candlestick plugin that uses other key names, the bars fall back to a neutral color.
+
+## Indicators
+
+- `indicatorPlugin({ key, kind, period, k?, color?, label? })` draws a moving average or Bollinger bands, where `kind` is `"sma"`, `"ema"`, or `"bollinger"`.
+- The math comes from the package's own `sma`, `ema`, and `bollinger` functions, which work on plain arrays without a chart.
+- Before the window is full, the line has a gap, never a drop to zero, the same as `dj-chart`'s `missing` property.
+
+## Crosshair
+
+- `crosshairPlugin({ snap? })` draws a vertical guide at the hovered category and a horizontal guide at the pointer's value, both labeled on the axes.
+- `snap: true` locks the vertical guide to the nearest category. The horizontal guide always follows the pointer.
+
+## Dates on the x axis
+
+- The x axis stays one slot per row, with the date as a plain string in `category-key`. A real time axis would leave empty space for weekends and holidays when the market was closed.
+- `tradingDayTicks(categories, pixels, locale)` thins the labels to month starts, or quarter starts when months do not fit, and always keeps the first and last date. Use it through `dj-chart`'s `formatX`: `chart.formatX = (c) => keep.has(c) ? label(c) : ""`.
+
+## Performance
+
+- A chart with candles, volume, and an indicator renders in well under 200 ms at 2,000 categories, and stays fast up to about 10,000 categories on the hardware it was measured on.
+- Above that, aggregate the data. The cost comes from the axis labels and hover areas that `dj-chart` draws for each category, not from the candles.
+
 ## Examples
 
 ### Adding a moving-average indicator
 
-`indicatorPlugin` overlays a computed series on the SAME price axis the candles use. The leading run before the window fills is a real gap in the line (not a drop to zero) — visible here as no line at all until day 3 with `period: 3`. `sma`/`ema`/`bollinger` are also exported as plain functions with no chart dependency, for computing the same numbers outside a chart entirely.
+A 3-day moving average on the price axis. The line starts on day 3, when the window is full.
 
 ```html
 <div style="width: 560px; height: 360px">
@@ -72,7 +105,7 @@ npm install @dojo-ng/chart-financial
 
 ### Trading-day tick labels on the ordinal axis
 
-The x axis stays ordinal — one slot per date string, not a continuous time scale that would reserve width for the weekends this market never traded on. `tradingDayTicks` picks which categories to label (month starts, falling back to quarter starts once month starts would crowd), wired through `dj-chart`'s own `formatX` — the core needs no change to support it.
+Month-start labels from `tradingDayTicks`, applied through `formatX`.
 
 ```html
 <div style="width: 560px; height: 220px">

@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-headings
 
-Headings/quote plugin for @dojo-ng/rich-text
+Headings (levels 1 to 3) and block quotes for `<dj-rich-text>`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Contributes the `HeadingNode`/`QuoteNode` classes and one toolbar control: a paragraph-style `<select>` that shows the current block's type (Paragraph, Heading 1–3, Quote) and converts the selection's block(s) to the chosen type on change, returning focus to the editor afterward. FOUNDATIONAL, not optional in practice: Lexical needs node classes registered at editor creation, so without this plugin loaded, headings and quotes cannot exist in the document by any path — pasted or `value`-set `<h1>`–`<h3>`/`<blockquote>` markup degrades to plain paragraphs on import (the same rule `rich-text-table` documents for tables), `rich-text-markdown`'s `# `/`> ` shortcuts have nothing to convert into, and `rich-text-slash`'s Heading/Quote menu items silently do nothing. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. Exports `headingsPlugin` as a ready-made instance — unlike most rich-text plugins there is no `createHeadingsPlugin`/options, since there is nothing to configure. Also contributes five slash-menu inserts (Paragraph, Heading 1–3, Quote), picked up automatically when `rich-text-slash` is loaded alongside it.
 
 ## Install
 
@@ -25,3 +23,21 @@ Compose the headings plugin with the default set; the toolbar gains a paragraph-
   document.getElementById("editor").plugins = [...defaultPlugins, headingsPlugin];
 </script>
 ```
+
+## Using it
+
+- The toolbar gets a paragraph-style menu that shows the current block's type (Paragraph, Heading 1 to 3, or Quote) and changes the selected blocks to the chosen type. Focus returns to the editor.
+- With `rich-text-slash` loaded, the slash menu also offers Paragraph, Heading 1 to 3, and Quote.
+
+## Why you need it
+
+Lexical needs its node types when the editor is created. Without this plugin, headings and quotes cannot exist in the document at all:
+
+- Pasted or `value`-set `<h1>` to `<h3>` and `<blockquote>` become plain paragraphs.
+- `rich-text-markdown`'s `# ` and `> ` shortcuts have nothing to convert into.
+- `rich-text-slash`'s Heading and Quote items do nothing.
+
+## Setup
+
+- Exports `headingsPlugin`, ready to use. There is no `createHeadingsPlugin`, because there is nothing to configure.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.

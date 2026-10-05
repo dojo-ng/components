@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-links
 
-Link insert/edit/remove plugin for @dojo-ng/rich-text
+Links for `<dj-rich-text>`: add, change, and remove a link on the selection.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. The one toolbar button reflects whether the selection is a link (`aria-pressed`) and, on click, asks for a URL — an empty value removes the link, a new value sets or updates it, cancelling changes nothing. The default URL prompt is `window.prompt`; pass your own via `createLinksPlugin({ promptForUrl })` (it may be async — return a Promise) to drive it from an overlay. Auto-linking on paste/typing is a later addition.
 
 ## Install
 
@@ -25,3 +23,14 @@ Compose the links plugin with the default set. `createLinksPlugin({ promptForUrl
   document.getElementById("editor").plugins = [...defaultPlugins, linksPlugin];
 </script>
 ```
+
+## Using it
+
+- The toolbar button shows whether the selection is a link (`aria-pressed`). Clicking it asks for a URL.
+- An empty URL removes the link, a new URL sets or changes it, and Cancel changes nothing.
+
+## Setup
+
+- The default prompt is `window.prompt`. Pass your own with `createLinksPlugin({ promptForUrl })`; it may return a Promise, so it can open your own dialog.
+- For links made automatically while typing, add `rich-text-autolink`.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.

@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-mentions
 
-Mentions (@name) plugin for @dojo-ng/rich-text
+@mentions for `<dj-rich-text>`: type `@` and pick a person from a menu.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Typing the trigger (default `@`) opens a caret-anchored menu (built on `@dojo-ng/rich-text-menu`); ArrowUp/Down move the highlight, Enter/Tab or a click inserts an atomic `MentionNode` (`@label`, `segmented` mode so it deletes as a unit) plus a trailing space, Escape closes. Exports `createMentionsPlugin({ source, trigger? })`, `MentionNode`, `$createMentionNode`, `$isMentionNode`, and `DEFAULT_MENTION_TRIGGER` — there is NO default `mentionsPlugin` because `source` is app-owned and REQUIRED: `source(query) => Promise<Array<{ id, label }>>` (called debounced, with a stale-response guard and a loading spinner). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. Mentions survive the `value` round-trip via the node's own `importDOM` (`<span data-dj-mention="id">@label</span>`). PASTE CAVEAT: the sanitizer keeps `span` but strips its attributes, so a pasted mention degrades to plain `@label` text. DEFERRED: multiple trigger characters, hover-cards, in-place editing, SSR guidance.
 
 ## Install
 
@@ -29,3 +27,26 @@ Compose the mentions plugin with the default set and supply a `source`. Here it 
   document.getElementById("editor").plugins = [...defaultPlugins, mentions];
 </script>
 ```
+
+## Using it
+
+- Typing the trigger (`@` by default) opens a menu at the caret. ArrowUp and ArrowDown move the highlight; Enter, Tab, or a click inserts the mention and a space; Escape closes the menu.
+- A mention is one unit: it shows as `@label` and Backspace deletes it whole.
+
+## Setup
+
+- `source` is required and comes from your app: `source(query) => Promise<Array<{ id, label }>>`. It is called after a short delay, older answers are ignored, and a spinner shows while it loads.
+- Because `source` is required, there is no ready-made `mentionsPlugin`. Use `createMentionsPlugin({ source, trigger? })`.
+- Also exports `MentionNode`, `$createMentionNode`, `$isMentionNode`, and `DEFAULT_MENTION_TRIGGER`.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.
+
+## HTML and pasting
+
+- Mentions survive the `value` round trip as `<span data-dj-mention="id">@label</span>`.
+- Paste cleaning keeps the `span` but removes its attributes, so a pasted mention becomes plain `@label` text.
+
+## Not built
+
+- More than one trigger character, hover cards, editing a mention in place, and guidance for server-side rendering.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).

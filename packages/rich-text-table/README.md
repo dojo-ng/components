@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-table
 
-Table plugin for @dojo-ng/rich-text
+Tables for `<dj-rich-text>`: insert a table, then add or remove rows and columns.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes the three `@lexical/table` node classes (`TableNode`, `TableRowNode`, `TableCellNode`), registers `INSERT_TABLE_COMMAND` and Lexical's grid mouse-selection + Tab/arrow cell navigation, and adds two toolbar controls. "Insert table" opens an 8×8 grid picker (hover to size, click to insert); "Table menu" is enabled only when the caret is inside a table and offers insert row above/below, insert column left/right, delete row, delete column, toggle header row, and delete table. Exports `tablePlugin` and `createTablePlugin()`. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. PASTE: with this plugin loaded a pasted `<table>` imports as a real table (the paste sanitizer allowlists table markup); WITHOUT the plugin, pasted table elements degrade to paragraphs. DEFERRED: merge/split cells, column widths/resizing, caption UI (the tag survives paste, nothing more), nested-table styling beyond level 1.
 
 ## Install
 
@@ -25,3 +23,24 @@ Compose the table plugin with the default set. Insert from the 8×8 grid picker,
   document.getElementById("editor").plugins = [...defaultPlugins, tablePlugin];
 </script>
 ```
+
+## Using it
+
+- Insert table opens an 8 by 8 grid: point to choose the size, click to insert.
+- The table menu is available when the caret is in a table. It inserts a row above or below or a column left or right, deletes a row, a column, or the table, and turns the header row on or off.
+- Select cells with the mouse; Tab and the arrow keys move between cells.
+
+## Pasting
+
+- With this plugin loaded, a pasted `<table>` becomes a real table. Without it, pasted tables become paragraphs.
+
+## Setup
+
+- Exports `tablePlugin` and `createTablePlugin()`. With `rich-text-slash` loaded, the slash menu also offers Table.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.
+
+## Not built
+
+- Merging and splitting cells, column widths and resizing, editing captions (a pasted caption is kept, nothing more), and styling for tables inside tables.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).

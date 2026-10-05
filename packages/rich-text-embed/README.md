@@ -1,10 +1,8 @@
 # @dojo-ng/rich-text-embed
 
-Media embed plugin for @dojo-ng/rich-text
+Embedded media for `<dj-rich-text>`: YouTube and Vimeo videos, and video or audio files, from a pasted URL.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). It contributes an `EmbedNode` and an `INSERT_EMBED_COMMAND`, and adds a toolbar button that opens a `dj-dialog` for pasting a media URL. The URL is run through matchers, tried in order: YouTube (watch/`youtu.be`/shorts/embed URLs) and Vimeo render as privacy-enhanced iframes (`youtube-nocookie.com`, `player.vimeo.com`); a direct video file (`.mp4/.webm/.m3u8/.mov`) renders via `dj-video` and a direct audio file (`.mp3/.m4a/.ogg/.wav/.flac`) via `dj-audio`. An unsupported link shows an inline error and keeps the dialog open. Exports `embedPlugin`, `createEmbedPlugin({ matchers? })`, `EmbedNode`, `$createEmbedNode`, `$isEmbedNode`, `INSERT_EMBED_COMMAND`, `defaultMatchers`, and the `EmbedMatcher`/`EmbedPayload` types. Setting `plugins` REPLACES the default set, so spread `...defaultPlugins`. NO generic-iframe matcher ships (arbitrary iframes are a consumer decision — add your own matcher via `matchers`). APP PREREQUISITE: `dj-video` needs video.js's stylesheet + engine loaded at the document level. HTML/round-trip: an embed exports as `<div data-dj-embed data-src [data-title]>` wrapping a fallback `<a href>` (the canonical watch URL for youtube/vimeo), so a consuming site can render from the data attributes or fall back to the link; embeds survive the `value` round-trip via the node's own importDOM. PASTE: the sanitizer removes `iframe` and strips the embed div's attributes, so a pasted embed degrades to a plain link — embeds enter via the dialog, the command, or `value`. DEFERRED: oEmbed/metadata (titles, thumbnails), autoplay options, generic iframe matcher, resize/alignment UI.
 
 ## Install
 
@@ -28,6 +26,31 @@ Compose the embed plugin with the default set. Load video.js at the document lev
   document.getElementById("editor").plugins = [...defaultPlugins, embedPlugin];
 </script>
 ```
+
+## Inserting
+
+- The toolbar button opens a dialog for a media URL. An unsupported link shows an error and the dialog stays open.
+- Matchers are tried in order. YouTube (watch, `youtu.be`, shorts, and embed URLs) and Vimeo become privacy-enhanced iframes (`youtube-nocookie.com`, `player.vimeo.com`).
+- A video file (`.mp4`, `.webm`, `.m3u8`, `.mov`) uses `dj-video`, and an audio file (`.mp3`, `.m4a`, `.ogg`, `.wav`, `.flac`) uses `dj-audio`.
+- `dj-video` needs the video.js stylesheet and video.js loaded at the document level.
+
+## Setup
+
+- Exports `embedPlugin`, `createEmbedPlugin({ matchers? })`, `EmbedNode`, `$createEmbedNode`, `$isEmbedNode`, `INSERT_EMBED_COMMAND`, `defaultMatchers`, and the `EmbedMatcher` and `EmbedPayload` types.
+- There is no matcher for any iframe. Whether to allow other iframes is your decision: add your own matcher with `matchers`.
+- Setting `plugins` replaces the default set, so spread `...defaultPlugins` to keep bold, italic, underline, undo, and redo.
+
+## HTML and pasting
+
+- An embed exports as `<div data-dj-embed data-src [data-title]>` around a plain `<a href>`, so a site can render it from the data attributes or show the link.
+- Embeds survive the `value` round trip.
+- Paste cleaning removes iframes and the embed's attributes, so a pasted embed becomes a plain link. Embeds come in through the dialog, the command, or `value`.
+
+## Not built
+
+- Titles and thumbnails (oEmbed), autoplay options, a matcher for any iframe, and resizing or alignment.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 ## Examples
 

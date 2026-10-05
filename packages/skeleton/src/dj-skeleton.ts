@@ -9,22 +9,20 @@ export type SkeletonEffect = "sheen" | "none";
 /**
  * `<dj-skeleton>` — a loading placeholder that stands in for content while it loads.
  *
- * Shape and size come from consumer CSS on the host: it is `display: block` with a
- * default height of `1em` and a token border-radius. Style the host to size each
- * placeholder — a circular avatar is `border-radius: 50%`, a text line is a short
- * height with a width. No shape prop is needed.
+ * #### Size and shape
+ * - Style the host with CSS; there are no shape properties. It is `display: block`, `1em` high by
+ *   default, with the theme's border radius.
+ * - For a line of text, give it a short height and a width. For an avatar, make it square and add
+ *   `border-radius: 50%`.
+ * - `effect="sheen"` (the default) shows a moving sheen; `effect="none"` shows a still surface.
  *
- * Always `aria-hidden="true"`: the placeholder itself is decorative. Mark the region
- * that is loading with `aria-busy="true"` until the real content lands, so assistive
- * tech announces the loading state once for the whole region.
- *
- * `prefers-reduced-motion` disables the sheen regardless of `effect` (the shared
- * reducedMotion snippet collapses the animation).
+ * #### Accessibility
+ * - The skeleton is always `aria-hidden="true"`, because it is decoration.
+ * - Mark the region that is loading with `aria-busy="true"` until the real content arrives. Screen
+ *   readers then announce the loading state once for the region, not once per placeholder.
+ * - Under `prefers-reduced-motion`, the sheen does not move, whatever `effect` says.
  *
  * Parts: `base` (the placeholder surface).
- * @cssprop [--dj-skeleton-color=var(--dj-color-neutral-200)] - Placeholder fill.
- * @cssprop [--dj-skeleton-sheen-color=rgb(255 255 255 / 0.55)] - Color of the sweeping sheen band.
- * @cssprop [--dj-skeleton-radius=var(--dj-input-border-radius-small)] - Corner radius.
  */
 export class DjSkeleton extends DojoElement {
 	static override styles: CSSResultGroup = [baseStyles, styles, reducedMotion];

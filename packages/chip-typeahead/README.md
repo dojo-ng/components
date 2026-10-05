@@ -1,14 +1,10 @@
 # @dojo-ng/chip-typeahead
 
-`<dj-chip-typeahead>` — Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>`, selections render as removable `<dj-chip>`s.
+`<dj-chip-typeahead>` — A multi-select typeahead: type to filter `options`, pick from a popup list, and each choice becomes a removable chip.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values).
-
-With `allow-new`, Enter on non-empty input text creates a chip from the literal trimmed value (a free-text tag), unless the popup has an active (highlighted) option — that keeps picking. New values respect `duplicates`, clear the input, and join the form value like picked ones. Only Enter commits; comma is left alone (it is a valid character in many locales).
-
-> By default only configured `options` can be chosen. Add `allow-new` for a tag editor: Enter on non-empty text that matches no option creates a chip from the literal value (respecting `duplicates`), while a highlighted popup option still picks the option. Only Enter commits — comma is left alone, since it is a valid character in many locales.
+It is form-associated and submits each value under `name`. It is built from `dj-chip`, `dj-list`, `dj-popup`, and `dj-label`.
 
 ## Install
 
@@ -31,6 +27,19 @@ Selections render as removable chips; submits each value under `name`.
   ];
 </script>
 ```
+
+## Choosing values
+
+- Typing filters `options`; picking one from the popup adds it as a chip.
+- Backspace in an empty input removes the last chip.
+- The `change` event fires with the selected values.
+
+## Free-text tags: `allow-new`
+
+- By default only the configured `options` can be chosen.
+- With `allow-new`, Enter on text that matches no option creates a chip from that text, trimmed. If an option in the popup is highlighted, Enter picks that option instead.
+- New values follow `duplicates`, clear the input, and join the form value like picked ones.
+- Only Enter adds a value. Comma does not, because a comma is a normal character in many languages.
 
 ## Properties
 

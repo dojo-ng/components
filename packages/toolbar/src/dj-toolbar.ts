@@ -14,19 +14,31 @@ registerDefaults("dj", { moreActions: "More actions" });
 const KEBAB = html`<dj-icon><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg></dj-icon>`;
 
 /**
- * `<dj-toolbar>` — a horizontal action bar. Slots: `leading` (logo, menu/back button),
- * default (title or content), `actions` (primary action buttons, end-aligned). Secondary
- * actions can collapse into an overflow menu: set the `overflow` property to a list of
- * options and a `⋮` button renders a popup `<dj-list>` of them, emitting `dj-action` with the
- * chosen value. `sticky` pins the bar to the top. `role="toolbar"`.
+ * `<dj-toolbar>` — a horizontal action bar with `role="toolbar"`.
  *
- * Composes popup, list, icon. The overflow menu closes on selection, Escape, outside click,
- * and on tab-out. (Automatic width-based collapsing of slotted actions is a future addition;
- * for now the app decides which actions are primary and which go in `overflow`.)
+ * #### Layout
+ * - The `leading` slot holds a logo or a menu or back button.
+ * - The default slot holds the title or other content.
+ * - The `actions` slot holds the primary action buttons, aligned to the end.
+ * - `sticky` pins the bar to the top.
  *
+ * #### Overflow menu
+ * - Set the `overflow` property to a list of options to put secondary actions in a menu. A `⋮`
+ *   button opens them in a popup `<dj-list>`.
+ * - Choosing one emits `dj-action` with its value.
+ * - The menu closes when an item is chosen, on Escape, on a click outside, and when focus leaves
+ *   it.
+ *
+ * #### Not built
+ * - Moving slotted actions into the menu automatically when space runs out. For now your app
+ *   decides which actions are primary and which go in `overflow`.
+ *
+ * Slots:
+ *  - `leading`: a logo, or a menu or back button.
+ *  - (default): the title or other content.
+ *  - `actions`: the primary action buttons, aligned to the end.
  * Parts: `bar`, `leading`, `title`, `actions`, `overflow`. Event: `dj-action` (detail: `{ value }`).
  *
- * @cssprop [--dj-toolbar-z-index=700] - Stacking order when the toolbar is sticky.
  */
 export class DjToolbar extends DojoElement {
 	static override styles = styles;

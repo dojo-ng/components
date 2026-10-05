@@ -313,9 +313,22 @@ An editable combobox: type to filter `options`, pick from a popup `<dj-list>`. `
 
 ### `<dj-chip-typeahead>` · `@dojo-ng/chip-typeahead`
 
-Multi-select typeahead: type to filter `options`, pick from the popup `<dj-list>`, selections render as removable `<dj-chip>`s. Backspace on an empty input removes the last chip. Form-associated (submits each value under `name`). Composes chip, list, popup, label. Event: `change` (detail: selected values).
+A multi-select typeahead: type to filter `options`, pick from a popup list, and each choice becomes a removable chip.
 
-With `allow-new`, Enter on non-empty input text creates a chip from the literal trimmed value (a free-text tag), unless the popup has an active (highlighted) option — that keeps picking. New values respect `duplicates`, clear the input, and join the form value like picked ones. Only Enter commits; comma is left alone (it is a valid character in many locales).
+It is form-associated and submits each value under `name`. It is built from `dj-chip`, `dj-list`, `dj-popup`, and `dj-label`.
+
+#### Choosing values
+
+- Typing filters `options`; picking one from the popup adds it as a chip.
+- Backspace in an empty input removes the last chip.
+- The `change` event fires with the selected values.
+
+#### Free-text tags: `allow-new`
+
+- By default only the configured `options` can be chosen.
+- With `allow-new`, Enter on text that matches no option creates a chip from that text, trimmed. If an option in the popup is highlighted, Enter picks that option instead.
+- New values follow `duplicates`, clear the input, and join the form value like picked ones.
+- Only Enter adds a value. Comma does not, because a comma is a normal character in many languages.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -604,7 +617,31 @@ The internal model is HSV + alpha; `value` is a color STRING formatted through `
 
 ### `<dj-file-input>` · `@dojo-ng/file-input`
 
-A form-associated file selector with a button (opens the OS picker) and a focusable drop zone. Files arrive by picker, drop, paste (a screenshot pasted while the drop zone has focus), or the public `addFiles` method; all four route through one intake that applies `accept` + `multiple` + max-size. Selected files are copied into component state, shown as a removable list; the element only SELECTS files (no upload/preview). Form value: a single `File` normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`, `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.
+A form-associated file selector with a button that opens the system file picker and a focusable drop zone.
+
+The component only selects files. It does not upload them or show previews. Selected files are listed with their size and a remove button.
+
+#### Adding files
+
+Files can arrive in four ways, and all of them go through the same checks:
+
+- The file picker.
+- A drop on the drop zone.
+- A paste, such as a screenshot, while the drop zone has focus.
+- The `addFiles(files)` method, for files your app captured somewhere else, such as a paste in a message body or a drop on a whole pane.
+
+#### Checks
+
+- `accept` filters the picker and drops, by extension, exact MIME type, or `type/*`.
+- Without `multiple`, a new file replaces the current one.
+- `max-size` (bytes, per file) rejects a larger file and sets a `fileTooLarge` validity error, cleared on the next change.
+- `required` with no files reports `valueMissing`.
+
+#### Value
+
+- The form value is one `File`, or, with `multiple`, a `FormData` with one entry per file under `name`.
+- `files` (read-only) is the current selection, and `clear()` empties it.
+- `dj-change` fires with `{ files }` when files are added or removed.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -700,9 +737,25 @@ Right-click (contextmenu) on the trigger (default slot) opens a `<dj-popup>` at 
 
 ### `<dj-dropdown>` · `@dojo-ng/dropdown`
 
-The APG menu-button glue over the existing `<dj-popup>` and `<dj-list>`. Put the trigger (usually a `<dj-button>`) in the `trigger` slot and the content — typically one `<dj-list>` — in the default slot; the content renders in a `<dj-popup>` anchored to the trigger.
+A menu button: a trigger that opens a menu or panel anchored to it, built on `<dj-popup>` and `<dj-list>`.
 
-Behavior: clicking the trigger toggles it. ArrowDown / Enter / Space open it; on open, if the content is a `<dj-list>`, its `menu` mode is switched on, it is focused, and its first item is activated. Escape closes and returns focus to the trigger; choosing an item (the list's `change` event) closes and refocuses too — the `change` event still reaches the consumer untouched. Non-list content is allowed as an arbitrary panel: then dj-dropdown only does open/close/Escape/focus-return, with no list steering.
+Put the trigger, usually a `<dj-button>`, in the `trigger` slot, and the menu, usually one `<dj-list>`, in the default slot.
+
+#### Opening and closing
+
+- A click on the trigger opens or closes it. ArrowDown, Enter, and Space open it.
+- When the content is a `<dj-list>`, opening switches on its `menu` mode, focuses it, and activates the first item.
+- Choosing an item closes the menu. The list's `change` event still reaches your code unchanged.
+- Escape closes it. Focus returns to the trigger every time it closes.
+
+#### Other content
+
+- Content that is not a `<dj-list>` works as a plain anchored panel. The dropdown then only opens, closes, handles Escape, and returns focus.
+- For an anchored panel with no menu behavior, use `dj-trigger-popup`. For a right-click menu, use `dj-context-menu`.
+
+#### Accessibility
+
+- It follows the APG menu button pattern, and sets `aria-haspopup` and `aria-expanded` on your trigger for you.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1043,9 +1096,26 @@ App header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`.
 
 ### `<dj-toolbar>` · `@dojo-ng/toolbar`
 
-A horizontal action bar. Slots: `leading` (logo, menu/back button), default (title or content), `actions` (primary action buttons, end-aligned). Secondary actions can collapse into an overflow menu: set the `overflow` property to a list of options and a `⋮` button renders a popup `<dj-list>` of them, emitting `dj-action` with the chosen value. `sticky` pins the bar to the top. `role="toolbar"`.
+A horizontal action bar with `role="toolbar"`.
 
-Composes popup, list, icon. The overflow menu closes on selection, Escape, outside click, and on tab-out. (Automatic width-based collapsing of slotted actions is a future addition; for now the app decides which actions are primary and which go in `overflow`.)
+#### Layout
+
+- The `leading` slot holds a logo or a menu or back button.
+- The default slot holds the title or other content.
+- The `actions` slot holds the primary action buttons, aligned to the end.
+- `sticky` pins the bar to the top.
+
+#### Overflow menu
+
+- Set the `overflow` property to a list of options to put secondary actions in a menu. A `⋮` button opens them in a popup `<dj-list>`.
+- Choosing one emits `dj-action` with its value.
+- The menu closes when an item is chosen, on Escape, on a click outside, and when focus leaves it.
+
+#### Not built
+
+- Moving slotted actions into the menu automatically when space runs out. For now your app decides which actions are primary and which go in `overflow`.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1054,13 +1124,11 @@ Composes popup, list, icon. The overflow menu closes on selection, Escape, outsi
 | `overflow` | — | `ListOption[]` | `[]` |
 | `overflowPosition` | overflow-position ↻ | `PopupPosition` | `"below"` |
 
-**Slots:** `leading`, default, `actions`
+**Slots:** `leading` (a logo, or a menu or back button.), default (the title or other content.), `actions` (the primary action buttons, aligned to the end.)
 
 **Parts:** `bar`, `leading`, `title`, `actions`, `overflow`
 
 **Events:** `dj-action` (detail: `{ value }`)
-
-**CSS properties:** `--dj-toolbar-z-index` (default `700`; Stacking order when the toolbar is sticky.)
 
 
 ### `<dj-pagination>` · `@dojo-ng/pagination`
@@ -1273,7 +1341,32 @@ applies it itself), `dj-card-click` (detail `{ card, key }`)
 
 ### `<dj-list>` · `@dojo-ng/list`
 
-A single-select list/menu driven by `options`. Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard (space to grab, arrows to move, space to drop, escape to cancel) — controlled: it emits `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`.
+A single-select list, or a menu, built from `options`.
+
+Coming from Dojo's Listbox? Use this component: it has the listbox role and keyboard model that Listbox had. The list is form-associated and submits `value`.
+
+#### Keyboard
+
+The list is one tab stop (the active-descendant pattern).
+
+- The arrow keys, Home, and End move the active item.
+- Enter or Space selects it.
+
+#### Options
+
+- `menu` switches the roles to `menu` and `menuitem`.
+- `loading` shows a spinner.
+
+#### Reordering
+
+- With `reorderable`, items can be dragged with a pointer or touch, or moved with the keyboard: Space to grab, the arrow keys to move, Space to drop, and Escape to cancel.
+- Reordering is controlled: the list emits `dj-reorder`, and you reorder `options`.
+
+#### Not built
+
+- Virtualization for very long lists.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1290,8 +1383,6 @@ A single-select list/menu driven by `options`. Uses the active-descendant patter
 **Events:** `change`, `dj-reorder`
 
 **Methods:** `checkValidity(): boolean`, `focus(options: FocusOptions)`, `moveActive(delta: 1 | -1)` (Move the highlighted (active) option by one selectable step, wrapping; skips disabled items and dividers.), `activateFirst()` (Highlight the first selectable option (skipping disabled items and dividers); clears the highlight if none.), `chooseActive(): boolean` (Select the active option, firing the normal `change`. Returns false and fires nothing if none is active.)
-
-**CSS properties:** `--dj-list-max-height` (default `none`; Maximum height before the list scrolls.)
 
 
 ### `<dj-grid>` · `@dojo-ng/grid`
@@ -1724,19 +1815,23 @@ A linear bar or circular spinner. `active` (default true) toggles visibility whi
 
 A loading placeholder that stands in for content while it loads.
 
-Shape and size come from consumer CSS on the host: it is `display: block` with a default height of `1em` and a token border-radius. Style the host to size each placeholder — a circular avatar is `border-radius: 50%`, a text line is a short height with a width. No shape prop is needed.
+#### Size and shape
 
-Always `aria-hidden="true"`: the placeholder itself is decorative. Mark the region that is loading with `aria-busy="true"` until the real content lands, so assistive tech announces the loading state once for the whole region.
+- Style the host with CSS; there are no shape properties. It is `display: block`, `1em` high by default, with the theme's border radius.
+- For a line of text, give it a short height and a width. For an avatar, make it square and add `border-radius: 50%`.
+- `effect="sheen"` (the default) shows a moving sheen; `effect="none"` shows a still surface.
 
-`prefers-reduced-motion` disables the sheen regardless of `effect` (the shared reducedMotion snippet collapses the animation).
+#### Accessibility
+
+- The skeleton is always `aria-hidden="true"`, because it is decoration.
+- Mark the region that is loading with `aria-busy="true"` until the real content arrives. Screen readers then announce the loading state once for the region, not once per placeholder.
+- Under `prefers-reduced-motion`, the sheen does not move, whatever `effect` says.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `effect` | effect ↻ | `SkeletonEffect` | `"sheen"` |
 
 **Parts:** `base` (the placeholder surface)
-
-**CSS properties:** `--dj-skeleton-color` (default `var(--dj-color-neutral-200)`; Placeholder fill.), `--dj-skeleton-sheen-color` (default `rgb(255 255 255 / 0.55)`; Color of the sweeping sheen band.), `--dj-skeleton-radius` (default `var(--dj-input-border-radius-small)`; Corner radius.)
 
 
 ### `<dj-global-event>` · `@dojo-ng/global-event`
@@ -1754,7 +1849,27 @@ Non-visual; attaches listeners to window/document for its lifetime. Set `windowL
 
 ### `<dj-transition>` · `@dojo-ng/transition`
 
-Runs an enter/leave effect when `show` toggles. It defines no effects itself: it reflects a `state` attribute (`entering` | `entered` | `leaving` | `left`) on the host, and the consumer's page CSS attaches the animation to `dj-transition[state="entering"]` / `dj-transition[state="leaving"]`. Enter effects must be `@keyframes` animations (enter-by-transition is not supported in v1); leave effects may be an animation or transitioned properties. The wrapper stays mounted through the leave effect, then hides via `display: none` at `state="left"`. Rapid toggling cancels the in-flight phase cleanly and fires no event for it.
+Runs an enter or leave effect when `show` changes.
+
+The component defines no effects itself. It sets a `state` attribute on the host, and your page CSS attaches the animation to it.
+
+#### States
+
+- `state` moves through `entering`, `entered`, `leaving`, and `left`.
+- Attach the enter effect to `dj-transition[state="entering"]` and the leave effect to `dj-transition[state="leaving"]`.
+- The content stays visible through the leave effect, then is hidden with `display: none` at `state="left"`.
+
+#### Effects
+
+- An enter effect must be a `@keyframes` animation.
+- A leave effect can be an animation or a CSS transition.
+- If `show` changes again during an effect, that effect stops cleanly and its event does not fire.
+
+#### Not built
+
+- Enter effects made with CSS transitions.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|

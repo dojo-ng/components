@@ -1,12 +1,10 @@
 # @dojo-ng/file-input
 
-`<dj-file-input>` — A form-associated file selector with a button (opens the OS picker) and a focusable drop zone.
+`<dj-file-input>` — A form-associated file selector with a button that opens the system file picker and a focusable drop zone.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Files arrive by picker, drop, paste (a screenshot pasted while the drop zone has focus), or the public `addFiles` method; all four route through one intake that applies `accept` + `multiple` + max-size. Selected files are copied into component state, shown as a removable list; the element only SELECTS files (no upload/preview). Form value: a single `File` normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`, `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.
-
-> A form-associated file selector: a `dj-button` opens the OS picker and the host doubles as a drop zone. Selected files are copied into component state and listed with their size and a remove button; the component only SELECTS files — it does no uploading or preview. `accept` filters both the picker and drops (extension, exact MIME, or `type/*`); `multiple` allows more than one (otherwise a new pick replaces the current file); `max-size` (bytes, per file) rejects an oversize file and sets a `fileTooLarge` validity error, cleared on the next change; `required` with no files reports `valueMissing`. Form value is a single `File`, or a `FormData` with one entry per file under `name` when `multiple`. Read `files` (read-only) for the current selection; call `clear()` to empty it. Emits `dj-change` (`{ files }`) on add and remove. Files arrive four ways, all through one intake (which applies `accept` + `multiple` + `max-size`): the picker, a drop, a paste, and the public `addFiles(files: File[] | FileList)` method — the app-integration seam for forwarding files captured elsewhere (a paste into a compose body, a drop on a whole pane). The drop zone is focusable and shows a focus ring; pasting a file (e.g. a screenshot) while it has focus adds the file. Parts: `button`, `dropzone`, `list`, `item`, `remove`.
+The component only selects files. It does not upload them or show previews. Selected files are listed with their size and a remove button.
 
 ## Install
 
@@ -27,6 +25,28 @@ Set `accept` and `multiple`; read the selection from `dj-change` or the `files` 
   document.getElementById("files").addEventListener("dj-change", (e) => console.log(e.detail.files));
 </script>
 ```
+
+## Adding files
+
+Files can arrive in four ways, and all of them go through the same checks:
+
+- The file picker.
+- A drop on the drop zone.
+- A paste, such as a screenshot, while the drop zone has focus.
+- The `addFiles(files)` method, for files your app captured somewhere else, such as a paste in a message body or a drop on a whole pane.
+
+## Checks
+
+- `accept` filters the picker and drops, by extension, exact MIME type, or `type/*`.
+- Without `multiple`, a new file replaces the current one.
+- `max-size` (bytes, per file) rejects a larger file and sets a `fileTooLarge` validity error, cleared on the next change.
+- `required` with no files reports `valueMissing`.
+
+## Value
+
+- The form value is one `File`, or, with `multiple`, a `FormData` with one entry per file under `name`.
+- `files` (read-only) is the current selection, and `clear()` empties it.
+- `dj-change` fires with `{ files }` when files are added or removed.
 
 ## Properties
 

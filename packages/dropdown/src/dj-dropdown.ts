@@ -13,17 +13,28 @@ interface DjListLike extends HTMLElement {
 }
 
 /**
- * `<dj-dropdown>` — the APG menu-button glue over the existing `<dj-popup>` and `<dj-list>`.
- * Put the trigger (usually a `<dj-button>`) in the `trigger` slot and the content — typically
- * one `<dj-list>` — in the default slot; the content renders in a `<dj-popup>` anchored to the
- * trigger.
+ * `<dj-dropdown>` — a menu button: a trigger that opens a menu or panel anchored to it, built on
+ * `<dj-popup>` and `<dj-list>`.
  *
- * Behavior: clicking the trigger toggles it. ArrowDown / Enter / Space open it; on open, if the
- * content is a `<dj-list>`, its `menu` mode is switched on, it is focused, and its first item is
- * activated. Escape closes and returns focus to the trigger; choosing an item (the list's
- * `change` event) closes and refocuses too — the `change` event still reaches the consumer
- * untouched. Non-list content is allowed as an arbitrary panel: then dj-dropdown only does
- * open/close/Escape/focus-return, with no list steering.
+ * Put the trigger, usually a `<dj-button>`, in the `trigger` slot, and the menu, usually one
+ * `<dj-list>`, in the default slot.
+ *
+ * #### Opening and closing
+ * - A click on the trigger opens or closes it. ArrowDown, Enter, and Space open it.
+ * - When the content is a `<dj-list>`, opening switches on its `menu` mode, focuses it, and
+ *   activates the first item.
+ * - Choosing an item closes the menu. The list's `change` event still reaches your code unchanged.
+ * - Escape closes it. Focus returns to the trigger every time it closes.
+ *
+ * #### Other content
+ * - Content that is not a `<dj-list>` works as a plain anchored panel. The dropdown then only opens,
+ *   closes, handles Escape, and returns focus.
+ * - For an anchored panel with no menu behavior, use `dj-trigger-popup`. For a right-click menu,
+ *   use `dj-context-menu`.
+ *
+ * #### Accessibility
+ * - It follows the APG menu button pattern, and sets `aria-haspopup` and `aria-expanded` on your
+ *   trigger for you.
  *
  * Slots: `trigger` (the button), default (the menu list or panel).
  * Parts: `panel` (the content wrapper inside the popup).

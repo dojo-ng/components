@@ -1,12 +1,10 @@
 # @dojo-ng/transition
 
-`<dj-transition>` — Runs an enter/leave effect when `show` toggles.
+`<dj-transition>` — Runs an enter or leave effect when `show` changes.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-It defines no effects itself: it reflects a `state` attribute (`entering` | `entered` | `leaving` | `left`) on the host, and the consumer's page CSS attaches the animation to `dj-transition[state="entering"]` / `dj-transition[state="leaving"]`. Enter effects must be `@keyframes` animations (enter-by-transition is not supported in v1); leave effects may be an animation or transitioned properties. The wrapper stays mounted through the leave effect, then hides via `display: none` at `state="left"`. Rapid toggling cancels the in-flight phase cleanly and fires no event for it.
-
-> The component defines no effects itself: it reflects a `state` attribute you animate with page CSS. Enter effects must be `@keyframes` animations on `dj-transition[state="entering"]`; enter-by-transition is not supported. Leave effects may be an animation on `[state="leaving"]` or transitioned properties.
+The component defines no effects itself. It sets a `state` attribute on the host, and your page CSS attaches the animation to it.
 
 ## Install
 
@@ -18,7 +16,7 @@ npm install @dojo-ng/transition
 
 Import the package to register the custom element, then use the tag.
 
-Toggle `show`; the component reflects a `state` attribute that your page CSS animates. Enter must be a keyframe animation; leave may be an animation or transitioned properties. The wrapper stays mounted through the leave, then hides.
+Toggle `show`; page CSS animates the `state` attribute.
 
 ```html
 <style>
@@ -38,6 +36,24 @@ Toggle `show`; the component reflects a `state` attribute that your page CSS ani
   panel.addEventListener("dj-after-leave", () => console.log("left"));
 </script>
 ```
+
+## States
+
+- `state` moves through `entering`, `entered`, `leaving`, and `left`.
+- Attach the enter effect to `dj-transition[state="entering"]` and the leave effect to `dj-transition[state="leaving"]`.
+- The content stays visible through the leave effect, then is hidden with `display: none` at `state="left"`.
+
+## Effects
+
+- An enter effect must be a `@keyframes` animation.
+- A leave effect can be an animation or a CSS transition.
+- If `show` changes again during an effect, that effect stops cleanly and its event does not fire.
+
+## Not built
+
+- Enter effects made with CSS transitions.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 ## Properties
 

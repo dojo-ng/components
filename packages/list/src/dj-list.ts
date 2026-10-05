@@ -25,14 +25,30 @@ const EN_REORDER: Record<string, string> = {
 };
 
 /**
- * `<dj-list>` — a single-select list/menu driven by `options`. Uses the active-descendant
- * pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu`
- * switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when
- * `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard
- * (space to grab, arrows to move, space to drop, escape to cancel) — controlled: it emits
- * `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`.
+ * `<dj-list>` — a single-select list, or a menu, built from `options`.
  *
- * @cssprop [--dj-list-max-height=none] - Maximum height before the list scrolls.
+ * Coming from Dojo's Listbox? Use this component: it has the listbox role and keyboard model that
+ * Listbox had. The list is form-associated and submits `value`.
+ *
+ * #### Keyboard
+ * The list is one tab stop (the active-descendant pattern).
+ * - The arrow keys, Home, and End move the active item.
+ * - Enter or Space selects it.
+ *
+ * #### Options
+ * - `menu` switches the roles to `menu` and `menuitem`.
+ * - `loading` shows a spinner.
+ *
+ * #### Reordering
+ * - With `reorderable`, items can be dragged with a pointer or touch, or moved with the keyboard:
+ *   Space to grab, the arrow keys to move, Space to drop, and Escape to cancel.
+ * - Reordering is controlled: the list emits `dj-reorder`, and you reorder `options`.
+ *
+ * #### Not built
+ * - Virtualization for very long lists.
+ *
+ * Parts: `list`, `item`.
+ *
  */
 export class DjList extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = styles;

@@ -1,14 +1,10 @@
 # @dojo-ng/dropdown
 
-`<dj-dropdown>` — The APG menu-button glue over the existing `<dj-popup>` and `<dj-list>`.
+`<dj-dropdown>` — A menu button: a trigger that opens a menu or panel anchored to it, built on `<dj-popup>` and `<dj-list>`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Put the trigger (usually a `<dj-button>`) in the `trigger` slot and the content — typically one `<dj-list>` — in the default slot; the content renders in a `<dj-popup>` anchored to the trigger.
-
-Behavior: clicking the trigger toggles it. ArrowDown / Enter / Space open it; on open, if the content is a `<dj-list>`, its `menu` mode is switched on, it is focused, and its first item is activated. Escape closes and returns focus to the trigger; choosing an item (the list's `change` event) closes and refocuses too — the `change` event still reaches the consumer untouched. Non-list content is allowed as an arbitrary panel: then dj-dropdown only does open/close/Escape/focus-return, with no list steering.
-
-> The APG menu-button glue over `dj-popup` + `dj-list`: the trigger goes in the `trigger` slot, the menu (usually one `dj-list`) in the default slot. Click or ArrowDown/Enter/Space opens it and moves into the list; Enter chooses and closes; Escape closes; focus returns to the trigger each time. It sets `aria-haspopup`/`aria-expanded` on your trigger for you. Non-list content is allowed as a plain anchored panel (then it only does open/close/Escape/focus-return) — for a generic anchored panel with no menu semantics use `dj-trigger-popup`, and for right-click use `dj-context-menu`.
+Put the trigger, usually a `<dj-button>`, in the `trigger` slot, and the menu, usually one `<dj-list>`, in the default slot.
 
 ## Install
 
@@ -38,6 +34,22 @@ A button trigger plus a dj-list menu. Enter/Arrow keys drive it; choosing an ite
   ];
 </script>
 ```
+
+## Opening and closing
+
+- A click on the trigger opens or closes it. ArrowDown, Enter, and Space open it.
+- When the content is a `<dj-list>`, opening switches on its `menu` mode, focuses it, and activates the first item.
+- Choosing an item closes the menu. The list's `change` event still reaches your code unchanged.
+- Escape closes it. Focus returns to the trigger every time it closes.
+
+## Other content
+
+- Content that is not a `<dj-list>` works as a plain anchored panel. The dropdown then only opens, closes, handles Escape, and returns focus.
+- For an anchored panel with no menu behavior, use `dj-trigger-popup`. For a right-click menu, use `dj-context-menu`.
+
+## Accessibility
+
+- It follows the APG menu button pattern, and sets `aria-haspopup` and `aria-expanded` on your trigger for you.
 
 ## Properties
 
@@ -80,7 +92,7 @@ Non-list content is a plain anchored panel — open/close/Escape only.
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.
 
-## Accessibility and i18n
+## Localization
 
 Follows the project's WCAG 2.2 AA and localization conventions.
 

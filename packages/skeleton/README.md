@@ -4,14 +4,6 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Shape and size come from consumer CSS on the host: it is `display: block` with a default height of `1em` and a token border-radius. Style the host to size each placeholder — a circular avatar is `border-radius: 50%`, a text line is a short height with a width. No shape prop is needed.
-
-Always `aria-hidden="true"`: the placeholder itself is decorative. Mark the region that is loading with `aria-busy="true"` until the real content lands, so assistive tech announces the loading state once for the whole region.
-
-`prefers-reduced-motion` disables the sheen regardless of `effect` (the shared reducedMotion snippet collapses the animation).
-
-> Size and shape come from your CSS on the host, not from props: give it a width/height for a text line, or a square plus `border-radius: 50%` for an avatar. The skeleton is always `aria-hidden`; mark the region that is loading with `aria-busy="true"` until the real content lands so the loading state is announced once for the whole region, not per placeholder. `prefers-reduced-motion` stills the sheen automatically.
-
 ## Install
 
 ```bash
@@ -35,6 +27,18 @@ Size each placeholder with host CSS; mark the region `aria-busy` until content l
 </div>
 ```
 
+## Size and shape
+
+- Style the host with CSS; there are no shape properties. It is `display: block`, `1em` high by default, with the theme's border radius.
+- For a line of text, give it a short height and a width. For an avatar, make it square and add `border-radius: 50%`.
+- `effect="sheen"` (the default) shows a moving sheen; `effect="none"` shows a still surface.
+
+## Accessibility
+
+- The skeleton is always `aria-hidden="true"`, because it is decoration.
+- Mark the region that is loading with `aria-busy="true"` until the real content arrives. Screen readers then announce the loading state once for the region, not once per placeholder.
+- Under `prefers-reduced-motion`, the sheen does not move, whatever `effect` says.
+
 ## Properties
 
 `↻` marks an attribute reflected to the DOM; a dash means the property is set in JavaScript only.
@@ -46,12 +50,6 @@ Size each placeholder with host CSS; mark the region `aria-busy` until content l
 ## CSS parts
 
 - `base`: The placeholder surface.
-
-## CSS custom properties
-
-- `--dj-skeleton-color`: Placeholder fill. Default `var(--dj-color-neutral-200)`.
-- `--dj-skeleton-sheen-color`: Color of the sweeping sheen band. Default `rgb(255 255 255 / 0.55)`.
-- `--dj-skeleton-radius`: Corner radius. Default `var(--dj-input-border-radius-small)`.
 
 ## Examples
 
@@ -67,7 +65,7 @@ Size each placeholder with host CSS; mark the region `aria-busy` until content l
 
 Styled with Dojo NG `--dj-*` design tokens and exposes `::part()` hooks for targeted overrides.
 
-## Accessibility and i18n
+## Localization
 
 Follows the project's WCAG 2.2 AA and localization conventions.
 

@@ -1,12 +1,10 @@
 # @dojo-ng/list
 
-`<dj-list>` — A single-select list/menu driven by `options`.
+`<dj-list>` — A single-select list, or a menu, built from `options`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Uses the active-descendant pattern (one tab stop; arrow/Home/End move the active item, Enter/Space selects). `menu` switches roles to menu/menuitem. Form-associated (submits `value`). Shows a spinner when `loading`. With `reorderable`, items can be dragged (pointer/touch) or moved by keyboard (space to grab, arrows to move, space to drop, escape to cancel) — controlled: it emits `dj-reorder` and the consumer reorders `options`. Virtualization is deferred. Parts: `list`, `item`.
-
-> Coming from Dojo's **Listbox**? Use this component: it provides the selectable listbox role and keyboard model that Listbox did. Set `reorderable` to let items be reordered by drag or keyboard (space to grab, arrows to move, space to drop, escape to cancel); it is controlled — the list emits `dj-reorder` and you reorder `options`.
+Coming from Dojo's Listbox? Use this component: it has the listbox role and keyboard model that Listbox had. The list is form-associated and submits `value`.
 
 ## Install
 
@@ -29,6 +27,29 @@ Provide `options`; read `value` from the `change` event.
   el.addEventListener("change", () => console.log(el.value));
 </script>
 ```
+
+## Keyboard
+
+The list is one tab stop (the active-descendant pattern).
+
+- The arrow keys, Home, and End move the active item.
+- Enter or Space selects it.
+
+## Options
+
+- `menu` switches the roles to `menu` and `menuitem`.
+- `loading` shows a spinner.
+
+## Reordering
+
+- With `reorderable`, items can be dragged with a pointer or touch, or moved with the keyboard: Space to grab, the arrow keys to move, Space to drop, and Escape to cancel.
+- Reordering is controlled: the list emits `dj-reorder`, and you reorder `options`.
+
+## Not built
+
+- Virtualization for very long lists.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
 ## Properties
 
@@ -62,10 +83,6 @@ Provide `options`; read `value` from the `change` event.
 - `moveActive(delta: 1 | -1)`: Move the highlighted (active) option by one selectable step, wrapping; skips disabled items and dividers.
 - `activateFirst()`: Highlight the first selectable option (skipping disabled items and dividers); clears the highlight if none.
 - `chooseActive(): boolean`: Select the active option, firing the normal `change`. Returns false and fires nothing if none is active.
-
-## CSS custom properties
-
-- `--dj-list-max-height`: Maximum height before the list scrolls. Default `none`.
 
 ## Theming
 

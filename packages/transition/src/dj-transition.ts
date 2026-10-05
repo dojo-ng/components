@@ -4,14 +4,26 @@ import DojoElement from "@dojo-ng/dojo-element";
 import { awaitMotion } from "./motion.js";
 
 /**
- * `<dj-transition>` — runs an enter/leave effect when `show` toggles. It defines no
- * effects itself: it reflects a `state` attribute (`entering` | `entered` | `leaving`
- * | `left`) on the host, and the consumer's page CSS attaches the animation to
- * `dj-transition[state="entering"]` / `dj-transition[state="leaving"]`. Enter effects
- * must be `@keyframes` animations (enter-by-transition is not supported in v1); leave
- * effects may be an animation or transitioned properties. The wrapper stays mounted
- * through the leave effect, then hides via `display: none` at `state="left"`. Rapid
- * toggling cancels the in-flight phase cleanly and fires no event for it.
+ * `<dj-transition>` — runs an enter or leave effect when `show` changes.
+ *
+ * The component defines no effects itself. It sets a `state` attribute on the host, and your page
+ * CSS attaches the animation to it.
+ *
+ * #### States
+ * - `state` moves through `entering`, `entered`, `leaving`, and `left`.
+ * - Attach the enter effect to `dj-transition[state="entering"]` and the leave effect to
+ *   `dj-transition[state="leaving"]`.
+ * - The content stays visible through the leave effect, then is hidden with `display: none` at
+ *   `state="left"`.
+ *
+ * #### Effects
+ * - An enter effect must be a `@keyframes` animation.
+ * - A leave effect can be an animation or a CSS transition.
+ * - If `show` changes again during an effect, that effect stops cleanly and its event does not
+ *   fire.
+ *
+ * #### Not built
+ * - Enter effects made with CSS transitions.
  *
  * Slots:
  *  - (default) — the content to show or hide.

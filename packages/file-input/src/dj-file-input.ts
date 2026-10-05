@@ -21,13 +21,35 @@ registerDefaults("dj", EN);
 const CLOSE_ICON = html`<svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`;
 
 /**
- * `<dj-file-input>` — a form-associated file selector with a button (opens the OS picker) and a
- * focusable drop zone. Files arrive by picker, drop, paste (a screenshot pasted while the drop zone
- * has focus), or the public `addFiles` method; all four route through one intake that applies
- * `accept` + `multiple` + max-size. Selected files are copied into component state, shown as a
- * removable list; the element only SELECTS files (no upload/preview). Form value: a single `File`
- * normally, or a `FormData` with one entry per file (under `name`) when `multiple`. Parts: `button`,
- * `dropzone`, `list`, `item`, `remove`. Event: `dj-change` (`{ files }`) on add and remove.
+ * `<dj-file-input>` — a form-associated file selector with a button that opens the system file
+ * picker and a focusable drop zone.
+ *
+ * The component only selects files. It does not upload them or show previews. Selected files are
+ * listed with their size and a remove button.
+ *
+ * #### Adding files
+ * Files can arrive in four ways, and all of them go through the same checks:
+ * - The file picker.
+ * - A drop on the drop zone.
+ * - A paste, such as a screenshot, while the drop zone has focus.
+ * - The `addFiles(files)` method, for files your app captured somewhere else, such as a paste in
+ *   a message body or a drop on a whole pane.
+ *
+ * #### Checks
+ * - `accept` filters the picker and drops, by extension, exact MIME type, or `type/*`.
+ * - Without `multiple`, a new file replaces the current one.
+ * - `max-size` (bytes, per file) rejects a larger file and sets a `fileTooLarge` validity error,
+ *   cleared on the next change.
+ * - `required` with no files reports `valueMissing`.
+ *
+ * #### Value
+ * - The form value is one `File`, or, with `multiple`, a `FormData` with one entry per file under
+ *   `name`.
+ * - `files` (read-only) is the current selection, and `clear()` empties it.
+ * - `dj-change` fires with `{ files }` when files are added or removed.
+ *
+ * Parts: `button`, `dropzone`, `list`, `item`, `remove`.
+ * Event: `dj-change` (`{ files }`) on add and remove.
  */
 export class DjFileInput extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles: CSSResultGroup = styles;

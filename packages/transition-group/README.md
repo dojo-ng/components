@@ -6,7 +6,7 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 When the group's `show` changes it drives each child's `show` in DOM order, child `i` after `i * stagger` ms, for both enter and leave. When every child has completed its phase it emits one group `dj-after-enter` (or `dj-after-leave`). v1 is stagger only: no FLIP/list-move animation and no `appear` forwarding (set `appear` on the children directly). Non-`dj-transition` slotted elements are ignored.
 
-> Coordinates slotted `dj-transition` children only (v1 is stagger, no list-move animation). The effects live on the children; the group just drives their `show` with a delay. Set `appear` on the children directly.
+Coordinates slotted `dj-transition` children only (v1 is stagger, no list-move animation). The effects live on the children; the group just drives their `show` with a delay. Set `appear` on the children directly.
 
 ## Install
 

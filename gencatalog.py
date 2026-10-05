@@ -168,7 +168,10 @@ def plugin_entries(pkg):
     factories, ready = G.plugin_api(pkg)
 
     note = NOTES.get(pkg, "")
-    note_line = G.md_safe(first_sentences(note, 2)) + "\n" if note else None
+    # NOTES can be structured (paragraphs, headings, bullets); the one-line summary comes from the
+    # lead paragraph only, so a heading or a bullet never leaks into it.
+    lead = G.first_paragraph(G.structured_md(note)) if note else ""
+    note_line = G.md_safe(first_sentences(lead, 2)) + "\n" if note else None
 
     def options_block(factory_name, factory_params):
         opts_type = G.options_type_of(factory_params)

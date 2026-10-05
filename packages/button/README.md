@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-> For an icon-only button, put `aria-label` on `<dj-button>` — it forwards to the native button inside the shadow root, along with `aria-pressed`/`aria-expanded` for a toggle or disclosure trigger. `aria-labelledby`/`aria-describedby`/`aria-controls` are not forwarded: those are IDREFs, which cannot resolve across the shadow boundary.
+For an icon-only button, put `aria-label` on `<dj-button>` — it forwards to the native button inside the shadow root, along with `aria-pressed`/`aria-expanded` for a toggle or disclosure trigger. `aria-labelledby`/`aria-describedby`/`aria-controls` are not forwarded: those are IDREFs, which cannot resolve across the shadow boundary.
 
 ## Install
 

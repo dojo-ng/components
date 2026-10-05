@@ -40,8 +40,48 @@ NOTES = {
     "badge": "Presentational only — a badge has no ARIA role. When it shows a count for a control (an unread count on a button, say), put the accessible name on the CONTROL (`aria-label=\"Notifications, 4 unread\"`), not on the badge, so assistive tech reads the meaning rather than a bare number. Variant colors reuse the theme's semantic `--dj-color-*-600` scales; override a single badge with `--dj-badge-background` / `--dj-badge-color`.",
     "alert": "An inline status banner that sits in the page flow — distinct from `dj-snackbar` (transient, floating) and `dj-result` (full-page). It shows by default (`open`); `close()` hides it and emits `dj-close`. info/success announce politely (`role=\"status\"`), warning/danger assertively (`role=\"alert\"`). Each variant has a default glyph; override it via the `icon` slot. Add `closable` for a dismiss button (its label is the localized `close` key). Variant colors reuse the theme's semantic tint/ink scales; override one alert with `--dj-alert-background` / `--dj-alert-color` / `--dj-alert-accent-color`.",
     "search-box": "Free text plus typed `key:value` filters. Configure `keys`: a key with `options` opens a suggestion popup when you type `key:` (pick to commit), a key without takes a free-typed value committed by Enter or the terminating space, and values may be `\"quoted\"` to hold spaces. A committed filter becomes a closeable chip before the input; an unconfigured `word:` stays plain text — no popup, no chip, no error. Backspace with the caret at the start removes the last chip. Read `query` (`{ text, tokens }`) or listen for `dj-query-change`; `dj-search` fires on Enter outside token mode. `setQuery()` sets it programmatically without emitting. The tokenizer IS the exported `parseQuery`, so a backend can reuse the same grammar (`import { parseQuery, formatQuery } from \"@dojo-ng/search-box\"`). Not form-associated — search is app-driven.",
-    "data-grid-select": "It owns a COLUMN, not the selection. Checkboxes read and write TanStack's existing row selection through `row.getIsSelected()`/`toggleSelected()`, so `selection-mode`, `rowSelection`, and `dj-selection-change` remain the single source of truth — there is no second copy of the selection to keep in sync. Pair it with `activation=\"click\"` on the grid and a click OPENS a row (`dj-activate`) while the checkboxes build the set bulk actions run on; that combination is the whole point. Behavior follows `selection-mode`: `\"multiple\"` gives checkboxes plus a header select-all with a real indeterminate state, `\"single\"` gives radios and no header control (select-all is meaningless), and `\"none\"` adds no column at all. Shift-click a checkbox to select the range from the last one clicked; the range is computed over the ROW MODEL, so it covers rows the virtualizer has never rendered. Always pass `label` — a column of forty identical \"Select row\" controls is useless with a screen reader.",
-    "data-grid-rowstate": "Styling contract: `row()` classifies a row into state tokens and each token `T` becomes an extra shadow part `row--T` on that row, so you style whole rows from your own CSS — `dj-data-grid::part(row--unread) { font-weight: 600 }`. `cell()` returns an inline style string for one column's content instead, for per-cell emphasis (bold the subject but not the date). Both options are optional and are pure functions of row data, so the grid core never learns your states. TWO CONSTRAINTS. (1) Only ONE plugin may own the `part` attribute: `rowAttributes` merges by key and a second row-part plugin would clobber this one. Combining with `tree`/`groups` is fine — those set `aria-level`/`aria-expanded`, different keys. (2) A part name cannot contain spaces, so state tokens must match `/^[a-z0-9-]+$/`; an invalid token is dropped with a single `console.warn` rather than emitting a broken `part`. Note that the base `row` part is always emitted alongside your tokens, so `::part(row)` rules keep working.",
+    "data-grid-select": """
+A checkbox selection column for `<dj-data-grid>`, with select-all and range selection.
+
+#### How it works
+- The plugin adds a column; it does not hold the selection. The checkboxes read and write the
+  grid's own row selection, so `selection-mode`, `rowSelection`, and `dj-selection-change` stay
+  the only source of truth.
+- `selection-mode="multiple"` gives checkboxes and a select-all checkbox in the header, with a real
+  mixed state. `"single"` gives radio buttons and no header control. `"none"` adds no column.
+- Shift-click a checkbox to select the range from the last one clicked. The range covers rows that
+  are not rendered yet.
+
+#### Open rows and select them
+- Combine it with `activation="click"` on the grid: a click opens a row (`dj-activate`), and the
+  checkboxes build the set for bulk actions.
+
+#### Accessibility
+- Always pass `label`. Without it, a screen reader hears a column of identical "Select row"
+  controls.
+""",
+    "data-grid-rowstate": """
+Row and cell styling from your data for `<dj-data-grid>`, such as bold unread rows or flagged
+items.
+
+#### Row states
+- `row()` returns state tokens for a row. Each token `T` becomes an extra shadow part `row--T` on
+  that row, so you style whole rows from your own CSS:
+  `dj-data-grid::part(row--unread) { font-weight: 600 }`.
+- The base `row` part is always there too, so `::part(row)` rules keep working.
+- Tokens must match `/^[a-z0-9-]+$/`, because a part name cannot contain spaces. An invalid token is
+  dropped, with one console warning.
+
+#### Cell styles
+- `cell()` returns an inline style for one column's content, for emphasis on a single cell, such
+  as a bold subject but not a bold date.
+
+#### Rules
+- Both functions are optional and use only the row data, so the grid never needs to know your
+  states.
+- Only one plugin can set a row's `part` attribute, so do not combine this with another plugin
+  that sets row parts. The tree and groups plugins are fine, because they set other attributes.
+""",
     "button": "For an icon-only button, put `aria-label` on `<dj-button>` — it forwards to the native button inside the shadow root, along with `aria-pressed`/`aria-expanded` for a toggle or disclosure trigger. `aria-labelledby`/`aria-describedby`/`aria-controls` are not forwarded: those are IDREFs, which cannot resolve across the shadow boundary.",
 }
 
@@ -482,6 +522,18 @@ def first_sentence(text):
     m = re.split(r"(?<=[.])\s", text, maxsplit=1)
     return m[0] if m else text
 
+def _split_note(note):
+    """A NOTES entry as (lead markdown, [section blocks]). NOTES may be one paragraph or
+    structured like a class doc: paragraphs, `#### Heading` lines, and `- ` bullets
+    (G.structured_md). It used to be printed as a `>` blockquote, which npm shows as one block of
+    gray text, the same problem the class descriptions had."""
+    if not note:
+        return "", []
+    blocks = G.add_request_line(G.structured_md(note)).split("\n\n")
+    i = next((k for k, b in enumerate(blocks) if b.startswith("#### ")), len(blocks))
+    return "\n\n".join(blocks[:i]), blocks[i:]
+
+
 def _list_item(name, description="", extra=""):
     """`name`: Description. Extra. One README list line for a slot, part, event, method, or CSS
     custom property."""
@@ -518,8 +570,9 @@ def component_readme(pkg, s):
     if rest:
         o.append(G.md_safe(rest[0].upper() + rest[1:]) + "\n")
     note = NOTES.get(pkg)
-    if note:
-        o.append("> " + note + "\n")
+    note_lead, note_sections = _split_note(note)
+    if note_lead:
+        o.append(G.md_safe(note_lead) + "\n")
     o.append("## Install\n")
     o.append(f"```bash\nnpm install @dojo-ng/{pkg}\n```\n")
     o.append("## Usage\n")
@@ -532,8 +585,8 @@ def component_readme(pkg, s):
         o.append("```html\n" + code0 + "\n```\n")
     else:
         o.append(f"```html\n<script type=\"module\">import \"@dojo-ng/{pkg}\";</script>\n<{tag}></{tag}>\n```\n")
-    if sections:
-        o.append(G.md_safe(G.shift_headings("\n\n".join(sections), "## ")) + "\n")
+    if sections or note_sections:
+        o.append(G.md_safe(G.shift_headings("\n\n".join(sections + note_sections), "## ")) + "\n")
     ps = G.parse_props(s)
     if ps:
         o.append("## Properties\n")
@@ -587,12 +640,18 @@ def component_readme(pkg, s):
 def infra_readme(pkg):
     desc = pkg_desc(pkg)
     o = [f"# @dojo-ng/{pkg}\n"]
-    if desc:
+    note_lead, note_sections = _split_note(NOTES.get(pkg))
+    # The NOTES lead is written for readers; package.json's description is a short npm summary of
+    # the same thing. Show the lead when there is one, and fall back to the description.
+    # An unstructured (one-paragraph) note is extra detail, so it follows the description.
+    structured = "#### " in (NOTES.get(pkg) or "")
+    if structured and note_lead:
+        o.append(G.md_safe(note_lead) + "\n")
+    elif desc:
         o.append(desc + "\n")
     o.append("Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.\n")
-    note = NOTES.get(pkg)
-    if note:
-        o.append("> " + note + "\n")
+    if note_lead and not structured:
+        o.append(G.md_safe(note_lead) + "\n")
     o.append("## Install\n")
     o.append(f"```bash\nnpm install @dojo-ng/{pkg}\n```\n")
     # Support packages (data-grid plugins, rich-text plugins) carry worked examples too.
@@ -603,6 +662,9 @@ def infra_readme(pkg):
         if d0:
             o.append(d0 + "\n")
         o.append("```html\n" + code0 + "\n```\n")
+    if note_sections:
+        o.append(G.md_safe(G.shift_headings("\n\n".join(note_sections), "## ")) + "\n")
+    if exs:
         if len(exs) > 1:
             o.append("## Examples\n")
             for title, d, code in exs[1:]:
@@ -619,15 +681,123 @@ def infra_readme(pkg):
 # Data-grid plugin packages: notes + worked examples (support packages, rendered by infra_readme).
 NOTES.update({
  "dnd": "The keyboard/menu path in a consuming component is the accessibility contract (WCAG 2.5.7); drag is enhancement layered on top. The pointer core works inside shadow roots and on touch, mouse, and pen alike, with no dependency. Drops are CONTROLLED: the zone calls `onMove` and the consumer applies the change.",
- "data-grid-edit": "CONTROLLED editing: the plugin never writes to `data`. Listen for `dj-cell-commit`, update your store, and assign a new `data` array. Place this plugin first in the array so its editor wins the cell.",
- "data-grid-export": "Exports RAW cell values (formatting is presentation). Default set = filtered but unpaginated rows; `all: true` exports the pre-filter set. Synthetic `__` columns (like the detail expander) are skipped.",
- "data-grid-tree": "Use `treePlugin` OR `groupsPlugin` per grid, never both (they both own expansion).",
- "data-grid-detail": "Detail rows switch the grid virtualizer to measured (variable-height) mode; grids without this plugin keep the fixed-height fast path.",
- "data-grid-filter": "Two independent filters, both driving TanStack through the table API (`setGlobalFilter` / `column.setFilterValue`) rather than by poking core state, so the core `onStateChange` runs and the virtualizer's row count tracks the narrowed set. `quick` (default `true`) is a single full-width text box above the header; per-column filters are opt-in via `GridColumn.filter` (`\"text\"` or `\"select\"`) and render in a subheader row that appears only when at least one visible column declares one. Both quick and per-column text inputs are debounced 150ms — automation should wait past that debounce rather than asserting a synchronous filter. Composes with `data-grid-pagination` with no ordering step: TanStack's row-model pipeline filters before it paginates, so the page count shrinks to the filtered set automatically.",
- "data-grid-formats": "Declarative per-column value formatting: set `format` on a `GridColumn` — a `{ kind: \"number\"|\"currency\"|\"percent\"|\"date\"|\"time\"|\"datetime\", options?, currency? }` descriptor (delegated to memoized `Intl` instances via `@dojo-ng/i18n`, never hand-rolled) or a plain `(value, row) => string` function — and `renderCell` formats only that column, returning `undefined` (so other plugins and the core default proceed) for columns without `format`. Locale-reactive: `setup()` attaches a `LocaleController` to the host, so a runtime `lang` change on the grid or an ancestor reformats every value with no plugin reconfiguration. Place this plugin AFTER structural and component plugins in the `plugins` array — it is the fallback formatter, so a plugin ordered after it that also targets the same column would only ever see the already-formatted string, not the raw value.",
- "data-grid-groups": "Groups rows by one or more columns (`by`) with optional per-column `aggregates` (`sum`/`mean`/`min`/`max`/`count`, or a function over the group's leaf rows); grouped cells show an expander, the group value, and the leaf count, aggregated cells show the formatted aggregate, and a grand-totals row renders below the scroller whenever `aggregates` is non-empty. THE LEAF COUNT IS ALREADY THERE FOR FREE: the grouped column's own cell always renders as `value (n)` (e.g. `Ada (3)`), with no `aggregates` entry needed to get it — an explicit `count` aggregate on a DIFFERENT column renders that same number again in that column's cell, which is what you want for a dedicated report-style count column, but is a duplicate if you only meant \"show me how many\". ONE HARD RULE, enforced in `setup()` by throwing rather than silently misbehaving: use `treePlugin` OR `groupsPlugin` on a grid, never both — they both own row expansion, and TanStack has no notion of layering two grouping strategies on the same table. Numeric aggregates format through `@dojo-ng/i18n`, so totals follow the grid's locale the same way `data-grid-formats` does.",
- "data-grid-pagination": "Page navigation below the scroller: reuses the existing `<dj-pagination>` plus a page-size dropdown, both driving TanStack through the table API (`setPageIndex`/`setPageSize`) so the core `onStateChange` runs and the virtualizer's row count follows the current page. `pageSize` (default 25) seeds the initial page size; `pageSizes` (default `[10, 25, 50, 100]`) are only the dropdown's offered choices — the seeded `pageSize` need not be one of them. Composes with `data-grid-filter` with no ordering step: TanStack filters before it paginates, so the page count shrinks to the filtered set automatically.",
- "data-grid-cell-components": "Lets a column render arbitrary Lit content via `GridColumn.render` — a `dj-button`, `dj-icon`, `dj-chip`, a sparkline, anything — while columns without `render` fall through to other plugins and the core default. Two prebuilt helpers cover the common cases without authoring a template: `actionButton(label, action, opts?)` renders a small `dj-button` that emits `dj-cell-action` (detail `{ action, row }`) from the host and stops the click from also selecting the row, and `checkmarkCell(opts?)` renders an `aria-hidden` checkmark glyph with a visually-hidden Yes/No text alternative, so the value still reaches assistive tech. CONSTRAINT: cell content is reachable by mouse and touch today; cell-level keyboard navigation — tabbing into a button that lives inside a cell — is a later core feature, not something this plugin can add on its own.",
+ "data-grid-edit": """
+Inline cell editing for `<dj-data-grid>`.
+
+#### How it works
+- Editing is controlled: the plugin never writes to `data`. Listen for `dj-cell-commit`, update
+  your data, and assign a new `data` array.
+- Put this plugin first in the `plugins` array, so its editor wins the cell over other plugins.
+""",
+ "data-grid-export": """
+CSV export for `<dj-data-grid>`.
+
+#### What is exported
+- Raw cell values, not the formatted text, because formatting is presentation.
+- By default, the filtered rows on all pages. With `all: true`, every row, before filtering.
+- Internal columns whose id starts with `__`, such as the detail expander, are skipped.
+""",
+ "data-grid-tree": """
+Tree rows for `<dj-data-grid>`: rows with children can be expanded and collapsed.
+
+#### Rules
+- Use `treePlugin` or `groupsPlugin` on a grid, never both, because both control row expansion.
+""",
+ "data-grid-detail": """
+Master-detail rows for `<dj-data-grid>`: an expanded row shows extra content below it.
+
+#### Performance
+- Detail rows switch the grid to measured rows of different heights. Grids without this plugin keep
+  the faster fixed-height rows.
+""",
+ "data-grid-filter": """
+Filtering for `<dj-data-grid>`: a quick filter box and optional per-column filters.
+
+#### Quick filter
+- `quick` (on by default) adds one text box above the header that filters across all columns.
+
+#### Column filters
+- Set `filter` on a `GridColumn` to `"text"` or `"select"` to add a filter for that column.
+- The filters appear in a second header row, which is shown only when at least one visible column
+  has a filter.
+
+#### Behavior
+- Text filters wait 150 ms after typing stops before they apply. Automated tests should wait past
+  that delay instead of expecting the result at once.
+- The filters work through the TanStack table API, so the grid's row count and scrolling follow the
+  filtered set.
+- It works with `data-grid-pagination` in any order: rows are filtered before they are paged, so
+  the page count follows the filtered set.
+""",
+ "data-grid-formats": """
+Per-column value formatting for `<dj-data-grid>`: numbers, currency, percentages, dates, and times.
+
+#### Setting a format
+- Set `format` on a `GridColumn` to a descriptor: `{ kind, options?, currency? }`, where `kind` is
+  `"number"`, `"currency"`, `"percent"`, `"date"`, `"time"`, or `"datetime"`.
+- Or set it to a function `(value, row) => string`.
+- Columns without `format` are left to other plugins and the grid's default.
+
+#### Locale
+- Descriptors use `Intl` through `@dojo-ng/i18n`.
+- When `lang` changes on the grid or an ancestor, every value is formatted again, with no change to
+  the plugin.
+
+#### Plugin order
+- Put this plugin after the structural and cell-component plugins. It is the fallback formatter,
+  so a plugin after it would only see the formatted text, not the raw value.
+""",
+ "data-grid-groups": """
+Row grouping with aggregates for `<dj-data-grid>`.
+
+#### Grouping
+- `by` lists the columns to group by. A grouped row shows an expander, the group value, and the
+  number of rows in the group, such as `Ada (3)`.
+- That count is always there. You do not need a `count` aggregate to get it.
+
+#### Aggregates
+- `aggregates` sets an aggregate per column: `sum`, `mean`, `min`, `max`, `count`, or a function
+  over the group's rows.
+- A `count` aggregate on another column shows the same number again in that column. Use it for a
+  separate count column, not just to see the size of each group.
+- When `aggregates` is set, a grand-totals row appears below the rows.
+- Numeric aggregates are formatted through `@dojo-ng/i18n`, so they follow the grid's locale.
+
+#### Rules
+- Use `groupsPlugin` or `treePlugin` on a grid, never both. Both control row expansion, so setup
+  throws an error if both are present.
+""",
+ "data-grid-pagination": """
+Page navigation for `<dj-data-grid>`: a `<dj-pagination>` and a page-size menu below the rows.
+
+#### Options
+- `pageSize` (default 25) is the starting page size.
+- `pageSizes` (default `[10, 25, 50, 100]`) are the choices in the menu. The starting `pageSize`
+  does not have to be one of them.
+
+#### Behavior
+- Paging works through the TanStack table API, so the grid's row count follows the current page.
+- It works with `data-grid-filter` in any order: rows are filtered before they are paged, so the
+  page count follows the filtered set.
+""",
+ "data-grid-cell-components": """
+Custom cell content for `<dj-data-grid>`: a column can render any Lit content, such as a
+`dj-button`, a `dj-icon`, a `dj-chip`, or a sparkline.
+
+#### Custom cells
+- Set `render` on a `GridColumn`. Columns without `render` are left to other plugins and the
+  grid's default.
+
+#### Ready-made cells
+- `actionButton(label, action, opts?)` renders a small `dj-button`. A click emits
+  `dj-cell-action` with `{ action, row }` from the grid, and does not also select the row.
+- `checkmarkCell(opts?)` renders a checkmark with hidden Yes or No text, so screen reader users
+  also get the value.
+
+#### Not supported yet
+- Keyboard access to controls inside a cell. Cell content can be used with a mouse or touch today;
+  moving keyboard focus into a cell needs a change in the grid itself.
+""",
 })
 EXAMPLES.update({
  "dnd": [

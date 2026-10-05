@@ -4,7 +4,7 @@ Dojo NG drag-and-drop primitive (pointer-events core: shadow DOM + touch, no dep
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
 
-> The keyboard/menu path in a consuming component is the accessibility contract (WCAG 2.5.7); drag is enhancement layered on top. The pointer core works inside shadow roots and on touch, mouse, and pen alike, with no dependency. Drops are CONTROLLED: the zone calls `onMove` and the consumer applies the change.
+The keyboard/menu path in a consuming component is the accessibility contract (WCAG 2.5.7); drag is enhancement layered on top. The pointer core works inside shadow roots and on touch, mouse, and pen alike, with no dependency. Drops are CONTROLLED: the zone calls `onMove` and the consumer applies the change.
 
 ## Install
 

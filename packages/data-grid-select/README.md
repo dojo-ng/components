@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-select
 
-Checkbox selection column plugin for @dojo-ng/data-grid (select-all, range selection)
+A checkbox selection column for `<dj-data-grid>`, with select-all and range selection.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> It owns a COLUMN, not the selection. Checkboxes read and write TanStack's existing row selection through `row.getIsSelected()`/`toggleSelected()`, so `selection-mode`, `rowSelection`, and `dj-selection-change` remain the single source of truth — there is no second copy of the selection to keep in sync. Pair it with `activation="click"` on the grid and a click OPENS a row (`dj-activate`) while the checkboxes build the set bulk actions run on; that combination is the whole point. Behavior follows `selection-mode`: `"multiple"` gives checkboxes plus a header select-all with a real indeterminate state, `"single"` gives radios and no header control (select-all is meaningless), and `"none"` adds no column at all. Shift-click a checkbox to select the range from the last one clicked; the range is computed over the ROW MODEL, so it covers rows the virtualizer has never rendered. Always pass `label` — a column of forty identical "Select row" controls is useless with a screen reader.
 
 ## Install
 
@@ -36,6 +34,20 @@ The intended combination. `activation="click"` makes a plain click open a row; t
   document.getElementById("archive").addEventListener("click", () => archive(selected));
 </script>
 ```
+
+## How it works
+
+- The plugin adds a column; it does not hold the selection. The checkboxes read and write the grid's own row selection, so `selection-mode`, `rowSelection`, and `dj-selection-change` stay the only source of truth.
+- `selection-mode="multiple"` gives checkboxes and a select-all checkbox in the header, with a real mixed state. `"single"` gives radio buttons and no header control. `"none"` adds no column.
+- Shift-click a checkbox to select the range from the last one clicked. The range covers rows that are not rendered yet.
+
+## Open rows and select them
+
+- Combine it with `activation="click"` on the grid: a click opens a row (`dj-activate`), and the checkboxes build the set for bulk actions.
+
+## Accessibility
+
+- Always pass `label`. Without it, a screen reader hears a column of identical "Select row" controls.
 
 ## Examples
 

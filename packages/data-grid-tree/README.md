@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-tree
 
-Tree (hierarchical) rows for @dojo-ng/data-grid
+Tree rows for `<dj-data-grid>`: rows with children can be expanded and collapsed.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> Use `treePlugin` OR `groupsPlugin` per grid, never both (they both own expansion).
 
 ## Install
 
@@ -32,3 +30,7 @@ Nested `children` arrays become an expandable tree; ArrowRight/ArrowLeft expand 
   g.plugins = [treePlugin()];
 </script>
 ```
+
+## Rules
+
+- Use `treePlugin` or `groupsPlugin` on a grid, never both, because both control row expansion.

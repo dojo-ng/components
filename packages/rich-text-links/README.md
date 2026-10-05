@@ -4,7 +4,7 @@ Link insert/edit/remove plugin for @dojo-ng/rich-text
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
 
-> An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. The one toolbar button reflects whether the selection is a link (`aria-pressed`) and, on click, asks for a URL — an empty value removes the link, a new value sets or updates it, cancelling changes nothing. The default URL prompt is `window.prompt`; pass your own via `createLinksPlugin({ promptForUrl })` (it may be async — return a Promise) to drive it from an overlay. Auto-linking on paste/typing is a later addition.
+An opt-in plugin for `@dojo-ng/rich-text` (not a custom element). Setting `plugins` REPLACES the default set, so spread `...defaultPlugins` to keep bold/italic/underline + undo/redo. The one toolbar button reflects whether the selection is a link (`aria-pressed`) and, on click, asks for a URL — an empty value removes the link, a new value sets or updates it, cancelling changes nothing. The default URL prompt is `window.prompt`; pass your own via `createLinksPlugin({ promptForUrl })` (it may be async — return a Promise) to drive it from an overlay. Auto-linking on paste/typing is a later addition.
 
 ## Install
 

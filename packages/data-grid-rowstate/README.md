@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-rowstate
 
-Row/cell state styling plugin for @dojo-ng/data-grid (conditional row parts + cell emphasis)
+Row and cell styling from your data for `<dj-data-grid>`, such as bold unread rows or flagged items.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> Styling contract: `row()` classifies a row into state tokens and each token `T` becomes an extra shadow part `row--T` on that row, so you style whole rows from your own CSS — `dj-data-grid::part(row--unread) { font-weight: 600 }`. `cell()` returns an inline style string for one column's content instead, for per-cell emphasis (bold the subject but not the date). Both options are optional and are pure functions of row data, so the grid core never learns your states. TWO CONSTRAINTS. (1) Only ONE plugin may own the `part` attribute: `rowAttributes` merges by key and a second row-part plugin would clobber this one. Combining with `tree`/`groups` is fine — those set `aria-level`/`aria-expanded`, different keys. (2) A part name cannot contain spaces, so state tokens must match `/^[a-z0-9-]+$/`; an invalid token is dropped with a single `console.warn` rather than emitting a broken `part`. Note that the base `row` part is always emitted alongside your tokens, so `::part(row)` rules keep working.
 
 ## Install
 
@@ -48,6 +46,21 @@ npm install @dojo-ng/data-grid-rowstate
   ];
 </script>
 ```
+
+## Row states
+
+- `row()` returns state tokens for a row. Each token `T` becomes an extra shadow part `row--T` on that row, so you style whole rows from your own CSS: `dj-data-grid::part(row--unread) { font-weight: 600 }`.
+- The base `row` part is always there too, so `::part(row)` rules keep working.
+- Tokens must match `/^[a-z0-9-]+$/`, because a part name cannot contain spaces. An invalid token is dropped, with one console warning.
+
+## Cell styles
+
+- `cell()` returns an inline style for one column's content, for emphasis on a single cell, such as a bold subject but not a bold date.
+
+## Rules
+
+- Both functions are optional and use only the row data, so the grid never needs to know your states.
+- Only one plugin can set a row's `part` attribute, so do not combine this with another plugin that sets row parts. The tree and groups plugins are fine, because they set other attributes.
 
 ## Examples
 

@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-pagination
 
-Pagination for @dojo-ng/data-grid (reuses dj-pagination)
+Page navigation for `<dj-data-grid>`: a `<dj-pagination>` and a page-size menu below the rows.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> Page navigation below the scroller: reuses the existing `<dj-pagination>` plus a page-size dropdown, both driving TanStack through the table API (`setPageIndex`/`setPageSize`) so the core `onStateChange` runs and the virtualizer's row count follows the current page. `pageSize` (default 25) seeds the initial page size; `pageSizes` (default `[10, 25, 50, 100]`) are only the dropdown's offered choices — the seeded `pageSize` need not be one of them. Composes with `data-grid-filter` with no ordering step: TanStack filters before it paginates, so the page count shrinks to the filtered set automatically.
 
 ## Install
 
@@ -27,3 +25,13 @@ Filtering (when present) applies first, then pagination — TanStack's row-model
   g.plugins = [paginationPlugin({ pageSize: 10 })];
 </script>
 ```
+
+## Options
+
+- `pageSize` (default 25) is the starting page size.
+- `pageSizes` (default `[10, 25, 50, 100]`) are the choices in the menu. The starting `pageSize` does not have to be one of them.
+
+## Behavior
+
+- Paging works through the TanStack table API, so the grid's row count follows the current page.
+- It works with `data-grid-filter` in any order: rows are filtered before they are paged, so the page count follows the filtered set.

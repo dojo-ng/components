@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-export
 
-CSV export for @dojo-ng/data-grid
+CSV export for `<dj-data-grid>`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> Exports RAW cell values (formatting is presentation). Default set = filtered but unpaginated rows; `all: true` exports the pre-filter set. Synthetic `__` columns (like the detail expander) are skipped.
 
 ## Install
 
@@ -28,3 +26,9 @@ The chrome button downloads the current (filtered, unpaginated) rows. Import `to
   // or, from your own UI: console.log(toCsv(g));
 </script>
 ```
+
+## What is exported
+
+- Raw cell values, not the formatted text, because formatting is presentation.
+- By default, the filtered rows on all pages. With `all: true`, every row, before filtering.
+- Internal columns whose id starts with `__`, such as the detail expander, are skipped.

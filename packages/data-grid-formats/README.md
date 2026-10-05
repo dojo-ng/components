@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-formats
 
-Value-formatting plugin for @dojo-ng/data-grid (Intl number/currency/percent/date via @dojo-ng/i18n)
+Per-column value formatting for `<dj-data-grid>`: numbers, currency, percentages, dates, and times.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> Declarative per-column value formatting: set `format` on a `GridColumn` — a `{ kind: "number"|"currency"|"percent"|"date"|"time"|"datetime", options?, currency? }` descriptor (delegated to memoized `Intl` instances via `@dojo-ng/i18n`, never hand-rolled) or a plain `(value, row) => string` function — and `renderCell` formats only that column, returning `undefined` (so other plugins and the core default proceed) for columns without `format`. Locale-reactive: `setup()` attaches a `LocaleController` to the host, so a runtime `lang` change on the grid or an ancestor reformats every value with no plugin reconfiguration. Place this plugin AFTER structural and component plugins in the `plugins` array — it is the fallback formatter, so a plugin ordered after it that also targets the same column would only ever see the already-formatted string, not the raw value.
 
 ## Install
 
@@ -32,3 +30,18 @@ Set `format` on a column; other columns are untouched. Formatting follows the ac
   g.plugins = [formatsPlugin()];
 </script>
 ```
+
+## Setting a format
+
+- Set `format` on a `GridColumn` to a descriptor: `{ kind, options?, currency? }`, where `kind` is `"number"`, `"currency"`, `"percent"`, `"date"`, `"time"`, or `"datetime"`.
+- Or set it to a function `(value, row) => string`.
+- Columns without `format` are left to other plugins and the grid's default.
+
+## Locale
+
+- Descriptors use `Intl` through `@dojo-ng/i18n`.
+- When `lang` changes on the grid or an ancestor, every value is formatted again, with no change to the plugin.
+
+## Plugin order
+
+- Put this plugin after the structural and cell-component plugins. It is the fallback formatter, so a plugin after it would only see the formatted text, not the raw value.

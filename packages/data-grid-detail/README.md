@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-detail
 
-Master-detail (expandable row detail / subgrid) for @dojo-ng/data-grid
+Master-detail rows for `<dj-data-grid>`: an expanded row shows extra content below it.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> Detail rows switch the grid virtualizer to measured (variable-height) mode; grids without this plugin keep the fixed-height fast path.
 
 ## Install
 
@@ -35,3 +33,7 @@ Each row gains an expander; the detail panel renders any template — here a nes
   })];
 </script>
 ```
+
+## Performance
+
+- Detail rows switch the grid to measured rows of different heights. Grids without this plugin keep the faster fixed-height rows.

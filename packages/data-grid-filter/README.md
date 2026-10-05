@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-filter
 
-Quick + per-column filtering for @dojo-ng/data-grid
+Filtering for `<dj-data-grid>`: a quick filter box and optional per-column filters.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> Two independent filters, both driving TanStack through the table API (`setGlobalFilter` / `column.setFilterValue`) rather than by poking core state, so the core `onStateChange` runs and the virtualizer's row count tracks the narrowed set. `quick` (default `true`) is a single full-width text box above the header; per-column filters are opt-in via `GridColumn.filter` (`"text"` or `"select"`) and render in a subheader row that appears only when at least one visible column declares one. Both quick and per-column text inputs are debounced 150ms — automation should wait past that debounce rather than asserting a synchronous filter. Composes with `data-grid-pagination` with no ordering step: TanStack's row-model pipeline filters before it paginates, so the page count shrinks to the filtered set automatically.
 
 ## Install
 
@@ -30,3 +28,18 @@ The quick filter searches all columns; columns opt into their own filter with `f
   g.plugins = [filterPlugin()];
 </script>
 ```
+
+## Quick filter
+
+- `quick` (on by default) adds one text box above the header that filters across all columns.
+
+## Column filters
+
+- Set `filter` on a `GridColumn` to `"text"` or `"select"` to add a filter for that column.
+- The filters appear in a second header row, which is shown only when at least one visible column has a filter.
+
+## Behavior
+
+- Text filters wait 150 ms after typing stops before they apply. Automated tests should wait past that delay instead of expecting the result at once.
+- The filters work through the TanStack table API, so the grid's row count and scrolling follow the filtered set.
+- It works with `data-grid-pagination` in any order: rows are filtered before they are paged, so the page count follows the filtered set.

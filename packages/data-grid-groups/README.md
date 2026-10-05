@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-groups
 
-Row grouping + aggregates for @dojo-ng/data-grid
+Row grouping with aggregates for `<dj-data-grid>`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> Groups rows by one or more columns (`by`) with optional per-column `aggregates` (`sum`/`mean`/`min`/`max`/`count`, or a function over the group's leaf rows); grouped cells show an expander, the group value, and the leaf count, aggregated cells show the formatted aggregate, and a grand-totals row renders below the scroller whenever `aggregates` is non-empty. THE LEAF COUNT IS ALREADY THERE FOR FREE: the grouped column's own cell always renders as `value (n)` (e.g. `Ada (3)`), with no `aggregates` entry needed to get it — an explicit `count` aggregate on a DIFFERENT column renders that same number again in that column's cell, which is what you want for a dedicated report-style count column, but is a duplicate if you only meant "show me how many". ONE HARD RULE, enforced in `setup()` by throwing rather than silently misbehaving: use `treePlugin` OR `groupsPlugin` on a grid, never both — they both own row expansion, and TanStack has no notion of layering two grouping strategies on the same table. Numeric aggregates format through `@dojo-ng/i18n`, so totals follow the grid's locale the same way `data-grid-formats` does.
 
 ## Install
 
@@ -35,3 +33,19 @@ Group rows show the value and count; aggregated columns show sums (or mean/min/m
   g.plugins = [groupsPlugin({ by: "region", aggregates: { sales: "sum" } })];
 </script>
 ```
+
+## Grouping
+
+- `by` lists the columns to group by. A grouped row shows an expander, the group value, and the number of rows in the group, such as `Ada (3)`.
+- That count is always there. You do not need a `count` aggregate to get it.
+
+## Aggregates
+
+- `aggregates` sets an aggregate per column: `sum`, `mean`, `min`, `max`, `count`, or a function over the group's rows.
+- A `count` aggregate on another column shows the same number again in that column. Use it for a separate count column, not just to see the size of each group.
+- When `aggregates` is set, a grand-totals row appears below the rows.
+- Numeric aggregates are formatted through `@dojo-ng/i18n`, so they follow the grid's locale.
+
+## Rules
+
+- Use `groupsPlugin` or `treePlugin` on a grid, never both. Both control row expansion, so setup throws an error if both are present.

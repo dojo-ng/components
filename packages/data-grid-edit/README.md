@@ -1,10 +1,8 @@
 # @dojo-ng/data-grid-edit
 
-Controlled inline cell editing for @dojo-ng/data-grid
+Inline cell editing for `<dj-data-grid>`.
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library. BSD-3-Clause.
-
-> CONTROLLED editing: the plugin never writes to `data`. Listen for `dj-cell-commit`, update your store, and assign a new `data` array. Place this plugin first in the array so its editor wins the cell.
 
 ## Install
 
@@ -39,3 +37,8 @@ F2/Enter on the active row or double-click starts editing; Enter/blur commits, E
   });
 </script>
 ```
+
+## How it works
+
+- Editing is controlled: the plugin never writes to `data`. Listen for `dj-cell-commit`, update your data, and assign a new `data` array.
+- Put this plugin first in the `plugins` array, so its editor wins the cell over other plugins.

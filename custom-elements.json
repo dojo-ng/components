@@ -3813,7 +3813,7 @@
           "name": "DjDataGrid",
           "customElement": true,
           "tagName": "dj-data-grid",
-          "description": "a virtualized, sortable, selectable data grid built on TanStack Table and TanStack Virtual.\n\nGive it `columns`, `data`, and a `height`. The core covers columns, in-memory data, sorting, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Everything else is a plugin. The grid has ARIA role `grid`.\n\n#### Plugins\n\n- Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail are plugins. Pass an array of plugin objects to the `plugins` property, from JavaScript only.\n- A recommended order: one structural plugin first (`treePlugin` or `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, and `formatsPlugin`, then the plugins that only add controls (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`).\n- Changing `plugins` rebuilds the table, so set it once, early.\n\n#### Opening rows: `activation`\n\n`activation` decides what a plain click or Enter means on a row.\n\n- `\"none\"` (the default): click, Space, and Enter all toggle selection.\n- `\"click\"` (the mail and preview-pane idiom) or `\"double\"` (the file-manager idiom): a plain click, or a double click, opens the row and emits `dj-activate` with `{ row, index }`, where `row` is the original row data. Selection does not change.\n- With activation on, Enter opens the row and Space selects it.\n- Modifier clicks always select and never open: Ctrl or Cmd-click toggles a row, and Shift-click selects a range.\n- `\"double\"` uses the browser's own `dblclick`, so the two clicks inside a double click never open the row on their own.\n- Activation works with any `selection-mode`, including `\"none\"`, so a read-only list can have clickable rows.\n- To open rows by clicking while the user also builds a set for bulk actions, combine `activation=\"click\"`, `selection-mode=\"multiple\"`, and the checkbox column from `@dojo-ng/data-grid-select`.\n\n#### Rendered rows: `dj-range-change`\n\n- `dj-range-change` fires when the window of rendered rows moves, so you can load data in and out, or load more at the end of the list.\n- The detail is `{ start, end, count, rendered }`: the first and last rendered row index (inclusive), the total number of rows, and the list of rendered indexes.\n- The range includes the 8 extra rows the grid renders beyond each edge of the viewport. It is what the grid has rendered, not what the user can see, so fetching this range never leaves a gap.\n- To load more at the end: `if (e.detail.end >= e.detail.count - 1) loadMore()`.\n- When nothing is rendered, `start` and `end` are -1 and `count` is the real count.\n- The event fires after rendering and only when `(start, end, count)` changes, so setting `data` in the handler is safe.\n\n#### Printing\n\n- When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and browsers repeat the header on each printed page. This does not apply to rows drawn by the detail plugin (`@dojo-ng/data-grid-detail`).\n- Safari does not repeat the table header on each printed page. This is a WebKit limitation with no reliable CSS fix.\n\n#### Not supported yet\n\n- A data set larger than `data`: the scrollbar is sized from `data.length`, so it cannot include rows that are not loaded.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
+          "description": "a virtualized, sortable, selectable data grid built on TanStack Table and TanStack Virtual.\n\nGive it `columns`, `data`, and a `height`. The core covers columns, in-memory data, sorting, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Everything else is a plugin. The grid has ARIA role `grid`.\n\n#### Plugins\n\n- Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail are plugins. Pass an array of plugin objects to the `plugins` property, from JavaScript only.\n- A recommended order: one structural plugin first (`treePlugin` or `groupsPlugin`, never both), then `editPlugin`, `cellComponentsPlugin`, and `formatsPlugin`, then the plugins that only add controls (`filterPlugin`, `paginationPlugin`, `exportPlugin`, `detailPlugin`).\n- Changing `plugins` rebuilds the table, so set it once, early.\n\n#### Opening rows: `activation`\n\n`activation` decides what a plain click or Enter means on a row.\n\n- `\"none\"` (the default): click, Space, and Enter all toggle selection.\n- `\"click\"` (the mail and preview-pane idiom) or `\"double\"` (the file-manager idiom): a plain click, or a double click, opens the row and emits `dj-activate` with `{ row, index }`, where `row` is the original row data. Selection does not change.\n- With activation on, Enter opens the row and Space selects it.\n- Modifier clicks always select and never open: Ctrl or Cmd-click toggles a row, and Shift-click selects a range.\n- `\"double\"` uses the browser's own `dblclick`, so the two clicks inside a double click never open the row on their own.\n- Activation works with any `selection-mode`, including `\"none\"`, so a read-only list can have clickable rows.\n- To open rows by clicking while the user also builds a set for bulk actions, combine `activation=\"click\"`, `selection-mode=\"multiple\"`, and the checkbox column from `@dojo-ng/data-grid-select`.\n\n#### Rendered rows: `dj-range-change`\n\n- `dj-range-change` fires when the window of rendered rows moves, so you can load data in and out, or load more at the end of the list.\n- The detail is `{ start, end, count, rendered }`: the first and last rendered row index (inclusive), the total number of rows, and the list of rendered indexes.\n- The range includes the 8 extra rows the grid renders beyond each edge of the viewport. It is what the grid has rendered, not what the user can see, so fetching this range never leaves a gap.\n- To load more at the end: `if (e.detail.end >= e.detail.count - 1) loadMore()`.\n- When nothing is rendered, `start` and `end` are -1 and `count` is the real count.\n- The event fires after rendering and only when `(start, end, count)` changes, so setting `data` in the handler is safe.\n\n#### Focus and the active row\n\n- `focus()` on the host moves focus into the grid, so a consumer can return the keyboard to it (after closing a dialog, say) without reaching into the shadow root.\n- The grid shows a focus ring when it has keyboard focus, and the active row gets a stronger marker while the grid is focused.\n- The active row (the keyboard cursor) and each selected row carry extra parts, `row--active` and `row--selected`, alongside `row`, so a consumer can restyle them: `dj-data-grid::part(row--selected) { color: inherit }`. Plugin-contributed row parts (from `@dojo-ng/data-grid-rowstate`) are kept alongside them. Match rows with `[part~=\"row\"]`, not `[part=\"row\"]`, since a row can carry several parts.\n- `dj-active-change` fires when the user moves the active row with the keyboard or a click, with detail `{ index, row }`, where `row` is the original row data. Setting `activeIndex` from code does not fire it, the same way setting a native input's `value` fires no `change`.\n\n#### Printing\n\n- When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and browsers repeat the header on each printed page. This does not apply to rows drawn by the detail plugin (`@dojo-ng/data-grid-detail`).\n- Safari does not repeat the table header on each printed page. This is a WebKit limitation with no reliable CSS fix.\n\n#### Not supported yet\n\n- A data set larger than `data`: the scrollbar is sized from `data.length`, so it cannot include rows that are not loaded.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
           "superclass": {
             "name": "DojoElement"
           },
@@ -3883,6 +3883,23 @@
               },
               "default": "[]",
               "description": "Plugin set. Set in JavaScript (rich data). Declared up front because TanStack row models must exist at table creation; a post-mount change rebuilds the table. Default `[]`."
+            },
+            {
+              "kind": "method",
+              "name": "focus",
+              "description": "Forward focus to the element that owns the keyboard (the `role=\"grid\"` div). The print table also carries `part=\"grid\"`, so this selects by class, not by part.",
+              "parameters": [
+                {
+                  "name": "options",
+                  "type": {
+                    "text": "FocusOptions"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "blur"
             },
             {
               "kind": "method",
@@ -3969,6 +3986,14 @@
               "description": ""
             },
             {
+              "name": "row--active",
+              "description": ""
+            },
+            {
+              "name": "row--selected",
+              "description": ""
+            },
+            {
               "name": "cell",
               "description": ""
             },
@@ -4010,6 +4035,13 @@
                 "text": "CustomEvent"
               },
               "description": "detail `{ start, end, count, rendered }` \u2014 inclusive\nfirst and last rendered row-model indices, the total row count, and the full index list; `start`\nand `end` are -1 when nothing is rendered"
+            },
+            {
+              "name": "dj-active-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ index, row }`"
             },
             {
               "name": "dj-activate",

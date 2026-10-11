@@ -16,7 +16,7 @@ for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
 }
 
 const tick = (ms) => new Promise((r) => setTimeout(r, ms));
-const rowCount = (el) => el.renderRoot.querySelectorAll('[part="row"]').length;
+const rowCount = (el) => el.renderRoot.querySelectorAll('[part~="row"]').length;
 const sizerHeight = (el) => el.renderRoot.querySelector('[role="rowgroup"]').getAttribute("style");
 
 const DATA = [

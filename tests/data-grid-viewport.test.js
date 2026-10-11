@@ -30,7 +30,7 @@ const VIEWPORT = 400; // the stubbed scroll-element height
 
 /** The row-model indices actually in the DOM, from each row's `r-<index>` id. */
 function domIndices(el) {
-	return [...el.renderRoot.querySelectorAll('[part="row"]')]
+	return [...el.renderRoot.querySelectorAll('[part~="row"]')]
 		.map((r) => Number(r.id.replace(/^r-/, "")))
 		.sort((a, b) => a - b);
 }

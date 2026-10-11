@@ -9,7 +9,7 @@ import type { ListOption } from "@dojo-ng/list";
 import type { PopupPosition } from "@dojo-ng/popup";
 import styles from "./dj-typeahead.styles.js";
 
-registerDefaults("dj", { selectAnOption: "Please select an option." });
+registerDefaults("dj", { selectAnOption: "Please select an option.", suggestions: "Suggestions" });
 
 /**
  * `<dj-typeahead>` — an editable combobox: type to filter `options`, pick from a popup
@@ -96,11 +96,11 @@ export class DjTypeahead extends FormControl(DojoElement) implements Partial<Doj
 				placeholder=${this.placeholder ?? nothing}
 				helper-text=${this.helperText ?? nothing}
 				?disabled=${this.isDisabled} ?required=${this.required}
-				role="combobox" aria-expanded=${this.open ? "true" : "false"}
+				role="combobox" aria-expanded=${this.open ? "true" : "false"} aria-controls="suggestions"
 				@input=${this.onInput} @keydown=${this.onFieldKey} @focus=${() => { if (this.#reopenGuard) { this.#reopenGuard = false; return; } if (this.options.length) this.open = true; }}
 			></dj-text-input>
 			<dj-popup .anchor=${this.field} .open=${this.open && this.filtered.length > 0} position=${this.position} .scrollLock=${false} @dj-close=${() => { this.open = false; }}>
-				<dj-list .options=${this.filtered} .value=${this.value} @change=${(e: Event) => this.onSelect(e)}></dj-list>
+				<dj-list id="suggestions" label=${messages.resolve("dj", this.#i18n.locale, "suggestions") ?? "Suggestions"} .options=${this.filtered} .value=${this.value} @change=${(e: Event) => this.onSelect(e)}></dj-list>
 			</dj-popup>
 		`;
 	}

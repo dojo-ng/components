@@ -55,9 +55,16 @@ describe("dj-chip-typeahead", () => {
 		assert(values.includes("red") && values.includes("green"), "FormData carries each value");
 	});
 
-	it("has no serious or critical accessibility violations", async () => {
+	// CB11 (the CB10 shape in chip-typeahead): audit with the popup open, not only at rest.
+	it("has no serious or critical accessibility violations, at rest and with the popup open", async () => {
 		const el = await mount(make("dj-chip-typeahead", { options: OPTIONS, label: "Colors", value: ["red"] }));
 		await el.updateComplete;
+		await assertNoViolations(el);
+
+		el.focus();
+		await el.updateComplete;
+		await settleFrames();
+		assert(el.shadowRoot.querySelector("dj-popup").open, "focusing the input opens the popup");
 		await assertNoViolations(el);
 	});
 });

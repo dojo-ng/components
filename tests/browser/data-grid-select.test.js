@@ -90,14 +90,14 @@ describe("dj-data-grid selection column", () => {
 
 	it("the row's aria-selected stays authoritative when the checkbox drives selection", async () => {
 		const g = await gridWith({ selectionMode: "multiple" });
-		const row = g.shadowRoot.querySelectorAll('[part="row"]')[1];
+		const row = g.shadowRoot.querySelectorAll('[part~="row"]')[1];
 		assertEqual(row.getAttribute("aria-selected"), "false");
 
 		rowBoxes(g)[1].click();
 		await g.updateComplete;
 		await settleFrames();
 
-		const rowAfter = g.shadowRoot.querySelectorAll('[part="row"]')[1];
+		const rowAfter = g.shadowRoot.querySelectorAll('[part~="row"]')[1];
 		assertEqual(rowAfter.getAttribute("aria-selected"), "true", "the ROW reports selection; the checkbox only reflects it");
 	});
 
@@ -155,7 +155,7 @@ describe("dj-data-grid activation", () => {
 		const opened = [];
 		g.addEventListener("dj-activate", (e) => opened.push(e.detail.index));
 
-		g.shadowRoot.querySelectorAll('[part="row"]')[2].click();
+		g.shadowRoot.querySelectorAll('[part~="row"]')[2].click();
 		await g.updateComplete;
 		await settleFrames();
 
@@ -171,7 +171,7 @@ describe("dj-data-grid activation", () => {
 		const opened = [];
 		g.addEventListener("dj-activate", (e) => opened.push(e.detail.index));
 
-		const row = g.shadowRoot.querySelectorAll('[part="row"]')[1];
+		const row = g.shadowRoot.querySelectorAll('[part~="row"]')[1];
 		row.click();
 		await g.updateComplete;
 		assertEqual(opened.length, 0, "a single click does not activate");

@@ -14,9 +14,9 @@ for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
 	});
 }
 
-const rows = (el) => el.renderRoot.querySelectorAll('[part="row"]').length;
+const rows = (el) => el.renderRoot.querySelectorAll('[part~="row"]').length;
 const sizer = (el) => el.renderRoot.querySelector('[role="rowgroup"]').getAttribute("style");
-const firstExpander = (el) => el.renderRoot.querySelector('[part="row"] [part="expander"]');
+const firstExpander = (el) => el.renderRoot.querySelector('[part~="row"] [part="expander"]');
 const gridEl = (el) => el.renderRoot.querySelector('[part="grid"]');
 const key = (t, k) => t.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, composed: true }));
 
@@ -80,7 +80,7 @@ test("aria-level and aria-expanded are set on the rows", async () => {
 	const el = await treeGrid();
 	firstExpander(el).click();
 	await settled(el);
-	const rowEls = el.renderRoot.querySelectorAll('[part="row"]');
+	const rowEls = el.renderRoot.querySelectorAll('[part~="row"]');
 	assert.equal(rowEls[0].getAttribute("aria-level"), "1", "root is level 1");
 	assert.equal(rowEls[0].getAttribute("aria-expanded"), "true", "expanded root");
 	assert.equal(rowEls[1].getAttribute("aria-level"), "2", "child is level 2");

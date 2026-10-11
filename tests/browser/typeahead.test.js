@@ -42,9 +42,18 @@ describe("dj-typeahead", () => {
 		assertEqual(new FormData(form).get("fruit"), "banana", "FormData carries the value");
 	});
 
-	it("has no serious or critical accessibility violations", async () => {
+	// CB10: a closed popup audits almost nothing, so audit it open too. Before the fix this
+	// failed with aria-required-attr (combobox without aria-controls) and aria-input-field-name
+	// (the suggestion listbox had no name).
+	it("has no serious or critical accessibility violations, at rest and with the popup open", async () => {
 		const el = await mount(make("dj-typeahead", { options: OPTIONS, label: "Fruit" }));
 		await el.updateComplete;
+		await assertNoViolations(el);
+
+		el.focus();
+		await sendKeys({ type: "ap" });
+		await el.updateComplete;
+		await settleFrames();
 		await assertNoViolations(el);
 	});
 });

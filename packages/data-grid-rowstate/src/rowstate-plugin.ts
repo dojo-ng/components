@@ -33,12 +33,13 @@ const TOKEN = /^[a-z0-9-]+$/;
  * functions of row data, so the grid core never learns a consumer's states.
  *
  * Row parts ride the core `rowAttributes` hook. Core reconciles plugin-returned
- * attributes each render and removes any key a plugin stops returning, and it
- * overwrites the row template's static `part="row"` once a plugin sets `part` —
- * so this plugin ALWAYS emits the base `row` token (an unstated row returns
- * `{ part: "row" }`), otherwise the base part would be stripped off the reused
- * virtual-scroll rows. Only one plugin may own `part`; combining with
- * tree/groups (which set `aria-*`, different keys) composes fine.
+ * attributes each render and removes any key a plugin stops returning. Core
+ * merges a plugin's `part` tokens with its own (`row`, plus `row--active` and
+ * `row--selected` from data-grid 0.2.0), so this plugin's tokens sit alongside
+ * the core's. It still emits the base `row` token (an unstated row returns
+ * `{ part: "row" }`), which older cores needed and newer ones deduplicate.
+ * Only one plugin may own `part`; combining with tree/groups (which set
+ * `aria-*`, different keys) composes fine.
  */
 export function rowStatePlugin(options: RowStateOptions = {}): DataGridPlugin {
 	const warned = new Set<string>();

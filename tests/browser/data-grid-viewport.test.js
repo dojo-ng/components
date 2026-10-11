@@ -44,7 +44,7 @@ async function gridWithRanges(props) {
 
 /** The row-model indices actually in the DOM, from each row's `r-<index>` id. */
 function domIndices(grid) {
-	return [...grid.shadowRoot.querySelectorAll('[part="row"]')]
+	return [...grid.shadowRoot.querySelectorAll('[part~="row"]')]
 		.map((r) => Number(r.id.replace(/^r-/, "")))
 		.sort((a, b) => a - b);
 }

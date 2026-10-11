@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { property, state, query } from "lit/decorators.js";
 import DojoElement, { DojoFormControl, dismissOnFocusOut, FormControl } from "@dojo-ng/dojo-element";
+import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import "@dojo-ng/chip";
 import "@dojo-ng/popup";
 import "@dojo-ng/list";
@@ -8,6 +9,8 @@ import "@dojo-ng/label";
 import type { ListOption, DjList } from "@dojo-ng/list";
 import type { PopupPosition } from "@dojo-ng/popup";
 import styles from "./dj-chip-typeahead.styles.js";
+
+registerDefaults("dj", { suggestions: "Suggestions" });
 
 /**
  * `<dj-chip-typeahead>` — a multi-select typeahead: type to filter `options`, pick from a popup
@@ -38,6 +41,7 @@ export class DjChipTypeahead extends FormControl(DojoElement) implements Partial
 	static formAssociated = true;
 
 	#internals: ElementInternals;
+	#i18n = new LocaleController(this);
 	@query(".input") private input!: HTMLInputElement;
 
 	@property({ type: Array }) options: ListOption[] = [];
@@ -120,13 +124,13 @@ export class DjChipTypeahead extends FormControl(DojoElement) implements Partial
 			<div part="box" class="box ${this.focused ? "box--focused" : ""}" @click=${() => this.input?.focus()}>
 				${this.value.map((v) => html`<dj-chip closeable @dj-close=${() => this.removeValue(v)}>${this.labelFor(v)}</dj-chip>`)}
 				<input class="input" .value=${this.query} placeholder=${this.value.length ? nothing : (this.placeholder ?? nothing)}
-					?disabled=${this.isDisabled} role="combobox" aria-label=${this.label ?? nothing} aria-expanded=${this.open ? "true" : "false"}
+					?disabled=${this.isDisabled} role="combobox" aria-label=${this.label ?? nothing} aria-expanded=${this.open ? "true" : "false"} aria-controls="suggestions"
 					@input=${this.onInput} @keydown=${this.onKey}
 					@focus=${() => { this.focused = true; if (this.available.length) this.open = true; }}
 					@blur=${() => { this.focused = false; }} />
 			</div>
 			<dj-popup .anchor=${this.input} .open=${this.open && this.available.length > 0} position=${this.position} .scrollLock=${false} @dj-close=${() => { this.open = false; }}>
-				<dj-list .options=${this.available} @change=${(e: Event) => this.onSelect(e)}></dj-list>
+				<dj-list id="suggestions" label=${messages.resolve("dj", this.#i18n.locale, "suggestions") ?? "Suggestions"} .options=${this.available} @change=${(e: Event) => this.onSelect(e)}></dj-list>
 			</dj-popup>
 		`;
 	}

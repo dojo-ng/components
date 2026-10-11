@@ -95,6 +95,20 @@ export type ActivationMode = "none" | "click" | "double";
  * - The event fires after rendering and only when `(start, end, count)` changes, so setting `data`
  *   in the handler is safe.
  *
+ * #### Focus and the active row
+ * - `focus()` on the host moves focus into the grid, so a consumer can return the keyboard to it
+ *   (after closing a dialog, say) without reaching into the shadow root.
+ * - The grid shows a focus ring when it has keyboard focus, and the active row gets a stronger
+ *   marker while the grid is focused.
+ * - The active row (the keyboard cursor) and each selected row carry extra parts, `row--active`
+ *   and `row--selected`, alongside `row`, so a consumer can restyle them:
+ *   `dj-data-grid::part(row--selected) { color: inherit }`. Plugin-contributed row parts (from
+ *   `@dojo-ng/data-grid-rowstate`) are kept alongside them. Match rows with `[part~="row"]`,
+ *   not `[part="row"]`, since a row can carry several parts.
+ * - `dj-active-change` fires when the user moves the active row with the keyboard or a click,
+ *   with detail `{ index, row }`, where `row` is the original row data. Setting `activeIndex`
+ *   from code does not fire it, the same way setting a native input's `value` fires no `change`.
+ *
  * #### Printing
  * - When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and
  *   browsers repeat the header on each printed page. This does not apply to rows drawn by the
@@ -107,10 +121,10 @@ export type ActivationMode = "none" | "click" | "double";
  *   rows that are not loaded.
  *
  * Events: `dj-sort`, `dj-selection-change`, `dj-activate` (detail `{ row, index }`, where `row` is
- * the original row data), `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
+ * the original row data), `dj-active-change` (detail `{ index, row }`), `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
  * first and last rendered row-model indices, the total row count, and the full index list; `start`
- * and `end` are -1 when nothing is rendered). Parts: `grid`, `head`, `row`, `cell`, `chrome-top`,
- * `chrome-bottom`, `subhead`.
+ * and `end` are -1 when nothing is rendered). Parts: `grid`, `head`, `row`, `row--active`,
+ * `row--selected`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.
  */
 export class DjDataGrid extends DojoElement {
 	static override styles = styles;
@@ -144,6 +158,15 @@ export class DjDataGrid extends DojoElement {
 	/** Read-only access to the live TanStack table, so consumers outside a plugin (CSV export,
 	 *  tests) can reach it. Rebuilt when `plugins` changes; do not cache across rebuilds. */
 	get table(): Table<Row> { return this.#table; }
+
+	/** Forward focus to the element that owns the keyboard (the `role="grid"` div). The print
+	 *  table also carries `part="grid"`, so this selects by class, not by part. */
+	override focus(options?: FocusOptions) {
+		this.renderRoot.querySelector<HTMLElement>(".grid")?.focus(options);
+	}
+	override blur() {
+		this.renderRoot.querySelector<HTMLElement>(".grid")?.blur();
+	}
 	/** The plugin array the table was last built with. Compared by reference in willUpdate so a
 	 *  `plugins` assignment ALWAYS rebuilds — including one landing between upgrade-time
 	 *  connectedCallback and the first update flush (script-after-import order), which a
@@ -335,10 +358,18 @@ export class DjDataGrid extends DojoElement {
 		this.emit("dj-range-change", { detail: { start: r.start, end: r.end, count: r.count, rendered: r.rendered } });
 	}
 
+	/** Move the active row on a user gesture and announce it. Programmatic `activeIndex`
+	 *  assignments bypass this on purpose, so they stay silent. */
+	#setActive(index: number) {
+		if (index === this.activeIndex) return;
+		this.activeIndex = index;
+		const row = this.#table.getRowModel().rows[index];
+		this.emit("dj-active-change", { detail: { index, row: row?.original } });
+	}
 	private move(delta: number) {
 		const n = this.#table.getRowModel().rows.length;
 		if (!n) return;
-		this.activeIndex = Math.min(n - 1, Math.max(0, this.activeIndex + delta));
+		this.#setActive(Math.min(n - 1, Math.max(0, this.activeIndex + delta)));
 		this.#virtualizer?.scrollToIndex(this.activeIndex, { align: "auto" });
 	}
 	private onKeyDown(e: KeyboardEvent) {
@@ -346,8 +377,8 @@ export class DjDataGrid extends DojoElement {
 		switch (e.key) {
 			case "ArrowDown": e.preventDefault(); this.move(1); break;
 			case "ArrowUp": e.preventDefault(); this.move(-1); break;
-			case "Home": e.preventDefault(); this.activeIndex = 0; this.#virtualizer?.scrollToIndex(0); break;
-			case "End": e.preventDefault(); this.activeIndex = Math.max(0, n - 1); this.#virtualizer?.scrollToIndex(n - 1); break;
+			case "Home": e.preventDefault(); if (n) this.#setActive(0); this.#virtualizer?.scrollToIndex(0); break;
+			case "End": e.preventDefault(); if (n) this.#setActive(n - 1); this.#virtualizer?.scrollToIndex(n - 1); break;
 			// Platform convention (and the ARIA grid pattern): Enter activates, Space selects.
 			// Under `activation="none"` both keep toggling, so nothing existing moves.
 			case " ": e.preventDefault(); this.toggleAt(this.activeIndex); break;
@@ -379,7 +410,7 @@ export class DjDataGrid extends DojoElement {
 	 * activating a row while the user is building a selection is the surprise this design removes.
 	 */
 	#onRowClick(e: MouseEvent, index: number) {
-		this.activeIndex = index;
+		this.#setActive(index);
 		if (this.activation === "none") { this.toggleAt(index); return; }
 		// Ctrl/Cmd toggles this row; Shift is the range gesture (owned by the select plugin).
 		if (e.ctrlKey || e.metaKey) { this.toggleAt(index); return; }
@@ -398,11 +429,16 @@ export class DjDataGrid extends DojoElement {
 
 	/** A cell's content: the first plugin `renderCell` that returns non-undefined wins (else the
 	 *  core string default), then every `decorateCell` folds over it in array order. */
-	/** Merge every plugin's row attributes for a row (array order, later wins). */
-	#rowAttributes(row: TableRow<Row>): Record<string, string> {
+	/** Merge every plugin's row attributes for a row (array order, later wins), then fold the
+	 *  core's own state parts into `part`. A plugin's `part` tokens are kept, never replaced, so
+	 *  `row--active` and `row--selected` survive alongside a rowstate plugin's `row--unread`. */
+	#rowAttributes(row: TableRow<Row>, index: number, selected: boolean): Record<string, string> {
 		let attrs: Record<string, string> = {};
 		for (const p of this.plugins) if (p.rowAttributes) attrs = { ...attrs, ...p.rowAttributes(row, this.#ctx) };
-		return attrs;
+		const parts = new Set(["row", ...(attrs.part ?? "").split(/\s+/).filter(Boolean)]);
+		if (index === this.activeIndex) parts.add("row--active");
+		if (selected) parts.add("row--selected");
+		return { ...attrs, part: [...parts].join(" ") };
 	}
 
 	#cellContent(cell: Cell<Row, unknown>): unknown {
@@ -532,11 +568,11 @@ export class DjDataGrid extends DojoElement {
 								const rowStyle = hasDetail
 									? `position:static;height:${this.rowHeight}px;grid-template-columns:${template}`
 									: `transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`;
-								const rowTpl = html`<div part="row" id=${`r-${vi.index}`}
+								const rowTpl = html`<div id=${`r-${vi.index}`}
 									class="vrow ${vi.index === this.activeIndex ? "vrow--active" : ""} ${selected ? "vrow--selected" : ""}"
 									role="row" aria-rowindex=${vi.index + headerRows + 1} aria-selected=${this.selectionMode !== "none" ? (selected ? "true" : "false") : nothing}
 									style=${rowStyle}
-									${ref((el) => el && applyRowAttrs(el as Element, this.#rowAttributes(row)))}
+									${ref((el) => el && applyRowAttrs(el as Element, this.#rowAttributes(row, vi.index, selected)))}
 									@click=${(e: MouseEvent) => this.#onRowClick(e, vi.index)}
 									@dblclick=${(e: MouseEvent) => this.#onRowDblClick(e, vi.index)}>
 									${row.getVisibleCells().map((cell) => html`<div part="cell" class="cell" role="gridcell">${this.#cellContent(cell)}</div>`)}
@@ -574,6 +610,7 @@ declare global {
 		"dj-sort": CustomEvent<{ sorting: SortingState }>;
 		"dj-selection-change": CustomEvent<{ rows: Row[] }>;
 		"dj-activate": CustomEvent<{ row: Row; index: number }>;
+		"dj-active-change": CustomEvent<{ index: number; row: Row | undefined }>;
 		"dj-range-change": CustomEvent<{ start: number; end: number; count: number; rendered: number[] }>;
 	}
 }

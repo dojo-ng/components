@@ -18,7 +18,9 @@ export default css`
 	.hcell.sortable { cursor: pointer; } .hcell.sortable:hover { color: var(--dj-color-text, #1f2937); }
 	.sortind { display: inline-flex; opacity: .7; width: 1em; }
 	.scroll { overflow: auto; outline: none; }
-	.scroll:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: -2px; }
+	/* The ring goes on .grid because that is the element with tabindex; .scroll never takes focus. */
+	.grid:focus { outline: none; }
+	.grid:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: -2px; }
 	.vrow { position: absolute; left: 0; right: 0; display: grid; align-items: center; border-bottom: 1px solid var(--dj-color-neutral-100, #f3f4f6); }
 	/* Measured wrapper for master-detail: carries the absolute positioning; the row inside is static. */
 	.vwrap { position: absolute; left: 0; right: 0; }
@@ -27,6 +29,9 @@ export default css`
 	.vrow:hover { background: var(--dj-color-neutral-50, #f9fafb); }
 	.vrow--active { background: var(--dj-color-neutral-100, #f3f4f6); }
 	.vrow--selected { background: var(--dj-color-primary-100, #dbeafe); }
+	/* The keyboard cursor matters most while the keyboard is live: mark it with an inset bar while
+	   the grid is focused. A bar rather than a tint, so it still reads on a selected row. */
+	.grid:focus .vrow--active { box-shadow: inset 3px 0 0 var(--dj-color-primary-600, #2563eb); }
 	.cell { padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	/* Forced colors: row tints collapse; use the system selected pair for selected rows and
 	   an outline for the active (keyboard) row so both remain visible. */

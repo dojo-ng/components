@@ -36,7 +36,7 @@ describe("dj-data-grid", () => {
 		await settleFrames();
 		await settleFrames();
 
-		const rendered = () => grid.shadowRoot.querySelectorAll('[part="row"]').length;
+		const rendered = () => grid.shadowRoot.querySelectorAll('[part~="row"]').length;
 		const initial = rendered();
 		assert(initial > 0 && initial < 80, `only a window of rows renders, not all 5,000 (got ${initial})`);
 		assert(grid.shadowRoot.querySelector("#r-0"), "row 0 is in the initial window");
@@ -66,7 +66,7 @@ describe("dj-data-grid", () => {
 		assert(sorts >= 1, "clicking a sortable header emits dj-sort");
 		// TanStack sorts numeric columns descending on the first click (its sortDescFirst default).
 		assertEqual(valueHeader.getAttribute("aria-sort"), "descending", "the header reports descending sort");
-		const firstRowCells = grid.shadowRoot.querySelector('[part="row"]').querySelectorAll('[part="cell"]');
+		const firstRowCells = grid.shadowRoot.querySelector('[part~="row"]').querySelectorAll('[part="cell"]');
 		assertEqual(firstRowCells[2].textContent.trim(), "3", "the largest value sorts to the top");
 	});
 
@@ -77,7 +77,7 @@ describe("dj-data-grid", () => {
 		let detail;
 		grid.addEventListener("dj-selection-change", (e) => { detail = e.detail; });
 
-		const row = grid.shadowRoot.querySelector('[part="row"]');
+		const row = grid.shadowRoot.querySelector('[part~="row"]');
 		row.click();
 		await grid.updateComplete;
 		assert(detail && detail.rows.length === 1, "clicking a row selects exactly one row");
@@ -124,6 +124,27 @@ describe("dj-data-grid", () => {
 		await sendKeys({ press: "Enter" }); // commit
 		await grid.updateComplete;
 		assert(commit && commit.columnId === "name", "committing emits dj-cell-commit for the edited column");
+	});
+
+	// Track GF (KB7): focus() from the host, a focus ring on the element that actually holds focus,
+	// and the stronger active-row marker while the keyboard is live. Only a real browser computes
+	// :focus-visible and outline styles, so these live here rather than in the happy-dom suite.
+	it("focus() on the host focuses the grid, which shows a focus ring and marks the active row", async () => {
+		const grid = await mount(gridWith({ data: bigData(10), height: "300px" }));
+		await grid.updateComplete;
+		await settleFrames();
+		const inner = grid.shadowRoot.querySelector(".grid");
+		const activeRow = () => grid.shadowRoot.querySelector('[part~="row--active"]');
+		assertEqual(getComputedStyle(activeRow()).boxShadow, "none", "no active-row bar while the grid is unfocused");
+
+		grid.focus();
+		await sendKeys({ press: "ArrowDown" });
+		await grid.updateComplete;
+		assertEqual(deepActiveElement(), inner, "focus() lands on the role=grid element");
+		assert(inner.matches(":focus-visible"), "keyboard use makes the focus visible");
+		assert(getComputedStyle(inner).outlineStyle !== "none", "the grid draws a focus ring");
+		assertEqual(activeRow().id, "r-1", "row--active follows the cursor");
+		assert(getComputedStyle(activeRow()).boxShadow !== "none", "the active row is marked while the grid has focus");
 	});
 
 	it("has no serious or critical accessibility violations", async () => {

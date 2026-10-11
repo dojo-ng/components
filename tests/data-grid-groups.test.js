@@ -16,7 +16,7 @@ for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
 }
 
 const cells = (el) => [...el.renderRoot.querySelectorAll('[part="cell"]')];
-const rows = (el) => el.renderRoot.querySelectorAll('[part="row"]').length;
+const rows = (el) => el.renderRoot.querySelectorAll('[part~="row"]').length;
 const COLS = [{ id: "dept", header: "Dept", accessorKey: "dept" }, { id: "amt", header: "Amount", accessorKey: "amt" }];
 const DATA = [
 	{ dept: "Eng", amt: 100 }, { dept: "Eng", amt: 200 },

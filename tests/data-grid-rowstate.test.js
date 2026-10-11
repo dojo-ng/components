@@ -41,6 +41,9 @@ test("row() tokens become row--T parts and the base row part is kept on every ro
 	assert.equal(unread.length, 1, "exactly the unseen row is tagged unread");
 });
 
+// The core's own state parts (data-grid 0.2.0); the first row is active by default.
+const CORE_PARTS = new Set(["row--active", "row--selected"]);
+
 test("a row that returns no token still keeps part='row' (reconcile regression)", async () => {
 	// Every row is 'seen', so the classifier returns null for all — none may lose
 	// the base row part (a bare {} return would strip it off the reused rows).
@@ -52,7 +55,7 @@ test("a row that returns no token still keeps part='row' (reconcile regression)"
 	assert.equal(rows.length, 2);
 	for (const r of rows) {
 		assert.ok(parts(r).includes("row"));
-		assert.ok(!parts(r).some((p) => p.startsWith("row--")));
+		assert.ok(!parts(r).some((p) => p.startsWith("row--") && !CORE_PARTS.has(p)));
 	}
 });
 
@@ -67,7 +70,7 @@ test("an invalid state token warns once and is dropped", async () => {
 		);
 		for (const r of rowEls(el)) {
 			assert.ok(parts(r).includes("row"));
-			assert.ok(!parts(r).some((p) => p.startsWith("row--")), "the bad token produced no part");
+			assert.ok(!parts(r).some((p) => p.startsWith("row--") && !CORE_PARTS.has(p)), "the bad token produced no part");
 		}
 	} finally {
 		console.warn = orig;

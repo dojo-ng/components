@@ -1486,6 +1486,13 @@ Give it `columns`, `data`, and a `height`. The core covers columns, in-memory da
 - When nothing is rendered, `start` and `end` are -1 and `count` is the real count.
 - The event fires after rendering and only when `(start, end, count)` changes, so setting `data` in the handler is safe.
 
+#### Focus and the active row
+
+- `focus()` on the host moves focus into the grid, so a consumer can return the keyboard to it (after closing a dialog, say) without reaching into the shadow root.
+- The grid shows a focus ring when it has keyboard focus, and the active row gets a stronger marker while the grid is focused.
+- The active row (the keyboard cursor) and each selected row carry extra parts, `row--active` and `row--selected`, alongside `row`, so a consumer can restyle them: `dj-data-grid::part(row--selected) { color: inherit }`. Plugin-contributed row parts (from `@dojo-ng/data-grid-rowstate`) are kept alongside them. Match rows with `[part~="row"]`, not `[part="row"]`, since a row can carry several parts.
+- `dj-active-change` fires when the user moves the active row with the keyboard or a click, with detail `{ index, row }`, where `row` is the original row data. Setting `activeIndex` from code does not fire it, the same way setting a native input's `value` fires no `change`.
+
 #### Printing
 
 - When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and browsers repeat the header on each printed page. This does not apply to rows drawn by the detail plugin (`@dojo-ng/data-grid-detail`).
@@ -1507,14 +1514,14 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 | `height` | height | `string` | `"20rem"` |
 | `plugins` | — | `DataGridPlugin[]` | `[]` |
 
-**Parts:** `grid`, `head`, `row`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`, `detail`
+**Parts:** `grid`, `head`, `row`, `row--active`, `row--selected`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`, `detail`
 
 **Events:** `dj-sort`, `dj-selection-change`, `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
 first and last rendered row-model indices, the total row count, and the full index list; `start`
-and `end` are -1 when nothing is rendered), `dj-activate` (detail `{ row, index }`, where `row` is
+and `end` are -1 when nothing is rendered), `dj-active-change` (detail `{ index, row }`), `dj-activate` (detail `{ row, index }`, where `row` is
 the original row data)
 
-**Methods:** `toggleAt(index: number)`, `activateAt(index: number)` (Emit `dj-activate` for a row-model index. Fires regardless of `selectionMode` (a read-only list with clickable rows is a real case) but never under `activation="none"`.)
+**Methods:** `focus(options: FocusOptions)` (Forward focus to the element that owns the keyboard (the `role="grid"` div). The print table also carries `part="grid"`, so this selects by class, not by part.), `blur()`, `toggleAt(index: number)`, `activateAt(index: number)` (Emit `dj-activate` for a row-model index. Fires regardless of `selectionMode` (a read-only list with clickable rows is a real case) but never under `activation="none"`.)
 
 
 ### `<dj-calendar>` · `@dojo-ng/calendar`

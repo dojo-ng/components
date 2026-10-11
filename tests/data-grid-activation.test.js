@@ -21,7 +21,7 @@ for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
 const COLUMNS = [{ id: "a", header: "A", accessorKey: "a" }, { id: "b", header: "B", accessorKey: "b" }];
 const rows = (n) => Array.from({ length: n }, (_, i) => ({ a: "a" + i, b: "b" + i }));
 const grid = (props) => mount("dj-data-grid", { columns: COLUMNS, data: rows(5), ...props });
-const rowEls = (el) => [...el.renderRoot.querySelectorAll('[part="row"]')];
+const rowEls = (el) => [...el.renderRoot.querySelectorAll('[part~="row"]')];
 
 /** Collect dj-activate on the HOST — also proves the event bubbles and is composed. */
 function activations(el) {

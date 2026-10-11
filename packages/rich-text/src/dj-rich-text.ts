@@ -319,11 +319,14 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 	#renderItem(item: RichTextToolbarItem) {
 		if (item.render) return item.render(this.#ctx);
 		const pressed = item.isActive ? String(item.isActive(this.#ctx)) : nothing;
+		// `.title` as a property, not an attribute: dj-button puts it on its native button, which is
+		// what the pointer hovers, and the role-less host gets no second `title` of its own.
 		return html`<dj-button
 			kind="text"
 			aria-pressed=${pressed}
 			?disabled=${item.isDisabled ? item.isDisabled(this.#ctx) : false}
 			aria-label=${item.label}
+			.title=${item.label}
 			@click=${() => item.run?.(this.#ctx)}
 		>${this.#icon(item.icon)}</dj-button>`;
 	}

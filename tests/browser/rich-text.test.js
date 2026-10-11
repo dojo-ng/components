@@ -140,6 +140,23 @@ describe("dj-rich-text", () => {
 		await assertNoViolations(el);
 	});
 
+	it("default toolbar items carry hover text on the native button, not the host (CB12)", async () => {
+		// The tooltip itself is browser chrome and no test can see it; what can be checked is that
+		// the title sits on the element the pointer hovers, and that the name is still the label.
+		const el = await mount(make("dj-rich-text", { label: "Body" }));
+		await el.updateComplete;
+		await settleFrames();
+		const buttons = [...el.querySelectorAll(".dj-rt-toolbar dj-button")];
+		assert(buttons.length > 0, "the default toolbar rendered");
+		for (const b of buttons) {
+			const label = b.getAttribute("aria-label");
+			const native = b.shadowRoot.querySelector("button");
+			assertEqual(native.getAttribute("title"), label, `${label}: title on the native button`);
+			assertEqual(native.getAttribute("aria-label"), label, `${label}: accessible name unchanged`);
+			assert(!b.hasAttribute("title"), `${label}: no title on the host`);
+		}
+	});
+
 	it("a value set after the editor is built replaces the document", async () => {
 		const el = await mount(make("dj-rich-text", { label: "Body" }));
 		await el.updateComplete;

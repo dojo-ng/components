@@ -29,6 +29,9 @@ export default css`
 	.vrow:hover { background: var(--dj-color-neutral-50, #f9fafb); }
 	.vrow--active { background: var(--dj-color-neutral-100, #f3f4f6); }
 	.vrow--selected { background: var(--dj-color-primary-100, #dbeafe); }
+	/* .vrow:hover (class + pseudo-class) outranks a plain .vrow--selected, so without this a
+	   ticked row lost its tint under the pointer and read as unticked. */
+	.vrow--selected:hover { background: var(--dj-color-primary-100, #dbeafe); }
 	/* The keyboard cursor matters most while the keyboard is live: mark it with an inset bar while
 	   the grid is focused. A bar rather than a tint, so it still reads on a selected row. */
 	.grid:focus .vrow--active { box-shadow: inset 3px 0 0 var(--dj-color-primary-600, #2563eb); }
@@ -37,7 +40,7 @@ export default css`
 	   an outline for the active (keyboard) row so both remain visible. */
 	@media (forced-colors: active) {
 		.vrow--active { background: Canvas; outline: 2px solid Highlight; outline-offset: -2px; }
-		.vrow--selected { background: Highlight; color: HighlightText; }
+		.vrow--selected, .vrow--selected:hover { background: Highlight; color: HighlightText; }
 	}
 	/* Printing (dj-data-grid.ts's #renderPrintTable, plain row path only): a genuine <table>/<thead>,
 	   not the screen template's div grid. An earlier version tried to make the SCREEN markup repeat

@@ -12,6 +12,8 @@ import {
 	CommentNode,
 	BreakNode,
 	deserializeCriticMarkup,
+	serializeCriticMarkup,
+	CONTENT_CSS,
 	createCriticMarkupPlugin,
 	criticMarkupPlugin,
 } from "../packages/rich-text-criticmarkup/dist/index.js";
@@ -260,4 +262,35 @@ test("a CommentNode's decorator button does not multiply when an unrelated adjac
 
 	dispose();
 	host.remove();
+});
+
+// B1 VoiceOver pass, 2026-10-19: VO read <ins>/<del> content as plain text and ran a substitution's
+// halves together. Each mark now carries spoken start/end labels as data- attributes, voiced by
+// visually hidden ::before/::after in CONTENT_CSS — generated content, so never part of the text.
+test("insertion and deletion DOM carry spoken boundary labels; text and value are unchanged", () => {
+	const editor = editorWith();
+	editor.update(() => deserializeCriticMarkup(editor, "a {~~old~>new~~} b {++added++} c {--gone--}"), { discrete: true });
+	const root = editor.getRootElement();
+	const ins = [...root.querySelectorAll("ins.dj-cm-insertion")];
+	const del = [...root.querySelectorAll("del.dj-cm-deletion")];
+	assert.equal(ins.length, 2);
+	assert.equal(del.length, 2);
+	for (const el of ins) {
+		assert.equal(el.dataset.djCmStart, "insertion start");
+		assert.equal(el.dataset.djCmEnd, "insertion end");
+	}
+	for (const el of del) {
+		assert.equal(el.dataset.djCmStart, "deletion start");
+		assert.equal(el.dataset.djCmEnd, "deletion end");
+	}
+	assert.ok(!root.textContent.includes("insertion"), "labels must not enter the text content");
+	let value = "";
+	editor.getEditorState().read(() => { value = serializeCriticMarkup(editor); });
+	assert.equal(value, "a {~~old~>new~~} b {++added++} c {--gone--}");
+});
+
+test("the CONTENT_CSS voices the boundary labels from the data- attributes, visually hidden", () => {
+	assert.match(CONTENT_CSS, /::before \{ content: " " attr\(data-dj-cm-start\) " "; \}/);
+	assert.match(CONTENT_CSS, /::after \{ content: " " attr\(data-dj-cm-end\) " "; \}/);
+	assert.match(CONTENT_CSS, /::after \{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset\(100%\)/);
 });

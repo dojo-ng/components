@@ -125,6 +125,57 @@ describe("rich-text-criticmarkup: the comment popup, keyboard and axe", () => {
 		assertEqual(button.getAttribute("kind"), "outlined", "and this — no second action should be needed");
 	});
 
+	// B1 VoiceOver pass, 2026-10-19: VO read <ins>/<del> as plain text and ran a substitution's two
+	// halves together ("substitutedreplaced"). The fix speaks a start and end label through visually
+	// hidden ::before/::after generated content. This checks, in a real engine, that the labels are
+	// actually generated, take up no visible space, and leave the editor axe-clean.
+	it("insertions and deletions carry visually hidden spoken start/end labels", async () => {
+		const el = make("dj-rich-text", {
+			label: "Body",
+			format: "criticmarkup",
+			plugins: [criticMarkupPlugin],
+			value: "a {~~old~>new~~} b",
+		});
+		await mount(el);
+		await el.updateComplete;
+		await settleFrames();
+		const ins = el.querySelector("ins.dj-cm-insertion");
+		const del = el.querySelector("del.dj-cm-deletion");
+		assert(ins && del, "the substitution should render one <del> and one <ins>");
+		// The engines serialize the computed `content` three ways: Chromium resolves attr() into one
+		// string (" insertion start "), WebKit resolves it but keeps three strings (" " "insertion
+		// start" " "), and Firefox leaves it as specified (" " attr(data-dj-cm-start) " "). Normalize
+		// all three — substitute the attribute, drop the quotes, collapse spaces — then compare.
+		const spoken = (node, pseudo, attr, label) => {
+			const content = getComputedStyle(node, pseudo).content;
+			assertEqual(node.getAttribute(attr), label, `${attr} on <${node.localName}>`);
+			const text = content
+				.replace(/attr\(\s*([\w-]+)\s*\)/g, (_, name) => node.getAttribute(name) ?? "")
+				.replace(/"/g, "")
+				.replace(/\s+/g, " ")
+				.trim();
+			assertEqual(text, label, `<${node.localName}>${pseudo} should speak "${label}" (computed: ${content})`);
+		};
+		spoken(ins, "::before", "data-dj-cm-start", "insertion start");
+		spoken(ins, "::after", "data-dj-cm-end", "insertion end");
+		spoken(del, "::before", "data-dj-cm-start", "deletion start");
+		spoken(del, "::after", "data-dj-cm-end", "deletion end");
+		assertEqual(getComputedStyle(ins, "::before").position, "absolute", "the label is taken out of flow");
+		// Measure the text nodes only: a range over the whole <ins> would also report the rect of
+		// Lexical's inner <span>, counting the same text twice.
+		const walker = document.createTreeWalker(ins, NodeFilter.SHOW_TEXT);
+		let textWidth = 0;
+		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+			const range = document.createRange();
+			range.selectNodeContents(node);
+			textWidth += [...range.getClientRects()].reduce((sum, r) => sum + r.width, 0);
+		}
+		const delta = Math.abs(ins.getBoundingClientRect().width - textWidth);
+		assert(delta < 1, `the labels must add no visible width (delta ${delta}px)`);
+		assertEqual(el.value, "a {~~old~>new~~} b", "the labels never reach the value");
+		await assertNoViolations(el);
+	});
+
 	it("has no serious or critical accessibility violations with the comment popup open", async () => {
 		const el = await mountWithComment();
 		const button = el.querySelector(".dj-cm-comment-button");

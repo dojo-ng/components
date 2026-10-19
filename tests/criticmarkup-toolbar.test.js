@@ -12,11 +12,10 @@ import {
 	CommentNode,
 	BreakNode,
 	deserializeCriticMarkup,
-	serializeCriticMarkup,
-	CONTENT_CSS,
 	createCriticMarkupPlugin,
 	criticMarkupPlugin,
 } from "../packages/rich-text-criticmarkup/dist/index.js";
+import { registerMarkAnnouncer, markAnnouncement } from "../packages/rich-text-criticmarkup/dist/announce.js";
 
 const ALL_NODES = [InsertionNode, DeletionNode, HighlightNode, CommentNode, BreakNode];
 
@@ -264,33 +263,78 @@ test("a CommentNode's decorator button does not multiply when an unrelated adjac
 	host.remove();
 });
 
-// B1 VoiceOver pass, 2026-10-19: VO read <ins>/<del> content as plain text and ran a substitution's
-// halves together. Each mark now carries spoken start/end labels as data- attributes, voiced by
-// visually hidden ::before/::after in CONTENT_CSS — generated content, so never part of the text.
-test("insertion and deletion DOM carry spoken boundary labels; text and value are unchanged", () => {
-	const editor = editorWith();
-	editor.update(() => deserializeCriticMarkup(editor, "a {~~old~>new~~} b {++added++} c {--gone--}"), { discrete: true });
-	const root = editor.getRootElement();
-	const ins = [...root.querySelectorAll("ins.dj-cm-insertion")];
-	const del = [...root.querySelectorAll("del.dj-cm-deletion")];
-	assert.equal(ins.length, 2);
-	assert.equal(del.length, 2);
-	for (const el of ins) {
-		assert.equal(el.dataset.djCmStart, "insertion start");
-		assert.equal(el.dataset.djCmEnd, "insertion end");
-	}
-	for (const el of del) {
-		assert.equal(el.dataset.djCmStart, "deletion start");
-		assert.equal(el.dataset.djCmEnd, "deletion end");
-	}
-	assert.ok(!root.textContent.includes("insertion"), "labels must not enter the text content");
-	let value = "";
-	editor.getEditorState().read(() => { value = serializeCriticMarkup(editor); });
-	assert.equal(value, "a {~~old~>new~~} b {++added++} c {--gone--}");
+// B1 VoiceOver pass, 2026-10-19: VoiceOver never said a mark was inserted or deleted, and a
+// substitution's old word was lost to word-by-word reading. The plugin now speaks the mark the
+// caret enters through a polite live region; typing never announces.
+const MSG = {
+	announceInsertion: "Insertion: {text}",
+	announceDeletion: "Deletion: {text}",
+	announceReplacement: "Replacement: {old}, replaced by {new}",
+};
+
+/** Put the caret inside the `index`-th top-level child of the first paragraph, at `offset`. */
+function caretInChild(editor, index, offset = 1) {
+	editor.update(() => {
+		const p = $getRoot().getFirstChild();
+		const child = p.getChildAtIndex(index);
+		const text = child.getFirstDescendant?.() ?? child;
+		text.select(offset, offset);
+	}, { discrete: true });
+}
+
+test("the announcer speaks the insertion, deletion, or substitution the caret moves into", () => {
+	const { editor, host } = editorWithAttachedHost();
+	const dispose = registerMarkAnnouncer(editor, host, (k) => MSG[k]);
+	editor.update(() => deserializeCriticMarkup(editor, "a {~~old~>new~~} b {++added++} c {--gone--} d"), { discrete: true });
+	const live = host.querySelector(".dj-cm-live");
+	assert.ok(live, "a live region is appended to the host");
+	assert.equal(live.getAttribute("aria-live"), "polite");
+
+	caretInChild(editor, 0);
+	assert.equal(live.textContent, "", "plain prose says nothing");
+	caretInChild(editor, 1);
+	assert.equal(live.textContent, "Replacement: old, replaced by new");
+	caretInChild(editor, 2);
+	assert.equal(live.textContent, "Replacement: old, replaced by new", "the insertion half of the same substitution is not re-announced");
+	caretInChild(editor, 4);
+	assert.equal(live.textContent, "Insertion: added");
+	caretInChild(editor, 6);
+	assert.equal(live.textContent, "Deletion: gone");
+	caretInChild(editor, 7);
+	assert.equal(live.textContent, "", "leaving a mark clears the region");
+	caretInChild(editor, 6);
+	assert.equal(live.textContent, "Deletion: gone", "re-entering speaks again");
+
+	dispose();
+	assert.equal(host.querySelector(".dj-cm-live"), null, "cleanup removes the region");
 });
 
-test("the CONTENT_CSS voices the boundary labels from the data- attributes, visually hidden", () => {
-	assert.match(CONTENT_CSS, /::before \{ content: " " attr\(data-dj-cm-start\) " "; \}/);
-	assert.match(CONTENT_CSS, /::after \{ content: " " attr\(data-dj-cm-end\) " "; \}/);
-	assert.match(CONTENT_CSS, /::after \{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset\(100%\)/);
+test("the announcer stays quiet when an update changes text (typing), even into a new mark", () => {
+	const { editor, host } = editorWithAttachedHost();
+	registerMarkAnnouncer(editor, host, (k) => MSG[k]);
+	editor.update(() => deserializeCriticMarkup(editor, "a {++added++} b"), { discrete: true });
+	const live = host.querySelector(".dj-cm-live");
+	caretInChild(editor, 0);
+	editor.update(() => {
+		const ins = $getRoot().getFirstChild().getChildAtIndex(1);
+		const text = ins.getFirstDescendant();
+		text.setTextContent("added!");
+		text.select(6, 6);
+	}, { discrete: true });
+	assert.equal(live.textContent, "", "a text-changing update moves the tracked mark silently");
+});
+
+test("long mark text is clipped in the announcement", () => {
+	const long = "x".repeat(300);
+	const said = markAnnouncement({ key: "1", kind: "deletion", text: long }, (k) => MSG[k]);
+	assert.ok(said.length < 140, `announcement should be clipped, got ${said.length} chars`);
+	assert.ok(said.endsWith("…"));
+});
+
+test("the plugin wires the announcer: setup() adds the live region to the host", () => {
+	const { editor, host } = editorWithAttachedHost();
+	const dispose = createCriticMarkupPlugin().setup(contextFor(editor));
+	assert.ok(host.querySelector(".dj-cm-live[aria-live=polite]"));
+	dispose?.();
+	assert.equal(host.querySelector(".dj-cm-live"), null);
 });

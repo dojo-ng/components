@@ -28,6 +28,7 @@ import { PARAGRAPH_TOKEN, unmaskInlineFormat } from "./grammar.js";
 import { setSuggestionMode, isSuggestionMode, configureSuggestionMode, type StructuralPolicy } from "./suggestion-mode.js";
 import { markAtSelection, acceptMark, declineMark, acceptAllMarks, declineAllMarks } from "./resolution.js";
 import { createCommentPopupController, type CommentPopupController } from "./comment-popup.js";
+import { registerMarkAnnouncer } from "./announce.js";
 
 export interface CriticMarkupOptions {
 	/** Start in suggestion mode. Default `false`. */
@@ -56,6 +57,9 @@ const EN: Record<string, string> = {
 	removeHighlight: "Remove highlight",
 	confirmAcceptAll: "Accept every suggested change?",
 	confirmRejectAll: "Reject every suggested change?",
+	announceInsertion: "Insertion: {text}",
+	announceDeletion: "Deletion: {text}",
+	announceReplacement: "Replacement: {old}, replaced by {new}",
 };
 registerDefaults("dj", EN);
 
@@ -127,6 +131,8 @@ export function createCriticMarkupPlugin(options: CriticMarkupOptions = {}): Ric
 			ctx.host.addEventListener("click", onHostClick);
 
 			return mergeRegister(
+				// Speak insertions and deletions as the caret enters them (B1, VoiceOver).
+				registerMarkAnnouncer(ctx.editor, ctx.host, (key) => msg(ctx, key)),
 				// Safety net for `maskInlineFormat`: a masked character the mark transformers did not
 				// consume (a mark the markdown path could not pair, or one inside an inline code span)
 				// must never reach the document as a private-use code point. Those sentinels never

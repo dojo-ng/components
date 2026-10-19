@@ -25,39 +25,7 @@ import {
 	type SerializedLexicalNode,
 	type Spread,
 } from "lexical";
-import { getDefaultLocale, messages, registerDefaults } from "@dojo-ng/i18n";
 import { PARAGRAPH_TOKEN } from "./grammar.js";
-
-// --- Screen-reader boundary labels ----------------------------------------------------------------
-
-/**
- * Spoken boundaries for insertions and deletions. VoiceOver (macOS, Chrome and Safari) reads the
- * text inside `<ins>`/`<del>` as plain text and says nothing about it being inserted or deleted, and
- * reads a substitution's two halves as one run-on word ("substitutedreplaced") — confirmed in the
- * B1 VoiceOver pass, 2026-10-19. `aria-label` is not the fix: ARIA 1.2 prohibits naming the
- * `insertion`/`deletion` roles. So each mark carries its start and end labels as `data-` attributes,
- * and `CONTENT_CSS` speaks them through visually hidden `::before`/`::after` generated content.
- * Generated content is not DOM, so Lexical's reconciler, the selection, `textContent`, copy, and
- * serialization never see it.
- */
-const EN: Record<string, string> = {
-	insertionStart: "insertion start",
-	insertionEnd: "insertion end",
-	deletionStart: "deletion start",
-	deletionEnd: "deletion end",
-};
-registerDefaults("dj", EN);
-
-function srLabel(editor: LexicalEditor | undefined, key: string): string {
-	const locale = editor?.getRootElement()?.closest("[lang]")?.getAttribute("lang") || getDefaultLocale();
-	return messages.resolve("dj", locale, key) ?? EN[key] ?? key;
-}
-
-function labelBoundaries(el: HTMLElement, editor: LexicalEditor | undefined, kind: "insertion" | "deletion"): HTMLElement {
-	el.dataset.djCmStart = srLabel(editor, `${kind}Start`);
-	el.dataset.djCmEnd = srLabel(editor, `${kind}End`);
-	return el;
-}
 
 // --- MarkNode: shared base for the three ElementNode-based marks --------------------------------
 
@@ -107,8 +75,8 @@ export class InsertionNode extends MarkNode {
 		return new InsertionNode(node.__key);
 	}
 
-	override createDOM(_config: EditorConfig, editor?: LexicalEditor): HTMLElement {
-		return labelBoundaries(markDOM("ins", "dj-cm-insertion"), editor, "insertion");
+	override createDOM(): HTMLElement {
+		return markDOM("ins", "dj-cm-insertion");
 	}
 
 	static override importJSON(serializedNode: SerializedInsertionNode): InsertionNode {
@@ -154,8 +122,8 @@ export class DeletionNode extends MarkNode {
 		return new DeletionNode(node.__key);
 	}
 
-	override createDOM(_config: EditorConfig, editor?: LexicalEditor): HTMLElement {
-		return labelBoundaries(markDOM("del", "dj-cm-deletion"), editor, "deletion");
+	override createDOM(): HTMLElement {
+		return markDOM("del", "dj-cm-deletion");
 	}
 
 	static override importJSON(serializedNode: SerializedDeletionNode): DeletionNode {
@@ -476,9 +444,6 @@ dj-rich-text mark.dj-cm-highlight.dj-cm-has-comment { box-shadow: inset 0 -2px 0
 dj-rich-text .dj-cm-comment-button { display: inline-flex; align-items: center; justify-content: center; width: 1.1em; height: 1.1em; padding: 0; border: none; border-radius: 999px; background: var(--dj-color-primary-600, #2563eb); color: var(--dj-color-neutral-0, #fff); font-size: .75em; line-height: 1; cursor: pointer; }
 dj-rich-text .dj-cm-comment-button::before { content: "\\1F4AC"; }
 dj-rich-text .dj-cm-break-pill { display: inline-block; padding: 0 .3em; border-radius: 3px; background: var(--dj-color-primary-100, #dbeafe); color: var(--dj-color-primary-700, #1d4ed8); font-size: .85em; }
-dj-rich-text :is(ins.dj-cm-insertion, del.dj-cm-deletion)::before { content: " " attr(data-dj-cm-start) " "; }
-dj-rich-text :is(ins.dj-cm-insertion, del.dj-cm-deletion)::after { content: " " attr(data-dj-cm-end) " "; }
-dj-rich-text :is(ins.dj-cm-insertion, del.dj-cm-deletion)::before, dj-rich-text :is(ins.dj-cm-insertion, del.dj-cm-deletion)::after { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(100%); clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; user-select: none; pointer-events: none; }
 .dj-cm-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (forced-colors: active) {
 	dj-rich-text ins.dj-cm-insertion, dj-rich-text del.dj-cm-deletion { background: transparent; text-decoration-color: CanvasText; }

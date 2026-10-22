@@ -640,6 +640,8 @@ declare module "react" {
         "value"?: DjTree["value"];
         "expanded"?: DjTree["expanded"];
         "expand-on-row-click"?: DjTree["expandOnRowClick"];
+        "canDrop"?: DjTree["canDrop"];
+        "spring-delay"?: DjTree["springDelay"];
       };
       "dj-trigger-popup": DjProps<DjTriggerPopup> & {
         "open"?: DjTriggerPopup["open"];

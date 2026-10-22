@@ -636,6 +636,8 @@ declare module "solid-js" {
         "value"?: DjTree["value"];
         "expanded"?: DjTree["expanded"];
         "expand-on-row-click"?: DjTree["expandOnRowClick"];
+        "canDrop"?: DjTree["canDrop"];
+        "spring-delay"?: DjTree["springDelay"];
       };
       "dj-trigger-popup": JSX.HTMLAttributes<DjTriggerPopup> & {
         "open"?: DjTriggerPopup["open"];
@@ -713,6 +715,7 @@ declare module "solid-js" {
       "dj-action": CustomEvent;
       "dj-after-enter": CustomEvent;
       "dj-after-leave": CustomEvent;
+      "dj-drop": CustomEvent;
       "dj-expand-change": CustomEvent;
       "dj-step": CustomEvent;
     }
@@ -754,6 +757,7 @@ declare module "solid-js" {
       "dj-action": CustomEvent;
       "dj-after-enter": CustomEvent;
       "dj-after-leave": CustomEvent;
+      "dj-drop": CustomEvent;
       "dj-expand-change": CustomEvent;
       "dj-step": CustomEvent;
     }

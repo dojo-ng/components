@@ -38,6 +38,36 @@ describe("dj-tree", () => {
 		assertEqual(el.value, "veg", "the tree's value follows the selection");
 	});
 
+	// RD1. A real DataTransfer and real layout: the drag events cross the shadow boundary the way
+	// a browser drag's do, and the marked row is the one under the event.
+	it("as a drop target, marks the accepting row and emits dj-drop with the payload", async () => {
+		const el = await mount(make("dj-tree", { nodes: NODES, canDrop: (id, types) => id === "veg" && types.includes("application/x-test") }));
+		await el.updateComplete;
+		let detail;
+		el.addEventListener("dj-drop", (e) => { detail = e.detail; });
+		const dt = new DataTransfer();
+		dt.setData("application/x-test", "42");
+		const veg = el.shadowRoot.querySelectorAll('[part~="row"]')[1];
+		const fire = (type, target) => {
+			const e = new DragEvent(type, { bubbles: true, composed: true, cancelable: true, dataTransfer: dt });
+			target.dispatchEvent(e);
+			return e;
+		};
+		const over = fire("dragover", veg);
+		await el.updateComplete;
+		assert(over.defaultPrevented, "an accepting row allows the drop");
+		assert(veg.getAttribute("part").includes("row--drop-target"), "the accepting row is marked");
+		const fruit = el.shadowRoot.querySelectorAll('[part~="row"]')[0];
+		assert(!fire("dragover", fruit).defaultPrevented, "a refusing row does not allow the drop");
+		await el.updateComplete;
+		fire("dragover", veg);
+		fire("drop", veg);
+		await el.updateComplete;
+		assert(detail && detail.id === "veg", "dj-drop names the row");
+		assertEqual(detail.dataTransfer.getData("application/x-test"), "42", "the payload arrives");
+		assert(!el.shadowRoot.querySelector('[part~="row--drop-target"]'), "the mark clears on drop");
+	});
+
 	it("has no serious or critical accessibility violations", async () => {
 		const el = await mount(make("dj-tree", { nodes: NODES, expanded: ["fruit"] }));
 		await el.updateComplete;

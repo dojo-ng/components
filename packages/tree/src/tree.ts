@@ -50,12 +50,28 @@ interface VisRow {
  * - Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron
  *   points in the reading direction.
  *
+ * #### Dropping onto rows
+ * - Set `canDrop` to make the tree a target for native HTML5 drag and drop. It is called during a
+ *   drag with a row id and the drag's `dataTransfer.types` (the only part of a payload the browser
+ *   shows before the drop), and returns whether that row accepts it. Unset, the tree ignores drags.
+ * - The row under the pointer that accepts the drag is marked: the `row--drop-target` part and a
+ *   built-in outline. A refused row is not marked and the cursor shows the drop is not allowed.
+ * - Resting on a collapsed parent for `spring-delay` ms (default 800; 0 turns it off) during a drag
+ *   expands it, through the same path as a chevron click, so `dj-expand-change` fires. It stays
+ *   open after the drop.
+ * - A drop emits `dj-drop` with `{ id, dataTransfer }`. The tree does not select the row; the
+ *   consumer reads its payload from `dataTransfer` and applies the change.
+ * - Dragging has no keyboard form. A consumer that offers drop must offer another way to do the
+ *   same thing (WCAG 2.5.7), such as a Move command with a picker.
+ *
  * #### Not built
- * - Drag and drop, virtualization, checkboxes, and lazy loading.
+ * - Dragging tree rows, virtualization, checkboxes, and lazy loading.
  *
  * Slots: none (content comes from `nodes`).
- * Parts: `row` (a node's clickable line), `chevron`, `label`, `count`.
- * Events: `dj-select` (detail `{ id }`); `dj-expand-change` (detail `{ id, expanded, expandedIds }`).
+ * Parts: `row` (a node's clickable line), `row--drop-target` (added to the row a drag would drop
+ * on), `chevron`, `label`, `count`.
+ * Events: `dj-select` (detail `{ id }`); `dj-expand-change` (detail `{ id, expanded, expandedIds }`);
+ * `dj-drop` (detail `{ id, dataTransfer }`).
  *
  * @cssprop [--dj-tree-indent=1.1rem] - Indentation added per nesting level.
  * @cssprop [--dj-tree-count-color=var(--dj-color-text-muted)] - Color of the trailing count badge.
@@ -108,9 +124,17 @@ export class DjTree extends DojoElement {
 				font-size: 0.85em;
 				color: var(--dj-tree-count-color, var(--dj-color-text-muted, #6b7280));
 			}
+			/* The row a drag would drop on: the selected tint plus an inset ring, so it reads even
+			   when the drop target is the selected row. */
+			.row--drop {
+				background: var(--dj-color-primary-100, #dbeafe);
+				color: var(--dj-color-primary-700, #1d4ed8);
+				box-shadow: inset 0 0 0 2px var(--dj-color-primary-600, #2563eb);
+			}
 			/* Forced colors: the selected row's tint collapses, so use the system selected pair. */
 			@media (forced-colors: active) {
 				.row--selected { background: Highlight; color: HighlightText; }
+				.row--drop { background: Highlight; color: HighlightText; outline: 2px solid CanvasText; outline-offset: -2px; }
 			}
 		`,
 		reducedMotion,
@@ -132,8 +156,23 @@ export class DjTree extends DojoElement {
 	@property({ attribute: "expand-on-row-click", type: Boolean, reflect: true })
 	expandOnRowClick = false;
 
+	/**
+	 * Makes the tree a drop target. Called during a drag with a row id and the drag's
+	 * `dataTransfer.types`; return true when that row accepts the drop. Unset: the tree ignores drags.
+	 */
+	@property({ attribute: false }) canDrop?: (id: string, types: readonly string[]) => boolean;
+
+	/** Milliseconds a drag must rest on a collapsed parent before it expands. 0 turns this off. */
+	@property({ attribute: "spring-delay", type: Number }) springDelay = 800;
+
 	/** The row that currently holds the roving tabindex. */
 	@state() private activeId = "";
+	/** The row a drag would drop on, or "". */
+	@state() private dropId = "";
+	#springId = "";
+	#springTimer: ReturnType<typeof setTimeout> | undefined;
+	/** A drag that ends anywhere (dropped elsewhere, or Escape) must clear the mark. */
+	#onDocDragEnd = () => this.#endDrag();
 
 	#i18n = new LocaleController(this);
 	#visible: VisRow[] = [];
@@ -167,6 +206,83 @@ export class DjTree extends DojoElement {
 		if (!this.activeId || !ids.has(this.activeId)) {
 			this.activeId = this.value && ids.has(this.value) ? this.value : (vis[0]?.id ?? "");
 		}
+	}
+
+	override connectedCallback() {
+		super.connectedCallback();
+		document.addEventListener("dragend", this.#onDocDragEnd, true);
+		document.addEventListener("drop", this.#onDocDragEnd, true);
+	}
+
+	override disconnectedCallback() {
+		super.disconnectedCallback();
+		document.removeEventListener("dragend", this.#onDocDragEnd, true);
+		document.removeEventListener("drop", this.#onDocDragEnd, true);
+		this.#endDrag();
+	}
+
+	/** The row id a drag event is over, from its composed path (rows live in the shadow root). */
+	#rowOf(e: Event): string | null {
+		for (const n of e.composedPath()) {
+			if (n === this) break;
+			const el = n as HTMLElement;
+			if (el.classList?.contains("treeitem")) return el.dataset.id ?? null;
+		}
+		return null;
+	}
+
+	#accepts(id: string | null, e: DragEvent): id is string {
+		if (id == null || !this.canDrop) return false;
+		const types = e.dataTransfer ? Array.from(e.dataTransfer.types) : [];
+		return this.canDrop(id, types);
+	}
+
+	/** dragenter and dragover: mark the accepting row, refuse the rest, and arm spring-loading. */
+	#onDragOver(e: DragEvent) {
+		if (!this.canDrop) return;
+		const id = this.#rowOf(e);
+		const ok = this.#accepts(id, e);
+		if (ok) e.preventDefault();  // what makes a native drop legal here
+		if (e.dataTransfer) e.dataTransfer.dropEffect = ok ? "move" : "none";
+		if (this.dropId !== (ok ? id : "")) this.dropId = ok ? id : "";
+		this.#spring(id ?? "");
+	}
+
+	#onDragLeave(e: DragEvent) {
+		if (!this.canDrop) return;
+		const to = e.relatedTarget as Node | null;
+		if (to && (this.renderRoot.contains(to) || this.contains(to))) return;
+		this.#endDrag();
+	}
+
+	#onDrop(e: DragEvent) {
+		if (!this.canDrop) return;
+		const id = this.#rowOf(e);
+		const ok = this.#accepts(id, e);
+		this.#endDrag();
+		if (!ok) return;
+		e.preventDefault();
+		this.emit("dj-drop", { detail: { id, dataTransfer: e.dataTransfer } });
+	}
+
+	#spring(id: string) {
+		if (id === this.#springId) return;
+		clearTimeout(this.#springTimer);
+		this.#springTimer = undefined;
+		this.#springId = id;
+		const row = this.#visible.find((v) => v.id === id);
+		if (!this.springDelay || !row || !row.hasChildren || row.open) return;
+		this.#springTimer = setTimeout(() => {
+			this.#springTimer = undefined;
+			if (this.#springId === id && !this.#openSet.has(id)) this.#toggle(id);
+		}, this.springDelay);
+	}
+
+	#endDrag() {
+		clearTimeout(this.#springTimer);
+		this.#springTimer = undefined;
+		this.#springId = "";
+		if (this.dropId) this.dropId = "";
 	}
 
 	#toggle(id: string) {
@@ -252,7 +368,10 @@ export class DjTree extends DojoElement {
 				if (this.expandOnRowClick && hasChildren) this.#toggle(node.id);
 			}}
 		>
-			<div class="row ${selected ? "row--selected" : ""}" part="row">
+			<div
+				class="row ${selected ? "row--selected" : ""} ${node.id === this.dropId ? "row--drop" : ""}"
+				part=${node.id === this.dropId ? "row row--drop-target" : "row"}
+			>
 				${hasChildren
 					? html`<span
 							class=${chevClass}
@@ -271,7 +390,13 @@ export class DjTree extends DojoElement {
 	}
 
 	override render() {
-		return html`<ul role="tree">${this.nodes.map((n) => this.#renderNode(n, 1))}</ul>`;
+		return html`<ul
+			role="tree"
+			@dragenter=${this.#onDragOver}
+			@dragover=${this.#onDragOver}
+			@dragleave=${this.#onDragLeave}
+			@drop=${this.#onDrop}
+		>${this.nodes.map((n) => this.#renderNode(n, 1))}</ul>`;
 	}
 }
 export default DjTree;
@@ -280,5 +405,6 @@ declare global {
 	interface GlobalEventHandlersEventMap {
 		"dj-select": CustomEvent<{ id: string }>;
 		"dj-expand-change": CustomEvent<{ id: string; expanded: boolean; expandedIds: string[] }>;
+		"dj-drop": CustomEvent<{ id: string; dataTransfer: DataTransfer | null }>;
 	}
 }

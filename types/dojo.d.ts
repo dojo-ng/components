@@ -642,6 +642,8 @@ declare module "@dojo-ng/framework" {
         "value"?: DjTree["value"];
         "expanded"?: DjTree["expanded"];
         "expand-on-row-click"?: DjTree["expandOnRowClick"];
+        "canDrop"?: DjTree["canDrop"];
+        "spring-delay"?: DjTree["springDelay"];
       };
       "dj-trigger-popup": DjVNodeBase & {
         "open"?: DjTriggerPopup["open"];

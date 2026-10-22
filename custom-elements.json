@@ -11432,7 +11432,7 @@
           "name": "DjTree",
           "customElement": true,
           "tagName": "dj-tree",
-          "description": "a hierarchical tree built from `nodes`.\n\nThe tree knows nothing about what it shows: a file tree, a mail folder list, and a MIME structure are all just nodes. Each node can carry an `icon` (a name registered with `registerIcon` or `registerIcons` from `@dojo-ng/icon`) and a `count`, shown as a trailing badge such as an unread count.\n\n#### Selection and expansion\n\n- Both are controlled. `value` is the selected node id, and the tree emits `dj-select`.\n- `expanded` is the array of open node ids, and the tree emits `dj-expand-change`.\n- Clicking a row selects it; clicking the chevron expands or collapses it.\n- Set `expand-on-row-click` to make a click on a parent row also expand or collapse it. Use it when some rows exist only to hold others, so a click on them does something visible.\n\n#### Keyboard\n\nThe tree follows the APG tree pattern. Only one row is a tab stop: the selected row if it is visible, otherwise the first visible row. The arrow keys move focus without selecting.\n\n- Down and Up move through the visible rows.\n- Right expands a closed parent, moves into an open one, and does nothing on a leaf.\n- Left collapses an open parent, or moves to the parent row.\n- Home and End jump to the first and last visible row.\n- Enter or Space selects the focused row.\n\n#### Right-to-left\n\n- Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron points in the reading direction.\n\n#### Not built\n\n- Drag and drop, virtualization, checkboxes, and lazy loading.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
+          "description": "a hierarchical tree built from `nodes`.\n\nThe tree knows nothing about what it shows: a file tree, a mail folder list, and a MIME structure are all just nodes. Each node can carry an `icon` (a name registered with `registerIcon` or `registerIcons` from `@dojo-ng/icon`) and a `count`, shown as a trailing badge such as an unread count.\n\n#### Selection and expansion\n\n- Both are controlled. `value` is the selected node id, and the tree emits `dj-select`.\n- `expanded` is the array of open node ids, and the tree emits `dj-expand-change`.\n- Clicking a row selects it; clicking the chevron expands or collapses it.\n- Set `expand-on-row-click` to make a click on a parent row also expand or collapse it. Use it when some rows exist only to hold others, so a click on them does something visible.\n\n#### Keyboard\n\nThe tree follows the APG tree pattern. Only one row is a tab stop: the selected row if it is visible, otherwise the first visible row. The arrow keys move focus without selecting.\n\n- Down and Up move through the visible rows.\n- Right expands a closed parent, moves into an open one, and does nothing on a leaf.\n- Left collapses an open parent, or moves to the parent row.\n- Home and End jump to the first and last visible row.\n- Enter or Space selects the focused row.\n\n#### Right-to-left\n\n- Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron points in the reading direction.\n\n#### Dropping onto rows\n\n- Set `canDrop` to make the tree a target for native HTML5 drag and drop. It is called during a drag with a row id and the drag's `dataTransfer.types` (the only part of a payload the browser shows before the drop), and returns whether that row accepts it. Unset, the tree ignores drags.\n- The row under the pointer that accepts the drag is marked: the `row--drop-target` part and a built-in outline. A refused row is not marked and the cursor shows the drop is not allowed.\n- Resting on a collapsed parent for `spring-delay` ms (default 800; 0 turns it off) during a drag expands it, through the same path as a chevron click, so `dj-expand-change` fires. It stays open after the drop.\n- A drop emits `dj-drop` with `{ id, dataTransfer }`. The tree does not select the row; the consumer reads its payload from `dataTransfer` and applies the change.\n- Dragging has no keyboard form. A consumer that offers drop must offer another way to do the same thing (WCAG 2.5.7), such as a Move command with a picker.\n\n#### Not built\n\n- Dragging tree rows, virtualization, checkboxes, and lazy loading.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
           "superclass": {
             "name": "DojoElement"
           },
@@ -11477,6 +11477,24 @@
               "description": "Expand or collapse a parent when its row is clicked, not only its chevron. Off by default, because a row click means \"select\" in a tree whose rows are all selectable. Turn it on when some rows exist only to contain others \u2014 an account above its mail folders, a directory above its files \u2014 where clicking the row would otherwise do nothing at all. Selection still happens and `dj-select` still fires; this only adds the toggle. Leaf rows are unaffected.",
               "attribute": "expand-on-row-click",
               "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "canDrop",
+              "type": {
+                "text": "(id: string, types: readonly string[]) => boolean"
+              },
+              "description": "Makes the tree a drop target. Called during a drag with a row id and the drag's `dataTransfer.types`; return true when that row accepts the drop. Unset: the tree ignores drags."
+            },
+            {
+              "kind": "field",
+              "name": "springDelay",
+              "type": {
+                "text": "number"
+              },
+              "default": "800",
+              "description": "Milliseconds a drag must rest on a collapsed parent before it expands. 0 turns this off.",
+              "attribute": "spring-delay"
             }
           ],
           "attributes": [
@@ -11511,6 +11529,14 @@
               },
               "fieldName": "expandOnRowClick",
               "description": "Expand or collapse a parent when its row is clicked, not only its chevron. Off by default, because a row click means \"select\" in a tree whose rows are all selectable. Turn it on when some rows exist only to contain others \u2014 an account above its mail folders, a directory above its files \u2014 where clicking the row would otherwise do nothing at all. Selection still happens and `dj-select` still fires; this only adds the toggle. Leaf rows are unaffected."
+            },
+            {
+              "name": "spring-delay",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "springDelay",
+              "description": "Milliseconds a drag must rest on a collapsed parent before it expands. 0 turns this off."
             }
           ],
           "slots": [
@@ -11523,6 +11549,10 @@
             {
               "name": "row",
               "description": "a node's clickable line"
+            },
+            {
+              "name": "row--drop-target",
+              "description": "added to the row a drag would drop\non"
             },
             {
               "name": "chevron",
@@ -11550,6 +11580,13 @@
             }
           ],
           "events": [
+            {
+              "name": "dj-drop",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ id, dataTransfer }`"
+            },
             {
               "name": "dj-expand-change",
               "type": {

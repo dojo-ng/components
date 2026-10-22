@@ -63,9 +63,17 @@ The tree follows the APG tree pattern. Only one row is a tab stop: the selected 
 
 - Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron points in the reading direction.
 
+## Dropping onto rows
+
+- Set `canDrop` to make the tree a target for native HTML5 drag and drop. It is called during a drag with a row id and the drag's `dataTransfer.types` (the only part of a payload the browser shows before the drop), and returns whether that row accepts it. Unset, the tree ignores drags.
+- The row under the pointer that accepts the drag is marked: the `row--drop-target` part and a built-in outline. A refused row is not marked and the cursor shows the drop is not allowed.
+- Resting on a collapsed parent for `spring-delay` ms (default 800; 0 turns it off) during a drag expands it, through the same path as a chevron click, so `dj-expand-change` fires. It stays open after the drop.
+- A drop emits `dj-drop` with `{ id, dataTransfer }`. The tree does not select the row; the consumer reads its payload from `dataTransfer` and applies the change.
+- Dragging has no keyboard form. A consumer that offers drop must offer another way to do the same thing (WCAG 2.5.7), such as a Move command with a picker.
+
 ## Not built
 
-- Drag and drop, virtualization, checkboxes, and lazy loading.
+- Dragging tree rows, virtualization, checkboxes, and lazy loading.
 
 Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
 
@@ -79,6 +87,8 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 | `value` | value | `string` | `""` |
 | `expanded` | expanded | `string[]` | `[]` |
 | `expandOnRowClick` | expand-on-row-click ↻ | `boolean` | `false` |
+| `canDrop` | — | `(id: string, types: readonly string[]) => boolean` | — |
+| `springDelay` | spring-delay | `number` | `800` |
 
 ## Slots
 
@@ -87,12 +97,15 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 ## CSS parts
 
 - `row`: A node's clickable line.
+- `row--drop-target`: Added to the row a drag would drop
+on.
 - `chevron`
 - `label`
 - `count`
 
 ## Events
 
+- `dj-drop`: Detail `{ id, dataTransfer }`.
 - `dj-expand-change`: Detail `{ id, expanded, expandedIds }`.
 - `dj-select`: Detail `{ id }`.
 

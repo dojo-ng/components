@@ -183,3 +183,117 @@ test("arrow movement never selects; Enter and Space do", async () => {
 	await press(el, "inbox", " ");
 	assert.deepEqual(selected, ["inbox", "inbox"]);
 });
+
+// --- drop target (row-drag-tree-drop-spec RD1) ---------------------------------------------
+// happy-dom has no DataTransfer, so a stub carries `types` and records dropEffect.
+function dragEvent(type, types = ["application/x-test"]) {
+	const e = new Event(type, { bubbles: true, composed: true, cancelable: true });
+	Object.defineProperty(e, "dataTransfer", { value: { types, dropEffect: "" } });
+	return e;
+}
+async function dragOn(el, id, type, types) {
+	const e = dragEvent(type, types);
+	rowById(el, id).querySelector(".row").dispatchEvent(e);
+	await settled(el); await tick();
+	return e;
+}
+const marked = (el) => rows(el).filter((r) => r.querySelector(":scope > .row").getAttribute("part").includes("row--drop-target")).map((r) => r.dataset.id);
+
+test("drop: with no canDrop the tree ignores drags", async () => {
+	const el = await build();
+	const e = await dragOn(el, "trash", "dragover");
+	assert.equal(e.defaultPrevented, false);
+	assert.deepEqual(marked(el), []);
+});
+
+test("drop: an accepting row is marked and the drag is allowed; a refused row is not", async () => {
+	const el = await build({ canDrop: (id) => id !== "archive" });
+	let e = await dragOn(el, "trash", "dragover");
+	assert.equal(e.defaultPrevented, true);
+	assert.equal(e.dataTransfer.dropEffect, "move");
+	assert.deepEqual(marked(el), ["trash"]);
+	e = await dragOn(el, "archive", "dragover");
+	assert.equal(e.defaultPrevented, false);
+	assert.equal(e.dataTransfer.dropEffect, "none");
+	assert.deepEqual(marked(el), []);
+});
+
+test("drop: canDrop sees the drag's types", async () => {
+	let seen = null;
+	const el = await build({ canDrop: (id, types) => { seen = types; return types.includes("application/x-mine"); } });
+	const e = await dragOn(el, "trash", "dragover", ["application/x-mine", "text/plain"]);
+	assert.deepEqual(seen, ["application/x-mine", "text/plain"]);
+	assert.equal(e.defaultPrevented, true);
+	const e2 = await dragOn(el, "trash", "dragover", ["Files"]);
+	assert.equal(e2.defaultPrevented, false);
+});
+
+test("drop: only one row is marked at a time", async () => {
+	const el = await build({ canDrop: () => true });
+	await dragOn(el, "inbox", "dragover");
+	await dragOn(el, "trash", "dragover");
+	assert.deepEqual(marked(el), ["trash"]);
+});
+
+test("drop: dj-drop carries the id and dataTransfer, clears the mark, and does not select", async () => {
+	const el = await build({ canDrop: () => true });
+	const got = [];
+	el.addEventListener("dj-drop", (ev) => got.push(ev.detail));
+	await dragOn(el, "trash", "dragover");
+	const e = await dragOn(el, "trash", "drop");
+	assert.equal(e.defaultPrevented, true);
+	assert.equal(got.length, 1);
+	assert.equal(got[0].id, "trash");
+	assert.deepEqual([...got[0].dataTransfer.types], ["application/x-test"]);
+	assert.deepEqual(marked(el), []);
+	assert.equal(el.value, "");
+});
+
+test("drop: a drop on a refused row emits nothing", async () => {
+	const el = await build({ canDrop: (id) => id === "trash" });
+	let n = 0;
+	el.addEventListener("dj-drop", () => n++);
+	await dragOn(el, "archive", "drop");
+	assert.equal(n, 0);
+});
+
+test("drop: dragend anywhere clears the mark", async () => {
+	const el = await build({ canDrop: () => true });
+	await dragOn(el, "trash", "dragover");
+	document.dispatchEvent(new Event("dragend"));
+	await settled(el); await tick();
+	assert.deepEqual(marked(el), []);
+});
+
+test("drop: resting on a collapsed parent springs it open once, after the delay", async () => {
+	const el = await build({ canDrop: () => true, springDelay: 30 });
+	const changes = [];
+	el.addEventListener("dj-expand-change", (ev) => changes.push(ev.detail));
+	await dragOn(el, "inbox", "dragover");
+	await dragOn(el, "inbox", "dragover");  // repeated dragover must not restart or double the timer
+	assert.equal(changes.length, 0);
+	await new Promise((r) => setTimeout(r, 60));
+	await settled(el); await tick();
+	assert.equal(changes.length, 1);
+	assert.deepEqual(changes[0], { id: "inbox", expanded: true, expandedIds: ["inbox"] });
+	assert.ok(visibleIds(el).includes("work"));
+});
+
+test("drop: moving off a parent before the delay cancels the spring; leaves never spring", async () => {
+	const el = await build({ canDrop: () => true, springDelay: 30 });
+	let n = 0;
+	el.addEventListener("dj-expand-change", () => n++);
+	await dragOn(el, "inbox", "dragover");
+	await dragOn(el, "trash", "dragover");
+	await new Promise((r) => setTimeout(r, 60));
+	assert.equal(n, 0);
+});
+
+test("drop: spring-delay 0 turns spring-loading off", async () => {
+	const el = await build({ canDrop: () => true, springDelay: 0 });
+	let n = 0;
+	el.addEventListener("dj-expand-change", () => n++);
+	await dragOn(el, "inbox", "dragover");
+	await new Promise((r) => setTimeout(r, 20));
+	assert.equal(n, 0);
+});

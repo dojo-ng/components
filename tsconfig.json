@@ -281,6 +281,9 @@
       "path": "packages/data-grid-select"
     },
     {
+      "path": "packages/data-grid-drag"
+    },
+    {
       "path": "packages/data-grid-rowstate"
     },
     {

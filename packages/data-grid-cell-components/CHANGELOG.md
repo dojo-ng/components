@@ -1,5 +1,13 @@
 # @dojo-ng/data-grid-cell-components
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @dojo-ng/data-grid@0.2.0
+
 ## 0.1.1
 
 ### Patch Changes

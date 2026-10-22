@@ -1,6 +1,6 @@
 {
   "name": "@dojo-ng/data-grid",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "license": "BSD-3-Clause",
   "description": "Dojo NG virtualized data grid on TanStack",
   "type": "module",

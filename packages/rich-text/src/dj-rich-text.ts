@@ -67,7 +67,7 @@ const HTML_FORMAT: RichTextFormat = {
  * Event: `dj-change`.
  */
 export class DjRichText extends FormControl(DojoElement) implements Partial<DojoFormControl> {
-	static override version = "0.1.3";
+	static override version = "0.1.4";
 	static override focusable = true;
 	static formAssociated = true;
 

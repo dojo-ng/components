@@ -128,7 +128,7 @@ export type ActivationMode = "none" | "click" | "double";
  */
 export class DjDataGrid extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.2";
+	static override version = "0.2.0";
 	static override focusable = true;
 
 	@property({ type: Array }) columns: GridColumn[] = [];

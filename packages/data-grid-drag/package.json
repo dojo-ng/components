@@ -1,6 +1,6 @@
 {
   "name": "@dojo-ng/data-grid-drag",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "BSD-3-Clause",
   "description": "Row drag source plugin for @dojo-ng/data-grid (native HTML5 drag, drags the selection)",
   "type": "module",
@@ -16,7 +16,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@dojo-ng/data-grid": "^0.1.2",
+    "@dojo-ng/data-grid": "^0.2.0",
     "@tanstack/table-core": "^8.0.0"
   }
 }

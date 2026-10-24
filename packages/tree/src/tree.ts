@@ -2,6 +2,7 @@ import { html, css, nothing, type TemplateResult } from "lit";
 import { property, state } from "lit/decorators.js";
 import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
 import { LocaleController } from "@dojo-ng/i18n";
+import { getHistory, whenHistory, type NavigateDetail, type NavLocation, type TrailEntry } from "@dojo-ng/history/handle";
 import "@dojo-ng/icon";
 
 export interface TreeNode {
@@ -12,6 +13,18 @@ export interface TreeNode {
 	icon?: string;
 	/** A trailing count badge (e.g. an unread count). */
 	count?: number;
+	/**
+	 * The app path this node stands for when the tree has `track`. Without it, the path is derived:
+	 * the tree's `base-path`, then the ids from the root down to this node, joined with `/`.
+	 */
+	path?: string;
+}
+
+/** Where a tracked node sits: its resolved path, its label, and its parent, for trails and lookups. */
+interface PathInfo {
+	path: string;
+	label: string;
+	parentId: string | null;
 }
 
 interface VisRow {
@@ -64,6 +77,25 @@ interface VisRow {
  * - Dragging has no keyboard form. A consumer that offers drop must offer another way to do the
  *   same thing (WCAG 2.5.7), such as a Move command with a picker.
  *
+ * #### Tracking navigation
+ * Set `track` and the tree and `@dojo-ng/history` follow each other, with no route table to write.
+ * - Each node has a path: its own `path` if it sets one, otherwise `base-path` plus the ids from the
+ *   root down to the node, joined with `/` (each id URI-encoded). A tree with `base-path="/explore"`
+ *   gives the node `hr` > `comp` > `pay` the path `/explore/hr/comp/pay`.
+ * - Selecting a row (click, Enter, or Space) emits `dj-navigate` with `{ path, label, trail }`
+ *   alongside `dj-select`. `trail` is the nodes from the root to this one, each as `{ path, label }`,
+ *   and ends up in the history entry, so it survives Back, Forward, and a reload in the same tab.
+ * - When the location changes, the tree selects the node whose path matches it (an exact match, else
+ *   the node with the longest path that is a prefix of the location) and expands that node's
+ *   ancestors, emitting `dj-expand-change` for each. This is what makes Back reselect the right row.
+ *   It does not emit `dj-navigate`, because that would loop. It does not emit `dj-select` either.
+ * - If the location has no `trail` (a deep link, or a pasted URL), the tree adds the matched node's
+ *   trail to the history entry, so a `dj-back-button` in `up` mode can name the parent.
+ * - Ctrl-click, Cmd-click, or middle-click on a row opens its path in a new tab. Rows stay
+ *   `treeitem`s and not links, because a focusable link inside a treeitem would break the tree's
+ *   roving focus. Two nodes with the same path: the first in tree order wins.
+ * - `track` needs `@dojo-ng/history` installed. Without it nothing is tracked and nothing throws.
+ *
  * #### Not built
  * - Dragging tree rows, virtualization, checkboxes, and lazy loading.
  *
@@ -71,7 +103,7 @@ interface VisRow {
  * Parts: `row` (a node's clickable line), `row--drop-target` (added to the row a drag would drop
  * on), `chevron`, `label`, `count`.
  * Events: `dj-select` (detail `{ id }`); `dj-expand-change` (detail `{ id, expanded, expandedIds }`);
- * `dj-drop` (detail `{ id, dataTransfer }`).
+ * `dj-drop` (detail `{ id, dataTransfer }`); `dj-navigate` (detail `{ path, label, trail }`, only with `track`).
  *
  * @cssprop [--dj-tree-indent=1.1rem] - Indentation added per nesting level.
  * @cssprop [--dj-tree-count-color=var(--dj-color-text-muted)] - Color of the trailing count badge.
@@ -165,6 +197,15 @@ export class DjTree extends DojoElement {
 	/** Milliseconds a drag must rest on a collapsed parent before it expands. 0 turns this off. */
 	@property({ attribute: "spring-delay", type: Number }) springDelay = 800;
 
+	/**
+	 * Follow and drive the navigation history: selecting a row emits `dj-navigate`, and the location
+	 * selects and expands the matching row. Needs `@dojo-ng/history` installed.
+	 */
+	@property({ type: Boolean }) track = false;
+
+	/** With `track`, the path every derived node path starts with, such as `/explore`. */
+	@property({ attribute: "base-path" }) basePath = "";
+
 	/** The row that currently holds the roving tabindex. */
 	@state() private activeId = "";
 	/** The row a drag would drop on, or "". */
@@ -175,14 +216,138 @@ export class DjTree extends DojoElement {
 	#onDocDragEnd = () => this.#endDrag();
 
 	#i18n = new LocaleController(this);
+	/** Tracked nodes by id, and node id by path. Rebuilt when `nodes`, `base-path`, or `track` change. */
+	#info = new Map<string, PathInfo>();
+	#byPath = new Map<string, string>();
+	#location?: NavLocation;
+	#unsubscribe?: () => void;
 	#visible: VisRow[] = [];
 	#parentOf = new Map<string, string>();
 	#openSet = new Set<string>();
 
 	protected override willUpdate(changed: Map<PropertyKey, unknown>) {
-		if (changed.has("nodes") || changed.has("expanded") || changed.has("value")) {
+		let synced = false;
+		if (changed.has("nodes") || changed.has("basePath") || changed.has("track")) {
+			this.#indexPaths();
+			if (changed.has("track")) {
+				if (this.track) this.#follow();
+				else this.#stop();
+			}
+			synced = this.#syncLocation();
+		}
+		if (synced || changed.has("nodes") || changed.has("expanded") || changed.has("value")) {
 			this.#recompute();
 		}
+	}
+
+	/** Build the path-to-node index once per change to the nodes, not on every lookup. */
+	#indexPaths() {
+		this.#info = new Map();
+		this.#byPath = new Map();
+		if (!this.track) return;
+		const base = this.basePath.replace(/\/+$/, "");
+		const walk = (list: TreeNode[], parentId: string | null, ids: string[]) => {
+			for (const node of list) {
+				const own = [...ids, encodeURIComponent(node.id)];
+				const path = this.#normalize(node.path ?? `${base}/${own.join("/")}`);
+				this.#info.set(node.id, { path, label: node.label, parentId });
+				if (!this.#byPath.has(path)) this.#byPath.set(path, node.id);
+				if (node.children?.length) walk(node.children, node.id, own);
+			}
+		};
+		walk(this.nodes, null, []);
+	}
+
+	#normalize(path: string): string {
+		return path.replace(/\/+$/, "") || "/";
+	}
+
+	/** The node for a location path: an exact match, else the node with the longest path that is a prefix of it. */
+	#match(locationPath: string): string | undefined {
+		let path = this.#normalize(locationPath.split(/[?#]/)[0]);
+		for (;;) {
+			const id = this.#byPath.get(path);
+			if (id !== undefined) return id;
+			const cut = path.lastIndexOf("/");
+			if (cut <= 0) return undefined;
+			path = path.slice(0, cut);
+		}
+	}
+
+	/** Root-to-node trail for a tracked node. */
+	#trailOf(id: string): TrailEntry[] {
+		const trail: TrailEntry[] = [];
+		for (let at: string | null = id; at; at = this.#info.get(at)?.parentId ?? null) {
+			const info = this.#info.get(at);
+			if (!info) break;
+			trail.unshift({ path: info.path, label: info.label });
+		}
+		return trail;
+	}
+
+	/**
+	 * Select and reveal the node for the current location. Sets properties and emits
+	 * `dj-expand-change`; never emits `dj-navigate` (that would loop). Returns whether it changed anything.
+	 */
+	#syncLocation(): boolean {
+		const location = this.#location;
+		if (!location || !this.track) return false;
+		const id = this.#match(location.path);
+		if (id === undefined) return false;
+		let changed = false;
+		if (this.value !== id) {
+			this.value = id;
+			changed = true;
+		}
+		this.activeId = id;
+		const ancestors: string[] = [];
+		for (let at = this.#info.get(id)?.parentId; at; at = this.#info.get(at)?.parentId) ancestors.unshift(at);
+		for (const ancestor of ancestors) {
+			if (this.expanded.includes(ancestor)) continue;
+			const expandedIds = [...this.expanded, ancestor];
+			this.expanded = expandedIds;
+			this.emit("dj-expand-change", { detail: { id: ancestor, expanded: true, expandedIds } });
+			changed = true;
+		}
+		if (!location.trail) {
+			const trail = this.#trailOf(id);
+			// After the current publish has finished, and only if this is still the current location.
+			queueMicrotask(() => {
+				const instance = getHistory();
+				if (instance && instance.current === location) instance.annotate({ trail });
+			});
+		}
+		return changed;
+	}
+
+	/** Follow the location if history is (or later becomes) installed. */
+	#follow() {
+		if (!this.isConnected || !this.track || this.#unsubscribe) return;
+		const instance = getHistory();
+		if (instance) {
+			this.#unsubscribe = instance.subscribe((location) => {
+				this.#location = location;
+				this.#syncLocation();
+			});
+		} else {
+			// A WeakRef, so a tree removed before history is installed (it may never be) is not kept alive.
+			const self = new WeakRef(this);
+			void whenHistory().then(() => { const tree = self.deref(); if (tree) tree.#follow(); });
+		}
+	}
+
+	#stop() {
+		this.#unsubscribe?.();
+		this.#unsubscribe = undefined;
+		this.#location = undefined;
+	}
+
+	/** Open a tracked row in a new tab. Rows are treeitems, not links, so the browser cannot. */
+	#openInNewTab(id: string): boolean {
+		const info = this.#info.get(id);
+		if (!this.track || !info) return false;
+		window.open(getHistory()?.href(info.path) ?? info.path, "_blank", "noopener");
+		return true;
 	}
 
 	/** Rebuild the flat visible-row list, the parent map, and validate the roving active row. */
@@ -212,10 +377,12 @@ export class DjTree extends DojoElement {
 		super.connectedCallback();
 		document.addEventListener("dragend", this.#onDocDragEnd, true);
 		document.addEventListener("drop", this.#onDocDragEnd, true);
+		this.#follow();
 	}
 
 	override disconnectedCallback() {
 		super.disconnectedCallback();
+		this.#stop();
 		document.removeEventListener("dragend", this.#onDocDragEnd, true);
 		document.removeEventListener("drop", this.#onDocDragEnd, true);
 		this.#endDrag();
@@ -296,6 +463,11 @@ export class DjTree extends DojoElement {
 		this.activeId = id;
 		this.value = id;
 		this.emit("dj-select", { detail: { id } });
+		const info = this.#info.get(id);
+		if (this.track && info) {
+			const detail: NavigateDetail = { path: info.path, label: info.label, trail: this.#trailOf(id) };
+			this.emit("dj-navigate", { detail });
+		}
 	}
 
 	/** Move the roving focus to `id` and focus its row once rendered. */
@@ -362,10 +534,18 @@ export class DjTree extends DojoElement {
 			aria-selected=${selected ? "true" : nothing}
 			tabindex=${node.id === this.activeId ? "0" : "-1"}
 			@keydown=${(e: KeyboardEvent) => this.#onKeydown(e, node.id)}
-			@click=${(e: Event) => {
+			@click=${(e: MouseEvent) => {
 				e.stopPropagation();
+				if ((e.ctrlKey || e.metaKey) && this.#openInNewTab(node.id)) {
+					e.preventDefault();
+					return;
+				}
 				this.#select(node.id);
 				if (this.expandOnRowClick && hasChildren) this.#toggle(node.id);
+			}}
+			@auxclick=${(e: MouseEvent) => {
+				e.stopPropagation();
+				if (e.button === 1 && this.#openInNewTab(node.id)) e.preventDefault();
 			}}
 		>
 			<div
@@ -406,5 +586,6 @@ declare global {
 		"dj-select": CustomEvent<{ id: string }>;
 		"dj-expand-change": CustomEvent<{ id: string; expanded: boolean; expandedIds: string[] }>;
 		"dj-drop": CustomEvent<{ id: string; dataTransfer: DataTransfer | null }>;
+		"dj-navigate": CustomEvent<NavigateDetail>;
 	}
 }

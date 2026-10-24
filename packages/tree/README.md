@@ -71,6 +71,17 @@ The tree follows the APG tree pattern. Only one row is a tab stop: the selected 
 - A drop emits `dj-drop` with `{ id, dataTransfer }`. The tree does not select the row; the consumer reads its payload from `dataTransfer` and applies the change.
 - Dragging has no keyboard form. A consumer that offers drop must offer another way to do the same thing (WCAG 2.5.7), such as a Move command with a picker.
 
+## Tracking navigation
+
+Set `track` and the tree and `@dojo-ng/history` follow each other, with no route table to write.
+
+- Each node has a path: its own `path` if it sets one, otherwise `base-path` plus the ids from the root down to the node, joined with `/` (each id URI-encoded). A tree with `base-path="/explore"` gives the node `hr` &gt; `comp` &gt; `pay` the path `/explore/hr/comp/pay`.
+- Selecting a row (click, Enter, or Space) emits `dj-navigate` with `{ path, label, trail }` alongside `dj-select`. `trail` is the nodes from the root to this one, each as `{ path, label }`, and ends up in the history entry, so it survives Back, Forward, and a reload in the same tab.
+- When the location changes, the tree selects the node whose path matches it (an exact match, else the node with the longest path that is a prefix of the location) and expands that node's ancestors, emitting `dj-expand-change` for each. This is what makes Back reselect the right row. It does not emit `dj-navigate`, because that would loop. It does not emit `dj-select` either.
+- If the location has no `trail` (a deep link, or a pasted URL), the tree adds the matched node's trail to the history entry, so a `dj-back-button` in `up` mode can name the parent.
+- Ctrl-click, Cmd-click, or middle-click on a row opens its path in a new tab. Rows stay `treeitem`s and not links, because a focusable link inside a treeitem would break the tree's roving focus. Two nodes with the same path: the first in tree order wins.
+- `track` needs `@dojo-ng/history` installed. Without it nothing is tracked and nothing throws.
+
 ## Not built
 
 - Dragging tree rows, virtualization, checkboxes, and lazy loading.
@@ -89,6 +100,8 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 | `expandOnRowClick` | expand-on-row-click ↻ | `boolean` | `false` |
 | `canDrop` | — | `(id: string, types: readonly string[]) => boolean` | — |
 | `springDelay` | spring-delay | `number` | `800` |
+| `track` | track | `boolean` | `false` |
+| `basePath` | base-path | `string` | `""` |
 
 ## Slots
 
@@ -105,9 +118,10 @@ on.
 
 ## Events
 
-- `dj-drop`: Detail `{ id, dataTransfer }`.
 - `dj-expand-change`: Detail `{ id, expanded, expandedIds }`.
+- `dj-drop`: Detail `{ id, dataTransfer }`.
 - `dj-select`: Detail `{ id }`.
+- `dj-navigate`: Detail `{ path, label, trail }`, only with `track`.
 
 ## CSS custom properties
 

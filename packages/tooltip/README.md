@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown.
+The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown. Escape hides a tip that hover or focus showed, without moving the pointer or focus; entering or focusing the trigger again shows it again.
 
 ## Install
 

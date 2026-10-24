@@ -297,3 +297,272 @@ test("drop: spring-delay 0 turns spring-loading off", async () => {
 	await new Promise((r) => setTimeout(r, 20));
 	assert.equal(n, 0);
 });
+
+// --- Tracking navigation (C4): track, base-path, node paths, trail, location sync -----------
+
+import { installFakeHistory } from "./fake-history-window.js";
+
+const MAIL = () => [
+	{ id: "inbox", label: "Inbox", children: [
+		{ id: "work", label: "Work" },
+		{ id: "personal", label: "Personal" },
+	] },
+	{ id: "archive", label: "Archive", path: "/custom/archive", children: [
+		{ id: "y2025", label: "2025" },
+	] },
+	{ id: "trash", label: "Trash" },
+];
+
+function withHistory(t, options) {
+	const env = installFakeHistory(options);
+	t.after(() => env.stop());
+	return env;
+}
+function listen(t, target, type) {
+	const seen = [];
+	const fn = (e) => seen.push(e);
+	target.addEventListener(type, fn);
+	t.after(() => target.removeEventListener(type, fn));
+	return seen;
+}
+async function tracked(props = {}) {
+	const el = document.createElement("dj-tree");
+	el.nodes = MAIL();
+	el.track = true;
+	el.basePath = "/mail";
+	for (const [k, v] of Object.entries(props)) el[k] = v;
+	document.body.appendChild(el);
+	await settled(el);
+	await tick();
+	await settled(el);
+	return el;
+}
+const rowClick = async (el, id, init = {}) => {
+	const event = new MouseEvent("click", { bubbles: true, composed: true, cancelable: true, ...init });
+	rowById(el, id).dispatchEvent(event);
+	await settled(el); await tick();
+	return event;
+};
+
+test("track: selecting a node dispatches dj-select and then dj-navigate with a derived path, label and trail", async (t) => {
+	withHistory(t);
+	const el = await tracked({ expanded: ["inbox"] });
+	const order = [];
+	el.addEventListener("dj-select", (e) => order.push(["dj-select", e.detail]));
+	el.addEventListener("dj-navigate", (e) => order.push(["dj-navigate", e.detail]));
+	await rowClick(el, "work");
+	assert.deepEqual(order, [
+		["dj-select", { id: "work" }],
+		["dj-navigate", {
+			path: "/mail/inbox/work",
+			label: "Work",
+			trail: [{ path: "/mail/inbox", label: "Inbox" }, { path: "/mail/inbox/work", label: "Work" }],
+		}],
+	]);
+	el.remove();
+});
+
+test("track: an explicit node path wins for that node; its children still derive from ids", async (t) => {
+	withHistory(t);
+	const el = await tracked({ expanded: ["archive"] });
+	const navigates = listen(t, el, "dj-navigate");
+	await rowClick(el, "archive");
+	await rowClick(el, "y2025");
+	assert.deepEqual(navigates.map((e) => e.detail.path), ["/custom/archive", "/mail/archive/y2025"]);
+	assert.deepEqual(navigates[1].detail.trail, [
+		{ path: "/custom/archive", label: "Archive" },
+		{ path: "/mail/archive/y2025", label: "2025" },
+	]);
+	el.remove();
+});
+
+test("track: keyboard selection navigates too, and a trailing slash on base-path is ignored", async (t) => {
+	withHistory(t);
+	const el = await tracked({ basePath: "/mail/" });
+	const navigates = listen(t, el, "dj-navigate");
+	await press(el, "trash", "Enter");
+	assert.deepEqual(navigates.map((e) => e.detail.path), ["/mail/trash"]);
+	el.remove();
+});
+
+test("without track, selecting emits no dj-navigate", async (t) => {
+	withHistory(t);
+	const el = await tracked({ track: false });
+	const navigates = listen(t, el, "dj-navigate");
+	await rowClick(el, "trash");
+	assert.equal(navigates.length, 0);
+	el.remove();
+});
+
+test("track: the whole path works through history, and Back, Forward reselect the right node", async (t) => {
+	const { h } = withHistory(t);
+	const el = await tracked({ expanded: ["inbox", "archive"] });
+	await rowClick(el, "work");
+	await rowClick(el, "personal");
+	await rowClick(el, "trash");
+	assert.equal(h.current.path, "/mail/trash");
+	assert.deepEqual(h.current.trail, [{ path: "/mail/trash", label: "Trash" }]);
+	h.back();
+	await settled(el); await tick();
+	assert.equal(el.value, "personal");
+	h.back();
+	await settled(el); await tick();
+	assert.equal(el.value, "work");
+	h.forward();
+	await settled(el); await tick();
+	assert.equal(el.value, "personal");
+	el.remove();
+});
+
+test("track: a deep-link location selects and expands the node, emits dj-expand-change, and never dispatches dj-navigate", async (t) => {
+	withHistory(t, { window: { url: "http://example.test/mail/inbox/work" } });
+	const navigates = listen(t, document, "dj-navigate");
+	const el = document.createElement("dj-tree");
+	el.nodes = MAIL();
+	el.track = true;
+	el.basePath = "/mail";
+	const expands = listen(t, el, "dj-expand-change");
+	document.body.appendChild(el);
+	await settled(el); await tick(); await settled(el);
+	assert.equal(el.value, "work");
+	assert.deepEqual(el.expanded, ["inbox"]);
+	assert.deepEqual(expands.map((e) => e.detail), [{ id: "inbox", expanded: true, expandedIds: ["inbox"] }]);
+	assert.deepEqual(visibleIds(el), ["inbox", "work", "personal", "archive", "trash"]);
+	assert.deepEqual(tabbable(el), ["work"]);
+	assert.equal(navigates.length, 0, "location sync must not dispatch dj-navigate");
+	el.remove();
+});
+
+test("track: a go to a nested node while mounted expands every closed ancestor", async (t) => {
+	const { h } = withHistory(t);
+	const el = document.createElement("dj-tree");
+	el.nodes = [{ id: "a", label: "A", children: [{ id: "b", label: "B", children: [{ id: "c", label: "C" }] }] }];
+	el.track = true;
+	el.basePath = "/x";
+	document.body.appendChild(el);
+	await settled(el); await tick();
+	const navigates = listen(t, document, "dj-navigate");
+	const expands = listen(t, el, "dj-expand-change");
+	h.go("/x/a/b/c");
+	await settled(el); await tick(); await settled(el);
+	assert.equal(el.value, "c");
+	assert.deepEqual(el.expanded, ["a", "b"]);
+	assert.deepEqual(expands.map((e) => e.detail.id), ["a", "b"]);
+	assert.equal(navigates.length, 0);
+	el.remove();
+});
+
+test("track: a location below a node (its /quiz leaf is not in the tree) matches the longest ancestor path", async (t) => {
+	const { h } = withHistory(t);
+	const el = await tracked({ expanded: ["inbox"] });
+	h.go("/mail/inbox/work/quiz");
+	await settled(el); await tick();
+	assert.equal(el.value, "work");
+	h.go("/mail/inbox/quiz?x=1#top");
+	await settled(el); await tick();
+	assert.equal(el.value, "inbox", "query and hash are ignored, and the nearest node above wins");
+	el.remove();
+});
+
+test("track: a location that matches no node leaves the selection alone", async (t) => {
+	const { h } = withHistory(t);
+	const el = await tracked({ value: "trash" });
+	h.go("/somewhere/else");
+	await settled(el); await tick();
+	assert.equal(el.value, "trash");
+	el.remove();
+});
+
+test("track: annotate is called once, with the matched node's trail, and only when the location has none", async (t) => {
+	const { h } = withHistory(t, { window: { url: "http://example.test/mail/inbox/work" } });
+	const annotate = t.mock.method(h, "annotate");
+	const el = await tracked();
+	await tick();
+	assert.equal(annotate.mock.callCount(), 1, "a deep link has no trail");
+	assert.deepEqual(annotate.mock.calls[0].arguments[0], {
+		trail: [{ path: "/mail/inbox", label: "Inbox" }, { path: "/mail/inbox/work", label: "Work" }],
+	});
+	assert.deepEqual(h.current.trail, annotate.mock.calls[0].arguments[0].trail, "and the re-published location now carries it");
+	await rowClick(el, "trash"); // the click brings its own trail
+	h.back();
+	h.forward();
+	await tick();
+	assert.equal(annotate.mock.callCount(), 1, "no further annotate once a trail is present");
+	el.remove();
+});
+
+test("track: ctrl-click and meta-click open the row's href in a new tab and do not select or navigate", async (t) => {
+	withHistory(t, { base: "/acme", window: { url: "http://example.test/acme/" } });
+	const open = t.mock.method(window, "open", () => null);
+	const el = await tracked({ expanded: ["inbox"] });
+	const seen = [...listen(t, el, "dj-select"), ...listen(t, document, "dj-navigate")];
+	const sel = listen(t, el, "dj-select");
+	const nav = listen(t, document, "dj-navigate");
+	const event = await rowClick(el, "work", { ctrlKey: true });
+	await rowClick(el, "personal", { metaKey: true });
+	assert.equal(event.defaultPrevented, true);
+	assert.deepEqual(open.mock.calls.map((c) => c.arguments), [
+		["/acme/mail/inbox/work", "_blank", "noopener"],
+		["/acme/mail/inbox/personal", "_blank", "noopener"],
+	]);
+	assert.equal(sel.length + nav.length + seen.length, 0);
+	assert.equal(el.value, "");
+	el.remove();
+});
+
+test("track: middle-click (auxclick) opens a new tab too; other auxclicks do nothing", async (t) => {
+	withHistory(t);
+	const open = t.mock.method(window, "open", () => null);
+	const el = await tracked({ expanded: ["inbox"] });
+	const nav = listen(t, document, "dj-navigate");
+	rowById(el, "work").dispatchEvent(new MouseEvent("auxclick", { bubbles: true, composed: true, cancelable: true, button: 1 }));
+	rowById(el, "personal").dispatchEvent(new MouseEvent("auxclick", { bubbles: true, composed: true, cancelable: true, button: 2 }));
+	assert.deepEqual(open.mock.calls.map((c) => c.arguments), [["/mail/inbox/work", "_blank", "noopener"]]);
+	assert.equal(nav.length, 0);
+	el.remove();
+});
+
+test("without track, ctrl-click still just selects", async (t) => {
+	withHistory(t);
+	const open = t.mock.method(window, "open", () => null);
+	const el = await tracked({ track: false });
+	await rowClick(el, "trash", { ctrlKey: true });
+	assert.equal(open.mock.callCount(), 0);
+	assert.equal(el.value, "trash");
+	el.remove();
+});
+
+test("track: with no history installed it still emits dj-navigate and nothing throws; installing later starts the sync", async (t) => {
+	const el = await tracked();
+	const nav = listen(t, document, "dj-navigate");
+	await rowClick(el, "trash");
+	assert.equal(nav.length, 1);
+	const { h } = withHistory(t, { window: { url: "http://example.test/mail/inbox/personal" } });
+	await tick(); await settled(el); await tick();
+	assert.equal(el.value, "personal");
+	assert.ok(el.expanded.includes("inbox"));
+	assert.equal(h.current.path, "/mail/inbox/personal");
+	el.remove();
+});
+
+test("track: replacing nodes rebuilds the path index", async (t) => {
+	const { h } = withHistory(t, { window: { url: "http://example.test/mail/late/leaf" } });
+	const el = await tracked();
+	assert.equal(el.value, "", "nothing matches yet");
+	el.nodes = [{ id: "late", label: "Late", children: [{ id: "leaf", label: "Leaf" }] }];
+	await settled(el); await tick(); await settled(el);
+	assert.equal(el.value, "leaf");
+	assert.deepEqual(el.expanded, ["late"]);
+	assert.ok(h.current);
+	el.remove();
+});
+
+test("track: a removed tree stops following the location", async (t) => {
+	const { h } = withHistory(t);
+	const el = await tracked();
+	el.remove();
+	const before = el.value;
+	h.go("/mail/trash");
+	await tick();
+	assert.equal(el.value, before);
+});

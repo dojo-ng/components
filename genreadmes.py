@@ -1946,6 +1946,40 @@ MyGreeting.define("my-greeting");"""),
  ],
 })
 
+NOTES.update({
+ "nav-history": """
+The components that go with [`@dojo-ng/history`](https://www.npmjs.com/package/@dojo-ng/history):
+a Back button, and a controller that lets your own component follow the location. Install history
+once at startup (`installHistory(bus)`); these find it on their own. With history not installed,
+the Back button calls `window.history.back()` and the controller reports no location.
+
+#### HistoryController
+- `new HistoryController(this)` in a Lit element. `controller.location` is the current location
+  (`{ path, state, index, committed, source, trail? }`) or `undefined`, and `controller.history` is
+  the history instance or `undefined`. The element re-renders on every location change.
+- If history is installed after the element connects, the controller starts following then. After
+  the element disconnects it follows nothing.
+
+#### Back, and up
+- `mode="history"` (the default) is plain Back, disabled when there is nowhere to go.
+- `mode="up"` goes to the parent page and labels itself "Back to {title}". The parent comes from the
+  `trail` that a tracked `dj-tree` puts in the location, or else from the path with its last
+  segment removed; give `resolveTitle` to name it. At the top level it acts like `history` mode.
+- Call `preventDefault()` on `dj-back` to take over, for example to ask about unsaved changes.
+- Set `icon-only` for just the arrow. The label stays the accessible name and shows in a tooltip.
+""",
+})
+EXAMPLES.update({
+ "nav-history": [
+  ("Back button", "Plain Back. It is disabled at the first page of the app.",
+   '<dj-back-button></dj-back-button>\n<script type="module">\n  import { createPubSub } from "@dojo-ng/pubsub";\n  import { installHistory } from "@dojo-ng/history";\n  import "@dojo-ng/nav-history";\n  installHistory(createPubSub());\n</script>'),
+  ("Up to the parent page", "In `up` mode the label names the parent. Here `resolveTitle` supplies the title, because the path has no trail.",
+   '<dj-back-button id="up" mode="up"></dj-back-button>\n<script type="module">\n  import "@dojo-ng/nav-history";\n  const titles = { "/orders": "Orders" };\n  document.getElementById("up").resolveTitle = (path) => titles[path];\n  document.getElementById("up").addEventListener("dj-back", (e) => console.log(e.detail.mode, e.detail.target));\n</script>'),
+  ("Follow the location in your own element", "A controller re-renders the element whenever the location changes.",
+   'import { LitElement, html } from "lit";\nimport { HistoryController } from "@dojo-ng/nav-history";\n\nclass WhereAmI extends LitElement {\n  #nav = new HistoryController(this);\n  render() { return html`You are at ${this.#nav.location?.path ?? "..."}`; }\n}\ncustomElements.define("where-am-i", WhereAmI);'),
+ ],
+})
+
 # Merges enterprise/tests/readme_content.py's own NOTES/EXAMPLES dicts when the overlay is
 # checked out, so an overlay package gets the same migration-note / worked-example treatment as
 # a FOSS one with no edit to this public file — same "merge behind an existence check" shape as

@@ -3,6 +3,8 @@
 // axe on a populated tree.
 import { mount, cleanup, make, assert, assertEqual } from "./helpers.js";
 import { assertNoViolations } from "./a11y.js";
+import { createPubSub } from "@dojo-ng/pubsub";
+import { installHistory } from "@dojo-ng/history";
 import "../../packages/tree/dist/index.js";
 
 const NODES = [
@@ -72,5 +74,82 @@ describe("dj-tree", () => {
 		const el = await mount(make("dj-tree", { nodes: NODES, expanded: ["fruit"] }));
 		await el.updateComplete;
 		await assertNoViolations(el);
+	});
+});
+
+// C4. A tracked tree with the real installHistory and the real History API: click through three
+// nodes, wait out the dwell, press Back twice, then Forward. Each step must reselect the right
+// node, and Back must not add entries. A real popstate arrives a task after history.back().
+describe("dj-tree with track", () => {
+	let h;
+	afterEach(() => {
+		h?.destroy();
+		h = undefined;
+		cleanup();
+	});
+
+	const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+	const nextLocation = (hist, test = () => true) => new Promise((resolve) => {
+		let replayed = false;
+		let stop;
+		stop = hist.subscribe((location) => {
+			if (!replayed || !test(location)) return;
+			stop?.();
+			resolve(location);
+		});
+		replayed = true;
+	});
+	const TRACKED = [
+		{ id: "docs", label: "Docs", children: [{ id: "guide", label: "Guide" }, { id: "api", label: "API" }] },
+		{ id: "blog", label: "Blog" },
+	];
+	const rowOf = (el, id) => el.shadowRoot.querySelector(`li.treeitem[data-id="${id}"]`);
+
+	it("click three nodes, wait out the dwell, Back twice, then Forward: each step reselects the right node", async () => {
+		h = installHistory(createPubSub(), { dwellMs: 80 });
+		const el = await mount(make("dj-tree", { nodes: TRACKED, track: true, basePath: "/tt-test", expanded: ["docs"] }));
+		await el.updateComplete;
+		const start = history.length;
+
+		for (const id of ["guide", "api", "blog"]) {
+			rowOf(el, id).click();
+			await el.updateComplete;
+			await wait(160); // longer than dwellMs: each entry commits, so each is its own stack entry
+		}
+		assertEqual(location.pathname, "/tt-test/blog", "the URL follows the clicks");
+		assertEqual(history.length, start + 3, "three committed entries");
+
+		let arrived = nextLocation(h);
+		h.back();
+		await arrived;
+		await el.updateComplete;
+		assertEqual(el.value, "api", "Back reselects the previous node");
+		assertEqual(location.pathname, "/tt-test/docs/api", "and the URL is its path");
+
+		arrived = nextLocation(h);
+		h.back();
+		await arrived;
+		await el.updateComplete;
+		assertEqual(el.value, "guide", "Back again");
+
+		arrived = nextLocation(h);
+		h.forward();
+		await arrived;
+		await el.updateComplete;
+		assertEqual(el.value, "api", "Forward");
+		assertEqual(history.length, start + 3, "Back and Forward add no entries");
+		assertEqual(JSON.stringify(h.current.trail), JSON.stringify([{ path: "/tt-test/docs", label: "Docs" }, { path: "/tt-test/docs/api", label: "API" }]), "the trail comes back with the entry");
+	});
+
+	it("a deep location expands and selects the node when the tree appears", async () => {
+		h = installHistory(createPubSub(), { dwellMs: 0 });
+		h.go("/tt-test/docs/guide");
+		const el = await mount(make("dj-tree", { nodes: TRACKED, track: true, basePath: "/tt-test" }));
+		await el.updateComplete;
+		await wait(20);
+		await el.updateComplete;
+		assertEqual(el.value, "guide", "selected");
+		assert(el.expanded.includes("docs"), "its parent is open");
+		assert(rowOf(el, "guide"), "and the row renders");
 	});
 });

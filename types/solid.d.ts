@@ -8,6 +8,7 @@ import type { DjActionButton } from "@dojo-ng/action-button";
 import type { DjAlert } from "@dojo-ng/alert";
 import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
+import type { DjBackButton } from "@dojo-ng/nav-history";
 import type { DjBadge } from "@dojo-ng/badge";
 import type { DjBoard } from "@dojo-ng/board";
 import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
@@ -111,6 +112,12 @@ declare module "solid-js" {
         "secondary"?: DjAvatar["secondary"];
         "outline"?: DjAvatar["outline"];
       };
+      "dj-back-button": JSX.HTMLAttributes<DjBackButton> & {
+        "mode"?: DjBackButton["mode"];
+        "label"?: DjBackButton["label"];
+        "icon-only"?: DjBackButton["iconOnly"];
+        "resolveTitle"?: DjBackButton["resolveTitle"];
+      };
       "dj-badge": JSX.HTMLAttributes<DjBadge> & {
         "variant"?: DjBadge["variant"];
         "pill"?: DjBadge["pill"];
@@ -157,6 +164,8 @@ declare module "solid-js" {
         "media-src"?: DjCard["mediaSrc"];
         "media-title"?: DjCard["mediaTitle"];
         "clickable"?: DjCard["clickable"];
+        "path"?: DjCard["path"];
+        "track"?: DjCard["track"];
       };
       "dj-carousel": JSX.HTMLAttributes<DjCarousel> & {
         "per-view"?: DjCarousel["perView"];
@@ -638,6 +647,8 @@ declare module "solid-js" {
         "expand-on-row-click"?: DjTree["expandOnRowClick"];
         "canDrop"?: DjTree["canDrop"];
         "spring-delay"?: DjTree["springDelay"];
+        "track"?: DjTree["track"];
+        "base-path"?: DjTree["basePath"];
       };
       "dj-trigger-popup": JSX.HTMLAttributes<DjTriggerPopup> & {
         "open"?: DjTriggerPopup["open"];
@@ -683,6 +694,8 @@ declare module "solid-js" {
       "dj-pause": CustomEvent;
       "dj-ended": CustomEvent;
       "dj-time": CustomEvent;
+      "dj-back": CustomEvent;
+      "dj-navigate": CustomEvent;
       "dj-card-move": CustomEvent;
       "dj-card-click": CustomEvent;
       "change": CustomEvent;
@@ -715,8 +728,8 @@ declare module "solid-js" {
       "dj-action": CustomEvent;
       "dj-after-enter": CustomEvent;
       "dj-after-leave": CustomEvent;
-      "dj-drop": CustomEvent;
       "dj-expand-change": CustomEvent;
+      "dj-drop": CustomEvent;
       "dj-step": CustomEvent;
     }
     interface CustomCaptureEvents {
@@ -725,6 +738,8 @@ declare module "solid-js" {
       "dj-pause": CustomEvent;
       "dj-ended": CustomEvent;
       "dj-time": CustomEvent;
+      "dj-back": CustomEvent;
+      "dj-navigate": CustomEvent;
       "dj-card-move": CustomEvent;
       "dj-card-click": CustomEvent;
       "change": CustomEvent;
@@ -757,8 +772,8 @@ declare module "solid-js" {
       "dj-action": CustomEvent;
       "dj-after-enter": CustomEvent;
       "dj-after-leave": CustomEvent;
-      "dj-drop": CustomEvent;
       "dj-expand-change": CustomEvent;
+      "dj-drop": CustomEvent;
       "dj-step": CustomEvent;
     }
   }

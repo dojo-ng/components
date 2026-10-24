@@ -1354,7 +1354,7 @@
           "name": "DjCard",
           "customElement": true,
           "tagName": "dj-card",
-          "description": "content container. Slots: `header`, default (content), `actions`. Optional `title`/`subtitle`/`media-src`. `clickable` makes the body a button. Parts: `root`, `media`, `body`, `actions`.",
+          "description": "content container. Slots: `header`, default (content), `actions`. Optional `title`/`subtitle`/`media-src`. `clickable` makes the body a button. Parts: `root`, `media`, `body`, `actions`.\n\n#### Navigation\n\n- Set `path` to make the card a link to an app path. The body becomes a real `<a href>`, so Ctrl/Cmd-click, middle-click, and \"open in new tab\" work, and a screen reader announces a link. Keep buttons and other controls out of the default slot of such a card, because they would sit inside a link; put them in the `actions` slot, which is outside it.\n- A plain click is turned into `dj-navigate` (detail `{ path, label }`, `label` being the title), which `@dojo-ng/history` turns into a navigation. A click with a modifier key, or one that is already prevented, is left to the browser. With no history installed, the link navigates normally, as a full page load.\n- The `href` is the path with the history `base` added, so it stays correct under a prefix.\n- `path` wins over `clickable`: with both set, the body is the link and not a button.\n- Set `track` to follow the location: the link gets `aria-current=\"page\"` while the location is this card's `path`. The package is only read when history is installed.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -1420,6 +1420,25 @@
               },
               "default": "false",
               "attribute": "clickable"
+            },
+            {
+              "kind": "field",
+              "name": "path",
+              "type": {
+                "text": "string"
+              },
+              "description": "An app path. Makes the body a link to it. Wins over `clickable`.",
+              "attribute": "path"
+            },
+            {
+              "kind": "field",
+              "name": "track",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Mark the link `aria-current=\"page\"` while the navigation location is `path`. Needs `@dojo-ng/history` installed.",
+              "attribute": "track"
             }
           ],
           "attributes": [
@@ -1471,6 +1490,22 @@
                 "text": "boolean"
               },
               "fieldName": "clickable"
+            },
+            {
+              "name": "path",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "path",
+              "description": "An app path. Makes the body a link to it. Wins over `clickable`."
+            },
+            {
+              "name": "track",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "track",
+              "description": "Mark the link `aria-current=\"page\"` while the navigation location is `path`. Needs `@dojo-ng/history` installed."
             }
           ],
           "slots": [
@@ -1503,6 +1538,15 @@
             {
               "name": "actions",
               "description": ""
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-navigate",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ path, label }`"
             }
           ]
         }
@@ -6370,6 +6414,137 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/nav-history/src/dj-back-button.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjBackButton",
+          "customElement": true,
+          "tagName": "dj-back-button",
+          "description": "a Back button that follows the app's navigation history.\n\nIt is built on `<dj-button>`, so keyboard use, focus, and button semantics come from there. Install `@dojo-ng/history` once at startup; the button finds it through `HistoryController`.\n\n#### Modes\n\n- `history` (the default) does what the browser's Back button does, and is disabled when there is nowhere to go back to. With no history installed it calls `window.history.back()` and is never disabled.\n- `up` goes to the parent of the current page instead, by dispatching `dj-navigate`. The parent is the second-to-last entry of the location's `trail` when it has one (a tracked `dj-tree` supplies it), otherwise the current path with its last segment removed. At the top level, a single-segment path or a trail of one, there is no parent, and the button behaves exactly as in `history` mode.\n\n#### Label\n\n- In `up` mode with a parent, the label is \"Back to {title}\". The title is the trail entry's label, otherwise what `resolveTitle(parentPath)` returns. With no title, or in `history` mode, the label is \"Back\". Set `label` to replace the computed text.\n- The label is recomputed on every location change, including when a trail arrives late, so it needs no timer.\n- The accessible name always equals the visible label. With `icon-only`, only the arrow shows, the label becomes the accessible name, and a tooltip shows it on hover and focus.\n\n#### Taking over\n\n- `dj-back` fires first and can be canceled. Call `preventDefault()` to do something else (confirm unsaved changes, close a panel); the button then does nothing further.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "mode",
+              "type": {
+                "text": "BackMode"
+              },
+              "default": "\"history\"",
+              "description": "`history` calls Back. `up` goes to the parent page.",
+              "attribute": "mode",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Replaces the computed label.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "iconOnly",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Show only the arrow. The label is still the accessible name, and a tooltip shows it.",
+              "attribute": "icon-only",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "resolveTitle",
+              "type": {
+                "text": "(path: string) => string | undefined"
+              },
+              "description": "Looks up the title of the parent page in `up` mode when the trail has none. JS only."
+            },
+            {
+              "kind": "method",
+              "name": "focus",
+              "parameters": [
+                {
+                  "name": "options",
+                  "type": {
+                    "text": "FocusOptions"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "blur"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "mode",
+              "type": {
+                "text": "BackMode"
+              },
+              "fieldName": "mode",
+              "description": "`history` calls Back. `up` goes to the parent page."
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label",
+              "description": "Replaces the computed label."
+            },
+            {
+              "name": "icon-only",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "iconOnly",
+              "description": "Show only the arrow. The label is still the accessible name, and a tooltip shows it."
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "button",
+              "description": "the composed `<dj-button>`"
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-back",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "cancelable, detail `{ mode, target }`"
+            },
+            {
+              "name": "dj-navigate",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ path, label?, trail? }`"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-back-button",
+          "declaration": {
+            "name": "DjBackButton",
+            "module": "packages/nav-history/src/dj-back-button.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/number-input/src/dj-number-input.ts",
       "declarations": [
         {
@@ -11163,7 +11338,7 @@
           "name": "DjTooltip",
           "customElement": true,
           "tagName": "dj-tooltip",
-          "description": "shows tip content next to its trigger on hover/focus. The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown.",
+          "description": "shows tip content next to its trigger on hover/focus. The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown. Escape hides a tip that hover or focus showed, without moving the pointer or focus; entering or focusing the trigger again shows it again.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -11432,7 +11607,7 @@
           "name": "DjTree",
           "customElement": true,
           "tagName": "dj-tree",
-          "description": "a hierarchical tree built from `nodes`.\n\nThe tree knows nothing about what it shows: a file tree, a mail folder list, and a MIME structure are all just nodes. Each node can carry an `icon` (a name registered with `registerIcon` or `registerIcons` from `@dojo-ng/icon`) and a `count`, shown as a trailing badge such as an unread count.\n\n#### Selection and expansion\n\n- Both are controlled. `value` is the selected node id, and the tree emits `dj-select`.\n- `expanded` is the array of open node ids, and the tree emits `dj-expand-change`.\n- Clicking a row selects it; clicking the chevron expands or collapses it.\n- Set `expand-on-row-click` to make a click on a parent row also expand or collapse it. Use it when some rows exist only to hold others, so a click on them does something visible.\n\n#### Keyboard\n\nThe tree follows the APG tree pattern. Only one row is a tab stop: the selected row if it is visible, otherwise the first visible row. The arrow keys move focus without selecting.\n\n- Down and Up move through the visible rows.\n- Right expands a closed parent, moves into an open one, and does nothing on a leaf.\n- Left collapses an open parent, or moves to the parent row.\n- Home and End jump to the first and last visible row.\n- Enter or Space selects the focused row.\n\n#### Right-to-left\n\n- Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron points in the reading direction.\n\n#### Dropping onto rows\n\n- Set `canDrop` to make the tree a target for native HTML5 drag and drop. It is called during a drag with a row id and the drag's `dataTransfer.types` (the only part of a payload the browser shows before the drop), and returns whether that row accepts it. Unset, the tree ignores drags.\n- The row under the pointer that accepts the drag is marked: the `row--drop-target` part and a built-in outline. A refused row is not marked and the cursor shows the drop is not allowed.\n- Resting on a collapsed parent for `spring-delay` ms (default 800; 0 turns it off) during a drag expands it, through the same path as a chevron click, so `dj-expand-change` fires. It stays open after the drop.\n- A drop emits `dj-drop` with `{ id, dataTransfer }`. The tree does not select the row; the consumer reads its payload from `dataTransfer` and applies the change.\n- Dragging has no keyboard form. A consumer that offers drop must offer another way to do the same thing (WCAG 2.5.7), such as a Move command with a picker.\n\n#### Not built\n\n- Dragging tree rows, virtualization, checkboxes, and lazy loading.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
+          "description": "a hierarchical tree built from `nodes`.\n\nThe tree knows nothing about what it shows: a file tree, a mail folder list, and a MIME structure are all just nodes. Each node can carry an `icon` (a name registered with `registerIcon` or `registerIcons` from `@dojo-ng/icon`) and a `count`, shown as a trailing badge such as an unread count.\n\n#### Selection and expansion\n\n- Both are controlled. `value` is the selected node id, and the tree emits `dj-select`.\n- `expanded` is the array of open node ids, and the tree emits `dj-expand-change`.\n- Clicking a row selects it; clicking the chevron expands or collapses it.\n- Set `expand-on-row-click` to make a click on a parent row also expand or collapse it. Use it when some rows exist only to hold others, so a click on them does something visible.\n\n#### Keyboard\n\nThe tree follows the APG tree pattern. Only one row is a tab stop: the selected row if it is visible, otherwise the first visible row. The arrow keys move focus without selecting.\n\n- Down and Up move through the visible rows.\n- Right expands a closed parent, moves into an open one, and does nothing on a leaf.\n- Left collapses an open parent, or moves to the parent row.\n- Home and End jump to the first and last visible row.\n- Enter or Space selects the focused row.\n\n#### Right-to-left\n\n- Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron points in the reading direction.\n\n#### Dropping onto rows\n\n- Set `canDrop` to make the tree a target for native HTML5 drag and drop. It is called during a drag with a row id and the drag's `dataTransfer.types` (the only part of a payload the browser shows before the drop), and returns whether that row accepts it. Unset, the tree ignores drags.\n- The row under the pointer that accepts the drag is marked: the `row--drop-target` part and a built-in outline. A refused row is not marked and the cursor shows the drop is not allowed.\n- Resting on a collapsed parent for `spring-delay` ms (default 800; 0 turns it off) during a drag expands it, through the same path as a chevron click, so `dj-expand-change` fires. It stays open after the drop.\n- A drop emits `dj-drop` with `{ id, dataTransfer }`. The tree does not select the row; the consumer reads its payload from `dataTransfer` and applies the change.\n- Dragging has no keyboard form. A consumer that offers drop must offer another way to do the same thing (WCAG 2.5.7), such as a Move command with a picker.\n\n#### Tracking navigation\n\nSet `track` and the tree and `@dojo-ng/history` follow each other, with no route table to write.\n\n- Each node has a path: its own `path` if it sets one, otherwise `base-path` plus the ids from the root down to the node, joined with `/` (each id URI-encoded). A tree with `base-path=\"/explore\"` gives the node `hr` > `comp` > `pay` the path `/explore/hr/comp/pay`.\n- Selecting a row (click, Enter, or Space) emits `dj-navigate` with `{ path, label, trail }` alongside `dj-select`. `trail` is the nodes from the root to this one, each as `{ path, label }`, and ends up in the history entry, so it survives Back, Forward, and a reload in the same tab.\n- When the location changes, the tree selects the node whose path matches it (an exact match, else the node with the longest path that is a prefix of the location) and expands that node's ancestors, emitting `dj-expand-change` for each. This is what makes Back reselect the right row. It does not emit `dj-navigate`, because that would loop. It does not emit `dj-select` either.\n- If the location has no `trail` (a deep link, or a pasted URL), the tree adds the matched node's trail to the history entry, so a `dj-back-button` in `up` mode can name the parent.\n- Ctrl-click, Cmd-click, or middle-click on a row opens its path in a new tab. Rows stay `treeitem`s and not links, because a focusable link inside a treeitem would break the tree's roving focus. Two nodes with the same path: the first in tree order wins.\n- `track` needs `@dojo-ng/history` installed. Without it nothing is tracked and nothing throws.\n\n#### Not built\n\n- Dragging tree rows, virtualization, checkboxes, and lazy loading.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
           "superclass": {
             "name": "DojoElement"
           },
@@ -11495,6 +11670,26 @@
               "default": "800",
               "description": "Milliseconds a drag must rest on a collapsed parent before it expands. 0 turns this off.",
               "attribute": "spring-delay"
+            },
+            {
+              "kind": "field",
+              "name": "track",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Follow and drive the navigation history: selecting a row emits `dj-navigate`, and the location selects and expands the matching row. Needs `@dojo-ng/history` installed.",
+              "attribute": "track"
+            },
+            {
+              "kind": "field",
+              "name": "basePath",
+              "type": {
+                "text": "string"
+              },
+              "default": "\"\"",
+              "description": "With `track`, the path every derived node path starts with, such as `/explore`.",
+              "attribute": "base-path"
             }
           ],
           "attributes": [
@@ -11537,6 +11732,22 @@
               },
               "fieldName": "springDelay",
               "description": "Milliseconds a drag must rest on a collapsed parent before it expands. 0 turns this off."
+            },
+            {
+              "name": "track",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "track",
+              "description": "Follow and drive the navigation history: selecting a row emits `dj-navigate`, and the location selects and expands the matching row. Needs `@dojo-ng/history` installed."
+            },
+            {
+              "name": "base-path",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "basePath",
+              "description": "With `track`, the path every derived node path starts with, such as `/explore`."
             }
           ],
           "slots": [
@@ -11581,13 +11792,6 @@
           ],
           "events": [
             {
-              "name": "dj-drop",
-              "type": {
-                "text": "CustomEvent"
-              },
-              "description": "detail `{ id, dataTransfer }`"
-            },
-            {
               "name": "dj-expand-change",
               "type": {
                 "text": "CustomEvent"
@@ -11595,11 +11799,25 @@
               "description": "detail `{ id, expanded, expandedIds }`"
             },
             {
+              "name": "dj-drop",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ id, dataTransfer }`"
+            },
+            {
               "name": "dj-select",
               "type": {
                 "text": "CustomEvent"
               },
               "description": "detail `{ id }`"
+            },
+            {
+              "name": "dj-navigate",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ path, label, trail }`, only with `track`"
             }
           ]
         }

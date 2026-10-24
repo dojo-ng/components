@@ -14,6 +14,7 @@ import type { DjActionButton } from "@dojo-ng/action-button";
 import type { DjAlert } from "@dojo-ng/alert";
 import type { DjAudio } from "@dojo-ng/audio";
 import type { DjAvatar } from "@dojo-ng/avatar";
+import type { DjBackButton } from "@dojo-ng/nav-history";
 import type { DjBadge } from "@dojo-ng/badge";
 import type { DjBoard } from "@dojo-ng/board";
 import type { DjBreadcrumbGroup } from "@dojo-ng/breadcrumb-group";
@@ -117,6 +118,12 @@ declare module "@dojo-ng/framework" {
         "secondary"?: DjAvatar["secondary"];
         "outline"?: DjAvatar["outline"];
       };
+      "dj-back-button": DjVNodeBase & {
+        "mode"?: DjBackButton["mode"];
+        "label"?: DjBackButton["label"];
+        "icon-only"?: DjBackButton["iconOnly"];
+        "resolveTitle"?: DjBackButton["resolveTitle"];
+      };
       "dj-badge": DjVNodeBase & {
         "variant"?: DjBadge["variant"];
         "pill"?: DjBadge["pill"];
@@ -163,6 +170,8 @@ declare module "@dojo-ng/framework" {
         "media-src"?: DjCard["mediaSrc"];
         "media-title"?: DjCard["mediaTitle"];
         "clickable"?: DjCard["clickable"];
+        "path"?: DjCard["path"];
+        "track"?: DjCard["track"];
       };
       "dj-carousel": DjVNodeBase & {
         "per-view"?: DjCarousel["perView"];
@@ -644,6 +653,8 @@ declare module "@dojo-ng/framework" {
         "expand-on-row-click"?: DjTree["expandOnRowClick"];
         "canDrop"?: DjTree["canDrop"];
         "spring-delay"?: DjTree["springDelay"];
+        "track"?: DjTree["track"];
+        "base-path"?: DjTree["basePath"];
       };
       "dj-trigger-popup": DjVNodeBase & {
         "open"?: DjTriggerPopup["open"];

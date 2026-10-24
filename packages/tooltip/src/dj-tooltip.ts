@@ -7,7 +7,9 @@ export type TooltipOrientation = "top" | "right" | "bottom" | "left";
 
 /**
  * `<dj-tooltip>` — shows tip content next to its trigger on hover/focus. The trigger goes
- * in the default slot, the tip in the `content` slot. Set `open` to force it shown.
+ * in the default slot, the tip in the `content` slot. Set `open` to force it shown. Escape hides
+ * a tip that hover or focus showed, without moving the pointer or focus; entering or focusing the
+ * trigger again shows it again.
  * Parts: `content`.
  *
  * @cssprop [--dj-tooltip-z-index=950] - Stacking order of the tooltip.
@@ -34,9 +36,20 @@ export class DjTooltip extends DojoElement {
 		this.removeEventListener("pointerleave", this.hide);
 		this.removeEventListener("focusin", this.show);
 		this.removeEventListener("focusout", this.hide);
+		document.removeEventListener("keydown", this.dismiss);
 	}
-	private show = () => { this.active = true; };
-	private hide = () => { this.active = false; };
+	private show = () => {
+		this.active = true;
+		document.addEventListener("keydown", this.dismiss);
+	};
+	private hide = () => {
+		this.active = false;
+		document.removeEventListener("keydown", this.dismiss);
+	};
+	/** Escape dismisses the tip without moving the pointer or focus (WCAG 1.4.13). It stays dismissed until the trigger is entered or focused again. */
+	private dismiss = (event: KeyboardEvent) => {
+		if (event.key === "Escape" && this.active) this.hide();
+	};
 
 	override render() {
 		const visible = this.open || this.active;

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — Navigation history demo</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/i18n": "../packages/i18n/dist/index.js",
+					"@dojo-ng/icon": "../packages/icon/dist/index.js",
+					"@dojo-ng/button": "../packages/button/dist/index.js",
+					"@dojo-ng/tooltip": "../packages/tooltip/dist/index.js",
+					"@dojo-ng/card": "../packages/card/dist/index.js",
+					"@dojo-ng/tree": "../packages/tree/dist/index.js",
+					"@dojo-ng/nav-history": "../packages/nav-history/dist/index.js",
+					"@dojo-ng/history": "../node_modules/@dojo-ng/history/dist/index.js",
+					"@dojo-ng/history/handle": "../node_modules/@dojo-ng/history/dist/handle.js",
+					"@dojo-ng/pubsub": "../node_modules/@dojo-ng/pubsub/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			h1 { font-size: 1.2rem; }
+			.hint { color: var(--dj-color-text-muted); max-width: 56rem; }
+			.layout { display: grid; grid-template-columns: 14rem 1fr; gap: 1.5rem; max-width: 64rem; }
+			.bar { display: flex; gap: 1rem; align-items: center; margin: .75rem 0; flex-wrap: wrap; }
+			.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .75rem; }
+			#view { padding: 1rem; border: 1px solid var(--dj-color-neutral-300, #ccc); border-radius: .375rem; min-height: 8rem; }
+			#log { height: 10rem; overflow-y: auto; background: #111; color: #ddd; font: 12.5px/1.5 ui-monospace, monospace; padding: .6rem .8rem; border-radius: .375rem; max-width: 64rem; }
+			#log div { white-space: pre-wrap; }
+			input[type="number"] { width: 5rem; }
+		</style>
+	</head>
+	<body>
+		<h1>Navigation history — tracked tree, tracked cards, back button</h1>
+		<p class="hint">
+			The tree is the menu, the cards are links, and the view on the right is chosen only from the
+			published location. Skim a few pages quickly, wait for the dwell to pass on the last one, then
+			press Back: the skimmed pages are skipped. Cmd/Ctrl-click a card or a tree row to open it in a
+			new tab.
+		</p>
+		<p class="hint">
+			<strong>Server note:</strong> this playground is served by <code>python3 -m http.server</code>,
+			which has <strong>no SPA fallback</strong>. The demo runs under the page's own URL
+			(<code>base</code> is set to this file's path), so Back, Forward and trail work, but reloading
+			on a deep path such as <code>/playground/nav-history-demo.html/orders/7</code> returns 404.
+			Deep-path reload is demonstrated in the history package's own playground
+			(<code>framework/packages/history/playground</code>), which does serve every route.
+		</p>
+
+		<div class="bar">
+			<dj-back-button id="back-history" mode="history"></dj-back-button>
+			<dj-back-button id="back-up" mode="up"></dj-back-button>
+			<label>dwellMs <input id="dwell" type="number" min="0" step="100" value="3000" /></label>
+			<button type="button" id="apply">Apply (reinstall)</button>
+			<span id="readout" class="hint"></span>
+		</div>
+
+		<div class="layout">
+			<dj-tree id="menu" track></dj-tree>
+			<div>
+				<div id="view" role="region" aria-live="polite" aria-label="Current view"></div>
+				<h2 style="font-size:1rem">Orders</h2>
+				<div class="grid" id="cards"></div>
+			</div>
+		</div>
+
+		<h2 style="font-size:1rem">nav:location log</h2>
+		<div id="log" role="log" aria-label="nav:location log"></div>
+
+		<script type="module">
+			import "@dojo-ng/card";
+			import "@dojo-ng/tree";
+			import "@dojo-ng/nav-history";
+			import { createPubSub } from "@dojo-ng/pubsub";
+			import { installHistory, match } from "@dojo-ng/history";
+
+			const BASE = location.pathname.replace(/\/+$/, "");
+			const bus = createPubSub();
+			const $ = (id) => document.getElementById(id);
+			const log = (label, payload) => {
+				const line = document.createElement("div");
+				line.textContent = `${new Date().toLocaleTimeString()}  ${label}  ${JSON.stringify(payload)}`;
+				$("log").append(line);
+				$("log").scrollTop = $("log").scrollHeight;
+			};
+			let h = installHistory(bus, { base: BASE, dwellMs: 3000, onCommit: (e) => log("onCommit", e) });
+
+			// Tree node paths are derived from the ids (base-path "" + ids joined with "/"), so
+			// /orders/7 is the node orders > o7.
+			$("menu").nodes = [
+				{ id: "home", label: "Home", path: "/" },
+				{ id: "orders", label: "Orders", children: [1, 2, 3, 4, 5].map((n) => ({ id: String(n), label: `Order ${n}` })) },
+				{ id: "reports", label: "Reports", children: [{ id: "2026", label: "2026", children: [{ id: "q3", label: "Q3" }] }] },
+				{ id: "settings", label: "Settings" },
+			];
+
+			for (let n = 1; n <= 5; n++) {
+				const card = document.createElement("dj-card");
+				card.title = `Order ${n}`;
+				card.subtitle = "Open order";
+				card.path = `/orders/${n}`;
+				card.track = true;
+				$("cards").append(card);
+			}
+
+			const views = [
+				["/", () => "Home"],
+				["/orders", () => "Orders"],
+				["/orders/:id", (p) => `Order ${p.id}`],
+				["/reports/:year/:quarter", (p) => `Report ${p.year} ${p.quarter}`],
+				["/settings", () => "Settings"],
+			];
+			const viewFor = (path) => {
+				const pathname = path.split(/[?#]/)[0];
+				for (const [pattern, render] of views) {
+					const params = match(pattern, pathname);
+					if (params) return render(params);
+				}
+				return `Not found: ${pathname}`;
+			};
+			const readout = () => {
+				$("readout").textContent = `history.length ${history.length}  canGoBack ${h.canGoBack}  ${location.pathname}`;
+			};
+			bus.subscribe("nav:location", (loc) => {
+				$("view").textContent = viewFor(loc.path);
+				log("nav:location", loc);
+				readout();
+			});
+
+			$("apply").addEventListener("click", () => {
+				const dwellMs = Number($("dwell").value);
+				h.destroy();
+				h = installHistory(bus, { base: BASE, dwellMs, onCommit: (e) => log("onCommit", e) });
+				log("reinstalled", { dwellMs });
+			});
+			window.addEventListener("popstate", () => setTimeout(readout, 0));
+		</script>
+	</body>
+</html>

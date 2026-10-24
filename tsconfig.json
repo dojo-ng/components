@@ -339,6 +339,9 @@
     },
     {
       "path": "packages/dropdown"
+    },
+    {
+      "path": "packages/nav-history"
     }
   ]
 }

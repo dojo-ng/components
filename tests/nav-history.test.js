@@ -341,3 +341,220 @@ test("the accessible name is never empty, even before history is installed", asy
 	assert.ok(inner(el).getAttribute("aria-label"));
 	el.remove();
 });
+
+// --- dj-forward-button (C6) -----------------------------------------------------------------
+
+async function forward(props = {}) {
+	const el = document.createElement("dj-forward-button");
+	Object.assign(el, props);
+	document.body.appendChild(el);
+	await settled(el);
+	await tick();
+	await settled(el);
+	return el;
+}
+
+test("registers <dj-forward-button> and renders a dj-button labeled Forward", async () => {
+	assert.equal(typeof customElements.get("dj-forward-button"), "function");
+	const el = await forward();
+	assert.equal(inner(el).getAttribute("kind"), "text");
+	assert.equal(text(el), "Forward");
+	el.remove();
+});
+
+test("forward: disabled until a Back, enabled after it, and disabled again after a new push", async (t) => {
+	const { h } = withHistory(t);
+	const el = await forward();
+	h.go("/a");
+	h.go("/b");
+	await settled(el);
+	assert.equal(inner(el).hasAttribute("disabled"), true, "nothing ahead yet");
+	h.back();
+	await settled(el);
+	assert.equal(inner(el).hasAttribute("disabled"), false, "Back made Forward possible");
+	h.go("/c");
+	await settled(el);
+	assert.equal(inner(el).hasAttribute("disabled"), true, "a push clears Forward");
+	el.remove();
+});
+
+test("forward: a click goes Forward, publishing a pop, and adds no entry", async (t) => {
+	const { h, win } = withHistory(t);
+	const el = await forward();
+	h.go("/a");
+	h.back();
+	await settled(el);
+	const length = win.history.length;
+	await click(el);
+	assert.equal(h.current.path, "/a");
+	assert.equal(h.current.source, "pop");
+	assert.equal(win.history.length, length);
+	await settled(el);
+	assert.equal(inner(el).hasAttribute("disabled"), true, "back at the end of the stack");
+	el.remove();
+});
+
+test("forward: dj-forward is cancelable and has an empty detail; preventDefault stops the move", async (t) => {
+	const { h } = withHistory(t);
+	const el = await forward();
+	h.go("/a");
+	h.back();
+	await settled(el);
+	const seen = listen(t, "dj-forward");
+	el.addEventListener("dj-forward", (e) => e.preventDefault());
+	await click(el);
+	assert.equal(seen.length, 1);
+	assert.equal(seen[0].cancelable, true);
+	assert.deepEqual(seen[0].detail ?? {}, {});
+	assert.equal(h.current.path, "/", "still where Back left it");
+	el.remove();
+});
+
+test("forward: label replaces the text; icon-only keeps it as the accessible name in a tooltip", async () => {
+	const el = await forward({ label: "Next page" });
+	assert.equal(text(el), "Next page");
+	el.remove();
+
+	const iconOnly = await forward({ iconOnly: true });
+	assert.equal(inner(iconOnly).getAttribute("aria-label"), "Forward");
+	assert.equal(iconOnly.renderRoot.querySelector("dj-tooltip [slot=content]").textContent.trim(), "Forward");
+	iconOnly.remove();
+});
+
+test("forward with no history installed: never disabled, and a click calls window.history.forward()", async (t) => {
+	const forward_ = t.mock.method(window.history, "forward", () => {});
+	const el = await forward();
+	assert.equal(inner(el).hasAttribute("disabled"), false);
+	await click(el);
+	assert.equal(forward_.mock.callCount(), 1);
+	el.remove();
+});
+
+// --- confirmLeave (C9) ----------------------------------------------------------------------
+
+const { confirmLeave } = await import("../packages/nav-history/dist/index.js");
+
+const confirmDialog = () => document.querySelector("dj-dialog[data-confirm-leave]");
+const choose = async (which) => {
+	const dialog = confirmDialog();
+	const button = [...dialog.querySelectorAll("dj-button")].find((b) => b.textContent.trim() === which);
+	button.dispatchEvent(new MouseEvent("click", { bubbles: true, composed: true }));
+	await tick(3);
+};
+const target = { path: "/x" };
+const from = { path: "/", state: undefined, index: 0, committed: true, source: "load" };
+
+test("confirmLeave: a modal alertdialog opens with the message, a title, and Stay then Leave", async () => {
+	const answer = confirmLeave("You have unsaved changes.")(target, from);
+	await tick();
+	const dialog = confirmDialog();
+	assert.ok(dialog, "a dialog is open");
+	assert.equal(dialog.open, true);
+	assert.equal(dialog.role, "alertdialog");
+	assert.equal(dialog.querySelector("p").textContent, "You have unsaved changes.");
+	assert.equal(dialog.querySelector('[slot="title"]').textContent, "Leave this page?");
+	assert.deepEqual([...dialog.querySelectorAll("dj-button")].map((b) => b.textContent.trim()), ["Stay", "Leave"]);
+	await choose("Stay");
+	assert.equal(await answer, false);
+});
+
+test("confirmLeave: Leave resolves true, and the dialog is removed", async () => {
+	const answer = confirmLeave("Sure?")(target, from);
+	await tick();
+	await choose("Leave");
+	assert.equal(await answer, true);
+	assert.equal(confirmDialog(), null);
+});
+
+test("confirmLeave: Stay resolves false", async () => {
+	const answer = confirmLeave("Sure?")(target, from);
+	await tick();
+	await choose("Stay");
+	assert.equal(await answer, false);
+	assert.equal(confirmDialog(), null);
+});
+
+test("confirmLeave: Escape resolves false", async () => {
+	const answer = confirmLeave("Sure?")(target, from);
+	await tick();
+	document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+	await tick(3);
+	assert.equal(await answer, false);
+	assert.equal(confirmDialog(), null);
+});
+
+test("confirmLeave: the close button resolves false", async () => {
+	const answer = confirmLeave("Sure?")(target, from);
+	await tick();
+	confirmDialog().renderRoot.querySelector("[part=close]").click();
+	await tick(3);
+	assert.equal(await answer, false);
+});
+
+test("confirmLeave: focus returns to where it was", async () => {
+	const opener = document.createElement("button");
+	document.body.append(opener);
+	opener.focus();
+	const answer = confirmLeave("Sure?")(target, from);
+	await tick();
+	await choose("Stay");
+	await answer;
+	assert.equal(document.activeElement, opener);
+	opener.remove();
+});
+
+test("confirmLeave: texts can be replaced", async () => {
+	const answer = confirmLeave("Sure?", { title: "Wait", leaveText: "Discard", stayText: "Keep editing" })(target, from);
+	await tick();
+	const dialog = confirmDialog();
+	assert.equal(dialog.querySelector('[slot="title"]').textContent, "Wait");
+	assert.deepEqual([...dialog.querySelectorAll("dj-button")].map((b) => b.textContent.trim()), ["Keep editing", "Discard"]);
+	await choose("Discard");
+	assert.equal(await answer, true);
+});
+
+test("confirmLeave: asked again while open, the same dialog answers both", async () => {
+	const blocker = confirmLeave("Sure?");
+	const first = blocker(target, from);
+	const second = blocker(target, from);
+	await tick();
+	assert.equal(document.querySelectorAll("dj-dialog[data-confirm-leave]").length, 1);
+	await choose("Leave");
+	assert.deepEqual([await first, await second], [true, true]);
+});
+
+test("confirmLeave with history.block: Stay keeps the location, Leave goes Back", async (t) => {
+	const { h, win } = withHistory(t);
+	h.go("/a");
+	h.go("/b");
+	const unblock = h.block(confirmLeave("Unsaved changes."));
+
+	h.back();
+	await tick();
+	assert.ok(confirmDialog(), "the dialog opened over a Back");
+	await choose("Stay");
+	assert.equal(h.current.path, "/b");
+	assert.equal(win.location.pathname, "/b");
+
+	h.back();
+	await tick();
+	await choose("Leave");
+	await tick();
+	assert.equal(h.current.path, "/a");
+	assert.equal(h.current.source, "pop");
+
+	unblock();
+	h.back();
+	assert.equal(confirmDialog(), null, "unblocked: no dialog");
+});
+
+test("confirmLeave with history.block: a go asks first too", async (t) => {
+	const { h } = withHistory(t);
+	h.block(confirmLeave("Unsaved changes."));
+	h.go("/next");
+	await tick();
+	assert.ok(confirmDialog());
+	await choose("Leave");
+	await tick();
+	assert.equal(h.current.path, "/next");
+});

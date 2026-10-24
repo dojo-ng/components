@@ -44,6 +44,13 @@ Plain links in a `<nav>` landmark. Give it a `label` for the landmark.
 
 - This is a disclosure, not a menu (in APG terms): the links stay plain links in a `<nav>`, and the button has no `aria-haspopup`.
 
+## Tracking the app's navigation
+
+- Set `track` and the links follow `@dojo-ng/history`, with no click handler to write. A plain left click on a link to a page of the same app (`target` absent or `_self`, no `download`, same origin, under the history `base`) dispatches `dj-navigate` and is not followed by the browser. Ctrl-, Cmd- and middle-click keep the browser's link behavior.
+- The link whose path is the current location gets `aria-current="page"`, and the others lose it. The match is exact, so a link to `/orders` is not current at `/orders/7`. `dj-nav` owns `aria-current` on its links while `track` is on, and clears it when `track` goes off.
+- In the collapsed arrangement the panel closes after a tracked click and focus goes to the trigger.
+- It needs `@dojo-ng/history` installed. Without it, `track` does nothing and nothing throws.
+
 ## Not built
 
 - Toolbar-style overflow, which shows what fits and moves the rest into a menu. That is a separate component.
@@ -61,6 +68,7 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 | `panel` | panel ↻ | `"drawer" \| "dropdown" \| "overlay"` | `"drawer"` |
 | `triggerLabel` | trigger-label | `string` | — |
 | `collapsed` | collapsed ↻ | `boolean` | `false` |
+| `track` | track | `boolean` | `false` |
 
 ## Slots
 
@@ -77,6 +85,7 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 
 - `dj-nav-collapse`: Detail `{ collapsed }`.
 - `dj-nav-toggle`: Detail `{ open }`.
+- `dj-navigate`: Detail `{ path, label }`.
 
 ## Methods
 
@@ -116,6 +125,23 @@ Pin the token directly for a nav that is always collapsed, on any screen — no 
     <a href="/blog">Blog</a>
   </dj-nav>
 </div>
+```
+
+### Track the current page
+
+With `track`, a plain click on a link navigates through history and the current link gets `aria-current="page"`.
+
+```html
+<dj-nav label="Site" track>
+  <a href="/orders">Orders</a>
+  <a href="/settings">Settings</a>
+</dj-nav>
+<script type="module">
+  import { createPubSub } from "@dojo-ng/pubsub";
+  import { installHistory } from "@dojo-ng/history";
+  import "@dojo-ng/nav";
+  installHistory(createPubSub());
+</script>
 ```
 
 ## Theming

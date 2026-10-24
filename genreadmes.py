@@ -1949,9 +1949,10 @@ MyGreeting.define("my-greeting");"""),
 NOTES.update({
  "nav-history": """
 The components that go with [`@dojo-ng/history`](https://www.npmjs.com/package/@dojo-ng/history):
-a Back button, and a controller that lets your own component follow the location. Install history
-once at startup (`installHistory(bus)`); these find it on their own. With history not installed,
-the Back button calls `window.history.back()` and the controller reports no location.
+Back and Forward buttons, a controller that lets your own component follow the location, and a
+confirm-before-leaving helper. Install history once at startup (`installHistory(bus)`); these find
+it on their own. With history not installed, the buttons call `window.history.back()` and
+`window.history.forward()` and the controller reports no location.
 
 #### HistoryController
 - `new HistoryController(this)` in a Lit element. `controller.location` is the current location
@@ -1967,6 +1968,20 @@ the Back button calls `window.history.back()` and the controller reports no loca
   segment removed; give `resolveTitle` to name it. At the top level it acts like `history` mode.
 - Call `preventDefault()` on `dj-back` to take over, for example to ask about unsaved changes.
 - Set `icon-only` for just the arrow. The label stays the accessible name and shows in a tooltip.
+
+#### Forward
+- `<dj-forward-button>` goes Forward. It is disabled until there is a Forward to go to: after a Back,
+  and not after a new navigation, which clears Forward. After a reload with `sessionStorage` blocked
+  it stays disabled, because history cannot know how far Forward goes.
+- Call `preventDefault()` on `dj-forward` to take over. `label` and `icon-only` work as on the Back button.
+
+#### Asking before leaving
+- `history.block(confirmLeave("You have unsaved changes."))` asks before every navigation and Back,
+  with a modal dialog: Stay (focused first), Leave, Escape and the close button. Stay and Escape
+  keep the page. Call `block` when the page becomes dirty and the function it returned when it is
+  saved. Closing the tab shows the browser's own prompt while a blocker is active.
+- `confirmLeave(message, { title?, leaveText?, stayText? })` is only a blocker. Write your own
+  `(to, from) => boolean | Promise<boolean>` for any other rule.
 """,
 })
 EXAMPLES.update({
@@ -1979,6 +1994,20 @@ EXAMPLES.update({
    'import { LitElement, html } from "lit";\nimport { HistoryController } from "@dojo-ng/nav-history";\n\nclass WhereAmI extends LitElement {\n  #nav = new HistoryController(this);\n  render() { return html`You are at ${this.#nav.location?.path ?? "..."}`; }\n}\ncustomElements.define("where-am-i", WhereAmI);'),
  ],
 })
+EXAMPLES["nav-history"] += [
+  ("Forward button", "Disabled until a Back has happened; enabled again by it.",
+   '<dj-back-button></dj-back-button>\n<dj-forward-button></dj-forward-button>\n<script type="module">\n  import { createPubSub } from "@dojo-ng/pubsub";\n  import { installHistory } from "@dojo-ng/history";\n  import "@dojo-ng/nav-history";\n  installHistory(createPubSub());\n</script>'),
+  ("Ask before leaving", "While the form has unsaved text, a Back or a link asks first.",
+   'import { installHistory } from "@dojo-ng/history";\nimport { confirmLeave } from "@dojo-ng/nav-history";\n\nconst history = installHistory(bus);\nlet unblock;\nform.addEventListener("input", () => {\n  unblock ??= history.block(confirmLeave("You have unsaved changes."));\n});\nform.addEventListener("submit", () => { unblock?.(); unblock = undefined; });'),
+]
+EXAMPLES["breadcrumb-group"] += [
+  ("Follow the location", "With `track`, the crumbs come from the trail on the location, or from the path. Clicking a crumb navigates there.",
+   '<dj-breadcrumb-group id="bc" track></dj-breadcrumb-group>\n<script type="module">\n  import { createPubSub } from "@dojo-ng/pubsub";\n  import { installHistory } from "@dojo-ng/history";\n  import "@dojo-ng/breadcrumb-group";\n  const titles = { "/orders": "Orders" };\n  document.getElementById("bc").resolveTitle = (path) => titles[path];\n  installHistory(createPubSub()).go("/orders/7");\n</script>'),
+]
+EXAMPLES["nav"] += [
+  ("Track the current page", "With `track`, a plain click on a link navigates through history and the current link gets `aria-current=\"page\"`.",
+   '<dj-nav label="Site" track>\n  <a href="/orders">Orders</a>\n  <a href="/settings">Settings</a>\n</dj-nav>\n<script type="module">\n  import { createPubSub } from "@dojo-ng/pubsub";\n  import { installHistory } from "@dojo-ng/history";\n  import "@dojo-ng/nav";\n  installHistory(createPubSub());\n</script>'),
+]
 
 # Merges enterprise/tests/readme_content.py's own NOTES/EXAMPLES dicts when the overlay is
 # checked out, so an overlay package gets the same migration-note / worked-example treatment as

@@ -857,7 +857,7 @@
           "name": "DjBreadcrumbGroup",
           "customElement": true,
           "tagName": "dj-breadcrumb-group",
-          "description": "a breadcrumb trail from `items`. Part: `list`.",
+          "description": "a breadcrumb trail.\n\nGive it `items` for a trail you control. Or set `track` and it follows the app's navigation history, with no list to maintain:\n\n- With a trail on the location (a tracked `dj-tree` or a `dj-navigate` that carried one), there is one crumb per trail entry and the last is the current page.\n- Without one, the path is split into segments and each crumb is `resolveTitle(prefix)`, or the decoded segment when that returns nothing.\n- `items` is ignored while `track` is on and history is installed. With no history installed, `track` does nothing and `items` is shown as plain links.\n- A plain click on a crumb dispatches `dj-navigate` with that crumb's path and the trail up to it, so Back and a tracked tree follow. Ctrl-, Cmd- and middle-click keep the browser's link behavior.\n\nThe landmark's name is \"Breadcrumb\", translated. The separator is a CSS custom property, not text a screen reader reads.\n\nNeeds `@dojo-ng/history` installed for `track`; without it nothing throws.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -870,6 +870,24 @@
               },
               "default": "[]",
               "attribute": "items"
+            },
+            {
+              "kind": "field",
+              "name": "track",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Derive the crumbs from the navigation location instead of `items`. Needs `@dojo-ng/history` installed.",
+              "attribute": "track"
+            },
+            {
+              "kind": "field",
+              "name": "resolveTitle",
+              "type": {
+                "text": "(path: string) => string | undefined"
+              },
+              "description": "Names a path in the no-trail case. Returns `undefined` to fall back to the path segment. JS only."
             }
           ],
           "attributes": [
@@ -879,12 +897,36 @@
                 "text": "Crumb[]"
               },
               "fieldName": "items"
+            },
+            {
+              "name": "track",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "track",
+              "description": "Derive the crumbs from the navigation location instead of `items`. Needs `@dojo-ng/history` installed."
             }
           ],
           "cssParts": [
             {
               "name": "list",
               "description": ""
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-breadcrumb-separator",
+              "default": "\"/\"",
+              "description": "The text drawn between crumbs, for example `\"\u203a\"`."
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-navigate",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ path, label, trail }`"
             }
           ]
         }
@@ -6243,7 +6285,7 @@
           "name": "DjNav",
           "customElement": true,
           "tagName": "dj-nav",
-          "description": "a navigation landmark that collapses into a button and a panel when there is not enough room.\n\nThis is the \"hamburger menu\" or \"navicon\" pattern. A menu button that stays collapsed on a wide desktop screen is a normal use too, not only a mobile layout. Put the links in the default slot as plain `<a>` elements.\n\n#### When it collapses\n\n- By default the nav collapses when its container is narrower than 45rem.\n- To change that, set the `--dj-nav-collapsed` custom property on the element: 1 collapses, 0 expands. Because it is a theme token, not a breakpoint property, it can depend on the container: a nav in a narrow sidebar collapses even on a wide screen.\n- The component checks again when its own size changes. After a change that does not resize it, such as a theme switch or a media query on the viewport, call `refresh()`.\n- Only one arrangement is in the DOM at a time: the plain `<nav>` when expanded, or the button (and, while open, a panel around the same `<nav>`) when collapsed.\n\n#### The panel\n\n- `panel=\"drawer\"` (the default) uses `<dj-slide-pane>`, which opens from the side of the reading direction.\n- `panel=\"dropdown\"` and `panel=\"overlay\"` are drawn inside the component itself.\n- `dj-nav-toggle` fires when the panel opens or closes, and `dj-nav-collapse` when the arrangement changes.\n\n#### Accessibility\n\n- This is a disclosure, not a menu (in APG terms): the links stay plain links in a `<nav>`, and the button has no `aria-haspopup`.\n\n#### Not built\n\n- Toolbar-style overflow, which shows what fits and moves the rest into a menu. That is a separate component.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
+          "description": "a navigation landmark that collapses into a button and a panel when there is not enough room.\n\nThis is the \"hamburger menu\" or \"navicon\" pattern. A menu button that stays collapsed on a wide desktop screen is a normal use too, not only a mobile layout. Put the links in the default slot as plain `<a>` elements.\n\n#### When it collapses\n\n- By default the nav collapses when its container is narrower than 45rem.\n- To change that, set the `--dj-nav-collapsed` custom property on the element: 1 collapses, 0 expands. Because it is a theme token, not a breakpoint property, it can depend on the container: a nav in a narrow sidebar collapses even on a wide screen.\n- The component checks again when its own size changes. After a change that does not resize it, such as a theme switch or a media query on the viewport, call `refresh()`.\n- Only one arrangement is in the DOM at a time: the plain `<nav>` when expanded, or the button (and, while open, a panel around the same `<nav>`) when collapsed.\n\n#### The panel\n\n- `panel=\"drawer\"` (the default) uses `<dj-slide-pane>`, which opens from the side of the reading direction.\n- `panel=\"dropdown\"` and `panel=\"overlay\"` are drawn inside the component itself.\n- `dj-nav-toggle` fires when the panel opens or closes, and `dj-nav-collapse` when the arrangement changes.\n\n#### Accessibility\n\n- This is a disclosure, not a menu (in APG terms): the links stay plain links in a `<nav>`, and the button has no `aria-haspopup`.\n\n#### Tracking the app's navigation\n\n- Set `track` and the links follow `@dojo-ng/history`, with no click handler to write. A plain left click on a link to a page of the same app (`target` absent or `_self`, no `download`, same origin, under the history `base`) dispatches `dj-navigate` and is not followed by the browser. Ctrl-, Cmd- and middle-click keep the browser's link behavior.\n- The link whose path is the current location gets `aria-current=\"page\"`, and the others lose it. The match is exact, so a link to `/orders` is not current at `/orders/7`. `dj-nav` owns `aria-current` on its links while `track` is on, and clears it when `track` goes off.\n- In the collapsed arrangement the panel closes after a tracked click and focus goes to the trigger.\n- It needs `@dojo-ng/history` installed. Without it, `track` does nothing and nothing throws.\n\n#### Not built\n\n- Toolbar-style overflow, which shows what fits and moves the rest into a menu. That is a separate component.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
           "superclass": {
             "name": "DojoElement"
           },
@@ -6298,6 +6340,16 @@
               "description": "Whether the nav is currently collapsed (trigger + panel) or inline. Managed by the component; consumers treat it as read-only. Reflected so page CSS can style either arrangement.",
               "attribute": "collapsed",
               "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "track",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Follow `@dojo-ng/history`: turn plain clicks on the links into navigations and mark the current one. Needs history installed.",
+              "attribute": "track"
             },
             {
               "kind": "method",
@@ -6357,6 +6409,14 @@
               },
               "fieldName": "collapsed",
               "description": "Whether the nav is currently collapsed (trigger + panel) or inline. Managed by the component; consumers treat it as read-only. Reflected so page CSS can style either arrangement."
+            },
+            {
+              "name": "track",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "track",
+              "description": "Follow `@dojo-ng/history`: turn plain clicks on the links into navigations and mark the current one. Needs history installed."
             }
           ],
           "slots": [
@@ -6397,6 +6457,13 @@
                 "text": "CustomEvent"
               },
               "description": "detail `{ open }`"
+            },
+            {
+              "name": "dj-navigate",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ path, label }`"
             }
           ]
         }
@@ -6539,6 +6606,103 @@
           "declaration": {
             "name": "DjBackButton",
             "module": "packages/nav-history/src/dj-back-button.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "packages/nav-history/src/dj-forward-button.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjForwardButton",
+          "customElement": true,
+          "tagName": "dj-forward-button",
+          "description": "a Forward button that follows the app's navigation history.\n\nIt is built on `<dj-button>`, so keyboard use, focus, and button semantics come from there. Install `@dojo-ng/history` once at startup; the button finds it through `HistoryController`.\n\n- It calls Forward, and is disabled when there is nothing to go forward to: before any Back, and after a new navigation, which clears Forward. With no history installed it calls `window.history.forward()` and is never disabled.\n- After a reload with `sessionStorage` blocked, history cannot know how far Forward goes, so the button stays disabled. That is harmless.\n- `dj-forward` fires first and can be canceled. Call `preventDefault()` to do something else.\n- The label is \"Forward\". Set `label` to replace it. The accessible name always equals the visible label. With `icon-only`, only the arrow shows, the label becomes the accessible name, and a tooltip shows it on hover and focus. The arrow mirrors in right-to-left layouts.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Replaces the default label.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "iconOnly",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Show only the arrow. The label is still the accessible name, and a tooltip shows it.",
+              "attribute": "icon-only",
+              "reflects": true
+            },
+            {
+              "kind": "method",
+              "name": "focus",
+              "parameters": [
+                {
+                  "name": "options",
+                  "type": {
+                    "text": "FocusOptions"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "blur"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label",
+              "description": "Replaces the default label."
+            },
+            {
+              "name": "icon-only",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "iconOnly",
+              "description": "Show only the arrow. The label is still the accessible name, and a tooltip shows it."
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "button",
+              "description": "the composed `<dj-button>`"
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-forward",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "cancelable, empty detail"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-forward-button",
+          "declaration": {
+            "name": "DjForwardButton",
+            "module": "packages/nav-history/src/dj-forward-button.ts"
           }
         }
       ]

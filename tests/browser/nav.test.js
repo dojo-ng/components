@@ -9,6 +9,8 @@ import { sendKeys } from "@web/test-runner-commands";
 import { deepActiveElement, collectFocusables } from "../../packages/dojo-element/dist/index.js";
 import { mount, cleanup, make, assert, assertEqual, settleFrames } from "./helpers.js";
 import { assertNoViolations } from "./a11y.js";
+import { createPubSub } from "@dojo-ng/pubsub";
+import { installHistory } from "@dojo-ng/history";
 import "../../packages/nav/dist/index.js";
 
 /**
@@ -340,4 +342,76 @@ describe("dj-nav", () => {
 			await assertNoViolations(el);
 		});
 	}
+});
+
+// C8: track, in a real browser with the real History API. A collapsed drawer: open it, click a link,
+// and the panel closes, focus goes to the trigger, the location changes with no page load, and the
+// link is marked as the current page.
+describe("dj-nav with track", () => {
+	let h;
+	beforeEach(() => {
+		h = installHistory(createPubSub(), { dwellMs: 0 });
+	});
+	afterEach(() => {
+		h.destroy();
+		cleanup();
+	});
+
+	const nextLocation = (test = () => true) => new Promise((resolve) => {
+		let replayed = false;
+		let stop;
+		stop = h.subscribe((l) => {
+			if (!replayed || !test(l)) return;
+			stop?.();
+			resolve(l);
+		});
+		replayed = true;
+	});
+
+	function trackedNav(panel) {
+		const el = document.createElement("dj-nav");
+		el.track = true;
+		el.panel = panel;
+		el.style.setProperty("--dj-nav-collapsed", "1");
+		for (const [path, label] of [["/nav-test/one", "One"], ["/nav-test/two", "Two"]]) {
+			el.append(make("a", { href: path }, label));
+		}
+		return el;
+	}
+
+	for (const panel of ["drawer", "dropdown"]) {
+		it(`collapsed ${panel}: a link click closes the panel, focuses the trigger and changes the location`, async () => {
+			const el = trackedNav(panel);
+			await mount(el);
+			await settleFrames();
+			await el.show();
+			await el.updateComplete;
+			await settleFrames();
+			assert(el.open, "the panel is open");
+
+			const arrived = nextLocation((l) => l.path === "/nav-test/two");
+			el.querySelectorAll("a")[1].click();
+			const loc = await arrived;
+			await el.updateComplete;
+			await settleFrames();
+
+			assertEqual(location.pathname, "/nav-test/two", "the URL changed with no page load");
+			assertEqual(loc.source, "go", "a navigation, not a reload");
+			assert(!el.open, "the panel closed");
+			assert(el.shadowRoot.activeElement === el.shadowRoot.querySelector(".trigger"), "focus is on the trigger");
+			assertEqual(el.querySelectorAll("a")[1].getAttribute("aria-current"), "page", "the link is the current page");
+			assertEqual(el.querySelectorAll("a")[0].getAttribute("aria-current"), null, "the other is not");
+		});
+	}
+
+	it("has no serious or critical accessibility violations with a current link, expanded", async () => {
+		const el = trackedNav("drawer");
+		el.style.removeProperty("--dj-nav-collapsed");
+		el.style.width = "800px";
+		h.go("/nav-test/one");
+		await mount(el);
+		await settleFrames();
+		assertEqual(el.querySelectorAll("a")[0].getAttribute("aria-current"), "page", "marked on load");
+		await assertNoViolations(el);
+	});
 });

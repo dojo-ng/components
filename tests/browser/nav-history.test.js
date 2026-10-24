@@ -5,9 +5,9 @@
 import { sendKeys } from "@web/test-runner-commands";
 import { createPubSub } from "@dojo-ng/pubsub";
 import { installHistory } from "@dojo-ng/history";
-import { mount, cleanup, make, assert, assertEqual } from "./helpers.js";
+import { mount, cleanup, make, assert, assertEqual, settleFrames } from "./helpers.js";
 import { assertNoViolations } from "./a11y.js";
-import "../../packages/nav-history/dist/index.js";
+import { confirmLeave } from "../../packages/nav-history/dist/index.js";
 
 /** Resolves with the next location, after the replay, that satisfies `test`. */
 function nextLocation(h, test = () => true) {
@@ -93,5 +93,132 @@ describe("dj-back-button", () => {
 		el.iconOnly = true;
 		await el.updateComplete;
 		await assertNoViolations(el);
+	});
+});
+
+describe("dj-forward-button", () => {
+	let h;
+	beforeEach(() => {
+		h = installHistory(createPubSub(), { dwellMs: 0 });
+	});
+	afterEach(() => {
+		h.destroy();
+		cleanup();
+	});
+
+	it("Enter and Space on the focused button go Forward; it enables after a Back and disables at the end", async () => {
+		h.go("/nh-fwd/a");
+		h.go("/nh-fwd/b");
+		const el = await mount(make("dj-forward-button"));
+		await el.updateComplete;
+		assert(nativeButton(el).disabled, "disabled with nothing ahead");
+
+		let back = nextLocation(h);
+		h.back();
+		await back;
+		back = nextLocation(h);
+		h.back();
+		await back;
+		await el.updateComplete;
+		assert(!nativeButton(el).disabled, "enabled after Back");
+
+		el.focus();
+		assert(el.shadowRoot.activeElement === inner(el), "focus() reaches the inner dj-button");
+		let arrived = nextLocation(h);
+		await sendKeys({ press: "Enter" });
+		assertEqual((await arrived).path, "/nh-fwd/a", "Enter goes Forward");
+
+		arrived = nextLocation(h);
+		el.focus();
+		await sendKeys({ press: "Space" });
+		assertEqual((await arrived).path, "/nh-fwd/b", "Space goes Forward");
+		await el.updateComplete;
+		assert(nativeButton(el).disabled, "disabled at the end of the stack");
+	});
+
+	it("the accessible name is Forward, as text and when icon-only", async () => {
+		h.go("/nh-fwd/a");
+		h.back();
+		const el = await mount(make("dj-forward-button"));
+		await el.updateComplete;
+		assertEqual(inner(el).textContent.trim(), "Forward", "visible label");
+		el.iconOnly = true;
+		await el.updateComplete;
+		assertEqual(nativeButton(el).getAttribute("aria-label"), "Forward", "icon-only: aria-label is the label");
+	});
+
+	it("has no serious or critical accessibility violations, with the label shown and icon-only", async () => {
+		h.go("/nh-fwd/a");
+		h.back();
+		const el = await mount(make("dj-forward-button"));
+		await el.updateComplete;
+		await assertNoViolations(el);
+		el.iconOnly = true;
+		await el.updateComplete;
+		await assertNoViolations(el);
+	});
+});
+
+describe("confirmLeave", () => {
+	let h;
+	beforeEach(() => {
+		h = installHistory(createPubSub(), { dwellMs: 0 });
+	});
+	afterEach(() => {
+		h.destroy();
+		document.querySelectorAll("dj-dialog[data-confirm-leave]").forEach((d) => d.remove());
+		cleanup();
+	});
+
+	const until = async (check, message) => {
+		for (let i = 0; i < 100; i++) {
+			if (check()) return;
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		}
+		throw new Error(`timed out: ${message}`);
+	};
+	const dialog = () => document.querySelector("dj-dialog[data-confirm-leave]");
+	const choose = (label) => [...dialog().querySelectorAll("dj-button")].find((b) => b.textContent.trim() === label).click();
+
+	it("a dirty form: the real Back button asks, Stay keeps the page and focus, Leave goes back", async () => {
+		h.go("/cl-test/a");
+		h.go("/cl-test/form");
+		const input = await mount(make("input", { "aria-label": "Notes" }));
+		input.focus();
+		const unblock = h.block(confirmLeave("You have unsaved changes."));
+
+		history.back(); // the browser's own Back, not h.back()
+		await until(() => dialog()?.open, "the dialog opens");
+		assertEqual(location.pathname, "/cl-test/form", "still on the form while asking");
+		assertEqual(dialog().querySelector("p").textContent, "You have unsaved changes.", "message");
+
+		choose("Stay");
+		await until(() => !dialog(), "the dialog closes on Stay");
+		await settleFrames();
+		assertEqual(location.pathname, "/cl-test/form", "Stay keeps the location");
+		assertEqual(h.current.path, "/cl-test/form", "and publishes nothing");
+		assert(document.activeElement === input, "focus is back on the field");
+
+		const arrived = new Promise((resolve) => {
+			let replayed = false;
+			let stop;
+			stop = h.subscribe((l) => { if (replayed && l.source === "pop") { stop?.(); resolve(l); } });
+			replayed = true;
+		});
+		history.back();
+		await until(() => dialog()?.open, "the dialog opens again");
+		choose("Leave");
+		assertEqual((await arrived).path, "/cl-test/a", "Leave goes back");
+		assertEqual(location.pathname, "/cl-test/a", "the URL follows");
+		unblock();
+	});
+
+	it("the open dialog has no serious or critical accessibility violations", async () => {
+		h.go("/cl-test/a");
+		h.block(confirmLeave("You have unsaved changes."));
+		history.back();
+		await until(() => dialog()?.open, "the dialog opens");
+		await dialog().updateComplete;
+		await assertNoViolations(dialog());
 	});
 });

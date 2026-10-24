@@ -88,4 +88,23 @@ describe("dj-card with path", () => {
 		await el.updateComplete;
 		await assertNoViolations(el);
 	});
+	it("with focus on, activating a card link moves focus to the new view's heading, which has a name", async () => {
+		const heading = make("h1", { id: "card-focus-heading" }, "Card A");
+		await mount(heading);
+		h = installHistory(createPubSub(), { dwellMs: 0, focus: "#card-focus-heading" });
+		const el = await mount(make("dj-card", { path: "/card-test/focus", title: "Card A", track: true }));
+		const arrived = new Promise((resolve) => {
+			let replayed = false;
+			let stop;
+			stop = h.subscribe((l) => { if (replayed && l.path === "/card-test/focus") { stop?.(); resolve(l); } });
+			replayed = true;
+		});
+		body(el).click();
+		await arrived;
+		for (let i = 0; i < 50 && document.activeElement !== heading; i++) await new Promise((resolve) => setTimeout(resolve, 20));
+		assert(document.activeElement === heading, "the heading has focus after the navigation");
+		assertEqual(heading.getAttribute("tabindex"), "-1", "made focusable for the move");
+		assertEqual(heading.textContent.trim(), "Card A", "and its name is the page title a screen reader announces");
+		await assertNoViolations(heading);
+	});
 });

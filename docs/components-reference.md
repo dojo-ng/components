@@ -1138,13 +1138,30 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 
 ### `<dj-breadcrumb-group>` · `@dojo-ng/breadcrumb-group`
 
-A breadcrumb trail from `items`. Part: `list`.
+A breadcrumb trail.
+
+Give it `items` for a trail you control. Or set `track` and it follows the app's navigation history, with no list to maintain:
+
+- With a trail on the location (a tracked `dj-tree` or a `dj-navigate` that carried one), there is one crumb per trail entry and the last is the current page.
+- Without one, the path is split into segments and each crumb is `resolveTitle(prefix)`, or the decoded segment when that returns nothing.
+- `items` is ignored while `track` is on and history is installed. With no history installed, `track` does nothing and `items` is shown as plain links.
+- A plain click on a crumb dispatches `dj-navigate` with that crumb's path and the trail up to it, so Back and a tracked tree follow. Ctrl-, Cmd- and middle-click keep the browser's link behavior.
+
+The landmark's name is "Breadcrumb", translated. The separator is a CSS custom property, not text a screen reader reads.
+
+Needs `@dojo-ng/history` installed for `track`; without it nothing throws.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `items` | items | `Crumb[]` | `[]` |
+| `track` | track | `boolean` | `false` |
+| `resolveTitle` | — | `(path: string) => string \| undefined` | — |
 
 **Parts:** `list`
+
+**Events:** `dj-navigate` (detail `{ path, label, trail }`)
+
+**CSS properties:** `--dj-breadcrumb-separator` (default `"/"`; The text drawn between crumbs, for example `"›"`.)
 
 
 ### `<dj-header>` · `@dojo-ng/header`
@@ -1355,6 +1372,13 @@ This is the "hamburger menu" or "navicon" pattern. A menu button that stays coll
 
 - This is a disclosure, not a menu (in APG terms): the links stay plain links in a `<nav>`, and the button has no `aria-haspopup`.
 
+#### Tracking the app's navigation
+
+- Set `track` and the links follow `@dojo-ng/history`, with no click handler to write. A plain left click on a link to a page of the same app (`target` absent or `_self`, no `download`, same origin, under the history `base`) dispatches `dj-navigate` and is not followed by the browser. Ctrl-, Cmd- and middle-click keep the browser's link behavior.
+- The link whose path is the current location gets `aria-current="page"`, and the others lose it. The match is exact, so a link to `/orders` is not current at `/orders/7`. `dj-nav` owns `aria-current` on its links while `track` is on, and clears it when `track` goes off.
+- In the collapsed arrangement the panel closes after a tracked click and focus goes to the trigger.
+- It needs `@dojo-ng/history` installed. Without it, `track` does nothing and nothing throws.
+
 #### Not built
 
 - Toolbar-style overflow, which shows what fits and moves the rest into a menu. That is a separate component.
@@ -1368,12 +1392,13 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 | `panel` | panel ↻ | `"drawer" \| "dropdown" \| "overlay"` | `"drawer"` |
 | `triggerLabel` | trigger-label | `string` | — |
 | `collapsed` | collapsed ↻ | `boolean` | `false` |
+| `track` | track | `boolean` | `false` |
 
 **Slots:** default (the links — plain `<a>` elements), `trigger`
 
 **Parts:** `trigger`, `panel`, `nav`
 
-**Events:** `dj-nav-collapse` (detail `{ collapsed }`), `dj-nav-toggle` (detail `{ open }`)
+**Events:** `dj-nav-collapse` (detail `{ collapsed }`), `dj-nav-toggle` (detail `{ open }`), `dj-navigate` (detail `{ path, label }`)
 
 **Methods:** `show()`, `hide()`, `toggle()`, `refresh()` (Delegates to `TokenFlagController` — the escape hatch for a runtime pin or theme switch that `ResizeObserver` cannot see (it only sees size changes).)
 
@@ -1409,6 +1434,29 @@ It is built on `<dj-button>`, so keyboard use, focus, and button semantics come 
 **Parts:** `button` (the composed `<dj-button>`)
 
 **Events:** `dj-back` (cancelable, detail `{ mode, target }`), `dj-navigate` (detail `{ path, label?, trail? }`)
+
+**Methods:** `focus(options: FocusOptions)`, `blur()`
+
+
+### `<dj-forward-button>` · `@dojo-ng/nav-history`
+
+A Forward button that follows the app's navigation history.
+
+It is built on `<dj-button>`, so keyboard use, focus, and button semantics come from there. Install `@dojo-ng/history` once at startup; the button finds it through `HistoryController`.
+
+- It calls Forward, and is disabled when there is nothing to go forward to: before any Back, and after a new navigation, which clears Forward. With no history installed it calls `window.history.forward()` and is never disabled.
+- After a reload with `sessionStorage` blocked, history cannot know how far Forward goes, so the button stays disabled. That is harmless.
+- `dj-forward` fires first and can be canceled. Call `preventDefault()` to do something else.
+- The label is "Forward". Set `label` to replace it. The accessible name always equals the visible label. With `icon-only`, only the arrow shows, the label becomes the accessible name, and a tooltip shows it on hover and focus. The arrow mirrors in right-to-left layouts.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `label` | label | `string` | — |
+| `iconOnly` | icon-only ↻ | `boolean` | `false` |
+
+**Parts:** `button` (the composed `<dj-button>`)
+
+**Events:** `dj-forward` (cancelable, empty detail)
 
 **Methods:** `focus(options: FocusOptions)`, `blur()`
 

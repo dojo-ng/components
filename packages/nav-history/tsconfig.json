@@ -5,6 +5,7 @@
   "references": [
     { "path": "../dojo-element" },
     { "path": "../button" },
+    { "path": "../dialog" },
     { "path": "../tooltip" },
     { "path": "../i18n" }
   ]

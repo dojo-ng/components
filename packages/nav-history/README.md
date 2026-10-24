@@ -6,7 +6,7 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 It is built on `<dj-button>`, so keyboard use, focus, and button semantics come from there. Install `@dojo-ng/history` once at startup; the button finds it through `HistoryController`.
 
-The components that go with [`@dojo-ng/history`](https://www.npmjs.com/package/@dojo-ng/history): a Back button, and a controller that lets your own component follow the location. Install history once at startup (`installHistory(bus)`); these find it on their own. With history not installed, the Back button calls `window.history.back()` and the controller reports no location.
+The components that go with [`@dojo-ng/history`](https://www.npmjs.com/package/@dojo-ng/history): Back and Forward buttons, a controller that lets your own component follow the location, and a confirm-before-leaving helper. Install history once at startup (`installHistory(bus)`); these find it on their own. With history not installed, the buttons call `window.history.back()` and `window.history.forward()` and the controller reports no location.
 
 ## Install
 
@@ -56,6 +56,16 @@ Plain Back. It is disabled at the first page of the app.
 - `mode="up"` goes to the parent page and labels itself "Back to {title}". The parent comes from the `trail` that a tracked `dj-tree` puts in the location, or else from the path with its last segment removed; give `resolveTitle` to name it. At the top level it acts like `history` mode.
 - Call `preventDefault()` on `dj-back` to take over, for example to ask about unsaved changes.
 - Set `icon-only` for just the arrow. The label stays the accessible name and shows in a tooltip.
+
+## Forward
+
+- `<dj-forward-button>` goes Forward. It is disabled until there is a Forward to go to: after a Back, and not after a new navigation, which clears Forward. After a reload with `sessionStorage` blocked it stays disabled, because history cannot know how far Forward goes.
+- Call `preventDefault()` on `dj-forward` to take over. `label` and `icon-only` work as on the Back button.
+
+## Asking before leaving
+
+- `history.block(confirmLeave("You have unsaved changes."))` asks before every navigation and Back, with a modal dialog: Stay (focused first), Leave, Escape and the close button. Stay and Escape keep the page. Call `block` when the page becomes dirty and the function it returned when it is saved. Closing the tab shows the browser's own prompt while a blocker is active.
+- `confirmLeave(message, { title?, leaveText?, stayText? })` is only a blocker. Write your own `(to, from) => boolean | Promise<boolean>` for any other rule.
 
 ## Properties
 
@@ -111,6 +121,37 @@ class WhereAmI extends LitElement {
   render() { return html`You are at ${this.#nav.location?.path ?? "..."}`; }
 }
 customElements.define("where-am-i", WhereAmI);
+```
+
+### Forward button
+
+Disabled until a Back has happened; enabled again by it.
+
+```html
+<dj-back-button></dj-back-button>
+<dj-forward-button></dj-forward-button>
+<script type="module">
+  import { createPubSub } from "@dojo-ng/pubsub";
+  import { installHistory } from "@dojo-ng/history";
+  import "@dojo-ng/nav-history";
+  installHistory(createPubSub());
+</script>
+```
+
+### Ask before leaving
+
+While the form has unsaved text, a Back or a link asks first.
+
+```js
+import { installHistory } from "@dojo-ng/history";
+import { confirmLeave } from "@dojo-ng/nav-history";
+
+const history = installHistory(bus);
+let unblock;
+form.addEventListener("input", () => {
+  unblock ??= history.block(confirmLeave("You have unsaved changes."));
+});
+form.addEventListener("submit", () => { unblock?.(); unblock = undefined; });
 ```
 
 ## Theming

@@ -18,6 +18,8 @@ export class FakeHistoryWindow {
 		this._popstate = new Set();
 		this._storage = new Map();
 		this.calls = [];
+		/** Every history.go(delta) call, in order. */
+		this.traversals = [];
 		this.document = document;
 		const self = this;
 		// Bound functions report "[native code]", which installHistory's coexistence check looks for.
@@ -34,6 +36,7 @@ export class FakeHistoryWindow {
 			}.bind(null),
 			back: function back() { self._traverse(-1); }.bind(null),
 			forward: function forward() { self._traverse(1); }.bind(null),
+			go: function go(delta) { self.traversals.push(delta); self._traverse(delta); }.bind(null),
 		};
 		Object.defineProperty(this.history, "state", { get: () => this._stack[this._cursor].state });
 		Object.defineProperty(this.history, "length", { get: () => this._stack.length });

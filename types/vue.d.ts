@@ -36,6 +36,7 @@ import type { DjEmailInput } from "@dojo-ng/email-input";
 import type { DjFileInput } from "@dojo-ng/file-input";
 import type { DjFloatingActionButton } from "@dojo-ng/floating-action-button";
 import type { DjForm } from "@dojo-ng/form";
+import type { DjForwardButton } from "@dojo-ng/nav-history";
 import type { DjGlobalEvent } from "@dojo-ng/global-event";
 import type { DjGrid } from "@dojo-ng/grid";
 import type { DjHeader } from "@dojo-ng/header";
@@ -99,7 +100,7 @@ declare module "@vue/runtime-core" {
     "dj-back-button": DefineComponent<{ mode?: DjBackButton["mode"]; label?: DjBackButton["label"]; iconOnly?: DjBackButton["iconOnly"]; resolveTitle?: DjBackButton["resolveTitle"] }, {}, {}, {}, {}, {}, { "dj-back": (e: CustomEvent) => void, "dj-navigate": (e: CustomEvent) => void }>;
     "dj-badge": DefineComponent<{ variant?: DjBadge["variant"]; pill?: DjBadge["pill"] }, {}, {}, {}, {}, {}, {}>;
     "dj-board": DefineComponent<{ data?: DjBoard["data"]; lanes?: DjBoard["lanes"]; groupBy?: DjBoard["groupBy"]; cardKey?: DjBoard["cardKey"]; cardTitle?: DjBoard["cardTitle"]; label?: DjBoard["label"]; renderCard?: DjBoard["renderCard"]; draggable?: DjBoard["draggable"] }, {}, {}, {}, {}, {}, { "dj-card-move": (e: CustomEvent) => void, "dj-card-click": (e: CustomEvent) => void }>;
-    "dj-breadcrumb-group": DefineComponent<{ items?: DjBreadcrumbGroup["items"] }, {}, {}, {}, {}, {}, {}>;
+    "dj-breadcrumb-group": DefineComponent<{ items?: DjBreadcrumbGroup["items"]; track?: DjBreadcrumbGroup["track"]; resolveTitle?: DjBreadcrumbGroup["resolveTitle"] }, {}, {}, {}, {}, {}, { "dj-navigate": (e: CustomEvent) => void }>;
     "dj-button": DefineComponent<{ disabled?: DjButton["disabled"]; kind?: DjButton["kind"]; type?: DjButton["type"]; name?: DjButton["name"]; value?: DjButton["value"]; label?: DjButton["label"]; iconPosition?: DjButton["iconPosition"]; title?: DjButton["title"]; ariaLabel?: DjButton["ariaLabel"]; ariaPressed?: DjButton["ariaPressed"]; ariaExpanded?: DjButton["ariaExpanded"] }, {}, {}, {}, {}, {}, {}>;
     "dj-calendar": DefineComponent<{ value?: DjCalendar["value"]; name?: DjCalendar["name"]; min?: DjCalendar["min"]; max?: DjCalendar["max"]; locale?: DjCalendar["locale"]; firstDayOfWeek?: DjCalendar["firstDayOfWeek"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
     "dj-card": DefineComponent<{ kind?: DjCard["kind"]; square?: DjCard["square"]; title?: DjCard["title"]; subtitle?: DjCard["subtitle"]; mediaSrc?: DjCard["mediaSrc"]; mediaTitle?: DjCard["mediaTitle"]; clickable?: DjCard["clickable"]; path?: DjCard["path"]; track?: DjCard["track"] }, {}, {}, {}, {}, {}, { "dj-navigate": (e: CustomEvent) => void }>;
@@ -122,6 +123,7 @@ declare module "@vue/runtime-core" {
     "dj-file-input": DefineComponent<{ accept?: DjFileInput["accept"]; multiple?: DjFileInput["multiple"]; required?: DjFileInput["required"]; maxSize?: DjFileInput["maxSize"]; label?: DjFileInput["label"]; name?: DjFileInput["name"]; disabled?: DjFileInput["disabled"] }, {}, {}, {}, {}, {}, { "dj-change": (e: CustomEvent) => void }>;
     "dj-floating-action-button": DefineComponent<{ size?: DjFloatingActionButton["size"]; position?: DjFloatingActionButton["position"] }, {}, {}, {}, {}, {}, {}>;
     "dj-form": DefineComponent<{ column?: DjForm["column"]; noValidate?: DjForm["noValidate"] }, {}, {}, {}, {}, {}, { "dj-submit": (e: CustomEvent) => void, "dj-reset": (e: CustomEvent) => void }>;
+    "dj-forward-button": DefineComponent<{ label?: DjForwardButton["label"]; iconOnly?: DjForwardButton["iconOnly"] }, {}, {}, {}, {}, {}, { "dj-forward": (e: CustomEvent) => void }>;
     "dj-global-event": DefineComponent<{ windowListeners?: DjGlobalEvent["windowListeners"]; documentListeners?: DjGlobalEvent["documentListeners"] }, {}, {}, {}, {}, {}, {}>;
     "dj-grid": DefineComponent<{ columns?: DjGrid["columns"]; rows?: DjGrid["rows"] }, {}, {}, {}, {}, {}, { "dj-sort": (e: CustomEvent) => void }>;
     "dj-header": DefineComponent<{ sticky?: DjHeader["sticky"] }, {}, {}, {}, {}, {}, {}>;
@@ -132,7 +134,7 @@ declare module "@vue/runtime-core" {
     "dj-list": DefineComponent<{ options?: DjList["options"]; value?: DjList["value"]; name?: DjList["name"]; label?: DjList["label"]; menu?: DjList["menu"]; loading?: DjList["loading"]; reorderable?: DjList["reorderable"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void, "dj-reorder": (e: CustomEvent) => void }>;
     "dj-loading-indicator": DefineComponent<{ active?: DjLoadingIndicator["active"]; type?: DjLoadingIndicator["type"]; label?: DjLoadingIndicator["label"] }, {}, {}, {}, {}, {}, {}>;
     "dj-native-select": DefineComponent<{ value?: DjNativeSelect["value"]; name?: DjNativeSelect["name"]; options?: DjNativeSelect["options"]; label?: DjNativeSelect["label"]; helperText?: DjNativeSelect["helperText"]; disabled?: DjNativeSelect["disabled"]; required?: DjNativeSelect["required"]; labelHidden?: DjNativeSelect["labelHidden"]; placeholder?: DjNativeSelect["placeholder"]; size?: DjNativeSelect["size"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
-    "dj-nav": DefineComponent<{ label?: DjNav["label"]; open?: DjNav["open"]; panel?: DjNav["panel"]; triggerLabel?: DjNav["triggerLabel"]; collapsed?: DjNav["collapsed"] }, {}, {}, {}, {}, {}, { "dj-nav-collapse": (e: CustomEvent) => void, "dj-nav-toggle": (e: CustomEvent) => void }>;
+    "dj-nav": DefineComponent<{ label?: DjNav["label"]; open?: DjNav["open"]; panel?: DjNav["panel"]; triggerLabel?: DjNav["triggerLabel"]; collapsed?: DjNav["collapsed"]; track?: DjNav["track"] }, {}, {}, {}, {}, {}, { "dj-nav-collapse": (e: CustomEvent) => void, "dj-nav-toggle": (e: CustomEvent) => void, "dj-navigate": (e: CustomEvent) => void }>;
     "dj-number-input": DefineComponent<{ type?: DjNumberInput["type"] }, {}, {}, {}, {}, {}, {}>;
     "dj-pagination": DefineComponent<{ total?: DjPagination["total"]; page?: DjPagination["page"]; siblingCount?: DjPagination["siblingCount"] }, {}, {}, {}, {}, {}, { "dj-page": (e: CustomEvent) => void }>;
     "dj-password-input": DefineComponent<{ type?: DjPasswordInput["type"] }, {}, {}, {}, {}, {}, {}>;

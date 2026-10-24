@@ -1,13 +1,11 @@
-import { html } from "lit";
-import type { CSSResultGroup, TemplateResult } from "lit";
+import type { CSSResultGroup } from "lit";
 import { property } from "lit/decorators.js";
 import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import type { NavigateDetail, TrailEntry } from "@dojo-ng/history/handle";
-import "@dojo-ng/button";
-import "@dojo-ng/tooltip";
 import { HistoryController } from "./history-controller.js";
-import styles from "./dj-back-button.styles.js";
+import { renderArrowButton } from "./arrow-button.js";
+import styles from "./arrow-button.styles.js";
 
 registerDefaults("dj", { back: "Back", backTo: "Back to {title}" });
 
@@ -133,17 +131,14 @@ export class DjBackButton extends DojoElement {
 		const label = this.#labelText(parent);
 		const instance = this.#nav.history;
 		const disabled = !parent && instance !== undefined && !instance.canGoBack;
-		const arrow: TemplateResult = html`<span slot="icon"
-			><svg class="arrow ${this.#i18n.dir === "rtl" ? "arrow--rtl" : ""}" viewBox="0 0 24 24" aria-hidden="true"
-				><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-			/></svg></span>`;
-		if (this.iconOnly) {
-			return html`<dj-tooltip orientation="bottom">
-				<dj-button part="button" kind="text" aria-label=${label} ?disabled=${disabled} @click=${this.#onClick}>${arrow}</dj-button>
-				<span slot="content">${label}</span>
-			</dj-tooltip>`;
-		}
-		return html`<dj-button part="button" kind="text" ?disabled=${disabled} @click=${this.#onClick}>${arrow}${label}</dj-button>`;
+		return renderArrowButton({
+			direction: "back",
+			label,
+			disabled,
+			iconOnly: this.iconOnly,
+			rtl: this.#i18n.dir === "rtl",
+			onClick: this.#onClick,
+		});
 	}
 }
 export default DjBackButton;

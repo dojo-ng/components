@@ -19,6 +19,10 @@
 					"@dojo-ng/card": "../packages/card/dist/index.js",
 					"@dojo-ng/tree": "../packages/tree/dist/index.js",
 					"@dojo-ng/nav-history": "../packages/nav-history/dist/index.js",
+					"@dojo-ng/breadcrumb-group": "../packages/breadcrumb-group/dist/index.js",
+					"@dojo-ng/nav": "../packages/nav/dist/index.js",
+					"@dojo-ng/slide-pane": "../packages/slide-pane/dist/index.js",
+					"@dojo-ng/dialog": "../packages/dialog/dist/index.js",
 					"@dojo-ng/history": "../node_modules/@dojo-ng/history/dist/index.js",
 					"@dojo-ng/history/handle": "../node_modules/@dojo-ng/history/dist/handle.js",
 					"@dojo-ng/pubsub": "../node_modules/@dojo-ng/pubsub/dist/index.js"
@@ -33,30 +37,46 @@
 			.bar { display: flex; gap: 1rem; align-items: center; margin: .75rem 0; flex-wrap: wrap; }
 			.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .75rem; }
 			#view { padding: 1rem; border: 1px solid var(--dj-color-neutral-300, #ccc); border-radius: .375rem; min-height: 8rem; }
+			#view h2 { font-size: 1.1rem; margin: 0 0 .5rem; }
+			#view h2:focus { outline: 2px solid var(--dj-color-primary-600, #2563eb); outline-offset: 2px; }
+			#filler { height: 70rem; background: repeating-linear-gradient(#f3f4f6 0 4rem, #e5e7eb 4rem 8rem); border-radius: .25rem; color: #6b7280; padding: .5rem; }
+			nav a { margin-right: .75rem; }
+			textarea { width: 100%; max-width: 30rem; }
 			#log { height: 10rem; overflow-y: auto; background: #111; color: #ddd; font: 12.5px/1.5 ui-monospace, monospace; padding: .6rem .8rem; border-radius: .375rem; max-width: 64rem; }
 			#log div { white-space: pre-wrap; }
 			input[type="number"] { width: 5rem; }
 		</style>
 	</head>
 	<body>
-		<h1>Navigation history — tracked tree, tracked cards, back button</h1>
+		<h1>Navigation history — tree, cards, nav, breadcrumbs, back and forward</h1>
 		<p class="hint">
-			The tree is the menu, the cards are links, and the view on the right is chosen only from the
-			published location. Skim a few pages quickly, wait for the dwell to pass on the last one, then
-			press Back: the skimmed pages are skipped. Cmd/Ctrl-click a card or a tree row to open it in a
-			new tab.
+			The tree is the menu, the cards and the top nav are links, and the view on the right is chosen
+			only from the published location. Skim a few pages quickly, wait for the dwell to pass on the
+			last one, then press Back: the skimmed pages are skipped. Cmd/Ctrl-click a card, a nav link
+			or a tree row to open it in a new tab.
 		</p>
 		<p class="hint">
-			<strong>Server note:</strong> this playground is served by <code>python3 -m http.server</code>,
-			which has <strong>no SPA fallback</strong>. The demo runs under the page's own URL
-			(<code>base</code> is set to this file's path), so Back, Forward and trail work, but reloading
-			on a deep path such as <code>/playground/nav-history-demo.html/orders/7</code> returns 404.
-			Deep-path reload is demonstrated in the history package's own playground
-			(<code>framework/packages/history/playground</code>), which does serve every route.
+			<strong>Hash mode:</strong> the route lives after the <code>#</code>, so this page works under
+			<code>python3 -m http.server</code> with no SPA fallback, and a reload on
+			<code>#/orders/7</code> lands on that view. Edit the hash by hand and press Enter: the view
+			follows. <strong>Try:</strong> Forward lights up after Back and goes dark after a new click;
+			click a middle breadcrumb and the tree reselects that node; scroll down the long page,
+			navigate, then press Back to land at the same place; after a navigation the view title takes
+			focus; type in the notes box, then press Back or a link to be asked before leaving, and close
+			the tab to see the browser's own prompt.
 		</p>
+
+		<dj-nav id="topnav" track panel="dropdown" label="Sections">
+			<a href="#/">Home</a>
+			<a href="#/orders">Orders</a>
+			<a href="#/settings">Settings</a>
+		</dj-nav>
+
+		<dj-breadcrumb-group id="crumbs" track></dj-breadcrumb-group>
 
 		<div class="bar">
 			<dj-back-button id="back-history" mode="history"></dj-back-button>
+			<dj-forward-button id="forward"></dj-forward-button>
 			<dj-back-button id="back-up" mode="up"></dj-back-button>
 			<label>dwellMs <input id="dwell" type="number" min="0" step="100" value="3000" /></label>
 			<button type="button" id="apply">Apply (reinstall)</button>
@@ -67,8 +87,12 @@
 			<dj-tree id="menu" track></dj-tree>
 			<div>
 				<div id="view" role="region" aria-live="polite" aria-label="Current view"></div>
+				<h2 style="font-size:1rem">Notes (guarded)</h2>
+				<textarea id="notes" rows="2" aria-label="Notes" placeholder="Type here, then press Back"></textarea>
 				<h2 style="font-size:1rem">Orders</h2>
 				<div class="grid" id="cards"></div>
+				<h2 style="font-size:1rem">A long page, to test scroll restoration</h2>
+				<div id="filler">Scroll position is saved for every entry and restored on Back, Forward and reload.</div>
 			</div>
 		</div>
 
@@ -78,11 +102,12 @@
 		<script type="module">
 			import "@dojo-ng/card";
 			import "@dojo-ng/tree";
-			import "@dojo-ng/nav-history";
+			import "@dojo-ng/breadcrumb-group";
+			import "@dojo-ng/nav";
+			import { confirmLeave } from "@dojo-ng/nav-history";
 			import { createPubSub } from "@dojo-ng/pubsub";
 			import { installHistory, match } from "@dojo-ng/history";
 
-			const BASE = location.pathname.replace(/\/+$/, "");
 			const bus = createPubSub();
 			const $ = (id) => document.getElementById(id);
 			const log = (label, payload) => {
@@ -91,7 +116,23 @@
 				$("log").append(line);
 				$("log").scrollTop = $("log").scrollHeight;
 			};
-			let h = installHistory(bus, { base: BASE, dwellMs: 3000, onCommit: (e) => log("onCommit", e) });
+			const install = (dwellMs) => installHistory(bus, {
+				mode: "hash",
+				dwellMs,
+				scroll: true,
+				focus: "#view h2",
+				onCommit: (e) => log("onCommit", e),
+			});
+			let h = install(3000);
+
+			// Ask before leaving while the notes box has text. `block` is added when the box becomes
+			// dirty and removed when it is emptied, which is the app's call, not the library's.
+			let unblock;
+			$("notes").addEventListener("input", () => {
+				const dirty = $("notes").value.length > 0;
+				if (dirty && !unblock) unblock = h.block(confirmLeave("The notes box has text that will be lost."));
+				else if (!dirty && unblock) { unblock(); unblock = undefined; }
+			});
 
 			// Tree node paths are derived from the ids (base-path "" + ids joined with "/"), so
 			// /orders/7 is the node orders > o7.
@@ -111,6 +152,11 @@
 				$("cards").append(card);
 			}
 
+			// Titles for the breadcrumbs when the location has no trail (a typed or reloaded hash).
+			const titles = { "/orders": "Orders", "/reports": "Reports", "/settings": "Settings" };
+			$("crumbs").resolveTitle = (path) => titles[path];
+			$("back-up").resolveTitle = (path) => titles[path];
+
 			const views = [
 				["/", () => "Home"],
 				["/orders", () => "Orders"],
@@ -127,18 +173,22 @@
 				return `Not found: ${pathname}`;
 			};
 			const readout = () => {
-				$("readout").textContent = `history.length ${history.length}  canGoBack ${h.canGoBack}  ${location.pathname}`;
+				$("readout").textContent = `history.length ${history.length}  canGoBack ${h.canGoBack}  canGoForward ${h.canGoForward}  ${location.hash || "#/"}`;
 			};
 			bus.subscribe("nav:location", (loc) => {
-				$("view").textContent = viewFor(loc.path);
+				const title = document.createElement("h2");
+				title.textContent = viewFor(loc.path);
+				$("view").replaceChildren(title);
 				log("nav:location", loc);
 				readout();
 			});
 
 			$("apply").addEventListener("click", () => {
 				const dwellMs = Number($("dwell").value);
+				unblock?.();
+				unblock = undefined;
 				h.destroy();
-				h = installHistory(bus, { base: BASE, dwellMs, onCommit: (e) => log("onCommit", e) });
+				h = install(dwellMs);
 				log("reinstalled", { dwellMs });
 			});
 			window.addEventListener("popstate", () => setTimeout(readout, 0));

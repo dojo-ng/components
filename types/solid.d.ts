@@ -34,6 +34,7 @@ import type { DjEmailInput } from "@dojo-ng/email-input";
 import type { DjFileInput } from "@dojo-ng/file-input";
 import type { DjFloatingActionButton } from "@dojo-ng/floating-action-button";
 import type { DjForm } from "@dojo-ng/form";
+import type { DjForwardButton } from "@dojo-ng/nav-history";
 import type { DjGlobalEvent } from "@dojo-ng/global-event";
 import type { DjGrid } from "@dojo-ng/grid";
 import type { DjHeader } from "@dojo-ng/header";
@@ -134,6 +135,8 @@ declare module "solid-js" {
       };
       "dj-breadcrumb-group": JSX.HTMLAttributes<DjBreadcrumbGroup> & {
         "items"?: DjBreadcrumbGroup["items"];
+        "track"?: DjBreadcrumbGroup["track"];
+        "resolveTitle"?: DjBreadcrumbGroup["resolveTitle"];
       };
       "dj-button": JSX.HTMLAttributes<DjButton> & {
         "disabled"?: DjButton["disabled"];
@@ -316,6 +319,10 @@ declare module "solid-js" {
         "column"?: DjForm["column"];
         "novalidate"?: DjForm["noValidate"];
       };
+      "dj-forward-button": JSX.HTMLAttributes<DjForwardButton> & {
+        "label"?: DjForwardButton["label"];
+        "icon-only"?: DjForwardButton["iconOnly"];
+      };
       "dj-global-event": JSX.HTMLAttributes<DjGlobalEvent> & {
         "windowListeners"?: DjGlobalEvent["windowListeners"];
         "documentListeners"?: DjGlobalEvent["documentListeners"];
@@ -384,6 +391,7 @@ declare module "solid-js" {
         "panel"?: DjNav["panel"];
         "trigger-label"?: DjNav["triggerLabel"];
         "collapsed"?: DjNav["collapsed"];
+        "track"?: DjNav["track"];
       };
       "dj-number-input": JSX.HTMLAttributes<DjNumberInput> & {
         "type"?: DjNumberInput["type"];
@@ -714,6 +722,7 @@ declare module "solid-js" {
       "dj-activate": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
+      "dj-forward": CustomEvent;
       "dj-reorder": CustomEvent;
       "dj-nav-collapse": CustomEvent;
       "dj-nav-toggle": CustomEvent;
@@ -758,6 +767,7 @@ declare module "solid-js" {
       "dj-activate": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
+      "dj-forward": CustomEvent;
       "dj-reorder": CustomEvent;
       "dj-nav-collapse": CustomEvent;
       "dj-nav-toggle": CustomEvent;

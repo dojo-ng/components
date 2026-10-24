@@ -36,6 +36,7 @@ import type { DjEmailInput } from "@dojo-ng/email-input";
 import type { DjFileInput } from "@dojo-ng/file-input";
 import type { DjFloatingActionButton } from "@dojo-ng/floating-action-button";
 import type { DjForm } from "@dojo-ng/form";
+import type { DjForwardButton } from "@dojo-ng/nav-history";
 import type { DjGlobalEvent } from "@dojo-ng/global-event";
 import type { DjGrid } from "@dojo-ng/grid";
 import type { DjHeader } from "@dojo-ng/header";
@@ -138,6 +139,8 @@ declare module "react" {
       };
       "dj-breadcrumb-group": DjProps<DjBreadcrumbGroup> & {
         "items"?: DjBreadcrumbGroup["items"];
+        "track"?: DjBreadcrumbGroup["track"];
+        "resolveTitle"?: DjBreadcrumbGroup["resolveTitle"];
       };
       "dj-button": DjProps<DjButton> & {
         "disabled"?: DjButton["disabled"];
@@ -320,6 +323,10 @@ declare module "react" {
         "column"?: DjForm["column"];
         "novalidate"?: DjForm["noValidate"];
       };
+      "dj-forward-button": DjProps<DjForwardButton> & {
+        "label"?: DjForwardButton["label"];
+        "icon-only"?: DjForwardButton["iconOnly"];
+      };
       "dj-global-event": DjProps<DjGlobalEvent> & {
         "windowListeners"?: DjGlobalEvent["windowListeners"];
         "documentListeners"?: DjGlobalEvent["documentListeners"];
@@ -388,6 +395,7 @@ declare module "react" {
         "panel"?: DjNav["panel"];
         "trigger-label"?: DjNav["triggerLabel"];
         "collapsed"?: DjNav["collapsed"];
+        "track"?: DjNav["track"];
       };
       "dj-number-input": DjProps<DjNumberInput> & {
         "type"?: DjNumberInput["type"];

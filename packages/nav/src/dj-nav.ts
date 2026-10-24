@@ -11,6 +11,7 @@ import DojoElement, {
 	lockBodyScroll,
 } from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
+import { getHistory, whenHistory, type HistoryInstance, type NavigateDetail } from "@dojo-ng/history/handle";
 import "@dojo-ng/slide-pane";
 import styles from "./dj-nav.styles.js";
 
@@ -52,6 +53,17 @@ const EN: Record<string, string> = {
  * - This is a disclosure, not a menu (in APG terms): the links stay plain links in a `<nav>`, and
  *   the button has no `aria-haspopup`.
  *
+ * #### Tracking the app's navigation
+ * - Set `track` and the links follow `@dojo-ng/history`, with no click handler to write. A plain left
+ *   click on a link to a page of the same app (`target` absent or `_self`, no `download`, same origin,
+ *   under the history `base`) dispatches `dj-navigate` and is not followed by the browser. Ctrl-, Cmd-
+ *   and middle-click keep the browser's link behavior.
+ * - The link whose path is the current location gets `aria-current="page"`, and the others lose it.
+ *   The match is exact, so a link to `/orders` is not current at `/orders/7`. `dj-nav` owns
+ *   `aria-current` on its links while `track` is on, and clears it when `track` goes off.
+ * - In the collapsed arrangement the panel closes after a tracked click and focus goes to the trigger.
+ * - It needs `@dojo-ng/history` installed. Without it, `track` does nothing and nothing throws.
+ *
  * #### Not built
  * - Toolbar-style overflow, which shows what fits and moves the rest into a menu. That is a
  *   separate component.
@@ -62,6 +74,7 @@ const EN: Record<string, string> = {
  * Events:
  *  - `dj-nav-toggle` (detail `{ open }`) — the panel opened or closed, from any cause.
  *  - `dj-nav-collapse` (detail `{ collapsed }`) — the arrangement flipped.
+ *  - `dj-navigate` (detail `{ path, label }`) — a tracked link was clicked. `@dojo-ng/history` turns it into a navigation.
  *
  */
 export class DjNav extends DojoElement {
@@ -86,7 +99,14 @@ export class DjNav extends DojoElement {
 	 * arrangement. */
 	@property({ type: Boolean, reflect: true }) collapsed = false;
 
+	/** Follow `@dojo-ng/history`: turn plain clicks on the links into navigations and mark the current one. Needs history installed. */
+	@property({ type: Boolean }) track = false;
+
 	#i18n = new LocaleController(this);
+	#unsubscribe?: () => void;
+	#path?: string;
+	/** Links this component has marked, so turning `track` off clears exactly those. */
+	#marked = new Set<Element>();
 	#collapse = new TokenFlagController(this, "--dj-nav-collapsed");
 	#releaseScroll?: () => void;
 	#dismissDropdown?: () => void;
@@ -112,6 +132,10 @@ export class DjNav extends DojoElement {
 	}
 
 	protected override updated(changed: Map<PropertyKey, unknown>) {
+		if (changed.has("track")) {
+			if (this.track) this.#follow();
+			else this.#stop();
+		}
 		if (this.#pendingFlipFocus !== null) {
 			const which = this.#pendingFlipFocus;
 			this.#pendingFlipFocus = null;
@@ -142,11 +166,15 @@ export class DjNav extends DojoElement {
 	override connectedCallback() {
 		super.connectedCallback();
 		document.addEventListener("keydown", this.#onDocumentKeydown);
+		this.addEventListener("click", this.#onLinkClick);
+		this.#follow();
 	}
 
 	override disconnectedCallback() {
 		super.disconnectedCallback();
 		document.removeEventListener("keydown", this.#onDocumentKeydown);
+		this.removeEventListener("click", this.#onLinkClick);
+		this.#stop();
 		this.#releaseScroll?.();
 		this.#releaseScroll = undefined;
 		this.#dismissDropdown?.();
@@ -234,10 +262,65 @@ export class DjNav extends DojoElement {
 		}
 	};
 
+	/** Follow the location if tracking and history is (or later becomes) installed. */
+	#follow() {
+		if (!this.isConnected || !this.track || this.#unsubscribe) return;
+		const instance = getHistory();
+		if (instance) {
+			this.#unsubscribe = instance.subscribe((location) => {
+				this.#path = location.path;
+				this.#markCurrent();
+			});
+		} else {
+			// A WeakRef, so a nav removed before history is installed (it may never be) is not kept alive.
+			const self = new WeakRef(this);
+			void whenHistory().then(() => { const nav = self.deref(); if (nav) nav.#follow(); });
+		}
+	}
+
+	#stop() {
+		this.#unsubscribe?.();
+		this.#unsubscribe = undefined;
+		this.#path = undefined;
+		for (const link of this.#marked) link.removeAttribute("aria-current");
+		this.#marked.clear();
+	}
+
+	/** `aria-current="page"` on the link whose app path is the current location, and off the rest. */
+	#markCurrent() {
+		const instance = getHistory();
+		if (!this.track || !instance || this.#path === undefined) return;
+		for (const link of this.querySelectorAll("a")) {
+			if (appPath(link, instance) === this.#path) {
+				link.setAttribute("aria-current", "page");
+				this.#marked.add(link);
+			} else if (this.#marked.delete(link)) {
+				link.removeAttribute("aria-current");
+			}
+		}
+	}
+
+	#onLinkClick = (event: MouseEvent) => {
+		const instance = getHistory();
+		if (!this.track || !instance) return;
+		if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+		const link = (event.target as Element | null)?.closest?.("a");
+		if (!link || !this.contains(link) || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
+		const path = appPath(link, instance);
+		if (path === undefined) return;
+		event.preventDefault();
+		const detail: NavigateDetail = { path, label: link.textContent?.trim() || undefined };
+		this.emit("dj-navigate", { detail });
+		if (this.collapsed && this.open) {
+			this.#close();
+			this.renderRoot.querySelector<HTMLElement>(".trigger")?.focus();
+		}
+	};
+
 	#renderNav() {
 		return html`
 			<nav part="nav" class="nav" aria-label=${this.label ?? this.#msg("navigation")}>
-				<slot></slot>
+				<slot @slotchange=${() => this.#markCurrent()}></slot>
 			</nav>
 		`;
 	}
@@ -290,8 +373,36 @@ export class DjNav extends DojoElement {
 }
 export default DjNav;
 
+/**
+ * The app path a link points to, or `undefined` when it is not a page of this app: another origin, or
+ * outside the history `base`. In hash mode (`href("")` is `#`) the route is in the link's hash.
+ */
+function appPath(link: HTMLAnchorElement, history: HistoryInstance): string | undefined {
+	let url: URL;
+	try {
+		url = new URL(link.href, document.baseURI);
+	} catch {
+		return undefined;
+	}
+	const here = window.location;
+	if (url.origin !== here.origin) return undefined;
+	const base = history.href("");
+	if (base === "#") {
+		if (url.pathname !== here.pathname || url.search !== here.search || !url.hash.startsWith("#/")) return undefined;
+		return url.hash.slice(1);
+	}
+	const full = url.pathname + url.search + url.hash;
+	if (!base) return full;
+	if (full === base || full.startsWith(`${base}/`) || full.startsWith(`${base}?`) || full.startsWith(`${base}#`)) {
+		const rest = full.slice(base.length);
+		return rest.startsWith("/") ? rest : `/${rest}`;
+	}
+	return undefined;
+}
+
 declare global {
 	interface GlobalEventHandlersEventMap {
+		"dj-navigate": CustomEvent<NavigateDetail>;
 		"dj-nav-toggle": CustomEvent<{ open: boolean }>;
 		"dj-nav-collapse": CustomEvent<{ collapsed: boolean }>;
 	}

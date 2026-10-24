@@ -40,6 +40,7 @@ import type { DjEmailInput } from "@dojo-ng/email-input";
 import type { DjFileInput } from "@dojo-ng/file-input";
 import type { DjFloatingActionButton } from "@dojo-ng/floating-action-button";
 import type { DjForm } from "@dojo-ng/form";
+import type { DjForwardButton } from "@dojo-ng/nav-history";
 import type { DjGlobalEvent } from "@dojo-ng/global-event";
 import type { DjGrid } from "@dojo-ng/grid";
 import type { DjHeader } from "@dojo-ng/header";
@@ -140,6 +141,8 @@ declare module "@dojo-ng/framework" {
       };
       "dj-breadcrumb-group": DjVNodeBase & {
         "items"?: DjBreadcrumbGroup["items"];
+        "track"?: DjBreadcrumbGroup["track"];
+        "resolveTitle"?: DjBreadcrumbGroup["resolveTitle"];
       };
       "dj-button": DjVNodeBase & {
         "disabled"?: DjButton["disabled"];
@@ -322,6 +325,10 @@ declare module "@dojo-ng/framework" {
         "column"?: DjForm["column"];
         "novalidate"?: DjForm["noValidate"];
       };
+      "dj-forward-button": DjVNodeBase & {
+        "label"?: DjForwardButton["label"];
+        "icon-only"?: DjForwardButton["iconOnly"];
+      };
       "dj-global-event": DjVNodeBase & {
         "windowListeners"?: DjGlobalEvent["windowListeners"];
         "documentListeners"?: DjGlobalEvent["documentListeners"];
@@ -390,6 +397,7 @@ declare module "@dojo-ng/framework" {
         "panel"?: DjNav["panel"];
         "trigger-label"?: DjNav["triggerLabel"];
         "collapsed"?: DjNav["collapsed"];
+        "track"?: DjNav["track"];
       };
       "dj-number-input": DjVNodeBase & {
         "type"?: DjNumberInput["type"];

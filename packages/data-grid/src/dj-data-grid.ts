@@ -9,6 +9,7 @@ import {
 } from "@tanstack/table-core";
 import { Virtualizer, elementScroll, observeElementOffset, observeElementRect } from "@tanstack/virtual-core";
 import type { DataGridPlugin, DataGridContext } from "./plugin.js";
+import { RowCache } from "./row-cache.js";
 import styles from "./dj-data-grid.styles.js";
 
 export type Row = Record<string, unknown>;
@@ -116,15 +117,34 @@ export type ActivationMode = "none" | "click" | "double";
  * - Safari does not repeat the table header on each printed page. This is a WebKit limitation with
  *   no reliable CSS fix.
  *
- * #### Not supported yet
- * - A data set larger than `data`: the scrollbar is sized from `data.length`, so it cannot include
- *   rows that are not loaded.
+ * #### Rows from a server: `rowCount`
+ * - Set `rowCount` to the total number of rows on the server to turn on remote mode. `data` is
+ *   then ignored, and the scrollbar is sized from `rowCount`.
+ * - Rows the grid has not loaded render as placeholder rows (part `row--placeholder`,
+ *   `aria-busy="true"`). Plugin cell and row hooks are not called for them.
+ * - The grid asks for rows with `dj-rows-request`, detail `{ start, end, epoch, reason }`: an
+ *   inclusive, block-aligned range of absolute indices. Answer with
+ *   `grid.setRows(start, rows, epoch)`, passing back the request's `epoch`. An answer with an
+ *   older epoch is ignored, and the grid asks again.
+ * - Rows load in blocks of `blockSize` (default 100). The grid keeps at most `cacheSize` rows
+ *   (default 2,000) and drops the blocks farthest from the screen first.
+ * - After a jump of more than one screen (a scrollbar drag, End), the grid waits until the rows on
+ *   screen have held still for `settleMs` (default 100) before asking.
+ * - Every index is absolute: `activeIndex`, event indices, and `aria-rowindex` count from the top
+ *   of the full list, loaded or not. When the active row is not loaded yet, `dj-active-change`
+ *   fires with `row: undefined`, then again with the row once it arrives. `dj-activate` does
+ *   nothing on a placeholder.
+ * - Give the grid a `getRowId`, so selection survives rows being dropped from the cache.
+ * - Rows have a fixed height (`rowHeight`) in remote mode.
  *
  * Events: `dj-sort`, `dj-selection-change`, `dj-activate` (detail `{ row, index }`, where `row` is
  * the original row data), `dj-active-change` (detail `{ index, row }`), `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
  * first and last rendered row-model indices, the total row count, and the full index list; `start`
- * and `end` are -1 when nothing is rendered). Parts: `grid`, `head`, `row`, `row--active`,
- * `row--selected`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.
+ * and `end` are -1 when nothing is rendered), `dj-rows-request` (detail `{ start, end, epoch, reason }`,
+ * remote mode only). Parts: `grid`, `head`, `row`, `row--active`, `row--selected`,
+ * `row--placeholder`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.
+ *
+ * @cssprop --dj-data-grid-placeholder - The bar drawn in each cell of a row that is not loaded yet.
  */
 export class DjDataGrid extends DojoElement {
 	static override styles = styles;
@@ -141,7 +161,20 @@ export class DjDataGrid extends DojoElement {
 	/** Plugin set. Set in JavaScript (rich data). Declared up front because TanStack row models
 	 *  must exist at table creation; a post-mount change rebuilds the table. Default `[]`. */
 	@property({ attribute: false }) plugins: DataGridPlugin[] = [];
-	/** Optional stable row id accessor; defaults to row index. */
+	/** Total number of rows on the server. A number turns on remote mode, where `data` is ignored
+	 *  and rows arrive through `dj-rows-request` and `setRows`. Default `undefined` (rows come
+	 *  from `data`). */
+	@property({ attribute: "row-count", type: Number }) rowCount?: number;
+	/** Remote mode: rows per request block. Requests always name whole blocks. Default `100`. */
+	@property({ attribute: "block-size", type: Number }) blockSize = 100;
+	/** Remote mode: after a jump of more than one screen, wait this many milliseconds for the
+	 *  rows on screen to hold still before requesting rows. `0` requests at once. Default `100`. */
+	@property({ attribute: "settle-ms", type: Number }) settleMs = 100;
+	/** Remote mode: the most rows the grid keeps loaded. Blocks farthest from the screen are
+	 *  dropped first; blocks on screen never are. Default `2000`. */
+	@property({ attribute: "cache-size", type: Number }) cacheSize = 2000;
+	/** Optional stable row id accessor; defaults to row index. In remote mode the index is the
+	 *  absolute row index. */
 	getRowId?: (row: Row, index: number) => string;
 
 	@state() sorting: SortingState = [];
@@ -182,7 +215,12 @@ export class DjDataGrid extends DojoElement {
 	 */
 	#ctx: DataGridContext = this.#makeContext();
 	#makeContext(): DataGridContext {
-		const ctx = { host: this, refresh: () => this.requestUpdate() } as unknown as DataGridContext;
+		const ctx = {
+			host: this,
+			refresh: () => this.requestUpdate(),
+			rowAt: (index: number) => this.#rowAt(index),
+			indexOf: (row: TableRow<Row>) => this.#indexOf(row),
+		} as unknown as DataGridContext;
 		Object.defineProperty(ctx, "table", { get: () => this.#table, enumerable: true });
 		return ctx;
 	}
@@ -203,6 +241,131 @@ export class DjDataGrid extends DojoElement {
 	 *  (a selection toggle, a flags patch) stay silent and only real scrolling or a data change
 	 *  produces one. `rendered` is not compared: it is derived from the same virtual items. */
 	#emittedRange?: { start: number; end: number; count: number };
+
+	// ---- Remote mode (`rowCount`) ----
+	#cache = new RowCache();
+	/** What TanStack is fed in remote mode: the cached rows, in absolute order. */
+	#remoteData: Row[] = [];
+	/** TanStack data position -> absolute index, and back. */
+	#remoteIdx: number[] = [];
+	#remotePos = new Map<number, number>();
+	#warnedRowId = false;
+	/** The range seen by the previous updated(), to tell a jump from ordinary scrolling. */
+	#prevRange?: { start: number; end: number };
+	#settleTimer?: ReturnType<typeof setTimeout>;
+	/** The active row announced with `row: undefined`; announced again when its block lands. */
+	#pendingActive?: number;
+
+	get #isRemote(): boolean { return typeof this.rowCount === "number" && Number.isFinite(this.rowCount); }
+	/** Rows the virtualizer and the indices span: `rowCount` in remote mode, else the row model. */
+	#rowTotal(): number {
+		if (this.#isRemote) return Math.max(0, Math.floor(this.rowCount!));
+		return this.#table?.getRowModel().rows.length ?? 0;
+	}
+	/** The TanStack row at an index (absolute in remote mode), or undefined if it is not loaded. */
+	#rowAt(index: number): TableRow<Row> | undefined {
+		if (!this.#isRemote) return this.#table?.getRowModel().rows[index];
+		const pos = this.#remotePos.get(index);
+		return pos === undefined ? undefined : this.#table?.getCoreRowModel().rows[pos];
+	}
+	#indexOf(row: TableRow<Row>): number {
+		if (this.#isRemote) return this.#remoteIdx[row.index] ?? -1;
+		return this.#table?.getRowModel().rows.indexOf(row) ?? -1;
+	}
+	/** Test-only: the number of rows in the remote cache. Not public API. */
+	get _cachedRowCount(): number { return this.#cache.size; }
+	/** The current remote epoch; a `dj-rows-request` carries it and `setRows` must return it. */
+	get epoch(): number { return this.#cache.epoch; }
+
+	/**
+	 * Remote mode: answer a `dj-rows-request`. `start` is the absolute index of `rows[0]`; pass back
+	 * the request's `epoch`. Returns `false`, and keeps nothing, when the epoch is stale (the list
+	 * changed since the request) or the grid is not in remote mode.
+	 */
+	setRows(start: number, rows: Row[], epoch: number): boolean {
+		if (!this.#isRemote || epoch !== this.#cache.epoch) return false;
+		this.#cache.put(start, rows, this.#rowTotal());
+		const r = this.#range;
+		this.#cache.evict(this.cacheSize, r?.start ?? -1, r?.end ?? -1);
+		this.#syncRemoteData();
+		const i = this.#pendingActive;
+		if (i !== undefined && i === this.activeIndex) {
+			const row = this.#rowAt(i);
+			if (row) {
+				this.#pendingActive = undefined;
+				this.emit("dj-active-change", { detail: { index: i, row: row.original } });
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Remote mode: drop every cached row and ask again for the rows on screen. Call it when the list
+	 * changed in a way inserts and removals cannot describe. Starts a new epoch, so answers to
+	 * earlier requests are ignored. `keepScroll: false` also scrolls to the top.
+	 */
+	resetRows({ keepScroll = true }: { keepScroll?: boolean } = {}) {
+		if (!this.#isRemote) return;
+		this.#resetCache();
+		if (!keepScroll) this.#virtualizer?.scrollToOffset(0);
+	}
+
+	/** Rebuild TanStack's data from the cache. */
+	#syncRemoteData() {
+		const { rows, indices } = this.#cache.entries();
+		this.#remoteData = rows;
+		this.#remoteIdx = indices;
+		this.#remotePos = new Map(indices.map((abs, pos) => [abs, pos]));
+		this.#table?.setOptions(() => this.#mergedOptions());
+		this.requestUpdate();
+	}
+	#resetCache() {
+		clearTimeout(this.#settleTimer);
+		this.#settleTimer = undefined;
+		this.#pendingActive = undefined;
+		this.#cache.clear(this.blockSize);
+		this.#syncRemoteData();
+	}
+
+	/** Whole rows that fit the scroll viewport (at least 1). */
+	#viewportRows(): number {
+		const h = this.#virtualizer?.scrollRect?.height || this.scrollEl?.offsetHeight || 0;
+		return Math.max(1, Math.floor(h / this.rowHeight));
+	}
+
+	/**
+	 * Remote mode: request the blocks of the rendered range that are neither cached nor already
+	 * requested. Called from updated(), like the range event. A jump of more than one viewport
+	 * starts a `settleMs` hold; while it runs, any further movement restarts it, and only when it
+	 * expires is the range of that moment requested.
+	 */
+	#requestRows() {
+		const r = this.#range;
+		const prev = this.#prevRange;
+		this.#prevRange = r && { start: r.start, end: r.end };
+		if (!this.#isRemote || !r || r.start < 0) return;
+		const moved = !prev || prev.start !== r.start || prev.end !== r.end;
+		const jump = !!prev && prev.start >= 0 && Math.abs(r.start - prev.start) > this.#viewportRows();
+		if (this.settleMs > 0 && (jump || (this.#settleTimer !== undefined && moved))) {
+			clearTimeout(this.#settleTimer);
+			this.#settleTimer = setTimeout(() => {
+				this.#settleTimer = undefined;
+				const now = this.#range;
+				if (this.isConnected && now && now.start >= 0) this.#fetchRows(now.start, now.end, "range");
+			}, this.settleMs);
+			return;
+		}
+		if (this.#settleTimer !== undefined) return;
+		this.#fetchRows(r.start, r.end, "range");
+	}
+	#fetchRows(first: number, last: number, reason: "range" | "selection") {
+		const blocks = this.#cache.missing(first, last);
+		if (!blocks.length) return;
+		const epoch = this.#cache.epoch;
+		for (const run of this.#cache.request(blocks, this.#rowTotal())) {
+			this.emit("dj-rows-request", { detail: { start: run.start, end: run.end, epoch, reason } });
+		}
+	}
 
 	/** Column list after every plugin's `columns()` transform, in array order. */
 	#computeColumns(): GridColumn[] {
@@ -231,24 +394,36 @@ export class DjDataGrid extends DojoElement {
 		}
 		// Row count changes with filter/pagination/expansion plugins; keep the virtualizer in sync
 		// or it renders a stale row window.
-		this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#table.getRowModel().rows.length });
+		this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#rowTotal() });
 		this.requestUpdate();
 	};
 
 	/** Core TanStack options (no state/onStateChange — those are applied last, after plugins). */
 	#coreOptions(): TableOptionsResolved<Row> {
 		return {
-			data: this.data,
+			data: this.#isRemote ? this.#remoteData : this.data,
 			columns: this.#columnDefs(),
 			state: {},
 			onStateChange: this.#onStateChange,
 			enableRowSelection: this.selectionMode !== "none",
 			enableMultiRowSelection: this.selectionMode === "multiple",
-			getRowId: this.getRowId,
+			getRowId: this.#rowIdFn(),
 			getCoreRowModel: getCoreRowModel(),
 			getSortedRowModel: getSortedRowModel(),
 			renderFallbackValue: null,
 		};
+	}
+	/** Row ids. In remote mode TanStack only sees the cached rows, so the index it passes is a
+	 *  cache position; translate it to the absolute index before anything sees it. */
+	#rowIdFn(): ((row: Row, index: number) => string) | undefined {
+		if (!this.#isRemote) return this.getRowId;
+		const own = this.getRowId;
+		if (own) return (row, i) => own(row, this.#remoteIdx[i]);
+		if (!this.#warnedRowId) {
+			this.#warnedRowId = true;
+			console.warn("dj-data-grid: remote mode (rowCount) needs getRowId; selection falls back to absolute row indices.");
+		}
+		return (_row, i) => String(this.#remoteIdx[i]);
 	}
 	/** Core options spread with each plugin's tableOptions() in array order (later wins), then
 	 *  core's state/onStateChange applied LAST so a plugin can never clobber them. */
@@ -279,7 +454,7 @@ export class DjDataGrid extends DojoElement {
 			if (dispose) this.#disposers.push(dispose);
 		}
 		this.#builtPlugins = this.plugins;
-		this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#table.getRowModel().rows.length });
+		this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#rowTotal() });
 	}
 
 	protected override willUpdate(changed: Map<PropertyKey, unknown>) {
@@ -308,13 +483,15 @@ export class DjDataGrid extends DojoElement {
 		for (const d of this.#disposers) d();
 		this.#disposers = [];
 		this.#cleanup?.();
+		clearTimeout(this.#settleTimer);
+		this.#settleTimer = undefined;
 		window.removeEventListener("beforeprint", this.#onBeforePrint);
 		window.removeEventListener("afterprint", this.#onAfterPrint);
 	}
 
 	protected override firstUpdated() {
 		this.#virtualizer = new Virtualizer({
-			count: this.#table.getRowModel().rows.length,
+			count: this.#rowTotal(),
 			getScrollElement: () => this.scrollEl,
 			estimateSize: () => this.rowHeight,
 			overscan: 8,
@@ -335,13 +512,17 @@ export class DjDataGrid extends DojoElement {
 	protected override updated(c: Map<PropertyKey, unknown>) {
 		// Plugins-change rebuilds happen in willUpdate (reference compare against #builtPlugins),
 		// which is immune to the upgrade-order race a changedProperties guard has here.
-		if (c.has("data") || c.has("columns") || c.has("selectionMode")) {
+		// Entering or leaving remote mode, or a new block size, starts the cache over.
+		const wasRemote = c.has("rowCount") ? Number.isFinite(c.get("rowCount")) : this.#isRemote;
+		if (wasRemote !== this.#isRemote || (c.has("blockSize") && this.#isRemote)) this.#resetCache();
+		if (c.has("data") || c.has("columns") || c.has("selectionMode") || c.has("rowCount")) {
 			this.#table.setOptions(() => this.#mergedOptions());
-			this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#table.getRowModel().rows.length });
+			this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#rowTotal() });
 			this.#virtualizer?.measure();
 			this.requestUpdate();
 		}
 		this.#emitRangeChange();
+		this.#requestRows();
 	}
 
 	/**
@@ -363,20 +544,24 @@ export class DjDataGrid extends DojoElement {
 	#setActive(index: number) {
 		if (index === this.activeIndex) return;
 		this.activeIndex = index;
-		const row = this.#table.getRowModel().rows[index];
+		const row = this.#rowAt(index);
+		// A placeholder: announce now, and again with the row when its block lands (setRows).
+		this.#pendingActive = this.#isRemote && !row ? index : undefined;
 		this.emit("dj-active-change", { detail: { index, row: row?.original } });
 	}
 	private move(delta: number) {
-		const n = this.#table.getRowModel().rows.length;
+		const n = this.#rowTotal();
 		if (!n) return;
 		this.#setActive(Math.min(n - 1, Math.max(0, this.activeIndex + delta)));
 		this.#virtualizer?.scrollToIndex(this.activeIndex, { align: "auto" });
 	}
 	private onKeyDown(e: KeyboardEvent) {
-		const n = this.#table.getRowModel().rows.length;
+		const n = this.#rowTotal();
 		switch (e.key) {
 			case "ArrowDown": e.preventDefault(); this.move(1); break;
 			case "ArrowUp": e.preventDefault(); this.move(-1); break;
+			case "PageDown": e.preventDefault(); this.move(this.#viewportRows()); break;
+			case "PageUp": e.preventDefault(); this.move(-this.#viewportRows()); break;
 			case "Home": e.preventDefault(); if (n) this.#setActive(0); this.#virtualizer?.scrollToIndex(0); break;
 			case "End": e.preventDefault(); if (n) this.#setActive(n - 1); this.#virtualizer?.scrollToIndex(n - 1); break;
 			// Platform convention (and the ARIA grid pattern): Enter activates, Space selects.
@@ -391,7 +576,7 @@ export class DjDataGrid extends DojoElement {
 	}
 	toggleAt(index: number) {
 		if (this.selectionMode === "none") return;
-		this.#table.getRowModel().rows[index]?.toggleSelected();
+		this.#rowAt(index)?.toggleSelected();
 	}
 
 	/**
@@ -400,7 +585,7 @@ export class DjDataGrid extends DojoElement {
 	 */
 	activateAt(index: number) {
 		if (this.activation === "none") return;
-		const row = this.#table.getRowModel().rows[index];
+		const row = this.#rowAt(index);
 		if (!row) return;
 		this.emit("dj-activate", { detail: { row: row.original, index } });
 	}
@@ -479,7 +664,8 @@ export class DjDataGrid extends DojoElement {
 		this.#virtualizer?._willUpdate();
 		const virtualItems = this.#virtualizer?.getVirtualItems() ?? [];
 		const rows = this.#table?.getRowModel().rows ?? [];
-		const n = rows.length;
+		const remote = this.#isRemote;
+		const n = this.#rowTotal();
 		// Stash the rendered range for updated() to emit, from the REAL virtualizer window regardless
 		// of printing — a consumer's end-reached windowing logic (dj-range-change) must not see the
 		// whole list as "rendered" just because a print materialized it.
@@ -557,7 +743,19 @@ export class DjDataGrid extends DojoElement {
 					<div class="scroll" role="presentation" style=${`height:${this.height}`}>
 						<div role="rowgroup" style=${`height:${total}px;position:relative`}>
 							${items.map((vi) => {
-								const row = rows[vi.index];
+								const row = remote ? this.#rowAt(vi.index) : rows[vi.index];
+								if (!row && remote) {
+									// Not loaded yet: a real row with a real index, but no data to give plugins.
+									const active = vi.index === this.activeIndex;
+									return html`<div id=${`r-${vi.index}`}
+										class="vrow vrow--placeholder ${active ? "vrow--active" : ""}"
+										part=${active ? "row row--placeholder row--active" : "row row--placeholder"}
+										role="row" aria-rowindex=${vi.index + headerRows + 1} aria-busy="true"
+										style=${`transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`}
+										@click=${() => this.#setActive(vi.index)}>
+										${headers.map(() => html`<div part="cell" class="cell" role="gridcell"><span class="ph"></span></div>`)}
+									</div>`;
+								}
 								if (!row) return nothing;
 								const selected = row.getIsSelected();
 								// With a renderDetail plugin, rows have variable height: each virtual item
@@ -612,5 +810,6 @@ declare global {
 		"dj-activate": CustomEvent<{ row: Row; index: number }>;
 		"dj-active-change": CustomEvent<{ index: number; row: Row | undefined }>;
 		"dj-range-change": CustomEvent<{ start: number; end: number; count: number; rendered: number[] }>;
+		"dj-rows-request": CustomEvent<{ start: number; end: number; epoch: number; reason: "range" | "selection" }>;
 	}
 }

@@ -280,6 +280,10 @@ declare module "react" {
         "row-height"?: DjDataGrid["rowHeight"];
         "height"?: DjDataGrid["height"];
         "plugins"?: DjDataGrid["plugins"];
+        "row-count"?: DjDataGrid["rowCount"];
+        "block-size"?: DjDataGrid["blockSize"];
+        "settle-ms"?: DjDataGrid["settleMs"];
+        "cache-size"?: DjDataGrid["cacheSize"];
       };
       "dj-date-input": DjProps<DjDateInput> & {
         "value"?: DjDateInput["value"];

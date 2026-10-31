@@ -276,6 +276,10 @@ declare module "solid-js" {
         "row-height"?: DjDataGrid["rowHeight"];
         "height"?: DjDataGrid["height"];
         "plugins"?: DjDataGrid["plugins"];
+        "row-count"?: DjDataGrid["rowCount"];
+        "block-size"?: DjDataGrid["blockSize"];
+        "settle-ms"?: DjDataGrid["settleMs"];
+        "cache-size"?: DjDataGrid["cacheSize"];
       };
       "dj-date-input": JSX.HTMLAttributes<DjDateInput> & {
         "value"?: DjDateInput["value"];
@@ -716,10 +720,11 @@ declare module "solid-js" {
       "dj-open": CustomEvent;
       "dj-copy": CustomEvent;
       "dj-error": CustomEvent;
+      "dj-active-change": CustomEvent;
+      "dj-rows-request": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-selection-change": CustomEvent;
       "dj-range-change": CustomEvent;
-      "dj-active-change": CustomEvent;
       "dj-activate": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
@@ -761,10 +766,11 @@ declare module "solid-js" {
       "dj-open": CustomEvent;
       "dj-copy": CustomEvent;
       "dj-error": CustomEvent;
+      "dj-active-change": CustomEvent;
+      "dj-rows-request": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-selection-change": CustomEvent;
       "dj-range-change": CustomEvent;
-      "dj-active-change": CustomEvent;
       "dj-activate": CustomEvent;
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;

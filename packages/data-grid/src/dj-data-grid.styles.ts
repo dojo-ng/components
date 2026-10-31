@@ -35,6 +35,8 @@ export default css`
 	/* The keyboard cursor matters most while the keyboard is live: mark it with an inset bar while
 	   the grid is focused. A bar rather than a tint, so it still reads on a selected row. */
 	.grid:focus .vrow--active { box-shadow: inset 3px 0 0 var(--dj-color-primary-600, #2563eb); }
+	/* A row that is not loaded yet (remote mode): one faint bar per cell. */
+	.vrow--placeholder .ph { display: block; height: .6em; width: 60%; border-radius: .3em; background: var(--dj-data-grid-placeholder, var(--dj-color-neutral-100, #f3f4f6)); }
 	.cell { padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	/* Forced colors: row tints collapse; use the system selected pair for selected rows and
 	   an outline for the active (keyboard) row so both remain visible. */

@@ -147,6 +147,39 @@ describe("dj-data-grid", () => {
 		assert(getComputedStyle(activeRow()).boxShadow !== "none", "the active row is marked while the grid has focus");
 	});
 
+	// Remote rows RR4: End jumps to the last of 100,000 rows, which is a placeholder until its block
+	// arrives. The keyboard must stay on the grid through the jump and the ring must stay drawn.
+	it("remote mode: End then ArrowUp keep focus on the grid and the ring visible", async () => {
+		const grid = await mount(gridWith({ rowCount: 100000, rowHeight: 30, height: "300px", settleMs: 0, getRowId: (r) => String(r.id) }));
+		const requests = [];
+		grid.addEventListener("dj-rows-request", (e) => requests.push(e.detail));
+		await grid.updateComplete;
+		await settleFrames();
+		const inner = grid.shadowRoot.querySelector(".grid");
+		grid.focus();
+		await sendKeys({ press: "End" });
+		await grid.updateComplete;
+		await settleFrames();
+		await settleFrames();
+		assertEqual(grid.activeIndex, 99999, "End goes to rowCount - 1");
+		assertEqual(deepActiveElement(), inner, "focus stays on the grid after End");
+		const last = grid.shadowRoot.querySelector("#r-99999");
+		assert(last, "the last row is rendered");
+		assertEqual(last.getAttribute("aria-busy"), "true", "and it is a placeholder");
+		assertEqual(inner.getAttribute("aria-activedescendant"), "r-99999");
+		assert(requests.some((r) => r.start === 99900 && r.end === 99999), "the last block was requested");
+
+		await sendKeys({ press: "ArrowUp" });
+		await grid.updateComplete;
+		assertEqual(grid.activeIndex, 99998);
+		assertEqual(deepActiveElement(), inner, "focus stays on the grid after ArrowUp");
+		assert(inner.matches(":focus-visible"), "the focus stays visible");
+		assert(getComputedStyle(inner).outlineStyle !== "none", "the grid still draws its focus ring");
+		const active = grid.shadowRoot.querySelector('[part~="row--active"]');
+		assertEqual(active.id, "r-99998", "row--active follows the cursor onto a placeholder");
+		assert(getComputedStyle(active).boxShadow !== "none", "the active-row bar shows on the placeholder");
+	});
+
 	it("has no serious or critical accessibility violations", async () => {
 		const grid = await mount(gridWith({ data: bigData(8), selectionMode: "multiple", height: "300px" }));
 		await grid.updateComplete;

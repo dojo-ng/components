@@ -12,6 +12,12 @@ export interface DataGridContext {
 	readonly table: Table<Row>;
 	/** Re-render the grid. */
 	refresh(): void;
+	/** The row at a grid index, or undefined when there is none. In remote mode (`rowCount`) the
+	 *  index is absolute and an unloaded row is undefined; otherwise it is a row-model index. Use
+	 *  this, not `table.getRowModel().rows[i]`, so a plugin works in both modes. */
+	rowAt(index: number): TableRow<Row> | undefined;
+	/** The grid index of a row (absolute in remote mode), or -1. The inverse of `rowAt`. */
+	indexOf(row: TableRow<Row>): number;
 }
 
 export interface DataGridPlugin {

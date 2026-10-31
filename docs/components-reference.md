@@ -1625,11 +1625,16 @@ Give it `columns`, `data`, and a `height`. The core covers columns, in-memory da
 - When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and browsers repeat the header on each printed page. This does not apply to rows drawn by the detail plugin (`@dojo-ng/data-grid-detail`).
 - Safari does not repeat the table header on each printed page. This is a WebKit limitation with no reliable CSS fix.
 
-#### Not supported yet
+#### Rows from a server: `rowCount`
 
-- A data set larger than `data`: the scrollbar is sized from `data.length`, so it cannot include rows that are not loaded.
-
-Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
+- Set `rowCount` to the total number of rows on the server to turn on remote mode. `data` is then ignored, and the scrollbar is sized from `rowCount`.
+- Rows the grid has not loaded render as placeholder rows (part `row--placeholder`, `aria-busy="true"`). Plugin cell and row hooks are not called for them.
+- The grid asks for rows with `dj-rows-request`, detail `{ start, end, epoch, reason }`: an inclusive, block-aligned range of absolute indices. Answer with `grid.setRows(start, rows, epoch)`, passing back the request's `epoch`. An answer with an older epoch is ignored, and the grid asks again.
+- Rows load in blocks of `blockSize` (default 100). The grid keeps at most `cacheSize` rows (default 2,000) and drops the blocks farthest from the screen first.
+- After a jump of more than one screen (a scrollbar drag, End), the grid waits until the rows on screen have held still for `settleMs` (default 100) before asking.
+- Every index is absolute: `activeIndex`, event indices, and `aria-rowindex` count from the top of the full list, loaded or not. When the active row is not loaded yet, `dj-active-change` fires with `row: undefined`, then again with the row once it arrives. `dj-activate` does nothing on a placeholder.
+- Give the grid a `getRowId`, so selection survives rows being dropped from the cache.
+- Rows have a fixed height (`rowHeight`) in remote mode.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1640,15 +1645,22 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 | `rowHeight` | row-height | `number` | `36` |
 | `height` | height | `string` | `"20rem"` |
 | `plugins` | — | `DataGridPlugin[]` | `[]` |
+| `rowCount` | row-count | `number` | — |
+| `blockSize` | block-size | `number` | `100` |
+| `settleMs` | settle-ms | `number` | `100` |
+| `cacheSize` | cache-size | `number` | `2000` |
 
-**Parts:** `grid`, `head`, `row`, `row--active`, `row--selected`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`, `detail`
+**Parts:** `grid`, `head`, `row`, `row--active`, `row--selected`, `row--placeholder`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`, `detail`
 
-**Events:** `dj-sort`, `dj-selection-change`, `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
+**Events:** `dj-active-change` (detail `{ index, row }`), `dj-rows-request` (detail `{ start, end, epoch, reason }`,
+remote mode only), `dj-sort`, `dj-selection-change`, `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
 first and last rendered row-model indices, the total row count, and the full index list; `start`
-and `end` are -1 when nothing is rendered), `dj-active-change` (detail `{ index, row }`), `dj-activate` (detail `{ row, index }`, where `row` is
+and `end` are -1 when nothing is rendered), `dj-activate` (detail `{ row, index }`, where `row` is
 the original row data)
 
-**Methods:** `focus(options: FocusOptions)` (Forward focus to the element that owns the keyboard (the `role="grid"` div). The print table also carries `part="grid"`, so this selects by class, not by part.), `blur()`, `toggleAt(index: number)`, `activateAt(index: number)` (Emit `dj-activate` for a row-model index. Fires regardless of `selectionMode` (a read-only list with clickable rows is a real case) but never under `activation="none"`.)
+**Methods:** `focus(options: FocusOptions)` (Forward focus to the element that owns the keyboard (the `role="grid"` div). The print table also carries `part="grid"`, so this selects by class, not by part.), `blur()`, `setRows(start: number, rows: Row[], epoch: number): boolean` (Remote mode: answer a `dj-rows-request`. `start` is the absolute index of `rows[0]`; pass back the request's `epoch`. Returns `false`, and keeps nothing, when the epoch is stale (the list changed since the request) or the grid is not in remote mode.), `resetRows({ keepScroll = true }: { keepScroll?: boolean } = {})` (Remote mode: drop every cached row and ask again for the rows on screen. Call it when the list changed in a way inserts and removals cannot describe. Starts a new epoch, so answers to earlier requests are ignored. `keepScroll: false` also scrolls to the top.), `toggleAt(index: number)`, `activateAt(index: number)` (Emit `dj-activate` for a row-model index. Fires regardless of `selectionMode` (a read-only list with clickable rows is a real case) but never under `activation="none"`.)
+
+**CSS properties:** `--dj-data-grid-placeholder` (The bar drawn in each cell of a row that is not loaded yet.)
 
 
 ### `<dj-calendar>` · `@dojo-ng/calendar`

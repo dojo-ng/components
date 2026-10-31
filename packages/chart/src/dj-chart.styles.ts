@@ -85,6 +85,16 @@ export default css`
 		rect.bar { fill: CanvasText; stroke: Canvas; }
 		.marker, .point-mark, .slice { fill: CanvasText; stroke: Canvas; }
 		.legend-swatch, .tooltip { border: 1px solid CanvasText; }
+		/* Axes, ticks, and grid: system colors, not the theme's grays. */
+		.axis line, .axis path { stroke: CanvasText; }
+		.axis text, .axis-title { fill: CanvasText; }
+		.grid line { stroke: GrayText; }
+		/* A swatch's inline background would be forced to Canvas, leaving every legend entry the
+		   same empty box. Opt it out of forcing and paint it with a system color instead; marks
+		   are CanvasText here too, so the swatch still matches what it labels. A plugin entry can
+		   ask for an outline (data-swatch="hollow") to match a mark that renders hollow. */
+		.legend-swatch, .tooltip-swatch { forced-color-adjust: none; background: CanvasText !important; }
+		.legend-swatch[data-swatch="hollow"] { background: Canvas !important; }
 		.brush-track { fill: Canvas; stroke: CanvasText; }
 		.brush-window { fill: Highlight; opacity: 0.3; }
 		.brush-handle { fill: CanvasText; }

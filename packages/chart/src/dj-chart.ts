@@ -38,6 +38,9 @@ import {
 	effectiveRenderer,
 	placeLabels,
 	LABEL_DENSITY_CAP,
+	pointLabelOffset,
+	axisGutter,
+	thinAxisLabels,
 	baselineOf,
 	isLogScale,
 	isGapValue,
@@ -55,8 +58,13 @@ const RIGHT_AXIS_MARGIN = 48;
 // Top margin when any series shows point labels, so a label on the domain's maximum has room to
 // draw without clipping against the SVG viewBox's top edge.
 const LABEL_MARGIN_TOP = 22;
+// Line-chart marker and scatter point radii, shared by the marks and the point-label offset.
+const MARKER_RADIUS = 3.5;
+const POINT_MARK_RADIUS = 4;
 // Matches --dj-chart-label-size's default below; used for the width/height estimate in placeLabels.
 const LABEL_FONT_SIZE = 11;
+// The most of the plot's height plugin panes may take together; see buildPluginLayer.
+const MAX_PANE_SHARE = 0.4;
 // Radius reserved for an "outside the arc" pie/donut label, so it isn't clipped against the SVG edge.
 const RADIAL_LABEL_PAD = 16;
 
@@ -210,6 +218,10 @@ export class DjChart extends DojoElement {
 	@state() private view: { start: number; end: number } | null = null;
 
 	#ro?: ResizeObserver;
+	// The y-axis gutters the last vertical-cartesian render laid out with (they grow to fit long
+	// tick labels), so the brush strip and the tooltip line up with the plot they belong to.
+	#plotLeft = MARGIN.left;
+	#plotRight = MARGIN.right;
 	// Re-renders the chart when the document/ancestor locale changes, and supplies the
 	// active locale for tick and tooltip number formatting.
 	#i18n = new LocaleController(this);
@@ -549,29 +561,60 @@ export class DjChart extends DojoElement {
 		if (this.isHBar) return { template: this.renderCartesianH(W, H, innerH, accName), pluginCtx: null };
 		// Cartesian. A secondary axis needs extra right margin for its tick labels.
 		const hasRight = this.series.some((s) => s.axis === "right");
-		const innerW = Math.max(0, W - MARGIN.left - (hasRight ? RIGHT_AXIS_MARGIN : MARGIN.right));
 		// The brush window narrows the rendered data to a category range; the table keeps full data.
 		const [vs, ve] = this.viewRange(this.data.length);
 		const data = this.brush && this.view ? this.data.slice(vs, ve + 1) : this.data;
 		const cats2 = categories(data, this.categoryKey);
-		const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerH, this.hiddenKeys, this.missing, this.yScale, this.yScaleRight);
-		// Plugins: resolves panes and merges domain() contributions BEFORE anything below
-		// reads scales.y or innerH, since both are mutated/reassigned here when plugins are present.
-		const pluginLayer = this.buildPluginLayer(data, scales, innerW, innerH);
-		if (pluginLayer) innerH = pluginLayer.innerH;
+		const innerHBeforePanes = innerH;
+		// Lays the plot out for a given pair of y-axis gutters. Run once with the default margins;
+		// if the tick labels that layout produces are wider than the gutter (a log axis reaching
+		// "10,000,000", a currency formatY), run once more with gutters sized to fit them, so a
+		// long label is never clipped at the SVG edge or drawn over the axis title.
+		const layout = (left: number, right: number) => {
+			const innerW = Math.max(0, W - left - right);
+			const scales = buildScales(data, this.series, this.categoryKey, this.type, this.stacked, innerW, innerHBeforePanes, this.hiddenKeys, this.missing, this.yScale, this.yScaleRight);
+			// Plugins: resolves panes and merges domain() contributions BEFORE anything below
+			// reads scales.y or innerH, since both are mutated/reassigned here when plugins are present.
+			const pluginLayer = this.buildPluginLayer(data, scales, innerW, innerHBeforePanes);
+			const h = pluginLayer ? pluginLayer.innerH : innerHBeforePanes;
+			const ticks = yTicks(scales, 5, h);
+			const rightTicks = scales.yRight ? ticksOf(scales.yRight, 5, h) : [];
+			return { innerW, scales, pluginLayer, innerH: h, ticks, rightTicks };
+		};
+		const maxGutter = Math.floor(W * 0.4);
+		const defaultRight = hasRight ? RIGHT_AXIS_MARGIN : MARGIN.right;
+		let left = MARGIN.left;
+		let right = defaultRight;
+		let lay = layout(left, right);
+		const needLeft = axisGutter(lay.ticks.map((t) => this.fmtY(t)), !!this.yLabel, MARGIN.left, maxGutter);
+		const needRight = hasRight ? axisGutter(lay.rightTicks.map((t) => this.fmtY(t)), !!this.yLabelRight, RIGHT_AXIS_MARGIN, maxGutter) : right;
+		if (needLeft !== left || needRight !== right) {
+			left = needLeft;
+			right = needRight;
+			lay = layout(left, right);
+		}
+		this.#plotLeft = left;
+		this.#plotRight = right;
+		const { innerW, scales, pluginLayer, ticks } = lay;
+		innerH = lay.innerH;
 		this.syncPluginSetups(pluginLayer?.ctx ?? null);
 		const yOf = (i: number) => (this.series[i]?.axis === "right" && scales.yRight ? scales.yRight : scales.y);
 		this.warnLogNonPositive(data, this.series, yOf);
-		const ticks = yTicks(scales, 5, innerH);
+		// A plugin-only chart's accessible name names what its plugins draw, not "0 series".
+		if (pluginLayer) accName = accessibleName(this.label, this.type, this.series, cats, undefined, this.pluginDescriptions(pluginLayer.ctx));
+		// Category labels, thinned so neighbors never overprint (a long category list, a narrow
+		// chart, or a formatX that keeps more labels than fit).
+		const xLabels = cats2.map((c) => ({ c, x: xCenter(scales, c), text: this.fmtX(c) }));
+		const xKept = thinAxisLabels(xLabels, undefined, undefined, -left, innerW + right).map(({ index, x }) => ({ ...xLabels[index], x }));
 		const yR = scales.yRight;
 		let rightAxis: unknown = nothing;
 		if (yR) {
 			const sc = yR;
 			rightAxis = svg`<g class="axis" part="axis">
 				<line x1="${innerW}" y1="0" x2="${innerW}" y2="${innerH}"></line>
-				${ticksOf(sc, 5, innerH).map((t) => svg`<text x="${innerW + 8}" y="${sc(t)}" text-anchor="start" dominant-baseline="middle">${this.fmtY(t)}</text>`)}
+				${lay.rightTicks.map((t) => svg`<text x="${innerW + 8}" y="${sc(t)}" text-anchor="start" dominant-baseline="middle">${this.fmtY(t)}</text>`)}
 				${this.yLabelRight
-					? svg`<text class="axis-title" transform="translate(${innerW + RIGHT_AXIS_MARGIN - 12},${innerH / 2}) rotate(90)" text-anchor="middle">${this.yLabelRight}</text>`
+					? svg`<text class="axis-title" transform="translate(${innerW + right - 12},${innerH / 2}) rotate(90)" text-anchor="middle">${this.yLabelRight}</text>`
 					: nothing}
 			</g>`;
 		}
@@ -604,7 +647,7 @@ export class DjChart extends DojoElement {
 				if (isGapValue(raw, this.missingOf(s), isLog)) return;
 				labelCandidates.push({
 					x: xCenter(scales, cat(row, this.categoryKey)),
-					y: yScale(raw ?? 0) - 8,
+					y: yScale(raw ?? 0) - pointLabelOffset(MARKER_RADIUS),
 					text: this.labelText(rowIndex, raw ?? 0, s, fpCache),
 					order: rowIndex,
 				});
@@ -624,7 +667,7 @@ export class DjChart extends DojoElement {
 
 		const template = html`
 			<svg viewBox="0 0 ${W} ${H}" role="img" aria-label=${accName} part="plot" class="${this.#streaming ? "no-transition" : ""}">
-				<g transform="translate(${MARGIN.left},${topMargin})">
+				<g transform="translate(${left},${topMargin})">
 					${this.showGrid
 						? svg`<g class="grid" part="grid">${ticks.map(
 								(t) => svg`<line x1="0" x2="${innerW}" y1="${scales.y(t)}" y2="${scales.y(t)}"></line>`,
@@ -636,11 +679,11 @@ export class DjChart extends DojoElement {
 							(t) => svg`<text x="-8" y="${scales.y(t)}" text-anchor="end" dominant-baseline="middle">${this.fmtY(t)}</text>`,
 						)}
 						<line x1="0" y1="${innerH}" x2="${innerW}" y2="${innerH}"></line>
-						${cats2.map(
-							(c) => svg`<text x="${xCenter(scales, c)}" y="${innerH + 18}" text-anchor="middle">${this.fmtX(c)}</text>`,
+						${xKept.map(
+							(l) => svg`<text x="${l.x}" y="${innerH + 18}" text-anchor="middle">${l.text}</text>`,
 						)}
 						${this.yLabel
-							? svg`<text class="axis-title" transform="translate(${-MARGIN.left + 12},${innerH / 2}) rotate(-90)" text-anchor="middle">${this.yLabel}</text>`
+							? svg`<text class="axis-title" transform="translate(${-left + 12},${innerH / 2}) rotate(-90)" text-anchor="middle">${this.yLabel}</text>`
 							: nothing}
 						${this.xLabel
 							? svg`<text class="axis-title" x="${innerW / 2}" y="${innerH + MARGIN.bottom}" text-anchor="middle">${this.xLabel}</text>`
@@ -736,6 +779,15 @@ export class DjChart extends DojoElement {
 			}
 		}
 		const gap = this.#paneGapPx();
+		// Panes ask for fixed heights; on a short chart those can starve the main plot (an 80px
+		// volume pane in a 200px chart leaves the price axis a sliver). Scale every pane down
+		// proportionally so together they take at most MAX_PANE_SHARE of the plot.
+		const requested = paneEntries.reduce((sum, { pane }) => sum + pane.height, 0);
+		const budget = Math.max(0, innerHBeforePanes * MAX_PANE_SHARE - gap * paneEntries.length);
+		if (requested > budget) {
+			const k = requested > 0 ? budget / requested : 0;
+			for (const e of paneEntries) e.pane = { ...e.pane, height: e.pane.height * k };
+		}
 		const reserved = paneEntries.reduce((sum, { pane }) => sum + pane.height + gap, 0);
 		const innerH = Math.max(0, innerHBeforePanes - reserved);
 
@@ -830,7 +882,7 @@ export class DjChart extends DojoElement {
 			const raw = val(row[key]);
 			if (isGapValue(raw, missing, isLog)) return nothing;
 			const c = cat(row, this.categoryKey);
-			return svg`<circle class="marker" part="point" cx="${xCenter(scales, c)}" cy="${yScale(raw ?? 0)}" r="3.5" fill=${color}></circle>`;
+			return svg`<circle class="marker" part="point" cx="${xCenter(scales, c)}" cy="${yScale(raw ?? 0)}" r="${MARKER_RADIUS}" fill=${color}></circle>`;
 		})}`;
 	}
 
@@ -958,9 +1010,9 @@ export class DjChart extends DojoElement {
 								const yv = val(row[s.key]);
 								if ((xv === null || yv === null) && missing !== "zero") return nothing;
 								if (showLabels) {
-									labelCandidates.push({ x: scales.x(xv ?? 0), y: scales.y(yv ?? 0) - 8, text: this.labelText(ri, yv ?? 0, s, fpCache), order: ri });
+									labelCandidates.push({ x: scales.x(xv ?? 0), y: scales.y(yv ?? 0) - pointLabelOffset(this.type === "bubble" ? r(num(row[s.sizeKey ?? this.sizeKey ?? ""])) : POINT_MARK_RADIUS), text: this.labelText(ri, yv ?? 0, s, fpCache), order: ri });
 								}
-								return svg`<circle class="point-mark" part="point" cx="${scales.x(xv ?? 0)}" cy="${scales.y(yv ?? 0)}" r="${this.type === "bubble" ? r(num(row[s.sizeKey ?? this.sizeKey ?? ""])) : 4}" fill=${onCanvas ? "transparent" : c}
+								return svg`<circle class="point-mark" part="point" cx="${scales.x(xv ?? 0)}" cy="${scales.y(yv ?? 0)}" r="${this.type === "bubble" ? r(num(row[s.sizeKey ?? this.sizeKey ?? ""])) : POINT_MARK_RADIUS}" fill=${onCanvas ? "transparent" : c}
 									@pointerenter=${() => (this.hoverPt = { si, ri })} @pointerleave=${() => (this.hoverPt = null)}></circle>`;
 							})}`;
 						})}
@@ -1055,14 +1107,13 @@ export class DjChart extends DojoElement {
 	// ---- brush strip (visible category window) ----
 
 	private brushInnerW(W: number): number {
-		const hasRight = this.series.some((s) => s.axis === "right");
-		return Math.max(1, W - MARGIN.left - (hasRight ? RIGHT_AXIS_MARGIN : MARGIN.right));
+		return Math.max(1, W - this.#plotLeft - this.#plotRight);
 	}
 	/** Map a clientX to a category index using the brush svg's box. */
 	private brushIndexAt(clientX: number, svg: SVGSVGElement, n: number): number {
 		const rect = svg.getBoundingClientRect();
 		const innerW = this.brushInnerW(rect.width);
-		const frac = Math.max(0, Math.min(1, (clientX - rect.left - MARGIN.left) / innerW));
+		const frac = Math.max(0, Math.min(1, (clientX - rect.left - this.#plotLeft) / innerW));
 		return Math.round(frac * (n - 1));
 	}
 	private onBrushDown(mode: "start" | "end" | "pan", e: PointerEvent) {
@@ -1129,7 +1180,7 @@ export class DjChart extends DojoElement {
 		const ctx = first && vals.length > 1 ? vals.map((v, i) => `${xOf(i)},${yb(v)}`).join(" ") : "";
 		return html`<svg class="brush" viewBox="0 0 ${W} ${Hb}" width="100%" height=${Hb} role="group" aria-label="Visible range"
 			@pointermove=${(e: PointerEvent) => this.onBrushMove(e)} @pointerup=${(e: PointerEvent) => this.onBrushUp(e)} @dblclick=${() => { this.view = null; }}>
-			<g transform="translate(${MARGIN.left},0)">
+			<g transform="translate(${this.#plotLeft},0)">
 				<rect class="brush-track" x="0" y="2" width="${innerW}" height="${Hb - 4}" rx="3"></rect>
 				${ctx ? svg`<polyline class="brush-context" points="${ctx}"></polyline>` : nothing}
 				<rect class="brush-window" x="${xOf(vs)}" y="2" width="${Math.max(2, xOf(ve) - xOf(vs))}" height="${Hb - 4}"
@@ -1153,7 +1204,7 @@ export class DjChart extends DojoElement {
 		const items: TemplateResult[] = [];
 		for (const p of this.plugins) {
 			for (const item of p.legendItems?.(pluginCtx) ?? []) {
-				items.push(html`<span class="legend-item"><span class="legend-swatch" style=${`background:${item.color}`}></span>${item.label}</span>`);
+				items.push(html`<span class="legend-item"><span class="legend-swatch" data-plugin=${p.name} data-swatch=${item.swatch ?? "solid"} style=${`background:${item.color}`}></span>${item.label}</span>`);
 			}
 		}
 		return items;
@@ -1198,7 +1249,7 @@ export class DjChart extends DojoElement {
 	private renderTooltip(scales: ReturnType<typeof buildScales>, pluginCtx: ChartContext | null = null): TemplateResult {
 		if (this.hovered == null) return html`<div class="tooltip" part="tooltip" hidden></div>`;
 		const c = this.hovered;
-		const left = MARGIN.left + xCenter(scales, c);
+		const left = this.#plotLeft + xCenter(scales, c);
 		const style = `left:${left}px; top:${this.topMargin}px`;
 		// A plugin can replace the tooltip body for a category; the first non-undefined in array
 		// order wins, the core body otherwise.
@@ -1233,14 +1284,32 @@ export class DjChart extends DojoElement {
 	}
 
 	/** Plugin-contributed table columns: a header plus one cell per row, flattened
-	 * across plugins in order. `[]` when there's no plugin context. Cells are indexed by row position
-	 * — a fine assumption for the vertical-cartesian-only, typically-brush-free charts the
-	 * financial plugins target, but it means a `pluginCtx.data` narrowed by an active brush (a
-	 * different length
-	 * than `this.data`, which the table always renders in full) would misalign; no supported
-	 * combination does that, so it is not specially handled here. */
+	 * across plugins in order. `[]` when there's no plugin context. The table always lists every
+	 * row of `this.data`, and cells are matched to rows by position, so `tableRows` gets a copy of
+	 * the render's context with `data` set to the FULL data, never the brush window's slice. (Handing
+	 * it the slice put row 120's values next to row 0 and left every row past the window blank, in
+	 * the financial demo, which pairs a brush with plugins.) */
 	private pluginTableColumns(pluginCtx: ChartContext | null): Array<{ header: string; cells: string[] }> {
-		return pluginCtx ? this.plugins.flatMap((p) => p.tableRows?.(pluginCtx) ?? []) : [];
+		if (!pluginCtx) return [];
+		const tableCtx: ChartContext = { ...pluginCtx, data: this.data };
+		return this.plugins.flatMap((p) => p.tableRows?.(tableCtx) ?? []);
+	}
+
+	/** A plugin table cell: "—" is a missing value, announced like a core series' missing cell. */
+	private pluginCell(text: string | undefined) {
+		return text === "—" ? html`<span aria-label=${this.noValueLabel()}>&mdash;</span>` : (text ?? "");
+	}
+
+	/** What each plugin draws, for the accessible summary: its own `describe()`, else its legend
+	 * labels; nothing for a plugin with neither (a crosshair). */
+	private pluginDescriptions(ctx: ChartContext): string[] {
+		const out: string[] = [];
+		for (const p of this.plugins) {
+			const d = p.describe?.(ctx);
+			if (d) out.push(d);
+			else if (!p.describe) for (const item of p.legendItems?.(ctx) ?? []) out.push(item.label);
+		}
+		return out;
 	}
 
 	private renderTable(cats: string[], fpCache: Map<string, Map<number, string>>, pluginCtx: ChartContext | null = null): TemplateResult {
@@ -1256,19 +1325,19 @@ export class DjChart extends DojoElement {
 				</thead>
 				<tbody>
 					${this.data.map(
-						(row, rowIndex) => html`<tr><th scope="row">${this.valueCell(val(row[seriesX(first, this.xKey)]), first)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}${pluginColumns.map((col) => html`<td>${col.cells[rowIndex] ?? ""}</td>`)}</tr>`,
+						(row, rowIndex) => html`<tr><th scope="row">${this.valueCell(val(row[seriesX(first, this.xKey)]), first)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}${pluginColumns.map((col) => html`<td>${this.pluginCell(col.cells[rowIndex])}</td>`)}</tr>`,
 					)}
 				</tbody>
 			</table>`;
 		}
 		return html`<table class="sr-only">
-			<caption>${this.label ?? summary(this.type, this.series, cats)}</caption>
+			<caption>${this.label ?? summary(this.type, this.series, cats, pluginCtx ? this.pluginDescriptions(pluginCtx) : [])}</caption>
 			<thead>
 				<tr><th>${this.categoryKey || "Category"}</th>${this.series.map((s) => html`<th>${s.label ?? s.key}</th>`)}${pluginColumns.map((col) => html`<th scope="col">${col.header}</th>`)}</tr>
 			</thead>
 			<tbody>
 				${this.data.map(
-					(row, rowIndex) => html`<tr><th scope="row">${cat(row, this.categoryKey)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}${pluginColumns.map((col) => html`<td>${col.cells[rowIndex] ?? ""}</td>`)}</tr>`,
+					(row, rowIndex) => html`<tr><th scope="row">${cat(row, this.categoryKey)}</th>${this.series.map((s) => html`<td>${this.valueCell(val(row[s.key]), s)}${this.pointLabelSpan(rowIndex, s, fpCache)}</td>`)}${pluginColumns.map((col) => html`<td>${this.pluginCell(col.cells[rowIndex])}</td>`)}</tr>`,
 				)}
 			</tbody>
 		</table>`;

@@ -34,7 +34,7 @@
 		<h1>Financial chart — candlestick, volume, and an indicator</h1>
 		<p class="hint">
 			500 trading days (weekdays, 2024-01-02 through 2025-12-01), a candlestick plugin and a
-			volume pane sharing the same category axis, and a 20-period SMA overlay — all drawn by
+			volume pane sharing the same category axis, a 20-period SMA overlay, and a crosshair that follows the pointer — all drawn by
 			<code>@dojo-ng/chart-financial</code> plugins on a chart with <code>series: []</code> of
 			its own. The x axis stays ordinal (decision 16: a real trading calendar skips weekends,
 			so a continuous time scale would reserve dead space for them); <code>tradingDayTicks</code>
@@ -54,7 +54,7 @@
 		<script type="module">
 			import "@dojo-ng/chart";
 			import "@dojo-ng/button";
-			import { candlestickPlugin, volumePlugin, indicatorPlugin, tradingDayTicks } from "@dojo-ng/chart-financial";
+			import { candlestickPlugin, volumePlugin, indicatorPlugin, crosshairPlugin, tradingDayTicks } from "@dojo-ng/chart-financial";
 
 			const FINANCIAL_DATA = [
 				{ date: "2024-01-02", open: 150, high: 151.56, low: 148.76, close: 149.49, volume: 1267512 },
@@ -583,6 +583,7 @@
 					candlestickPlugin({ ...OHLC_KEYS, style }),
 					volumePlugin({ key: "volume", height: 80, label: "Volume" }),
 					indicatorPlugin({ key: "close", kind: "sma", period: 20, label: "SMA(20)" }),
+					crosshairPlugin({ snap: true }),
 				];
 			}
 			rebuildPlugins();

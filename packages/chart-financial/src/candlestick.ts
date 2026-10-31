@@ -237,10 +237,14 @@ export function candlestickPlugin(options: CandlestickPluginOptions): ChartPlugi
 			`;
 		},
 		legendItems() {
+			// Up candles render hollow under forced colors, so their swatch does too.
 			return [
-				{ label: `${label} (up)`, color: upColor },
+				{ label: `${label} (up)`, color: upColor, swatch: "hollow" as const },
 				{ label: `${label} (down)`, color: downColor },
 			];
+		},
+		describe() {
+			return style === "bar" ? `${label} OHLC bars` : `${label} candlesticks`;
 		},
 		tableRows(ctx) {
 			const column = (key: string) => ctx.data.map((row) => ctx.format(Number(row[key])));

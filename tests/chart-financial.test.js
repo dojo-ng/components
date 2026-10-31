@@ -12,7 +12,7 @@ import { sma, ema, bollinger, candlestickPlugin, volumePlugin, indicatorPlugin, 
 import { candleMarks, barMarks, CANDLE_BODY_WIDTH_RATIO, MIN_CANDLE_BODY_HEIGHT, BAR_TICK_RATIO } from "../packages/chart-financial/dist/candlestick.js";
 import { directionOf, volumeDomain, volumeMarks, VOLUME_PANE_ID, DEFAULT_VOLUME_PANE_HEIGHT, NEUTRAL_VOLUME_COLOR } from "../packages/chart-financial/dist/volume.js";
 import { indicatorLinePath } from "../packages/chart-financial/dist/indicator.js";
-import { nearestCategory, crosshairStateAt, renderCrosshair } from "../packages/chart-financial/dist/crosshair.js";
+import { nearestCategory, crosshairStateAt, renderCrosshair, crosshairDecimals, crosshairValueText } from "../packages/chart-financial/dist/crosshair.js";
 import { MIN_TICK_GAP_PX } from "../packages/chart-financial/dist/trading-day-ticks.js";
 import { DEFAULT_UP_COLOR, DEFAULT_DOWN_COLOR } from "../packages/chart-financial/dist/shared.js";
 
@@ -617,16 +617,21 @@ function dailyRange(startStr, endStr) {
 	return out;
 }
 const TWO_YEAR_CATS = dailyRange("2024-01-15", "2025-12-20");
+// Month starts, minus 2024-02-01 and 2025-12-01: each sits 17/19 days (about 19-22px at 800px)
+// from an always-kept endpoint, inside the 24px minimum gap, so it gives way to the endpoint.
+// Before B1's fix both were kept, drawing two labels on top of each other at each end.
 const EXPECTED_MONTH_STARTS = [
-	"2024-01-15", "2024-02-01", "2024-03-01", "2024-04-01", "2024-05-01", "2024-06-01",
+	"2024-01-15", "2024-03-01", "2024-04-01", "2024-05-01", "2024-06-01",
 	"2024-07-01", "2024-08-01", "2024-09-01", "2024-10-01", "2024-11-01", "2024-12-01",
 	"2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01",
-	"2025-07-01", "2025-08-01", "2025-09-01", "2025-10-01", "2025-11-01", "2025-12-01",
+	"2025-07-01", "2025-08-01", "2025-09-01", "2025-10-01", "2025-11-01",
 	"2025-12-20", // last category, appended — not itself a month start
 ];
+// Quarter starts at 200px (about 26px per quarter), minus 2024-04-01 and 2025-10-01, each too close
+// to an endpoint for the same reason.
 const EXPECTED_QUARTER_STARTS = [
-	"2024-01-15", "2024-04-01", "2024-07-01", "2024-10-01",
-	"2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01",
+	"2024-01-15", "2024-07-01", "2024-10-01",
+	"2025-01-01", "2025-04-01", "2025-07-01",
 	"2025-12-20", // last category, appended — not itself a quarter start
 ];
 
@@ -637,6 +642,38 @@ test("tradingDayTicks: 800px over two years of daily dates returns month starts"
 test("tradingDayTicks: 200px over the same range falls back to quarter starts", () => {
 	assert.deepEqual(tradingDayTicks(TWO_YEAR_CATS, 200, "en-US"), EXPECTED_QUARTER_STARTS);
 });
+
+// B1 (2026-10-29 browser pass): the financial demo got the SAME 9 labels at a 148px budget as at
+// 450px, because a grouping that didn't fit fell back to quarters unconditionally, and quarters
+// were never checked. Every budget must now give labels at least MIN_TICK_GAP_PX apart, and a
+// smaller budget must never give more labels than a larger one.
+function weekdays(startStr, count) {
+	const out = [];
+	let d = new Date(`${startStr}T00:00:00Z`);
+	while (out.length < count) {
+		const dow = d.getUTCDay();
+		if (dow !== 0 && dow !== 6) out.push(d.toISOString().slice(0, 10));
+		d = new Date(d.getTime() + 86400000);
+	}
+	return out;
+}
+for (const [count, budgets] of [[500, [450, 300, 148, 90]], [2000, [450, 148]]]) {
+	test(`tradingDayTicks: ${count} trading days honor the pixel budget (${budgets.join("/")}px)`, () => {
+		const cats = weekdays("2024-01-02", count);
+		let previous = Infinity;
+		for (const px of budgets) {
+			const kept = tradingDayTicks(cats, px, "en-US");
+			const per = px / (cats.length - 1);
+			const idx = kept.map((c) => cats.indexOf(c));
+			for (let i = 1; i < idx.length; i++) {
+				assert.ok((idx[i] - idx[i - 1]) * per >= MIN_TICK_GAP_PX, `${px}px: ${kept[i - 1]} and ${kept[i]} are ${((idx[i] - idx[i - 1]) * per).toFixed(1)}px apart`);
+			}
+			assert.ok(kept.length <= previous, `${px}px kept ${kept.length} labels, more than a wider budget's ${previous}`);
+			previous = kept.length;
+		}
+		assert.ok(tradingDayTicks(cats, 148, "en-US").length < tradingDayTicks(cats, 450, "en-US").length, "a narrower budget thins further");
+	});
+}
 
 test("tradingDayTicks: the first and last category are always present, even off-boundary", () => {
 	const kept = tradingDayTicks(TWO_YEAR_CATS, 800, "en-US");
@@ -723,6 +760,40 @@ test("renderCrosshair: draws two guide lines at the state's x/y and two labels w
 	assert.equal(labels[0].textContent, "2024-01-03");
 	assert.equal(labels[1].textContent, ctx.format(state.value));
 	assert.equal(div.querySelector('g[part="crosshair"]').getAttribute("aria-hidden"), "true");
+});
+
+// B1 F5: the crosshair printed the raw inverted value ("126.212") at whatever precision the float
+// happened to carry. It now shows as many decimals as one pixel of the axis resolves.
+test("crosshairDecimals: as many decimals as one pixel resolves, on linear and log axes", () => {
+	const linear = makeCtx(); // 40 over 200px: a pixel is worth 0.2
+	assert.equal(crosshairDecimals(linear, 100), 1);
+	const wide = makeCtx({ yScale: scaleLinear().domain([0, 20000]).range([200, 0]) }); // 100 per px
+	assert.equal(crosshairDecimals(wide, 100), 0);
+	const fine = makeCtx({ yScale: scaleLinear().domain([1.2, 1.3]).range([200, 0]) }); // 0.0005 per px
+	assert.equal(crosshairDecimals(fine, 100), 4);
+	const log = makeCtx({ yScale: scaleLog().domain([1, 10000]).range([200, 0]) });
+	assert.ok(crosshairDecimals(log, 195) > crosshairDecimals(log, 5), "a log pixel near the bottom is worth less, so it shows more decimals");
+});
+
+test("crosshairValueText: rounds before formatting, through the chart's own formatter", () => {
+	const ctx = { ...makeCtx(), format: (v) => `$${v}` };
+	const text = crosshairValueText(ctx, { category: "2024-01-02", x: 0, y: 100, value: 100.21234 });
+	assert.equal(text, "$100.2");
+});
+
+test("renderCrosshair: the value label sits inside the plot, and the category label never runs off an edge", () => {
+	const ctx = makeCtx();
+	for (const x of [0, 150, 300]) {
+		const div = document.createElement("div");
+		render(renderCrosshair(ctx, { category: "2024-01-02", x, y: 2, value: 119.6 }, "COLOR"), div);
+		const [cat, value] = [...div.querySelectorAll(".crosshair-label")];
+		assert.ok(Number(value.getAttribute("x")) >= 0, "value label is not in the tick gutter");
+		assert.equal(value.getAttribute("text-anchor"), "start");
+		assert.ok(Number(value.getAttribute("y")) >= 12, "value label is pushed down off the plot's top edge");
+		const half = ("2024-01-02".length * 12 * 0.6) / 2;
+		const cx = Number(cat.getAttribute("x"));
+		assert.ok(cx - half >= 0 && cx + half <= ctx.inner.width, `category label at ${cx} runs past an edge`);
+	}
 });
 
 /** happy-dom reports 0 for every element's real layout size, and dj-chart's plot only renders

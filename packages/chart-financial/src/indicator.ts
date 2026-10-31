@@ -1,7 +1,7 @@
 import { svg } from "lit";
 import { line as d3line } from "d3-shape";
 import { defineChartPlugin, type ChartContext, type ChartPlugin } from "@dojo-ng/chart";
-import { catOf } from "./shared.js";
+import { catOf, FORCED_COLORS_STYLE } from "./shared.js";
 import { sma, ema, bollinger } from "./indicators.js";
 
 /** No dedicated theme token for an indicator overlay (the financial plugins' tokens are
@@ -83,7 +83,7 @@ export function indicatorPlugin(options: IndicatorPluginOptions): ChartPlugin {
 		},
 		renderOver(ctx) {
 			const series = computedSeries(ctx, options);
-			return svg`<g part="indicator" aria-hidden="true">${series.map(({ suffix }, i) => {
+			return svg`<g part="indicator" aria-hidden="true">${FORCED_COLORS_STYLE}${series.map(({ suffix }, i) => {
 				const dashed = options.kind === "bollinger" && suffix !== " Mid";
 				return svg`<path
 					class="indicator-line ${dashed ? "indicator-line--band" : ""}"

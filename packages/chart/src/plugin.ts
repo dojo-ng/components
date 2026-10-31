@@ -5,7 +5,9 @@ import type { DjChart } from "./dj-chart.js";
 /** A strip of vertical space below the plot, owned by a plugin (volume, an oscillator). */
 export interface ChartPane {
 	id: string;
-	/** Height in px. The core shrinks the plot by the sum of all panes. */
+	/** Height in px. The core shrinks the plot by the sum of all panes. On a short chart the core
+	 * scales every pane down proportionally so panes never take more than 40% of the plot's
+	 * height, leaving the main plot readable. */
 	height: number;
 	/** Value domain for this pane's own scale. */
 	domain: [number, number];
@@ -32,6 +34,16 @@ export interface ChartContext {
 	refresh(): void;
 }
 
+/** One legend entry a plugin contributes. */
+export interface ChartLegendItem {
+	label: string;
+	color: string;
+	/** How the swatch draws under forced colors, where every color becomes a system color and the
+	 * hue can no longer tell entries apart: `"hollow"` (an outline) matches a mark that renders
+	 * hollow there, such as an up candle. Default `"solid"`. */
+	swatch?: "solid" | "hollow";
+}
+
 export interface ChartPlugin {
 	name: string;
 	/** Extra value-domain reach, merged into the primary axis domain. */
@@ -47,9 +59,16 @@ export interface ChartPlugin {
 	/** Replace the tooltip body for a category. First non-undefined in array order wins. */
 	renderTooltip?(category: string, ctx: ChartContext): TemplateResult | undefined;
 	/** Legend entries for marks this plugin draws (they are not in `series`). */
-	legendItems?(ctx: ChartContext): Array<{ label: string; color: string }>;
-	/** Extra columns for the accessible data table: a header and one cell per rendered row. */
+	legendItems?(ctx: ChartContext): ChartLegendItem[];
+	/** Extra columns for the accessible data table: a header and one cell per row. The table always
+	 * lists every row, so the core calls this with a context whose `data` is the chart's full
+	 * `data`, not the brush window's slice; cells are matched to rows by position. A cell of "—"
+	 * is announced as "No value", the same as a core series' missing cell. */
 	tableRows?(ctx: ChartContext): Array<{ header: string; cells: string[] }>;
+	/** What this plugin draws, in a few words ("Price candlesticks"), for the chart's accessible
+	 * summary. Defaults to the labels of its `legendItems`; a plugin that draws nothing worth
+	 * announcing (a crosshair) returns neither. */
+	describe?(ctx: ChartContext): string | undefined;
 	/** Listeners and controllers. Return a disposer. */
 	setup?(ctx: ChartContext): (() => void) | void;
 }

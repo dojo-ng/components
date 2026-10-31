@@ -11,7 +11,7 @@ import { emulateMedia } from "@web/test-runner-commands";
 import { mount, cleanup, make, assert, assertEqual, settleFrames } from "./helpers.js";
 import { assertNoViolations } from "./a11y.js";
 import "../../packages/chart/dist/index.js";
-import { candlestickPlugin, volumePlugin, indicatorPlugin } from "../../packages/chart-financial/dist/index.js";
+import { candlestickPlugin, volumePlugin, indicatorPlugin, crosshairPlugin } from "../../packages/chart-financial/dist/index.js";
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -159,5 +159,83 @@ describe("@dojo-ng/chart-financial", () => {
 		const name = svg.getAttribute("aria-label") ?? "";
 		assert(/candlestick/i.test(name), `accessible name should say "candlestick": "${name}"`);
 		assert(name.includes(FIRST_DATE) && name.includes(LAST_DATE), `accessible name should include the date range: "${name}"`);
+	});
+	// ---- B1 browser pass (2026-10-29) regressions ----
+
+	// B1 F10: the summary read "Line chart, 0 series:  across 60 categories" — nothing about what
+	// the chart actually draws, and a double space where the empty series list was.
+	it("accessible name lists the candlesticks, volume, and indicator, with no empty series list", async () => {
+		const el = await mount(financialChart({ label: undefined }));
+		await settleChart(el);
+		const name = el.shadowRoot.querySelector('svg[part="plot"]').getAttribute("aria-label");
+		assert(name.startsWith("Chart, 3 series: Price candlesticks, Volume, SMA(10) across 60 categories"), `got "${name}"`);
+		assert(!/0 series|\s{2}/.test(name), `no "0 series" and no double space: "${name}"`);
+	});
+
+	// B1 F9: with the brush narrowed, row 2024-01-02 showed 2024-06-18's prices and every row past
+	// the window was blank. Each row's OHLC/volume cells must be that row's own.
+	it("data table: every row's plugin cells are that row's own values under a narrowed brush", async () => {
+		const el = await mount(financialChart({ brush: true, yScale: "linear" }));
+		await settleChart(el);
+		// Keydown dispatched straight at the handles (the brush's own keyboard handler): thirty real
+		// sendKeys round trips took over the 5s test timeout in Firefox under full-suite load.
+		const press = async (which, key, times) => {
+			for (let i = 0; i < times; i++) {
+				const h = el.shadowRoot.querySelector(`[aria-label="Range ${which}"]`);
+				h.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+				await el.updateComplete;
+			}
+		};
+		await press("start", "ArrowRight", 10);
+		await press("end", "ArrowLeft", 20);
+		await settleChart(el);
+		assertEqual(el.shadowRoot.querySelectorAll(".candle-body").length, 30, "the brush narrowed the drawing to 30 candles");
+		const headers = [...el.shadowRoot.querySelectorAll("table.sr-only thead th")].map((th) => th.textContent);
+		const openCol = headers.indexOf("Price Open");
+		const volCol = headers.indexOf("Volume");
+		const trs = [...el.shadowRoot.querySelectorAll("table.sr-only tbody tr")];
+		assertEqual(trs.length, DATA.length, "the table lists every row");
+		trs.forEach((tr, i) => {
+			const cells = [...tr.children].map((c) => c.textContent.trim());
+			assertEqual(cells[0], DATA[i].date, `row ${i} date`);
+			assertEqual(Number(cells[openCol].replace(/,/g, "")), DATA[i].open, `row ${DATA[i].date}: open belongs to another row`);
+			assertEqual(Number(cells[volCol].replace(/,/g, "")), DATA[i].volume, `row ${DATA[i].date}: volume belongs to another row`);
+		});
+	});
+
+	// B1 F5: the crosshair's value label sat at x=-8 in the tick gutter (clipped at the SVG edge,
+	// on top of the tick labels) and printed the raw inverted value, "126.212".
+	it("crosshair: the value label stays inside the plot and shows only the precision a pixel resolves", async () => {
+		const el = await mount(financialChart({ yScale: "linear", plugins: [candlestickPlugin({ open: "open", high: "high", low: "low", close: "close" }), crosshairPlugin()] }));
+		await settleChart(el);
+		const plot = el.shadowRoot.querySelector('svg[part="plot"]');
+		const r = plot.getBoundingClientRect();
+		el.dispatchEvent(new PointerEvent("pointermove", { clientX: r.left + r.width * 0.37, clientY: r.top + r.height * 0.41, bubbles: true, composed: true }));
+		await el.updateComplete;
+		const labels = [...el.shadowRoot.querySelectorAll(".crosshair-label")];
+		assertEqual(labels.length, 2, "both crosshair labels render");
+		const value = labels.find((t) => t.getAttribute("text-anchor") === "start");
+		assert(value, "the value label is anchored inside the plot");
+		assert(Number(value.getAttribute("x")) >= 0, `value label x ${value.getAttribute("x")} is in the tick gutter`);
+		const decimals = (value.textContent.split(".")[1] ?? "").length;
+		assert(decimals <= 1, `a ~300px axis spanning tens of dollars resolves 0.1 at best; "${value.textContent}" claims ${decimals} decimals`);
+		for (const t of labels) {
+			const b = t.getBoundingClientRect();
+			assert(b.left >= r.left - 0.5 && b.right <= r.right + 0.5, `"${t.textContent}" runs past the plot's edge`);
+		}
+	});
+
+	// B1 F8: under forced colors the SMA stayed theme purple and all four legend swatches became
+	// the same empty box, so "Price (up)" and "Price (down)" couldn't be told apart.
+	it("forced colors: the indicator uses Highlight, and up/down legend swatches differ", async () => {
+		await emulateMedia({ forcedColors: "active" });
+		const el = await mount(financialChart({}));
+		await settleChart(el);
+		const probe = (kw) => { const s = document.createElement("span"); s.style.color = kw; document.body.append(s); const c = getComputedStyle(s).color; s.remove(); return c; };
+		assertEqual(getComputedStyle(el.shadowRoot.querySelector(".indicator-line")).stroke, probe("Highlight"), "SMA line is Highlight");
+		const sw = Object.fromEntries([...el.shadowRoot.querySelectorAll(".legend-item")].map((i) => [i.textContent.trim(), getComputedStyle(i.querySelector(".legend-swatch")).backgroundColor]));
+		assertEqual(sw["Price (up)"], probe("Canvas"), "the up swatch is hollow, like an up candle");
+		assertEqual(sw["Price (down)"], probe("CanvasText"), "the down swatch is solid, like a down candle");
+		assertEqual(sw["SMA(10)"], probe("Highlight"), "the SMA swatch matches its line");
 	});
 });

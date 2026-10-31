@@ -33,6 +33,14 @@ import {
 	baselineOf,
 	isLogScale,
 	logTicks,
+	summary,
+	linearTickCount,
+	axisGutter,
+	thinAxisLabels,
+	pointLabelOffset,
+	LABEL_GAP_PX,
+	spaceTicks,
+	MIN_LINEAR_TICK_GAP_PX,
 } from "../packages/chart/dist/core.js";
 import { scaleLinear, scaleLog } from "d3-scale";
 import { inlinePresentationalStyles, serializeChartSvg } from "../packages/chart/dist/export.js";
@@ -1289,4 +1297,69 @@ test("toSvg(): renderer=canvas on an unsupported type (bar) takes the svg path â
 	const out = el.toSvg();
 	assert.ok(out.startsWith("<svg"));
 	assert.ok(!out.includes("<image"), "a chart that asked for canvas but fell back must not get a bitmap composited over it");
+});
+
+// ---- B1 browser pass (2026-10-29) regressions: pure helpers ----
+
+test("summary: a plugin-only chart names its plugins and says 'Chart', not its routing type", () => {
+	const cats = ["a", "b", "c"];
+	assert.equal(summary("line", [], cats, ["Price candlesticks", "Volume"]), "Chart, 2 series: Price candlesticks, Volume across 3 categories (a to c).");
+	assert.equal(summary("line", [{ key: "v", label: "Visits" }], cats, ["SMA(20)"]), "Line chart, 2 series: Visits, SMA(20) across 3 categories (a to c).");
+});
+
+test("summary: an empty series list leaves no dangling colon or double space", () => {
+	const s = summary("line", [], ["a", "b"]);
+	assert.equal(s, "Line chart, 0 series across 2 categories (a to b).");
+	assert.ok(!/\s{2}|:\s/.test(s));
+	assert.equal(summary("bar", [{ key: "v" }], ["a"]), "Bar chart, 1 series: v across 1 categories (a to a).", "the ordinary case is unchanged");
+});
+
+test("linearTickCount: lowers the count on a short axis, never below 2", () => {
+	assert.equal(linearTickCount(5), 5);
+	assert.equal(linearTickCount(5, 300), 5);
+	assert.equal(linearTickCount(5, 84), 3);
+	assert.equal(linearTickCount(5, 20), 2);
+	assert.equal(linearTickCount(5, 0), 5, "no layout yet: leave the count alone");
+});
+
+test("axisGutter: grows to fit the widest label plus the title, within min and max", () => {
+	assert.equal(axisGutter(["0", "50", "100"], false, 44, 400), 44, "short labels, no title: the default");
+	assert.equal(axisGutter(["0", "20", "40"], true, 44, 400), 44, "two-digit labels fit beside a title in the default");
+	const long = axisGutter(["10,000,000"], true, 44, 400);
+	assert.ok(long >= 8 + 10 * 12 * 0.6 + 19, `"10,000,000" plus a title needs more than ${long}`);
+	assert.ok(axisGutter(["10,000,000"], false, 44, 400) < long, "no title, less room");
+	assert.equal(axisGutter(["x".repeat(200)], true, 44, 120), 120, "capped at max");
+});
+
+test("thinAxisLabels: keeps non-overlapping labels left to right, skipping empty ones", () => {
+	const at = (xs, text = "Mon") => xs.map((x) => ({ x, text }));
+	const idx = (r) => r.map((k) => k.index);
+	assert.deepEqual(idx(thinAxisLabels(at([0, 50, 100]))), [0, 1, 2], "well spaced: all kept");
+	assert.deepEqual(idx(thinAxisLabels(at([0, 10, 20, 30, 40, 50]))), [0, 3], "crowded: every third survives");
+	const mixed = [{ x: 0, text: "Jan" }, { x: 5, text: "" }, { x: 10, text: "" }, { x: 40, text: "Feb" }];
+	assert.deepEqual(idx(thinAxisLabels(mixed)), [0, 3], "empty labels from formatX are skipped, not counted");
+});
+
+test("thinAxisLabels: a label at the edge slides inside the bounds instead of running off", () => {
+	const half = (3 * 12 * 0.6) / 2;
+	const kept = thinAxisLabels([{ x: 0, text: "Jan" }, { x: 300, text: "Dec" }], undefined, undefined, -10, 305);
+	assert.equal(kept[0].x, -10 + half, "slid right to clear the left edge");
+	assert.equal(kept[1].x, 305 - half, "slid left to clear the right edge");
+	const crowd = thinAxisLabels([{ x: 280, text: "Nov" }, { x: 300, text: "Dec" }], undefined, undefined, 0, 302);
+	assert.equal(crowd.length, 1, "overlap is judged where the slid label actually draws");
+});
+
+test("pointLabelOffset and LABEL_GAP_PX: a label clears its mark, and neighbors clear each other's halo", () => {
+	assert.ok(pointLabelOffset(3.5) - 3.5 - 0.75 >= 11 / 2 + 1, "label's lower half plus 1px of air sits above a 3.5px marker and its stroke");
+	assert.ok(LABEL_GAP_PX >= 3 + 3, "room for the 3px halo plus a few px");
+});
+
+test("spaceTicks: thins d3's ticks until neighbors clear the minimum gap; one label on a zero-height axis", () => {
+	const y = scaleLinear().domain([120, 180]).range([30, 0]);
+	const ticks = y.ticks(2); // d3 treats 2 as a hint and returns more
+	assert.ok(ticks.length > 2, `fixture: d3 returned ${ticks.length} ticks`);
+	const spaced = spaceTicks(y, ticks, 30);
+	for (let i = 1; i < spaced.length; i++) assert.ok(Math.abs(y(spaced[i]) - y(spaced[i - 1])) >= MIN_LINEAR_TICK_GAP_PX);
+	assert.deepEqual(spaceTicks(y, ticks, undefined), ticks, "no measured height: untouched");
+	assert.equal(spaceTicks(scaleLinear().domain([0, 1]).range([0, 0]), [0, 0.5, 1], 0).length, 1);
 });

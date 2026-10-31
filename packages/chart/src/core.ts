@@ -526,14 +526,43 @@ export function centerSubLabelSize(innerRadius: number): number {
  * still get a sane, if untidied, answer rather than a thrown error. */
 export function yTicks(scales: Scales, count = 5, pixels?: number): number[] {
 	if (isLogScale(scales.y)) return pixels !== undefined ? logTicks(scales.y, pixels) : scales.y.ticks();
-	return scales.y.ticks(count);
+	return spaceTicks(scales.y, scales.y.ticks(linearTickCount(count, pixels)), pixels);
+}
+
+/** Minimum vertical room per linear tick, in px: about two lines of the 0.75rem axis text. */
+export const MIN_LINEAR_TICK_SPACING_PX = 28;
+
+/** The tick count to ask a linear scale for: `count`, lowered when `pixels` is too short to give
+ * each tick {@link MIN_LINEAR_TICK_SPACING_PX} (a short plot, or one a plugin pane has shrunk),
+ * so the labels never overprint. Never below 2, so an axis keeps both ends readable. */
+export function linearTickCount(count: number, pixels?: number): number {
+	if (pixels === undefined || !(pixels > 0)) return count;
+	return Math.max(2, Math.min(count, Math.floor(pixels / MIN_LINEAR_TICK_SPACING_PX)));
 }
 
 /** Tick values for any value scale (used for the secondary axis and the horizontal path) — the
  * same log-aware behavior as {@link yTicks}, for a scale that isn't necessarily `scales.y` itself. */
 export function ticksOf(scale: ValueScale, count = 5, pixels?: number): number[] {
 	if (isLogScale(scale)) return pixels !== undefined ? logTicks(scale, pixels) : scale.ticks();
-	return scale.ticks(count);
+	return spaceTicks(scale, scale.ticks(linearTickCount(count, pixels)), pixels);
+}
+
+/** Minimum pixel distance between two linear tick labels: one line of 0.75rem axis text plus a
+ * little air. */
+export const MIN_LINEAR_TICK_GAP_PX = 16;
+
+/** d3 treats a tick count as a hint (asked for 2 it can return 4), so after asking for fewer
+ * ticks on a short axis, keep every `stride`th one until neighbors sit at least
+ * {@link MIN_LINEAR_TICK_GAP_PX} apart. No-op without a measured `pixels`. */
+export function spaceTicks(scale: ValueScale, ticks: number[], pixels?: number): number[] {
+	if (pixels === undefined || ticks.length < 2) return ticks;
+	if (!(pixels > 0)) return ticks.slice(0, 1); // a plot with no height has room for one label
+	const clears = (ts: number[]) => ts.every((t, i) => i === 0 || Math.abs(scale(t) - scale(ts[i - 1])) >= MIN_LINEAR_TICK_GAP_PX);
+	for (let stride = 1; stride < ticks.length; stride++) {
+		const thinned = ticks.filter((_, i) => i % stride === 0);
+		if (clears(thinned)) return thinned;
+	}
+	return ticks.slice(0, 1);
 }
 
 /** Decade-first tick thinning for a logarithmic value scale: `scaleLog().ticks()`
@@ -700,6 +729,17 @@ const LABEL_CHAR_WIDTH_FACTOR = 0.6;
  * per-node cost that tick labels and hit-bands have to guard against. */
 export const LABEL_DENSITY_CAP = 150;
 
+/** Horizontal clearance between two kept point labels' estimated boxes: the 3px halo plus room
+ * for the estimate to run short (Firefox's default sans renders digits wider than the 0.6em
+ * estimate, so a 4px clearance let neighbors touch there). */
+export const LABEL_GAP_PX = 7;
+
+/** How far above a point its label's center sits: the mark's radius plus half a label line and a
+ * little air, so the text clears the dot instead of cutting into it. */
+export function pointLabelOffset(markRadius: number): number {
+	return markRadius + 8.5;
+}
+
 /** Estimated pixel width of a label's text at the given font size (see the section note — this is
  * deliberately approximate, not `getBBox`). */
 export function estimateLabelWidth(text: string, fontSize: number): number {
@@ -718,23 +758,28 @@ export function placeLabels(candidates: PointLabel[], fontSize: number): { kept:
 		const cw = estimateLabelWidth(c.text, fontSize);
 		const overlaps = kept.some((k) => {
 			const kw = estimateLabelWidth(k.text, fontSize);
-			return Math.abs(c.x - k.x) < (cw + kw) / 2 + 4 && Math.abs(c.y - k.y) < fontSize + 4;
+			return Math.abs(c.x - k.x) < (cw + kw) / 2 + LABEL_GAP_PX && Math.abs(c.y - k.y) < fontSize + 4;
 		});
 		if (!overlaps) kept.push(c);
 	}
 	return { kept, capped: false };
 }
 
-/** A short text summary for the chart's accessible name. */
-export function summary(chartType: ChartType, series: ChartSeries[], cats: string[]): string {
+/** A short text summary for the chart's accessible name. `extra` names what plugins draw
+ * (candlesticks, a volume pane, an indicator): they count as series here, since that is what a
+ * listener would call them. A chart drawn only by plugins says "Chart" rather than its `type`,
+ * which for such a chart is only a routing value. */
+export function summary(chartType: ChartType, series: ChartSeries[], cats: string[], extra: string[] = []): string {
 	const cap = chartType[0].toUpperCase() + chartType.slice(1);
 	if (chartType === "pie" || chartType === "donut") {
 		return `${cap} chart, ${cats.length} slices: ${cats.join(", ")}.`;
 	}
-	const names = series.map((s) => s.label ?? s.key).join(", ");
+	const names = [...series.map((s) => s.label ?? s.key), ...extra];
+	const lead = series.length === 0 && extra.length > 0 ? "Chart" : `${cap} chart`;
+	const list = names.length ? `: ${names.join(", ")}` : "";
 	const hasCats = cats.length > 0 && cats[0] !== "";
 	const span = hasCats ? ` across ${cats.length} categories (${cats[0]} to ${cats[cats.length - 1]})` : "";
-	return `${cap} chart, ${series.length} series: ${names}${span}.`;
+	return `${lead}, ${names.length} series${list}${span}.`;
 }
 
 /** The chart's accessible name: an optional lead-in label, the generated data summary, and an
@@ -745,9 +790,59 @@ export function accessibleName(
 	series: ChartSeries[],
 	cats: string[],
 	centerLabel?: string,
+	extra: string[] = [],
 ): string {
-	const base = `${label ? label + ". " : ""}${summary(chartType, series, cats)}`;
+	const base = `${label ? label + ". " : ""}${summary(chartType, series, cats, extra)}`;
 	return centerLabel ? `${base} ${centerLabel}.` : base;
+}
+
+/** Font size of axis tick text in px (`.axis text` is 0.75rem). */
+export const AXIS_FONT_SIZE = 12;
+
+/** Estimated rendered width of the widest of `labels` at {@link AXIS_FONT_SIZE}, the same
+ * character-count estimate point labels use (no text measurement, so it works before layout and
+ * in happy-dom). Used to size the y-axis gutters so long tick labels are not clipped. */
+export function axisLabelWidth(labels: string[]): number {
+	let widest = 0;
+	for (const l of labels) widest = Math.max(widest, estimateLabelWidth(l, AXIS_FONT_SIZE));
+	return Math.ceil(widest);
+}
+
+/** The y-axis gutter (left or right margin) that fits `labels`: the tick-to-label gap, the widest
+ * label, and room for a rotated axis title when there is one. Never below `min` (the default
+ * margin), never above `max` (so a pathological label can't eat the plot). */
+export function axisGutter(labels: string[], hasTitle: boolean, min: number, max: number): number {
+	// The rotated title is centered 12px in from the edge with a ~13px line, so it occupies the
+	// first 19px; without one, keep a few px off the SVG edge.
+	const need = 8 + axisLabelWidth(labels) + (hasTitle ? 19 : 4);
+	return Math.max(min, Math.min(max, need));
+}
+
+/** Which category labels to draw so none overprints its neighbor, and where: walks the labels
+ * left to right and keeps one only when its estimated box clears the last kept one by `gapPx`.
+ * A label whose box would run past `[minX, maxX]` (the SVG's edges, in plot coordinates) is
+ * slid inward to fit, and judged for overlap where it will actually draw. Empty labels (a
+ * `formatX` that returns "" for categories it wants unlabeled) are skipped, not counted, so a
+ * consumer's own thinning composes with this one. Returns the kept labels' indices and centers. */
+export function thinAxisLabels(
+	labels: Array<{ x: number; text: string }>,
+	fontSize = AXIS_FONT_SIZE,
+	gapPx = 6,
+	minX = -Infinity,
+	maxX = Infinity,
+): Array<{ index: number; x: number }> {
+	const kept: Array<{ index: number; x: number }> = [];
+	let lastRight = -Infinity;
+	labels.forEach((l, i) => {
+		if (!l.text) return;
+		const half = estimateLabelWidth(l.text, fontSize) / 2;
+		const x = Math.max(minX + half, Math.min(maxX - half, l.x));
+		if (x - half >= lastRight + gapPx) {
+			kept.push({ index: i, x });
+			lastRight = x + half;
+		}
+	});
+	return kept;
 }
 
 // ---- sparkline ----

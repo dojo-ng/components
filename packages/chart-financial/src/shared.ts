@@ -21,7 +21,8 @@ export const DEFAULT_DOWN_COLOR = "var(--dj-chart-down, #dc2626)";
  * `--dj-chart-up`/`--dj-chart-down` resolve to, so up/down would otherwise become visually
  * identical — this is what actually carries the distinction there: up renders hollow (`fill:
  * none`, an outline only — the same convention real candlestick platforms already use), down
- * renders solid. Rendered as an inline `<style>` inside each plugin's own SVG output
+ * renders solid. Indicator lines, the crosshair, and plugin legend swatches get system colors too.
+ * Rendered as an inline `<style>` inside each plugin's own SVG output
  * (`renderUnder`/`renderPane`) rather than added to `theme.css`, because a page-level stylesheet
  * can't reach marks drawn into `dj-chart`'s shadow root — only a stylesheet living in that same
  * shadow root (which this is, once Lit commits it) can. */
@@ -36,5 +37,11 @@ export const FORCED_COLORS_STYLE = svg`<style>
 		.volume-bar[data-direction="up"] { fill: none; stroke: CanvasText; stroke-width: 1.5; }
 		.volume-bar[data-direction="down"] { fill: CanvasText; stroke: CanvasText; }
 		.volume-bar[data-direction="neutral"] { fill: CanvasText; fill-opacity: 0.5; stroke: CanvasText; }
+		/* Indicator lines use Highlight so they stay distinct from the CanvasText candles they
+		   overlay; the legend swatch follows so the entry still matches its line. */
+		.indicator-line { stroke: Highlight; }
+		.legend-swatch[data-plugin="indicator"] { background: Highlight !important; }
+		.crosshair-line { stroke: CanvasText; }
+		.crosshair-label { fill: CanvasText; stroke: Canvas; }
 	}
 </style>`;

@@ -551,6 +551,7 @@ declare module "@dojo-ng/framework" {
         "orientation"?: DjSplitPanel["orientation"];
         "position"?: DjSplitPanel["position"];
         "disabled"?: DjSplitPanel["disabled"];
+        "no-scroll-restore"?: DjSplitPanel["noScrollRestore"];
       };
       "dj-stack": DjVNodeBase & {
         "direction"?: DjStack["direction"];

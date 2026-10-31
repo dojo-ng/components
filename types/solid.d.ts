@@ -545,6 +545,7 @@ declare module "solid-js" {
         "orientation"?: DjSplitPanel["orientation"];
         "position"?: DjSplitPanel["position"];
         "disabled"?: DjSplitPanel["disabled"];
+        "no-scroll-restore"?: DjSplitPanel["noScrollRestore"];
       };
       "dj-stack": JSX.HTMLAttributes<DjStack> & {
         "direction"?: DjStack["direction"];

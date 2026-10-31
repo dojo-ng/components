@@ -549,6 +549,7 @@ declare module "react" {
         "orientation"?: DjSplitPanel["orientation"];
         "position"?: DjSplitPanel["position"];
         "disabled"?: DjSplitPanel["disabled"];
+        "no-scroll-restore"?: DjSplitPanel["noScrollRestore"];
       };
       "dj-stack": DjProps<DjStack> & {
         "direction"?: DjStack["direction"];

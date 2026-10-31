@@ -9554,7 +9554,7 @@
           "name": "DjSplitPanel",
           "customElement": true,
           "tagName": "dj-split-panel",
-          "description": "two resizable panes with a draggable divider between them.\n\nPut the panes in the `start` and `end` slots. `position` is the start pane's share of the space, as a percent from 0 to 100. The host needs a size, because the panes fill it: for a horizontal split, give it a height.\n\n#### Layout\n\n- `orientation=\"horizontal\"` (the default) puts the panes side by side with a vertical divider. `vertical` stacks them with a horizontal divider.\n- The panes always divide in the ratio `position` : (100 \u2212 `position`).\n- Minimum pane sizes come from CSS, not from properties: set `--dj-split-panel-min-start` and `--dj-split-panel-min-end` in any length unit, and dragging stops at that size.\n- The order follows the writing direction, so in a right-to-left page the start pane is on the right with no extra work.\n- The divider bar is drawn by the component. Put custom grip content in the optional `divider` slot.\n- For three panes, nest a second `dj-split-panel` inside a slot of the first.\n\n#### Resizing\n\n- Drag the divider with a mouse, a trackpad, or touch.\n- Or focus the divider and use the keyboard, so resizing never requires dragging (WCAG 2.5.7): the arrow keys move it by 1 (Shift: by 10), Home moves it to 0, and End to 100. A horizontal split uses Left and Right in the reading direction; a vertical split uses Up and Down.\n- `dj-reposition` fires when the split settles: once when a drag ends, and once per key press.\n\n#### Accessibility\n\n- The divider has `role=\"separator\"`, with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax` tracking `position`.\n- Its `aria-orientation` is the divider's own direction, so a horizontal split has a vertical separator.",
+          "description": "two resizable panes with a draggable divider between them.\n\nPut the panes in the `start` and `end` slots. `position` is the start pane's share of the space, as a percent from 0 to 100. The host needs a size, because the panes fill it: for a horizontal split, give it a height.\n\n#### Layout\n\n- `orientation=\"horizontal\"` (the default) puts the panes side by side with a vertical divider. `vertical` stacks them with a horizontal divider.\n- The panes always divide in the ratio `position` : (100 \u2212 `position`).\n- Minimum pane sizes come from CSS, not from properties: set `--dj-split-panel-min-start` and `--dj-split-panel-min-end` in any length unit, and dragging stops at that size.\n- The order follows the writing direction, so in a right-to-left page the start pane is on the right with no extra work.\n- The divider bar is drawn by the component. Put custom grip content in the optional `divider` slot.\n- For three panes, nest a second `dj-split-panel` inside a slot of the first.\n\n#### Resizing\n\n- Drag the divider with a mouse, a trackpad, or touch.\n- Or focus the divider and use the keyboard, so resizing never requires dragging (WCAG 2.5.7): the arrow keys move it by 1 (Shift: by 10), Home moves it to 0, and End to 100. A horizontal split uses Left and Right in the reading direction; a vertical split uses Up and Down.\n- `dj-reposition` fires when the split settles: once when a drag ends, and once per key press.\n\n#### Accessibility\n\n- The divider has `role=\"separator\"`, with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax` tracking `position`.\n- Its `aria-orientation` is the divider's own direction, so a horizontal split has a vertical separator.\n\n#### Navigation\n\n- With `@dojo-ng/history` installed with `scroll` on, Back, Forward and reload put both panes back where the user left them, as they do for the page. The panes scroll inside the shadow root, so the panel registers them itself, as `<id>:start` and `<id>:end`.\n- That needs an `id` on the host, unique on the page and the same each time the view is rendered, so a panel re-created after Back gets its old offsets. Without an `id`, nothing is registered, and one console warning per page says so.\n- Set `no-scroll-restore` to leave a panel's panes alone.\n- The package is only read when history is installed; a panel on a page without it is unchanged.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -9591,6 +9591,17 @@
               "description": "When set, the divider is inert (no drag, no keyboard, not a tab stop).",
               "attribute": "disabled",
               "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "noScrollRestore",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Don't save and restore the panes' scroll positions with navigation history.",
+              "attribute": "no-scroll-restore",
+              "reflects": true
             }
           ],
           "attributes": [
@@ -9617,6 +9628,14 @@
               },
               "fieldName": "disabled",
               "description": "When set, the divider is inert (no drag, no keyboard, not a tab stop)."
+            },
+            {
+              "name": "no-scroll-restore",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "noScrollRestore",
+              "description": "Don't save and restore the panes' scroll positions with navigation history."
             }
           ],
           "slots": [

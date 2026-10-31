@@ -1019,11 +1019,19 @@ Put the panes in the `start` and `end` slots. `position` is the start pane's sha
 - The divider has `role="separator"`, with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax` tracking `position`.
 - Its `aria-orientation` is the divider's own direction, so a horizontal split has a vertical separator.
 
+#### Navigation
+
+- With `@dojo-ng/history` installed with `scroll` on, Back, Forward and reload put both panes back where the user left them, as they do for the page. The panes scroll inside the shadow root, so the panel registers them itself, as `<id>:start` and `<id>:end`.
+- That needs an `id` on the host, unique on the page and the same each time the view is rendered, so a panel re-created after Back gets its old offsets. Without an `id`, nothing is registered, and one console warning per page says so.
+- Set `no-scroll-restore` to leave a panel's panes alone.
+- The package is only read when history is installed; a panel on a page without it is unchanged.
+
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `orientation` | orientation ↻ | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `position` | position ↻ | `number` | `50` |
 | `disabled` | disabled ↻ | `boolean` | `false` |
+| `noScrollRestore` | no-scroll-restore ↻ | `boolean` | `false` |
 
 **Slots:** `start`, `divider`, `end`
 

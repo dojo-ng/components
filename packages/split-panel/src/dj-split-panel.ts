@@ -2,12 +2,16 @@ import { html, nothing } from "lit";
 import { property } from "lit/decorators.js";
 import DojoElement from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults, getDir } from "@dojo-ng/i18n";
+import { getHistory, whenHistory, type HistoryInstance } from "@dojo-ng/history/handle";
 import styles from "./dj-split-panel.styles.js";
 
 registerDefaults("dj", { resize: "Resize" });
 const EN: Record<string, string> = { resize: "Resize" };
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+/** The missing-id warning is given once per page, however many panels lack one. */
+let warnedNoId = false;
 
 /**
  * `<dj-split-panel>` — two resizable panes with a draggable divider between them.
@@ -41,6 +45,16 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
  * - Its `aria-orientation` is the divider's own direction, so a horizontal split has a vertical
  *   separator.
  *
+ * #### Navigation
+ * - With `@dojo-ng/history` installed with `scroll` on, Back, Forward and reload put both panes back
+ *   where the user left them, as they do for the page. The panes scroll inside the shadow root, so
+ *   the panel registers them itself, as `<id>:start` and `<id>:end`.
+ * - That needs an `id` on the host, unique on the page and the same each time the view is
+ *   rendered, so a panel re-created after Back gets its old offsets. Without an `id`, nothing is
+ *   registered, and one console warning per page says so.
+ * - Set `no-scroll-restore` to leave a panel's panes alone.
+ * - The package is only read when history is installed; a panel on a page without it is unchanged.
+ *
  * Slots: `start` — the first pane; `end` — the second pane; `divider` — optional custom grip
  * content (the divider bar itself stays shadow-side).
  * Parts: `start`, `end`, `divider`.
@@ -63,9 +77,85 @@ export class DjSplitPanel extends DojoElement {
 	@property({ type: Number, reflect: true }) position = 50;
 	/** When set, the divider is inert (no drag, no keyboard, not a tab stop). */
 	@property({ type: Boolean, reflect: true }) disabled = false;
+	/** Don't save and restore the panes' scroll positions with navigation history. */
+	@property({ type: Boolean, reflect: true, attribute: "no-scroll-restore" }) noScrollRestore = false;
 
 	#i18n = new LocaleController(this);
 	#dragging = false;
+	/** What the panes are registered under now, and with which history. */
+	#scrollKey: string | undefined;
+	#scrollHistory: HistoryInstance | undefined;
+	#unregisterScroll: Array<() => void> = [];
+	#waitingForHistory = false;
+	#idObserver: MutationObserver | undefined;
+
+	override connectedCallback() {
+		super.connectedCallback();
+		if (typeof MutationObserver === "function") {
+			this.#idObserver ??= new MutationObserver(() => this.#syncScroll());
+			this.#idObserver.observe(this, { attributes: true, attributeFilter: ["id"] });
+		}
+		if (this.hasUpdated) this.#syncScroll();
+	}
+
+	override disconnectedCallback() {
+		super.disconnectedCallback();
+		this.#idObserver?.disconnect();
+		this.#dropScroll();
+	}
+
+	protected override firstUpdated() {
+		this.#syncScroll();
+	}
+
+	protected override updated(changed: Map<PropertyKey, unknown>) {
+		if (changed.has("noScrollRestore") && this.hasUpdated) this.#syncScroll();
+	}
+
+	/** Register the panes under the host's id, or unregister them, to match the current state. */
+	#syncScroll() {
+		const wanted = this.isConnected && this.hasUpdated && !this.noScrollRestore;
+		const history = wanted ? getHistory() : undefined;
+		if (wanted && !history) {
+			this.#dropScroll();
+			this.#waitForHistory();
+			return;
+		}
+		const key = history ? this.id : "";
+		if (history && !key && !warnedNoId) {
+			warnedNoId = true;
+			console.warn("[@dojo-ng/split-panel] A dj-split-panel has no id, so Back can't restore its panes' scroll. Give it an id, or set no-scroll-restore. This is the only warning of this kind.");
+		}
+		if (key === (this.#scrollKey ?? "") && history === this.#scrollHistory) return;
+		this.#dropScroll();
+		const start = this.renderRoot.querySelector(".pane--start");
+		const end = this.renderRoot.querySelector(".pane--end");
+		// scrollTarget is new in history 0.3.0; with an older one installed, the panes are left alone.
+		if (!history || !key || !start || !end || typeof history.scrollTarget !== "function") return;
+		this.#unregisterScroll = [history.scrollTarget(`${key}:start`, start), history.scrollTarget(`${key}:end`, end)];
+		this.#scrollKey = key;
+		this.#scrollHistory = history;
+	}
+
+	#dropScroll() {
+		for (const unregister of this.#unregisterScroll) unregister();
+		this.#unregisterScroll = [];
+		this.#scrollKey = undefined;
+		this.#scrollHistory = undefined;
+	}
+
+	#waitForHistory() {
+		if (this.#waitingForHistory) return;
+		this.#waitingForHistory = true;
+		// A WeakRef, so a panel removed before history is installed (it may never be) is not kept alive.
+		const self = new WeakRef(this);
+		void whenHistory().then(() => {
+			const panel = self.deref();
+			if (!panel) return;
+			panel.#waitingForHistory = false;
+			panel.#syncScroll();
+		});
+	}
 
 	#msg(key: string, params?: Record<string, string | number>): string {
 		return messages.resolve("dj", this.#i18n.locale, key, params) ?? EN[key] ?? key;

@@ -5,6 +5,7 @@ import { settled } from "./setup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import "../packages/split-panel/dist/index.js";
+import { installFakeHistory } from "./fake-history-window.js";
 
 const tick = async (n = 2) => { for (let i = 0; i < n; i++) await new Promise((r) => setTimeout(r, 0)); };
 
@@ -164,4 +165,118 @@ test("disabled: not a tab stop, keyboard and pointer inert, no events", async ()
 	d.dispatchEvent(pointer("pointerup", { clientX: 150, clientY: 50 }));
 	assert.equal(el.position, 50);
 	assert.equal(seen.length, 0);
+});
+
+// --- Navigation: the panes register with history (C11) ----------------------------------------
+// The panel's job is only to name its panes; saving and restoring them is history's, and is tested
+// in framework/packages/history. Here a spy on scrollTarget records what is registered and when.
+
+/** Install history and record every scrollTarget register and unregister. */
+const clearPanels = () => { for (const leftover of document.querySelectorAll("dj-split-panel")) leftover.remove(); };
+function withHistory(t, { clear = true } = {}) {
+	// Panels left by earlier tests have no id and would register (and warn) when history arrives.
+	if (clear) clearPanels();
+	const env = installFakeHistory({ scroll: true });
+	t.after(() => env.stop());
+	const log = [];
+	const live = new Map();
+	const original = env.h.scrollTarget;
+	env.h.scrollTarget = (key, el) => {
+		log.push(["register", key]);
+		live.set(key, el);
+		const unregister = original(key, el);
+		return () => {
+			log.push(["unregister", key]);
+			if (live.get(key) === el) live.delete(key);
+			unregister();
+		};
+	};
+	return { ...env, log, live };
+}
+const pane = (el, which) => el.renderRoot.querySelector(`.pane--${which}`);
+
+test("with an id, the two shadow panes are registered as <id>:start and <id>:end", async (t) => {
+	const { log, live } = withHistory(t);
+	const el = await build({ id: "mail" });
+	t.after(() => el.remove());
+	assert.deepEqual(log, [["register", "mail:start"], ["register", "mail:end"]]);
+	assert.equal(live.get("mail:start"), pane(el, "start"));
+	assert.equal(live.get("mail:end"), pane(el, "end"));
+});
+
+test("disconnect unregisters both panes, and reconnect registers them again", async (t) => {
+	const { log, live } = withHistory(t);
+	const el = await build({ id: "mail" });
+	el.remove();
+	assert.deepEqual(log.slice(2), [["unregister", "mail:start"], ["unregister", "mail:end"]]);
+	assert.equal(live.size, 0);
+	document.body.appendChild(el);
+	t.after(() => el.remove());
+	await settled(el);
+	assert.deepEqual([...live.keys()], ["mail:start", "mail:end"]);
+});
+
+test("changing the id re-registers under the new key", async (t) => {
+	const { live } = withHistory(t);
+	const el = await build({ id: "mail" });
+	t.after(() => el.remove());
+	el.id = "inbox";
+	await tick();
+	assert.deepEqual([...live.keys()], ["inbox:start", "inbox:end"]);
+	assert.equal(live.get("inbox:start"), pane(el, "start"));
+});
+
+test("history installed after the panel: the panes register when it arrives", async (t) => {
+	clearPanels();
+	const el = await build({ id: "late" });
+	t.after(() => el.remove());
+	const { live } = withHistory(t, { clear: false });
+	await tick();
+	assert.deepEqual([...live.keys()], ["late:start", "late:end"]);
+});
+
+test("no-scroll-restore registers nothing, and turning it on later unregisters", async (t) => {
+	const { log, live } = withHistory(t);
+	const off = await build({ id: "off", noScrollRestore: true });
+	t.after(() => off.remove());
+	assert.equal(off.getAttribute("no-scroll-restore"), "");
+	assert.deepEqual(log, []);
+
+	const on = await build({ id: "on" });
+	t.after(() => on.remove());
+	on.noScrollRestore = true;
+	await settled(on);
+	assert.equal(live.size, 0);
+	on.noScrollRestore = false;
+	await settled(on);
+	assert.deepEqual([...live.keys()], ["on:start", "on:end"]);
+});
+
+test("without an id, nothing is registered and one warning is given per page", async (t) => {
+	const { log } = withHistory(t);
+	const warnings = [];
+	t.mock.method(console, "warn", (message) => warnings.push(String(message)));
+	const first = await build();
+	const second = await build();
+	t.after(() => { first.remove(); second.remove(); });
+	assert.deepEqual(log, []);
+	assert.equal(warnings.filter((w) => w.includes("dj-split-panel has no id")).length, 1);
+});
+
+test("without history installed, an id-less panel does not warn", async (t) => {
+	const warnings = [];
+	t.mock.method(console, "warn", (message) => warnings.push(String(message)));
+	const el = await build();
+	t.after(() => el.remove());
+	assert.equal(warnings.length, 0);
+});
+
+test("an older history without scrollTarget is left alone, without an error", async (t) => {
+	const env = installFakeHistory({ scroll: true });
+	t.after(() => env.stop());
+	clearPanels();
+	env.h.scrollTarget = undefined; // as history 0.2.0
+	const el = await build({ id: "old" });
+	t.after(() => el.remove());
+	assert.ok(pane(el, "start"), "the panel renders");
 });

@@ -25,7 +25,7 @@ import styles from "./dj-card.styles.js";
  */
 export class DjCard extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.1";
+	static override version = "0.2.0";
 	@property({ reflect: true }) kind: "elevated" | "outlined" = "elevated";
 	@property({ type: Boolean }) square = false;
 	@property() title = "";

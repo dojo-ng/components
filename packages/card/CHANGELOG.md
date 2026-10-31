@@ -1,5 +1,16 @@
 # @dojo-ng/card
 
+## 0.2.0
+
+### Minor Changes
+
+- Add `path` and `track`. With `path` set, the card renders as a real link (`<a href>`) and dispatches `dj-navigate`; with `track` it also follows `nav:location` and shows `aria-current="page"` when it is the current page. Needs `@dojo-ng/history` installed to do either; without it the card behaves as before.
+
+### Patch Changes
+
+- Depend on `@dojo-ng/history` 0.3.0, so an app gets one copy of history alongside `dj-split-panel`.
+- Depend on `@dojo-ng/history` 0.2.0.
+
 ## 0.1.1
 
 ### Patch Changes

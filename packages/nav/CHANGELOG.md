@@ -1,5 +1,15 @@
 # @dojo-ng/nav
 
+## 0.2.0
+
+### Minor Changes
+
+- Add `track`. A plain click on a link to a page of the same app navigates through `@dojo-ng/history`, the link for the current page gets `aria-current="page"`, and a collapsed panel closes with focus returning to the trigger. Needs `@dojo-ng/history` installed; without it the nav behaves as before.
+
+### Patch Changes
+
+- Depend on `@dojo-ng/history` 0.3.0, so an app gets one copy of history alongside `dj-split-panel`.
+
 ## 0.1.1
 
 ### Patch Changes

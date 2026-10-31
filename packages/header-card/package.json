@@ -1,6 +1,6 @@
 {
   "name": "@dojo-ng/header-card",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "BSD-3-Clause",
   "description": "Dojo NG header-card web component",
   "type": "module",
@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@dojo-ng/dojo-element": "^0.1.2",
-    "@dojo-ng/card": "^0.1.1",
+    "@dojo-ng/card": "^0.2.0",
     "lit": "^3.3.0"
   }
 }

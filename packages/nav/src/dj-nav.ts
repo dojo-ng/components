@@ -79,7 +79,7 @@ const EN: Record<string, string> = {
  */
 export class DjNav extends DojoElement {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.1";
+	static override version = "0.2.0";
 
 	/** Accessible name for the `<nav>` landmark. */
 	@property() label?: string;

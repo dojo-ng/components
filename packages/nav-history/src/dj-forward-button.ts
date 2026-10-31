@@ -29,7 +29,7 @@ registerDefaults("dj", { forward: "Forward" });
  */
 export class DjForwardButton extends DojoElement {
 	static override styles: CSSResultGroup = [styles, reducedMotion];
-	static override version = "0.1.0";
+	static override version = "0.2.0";
 	static override focusable = true;
 
 	/** Replaces the default label. */

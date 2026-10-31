@@ -67,7 +67,7 @@ let warnedNoId = false;
  */
 export class DjSplitPanel extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.1";
+	static override version = "0.2.0";
 	/** The divider is a keyboard focus stop, so the focus trap counts it. */
 	static override focusable = true;
 

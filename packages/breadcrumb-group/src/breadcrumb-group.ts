@@ -36,7 +36,7 @@ interface TrackedCrumb extends Crumb { path: string; }
  * Events: `dj-navigate` (detail `{ path, label, trail }`) on a plain click of a tracked crumb.
  */
 export class DjBreadcrumbGroup extends DojoElement {
-	static override version = "0.1.1";
+	static override version = "0.2.0";
 	static override styles = css`
 		:host{display:block;} ol{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:var(--dj-spacing-2x-small,.25rem);margin:0;padding:0;}
 		a{color:var(--dj-color-primary-600,#2563eb);text-decoration:none;border-radius:2px;} a:hover{text-decoration:underline;}

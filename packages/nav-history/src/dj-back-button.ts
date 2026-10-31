@@ -58,7 +58,7 @@ interface Parent {
  */
 export class DjBackButton extends DojoElement {
 	static override styles: CSSResultGroup = [styles, reducedMotion];
-	static override version = "0.1.0";
+	static override version = "0.2.0";
 	static override focusable = true;
 
 	/** `history` calls Back. `up` goes to the parent page. */

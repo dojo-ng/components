@@ -138,7 +138,10 @@ describe("dj-forward-button", () => {
 
 	it("the accessible name is Forward, as text and when icon-only", async () => {
 		h.go("/nh-fwd/a");
+		// Wait for the Back: a traversal still pending when this test ends lands in the next one.
+		const back = nextLocation(h);
 		h.back();
+		await back;
 		const el = await mount(make("dj-forward-button"));
 		await el.updateComplete;
 		assertEqual(inner(el).textContent.trim(), "Forward", "visible label");
@@ -149,7 +152,10 @@ describe("dj-forward-button", () => {
 
 	it("has no serious or critical accessibility violations, with the label shown and icon-only", async () => {
 		h.go("/nh-fwd/a");
+		// Wait for the Back: a traversal still pending when this test ends lands in the next one.
+		const back = nextLocation(h);
 		h.back();
+		await back;
 		const el = await mount(make("dj-forward-button"));
 		await el.updateComplete;
 		await assertNoViolations(el);

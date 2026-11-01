@@ -78,6 +78,8 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 - Sorting is the host's job. A header click updates `sorting`, emits `dj-sort`, drops the cached rows, scrolls to the top (the active row goes to 0), and requests the top rows in a new epoch. Read `grid.sorting` when answering. The grid never reorders rows it is given.
 - When rows are added or removed on the server, call `insertRows(index, rowsOrCount)` or `removeRows(index, count)`. Cached rows, `activeIndex`, and the Shift anchor move with their rows, and a change above the screen scrolls by the same amount so nothing on screen jumps. For anything else, `resetRows()`. `getVisibleRange()` and `scrollToIndex()` let a host keep the user's place across a refresh.
 - Give the grid a `getRowId`, so selection survives rows being dropped from the cache.
+- Select all means every row on the server, loaded or not: `selectAll()` turns on `allSelected`, and `rowSelection` then holds the rows the user deselected. `dj-selection-change` carries `{ rows, ids, all, except, count }`; `rows` is only the loaded selected rows, so use `ids` (or `all` and `except`) and `count`. Inserts, removals, resets, and sorts keep select all on.
+- A Shift range (`@dojo-ng/data-grid-select`) over rows that are not loaded asks for them (`reason: "selection"`) and selects once they have all arrived. If the list changes first (a new epoch), the range is dropped.
 - Rows have a fixed height (`rowHeight`) in remote mode.
 
 ## Properties
@@ -115,10 +117,10 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 ## Events
 
 - `dj-active-change`: Detail `{ index, row }`.
+- `dj-selection-change`: Detail `{ rows, ids, all, except, count }`.
 - `dj-rows-request`: Detail `{ start, end, epoch, reason }`,
 remote mode only.
 - `dj-sort`
-- `dj-selection-change`
 - `dj-range-change`: Detail `{ start, end, count, rendered }` — inclusive
 first and last rendered row-model indices, the total row count, and the full index list; `start`
 and `end` are -1 when nothing is rendered.
@@ -130,6 +132,8 @@ the original row data.
 - `focus(options: FocusOptions)`: Forward focus to the element that owns the keyboard (the `role="grid"` div). The print table also carries `part="grid"`, so this selects by class, not by part.
 - `blur()`
 - `setRows(start: number, rows: Row[], epoch: number): boolean`: Remote mode: answer a `dj-rows-request`. `start` is the absolute index of `rows[0]`; pass back the request's `epoch`. Returns `false`, and keeps nothing, when the epoch is stale (the list changed since the request) or the grid is not in remote mode.
+- `selectAll()`: Select every row. In remote mode this is every row on the server, loaded or not (`allSelected`); elsewhere it selects every row in the row model. Needs `selectionMode="multiple"`. Emits `dj-selection-change`.
+- `clearSelection()`: Deselect every row and turn `allSelected` off. Emits `dj-selection-change` if anything was selected.
 - `resetRows({ keepScroll = true }: { keepScroll?: boolean } = {})`: Remote mode: drop every cached row and ask again for the rows on screen. Call it when the list changed in a way inserts and removals cannot describe. Starts a new epoch, so answers to earlier requests are ignored. `keepScroll: false` also scrolls to the top.
 - `insertRows(index: number, rowsOrCount: Row[] | number)`: Remote mode: `rowsOrCount` rows were added on the server at absolute index `index`. Pass the new rows to cache them, or a count to show placeholders the grid will request. Cached rows, `rowCount`, `activeIndex`, and the select plugin's Shift anchor move down with their rows; selection is by id and does not move. When the insert is above the first visible row, the view scrolls by the same amount so the rows on screen stay put. Starts a new epoch, so answers to earlier requests are ignored. Does nothing outside remote mode.
 - `removeRows(index: number, count: number)`: Remote mode: rows `index..index + count - 1` were removed on the server. Cached rows after them, `rowCount`, `activeIndex`, and the select plugin's Shift anchor move up. When the active row is removed, the row that slides into the first removed slot becomes active (clamped to the last row); this is silent, like any programmatic `activeIndex` change. Rows removed above the first visible row scroll the view by the same amount, so the rows on screen stay put. Starts a new epoch. Does nothing outside remote mode.

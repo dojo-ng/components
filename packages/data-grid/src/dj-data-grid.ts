@@ -37,6 +37,12 @@ export interface GridColumn {
 	 *  hook; copied onto the ColumnDef). Core never sets it itself. */
 	aggregationFn?: AggregationFnOption<Row>;
 }
+/**
+ * What is selected, in a form that works when most rows are not loaded. `all` false: `ids` are the
+ * selected row ids. `all` true: every row is selected except `except`. `count` is the number
+ * selected either way. From `grid.selection` and `dj-selection-change`.
+ */
+export interface GridSelection { ids: string[]; all: boolean; except: string[]; count: number }
 /** Rows inside the viewport, inclusive; both -1 when there are none. From `getVisibleRange()`. */
 export interface VisibleRange { first: number; last: number }
 export type SelectionMode = "none" | "single" | "multiple";
@@ -145,9 +151,16 @@ export type ActivationMode = "none" | "click" | "double";
  *   For anything else, `resetRows()`. `getVisibleRange()` and `scrollToIndex()` let a host keep
  *   the user's place across a refresh.
  * - Give the grid a `getRowId`, so selection survives rows being dropped from the cache.
+ * - Select all means every row on the server, loaded or not: `selectAll()` turns on `allSelected`,
+ *   and `rowSelection` then holds the rows the user deselected. `dj-selection-change` carries
+ *   `{ rows, ids, all, except, count }`; `rows` is only the loaded selected rows, so use `ids` (or
+ *   `all` and `except`) and `count`. Inserts, removals, resets, and sorts keep select all on.
+ * - A Shift range (`@dojo-ng/data-grid-select`) over rows that are not loaded asks for them
+ *   (`reason: "selection"`) and selects once they have all arrived. If the list changes first
+ *   (a new epoch), the range is dropped.
  * - Rows have a fixed height (`rowHeight`) in remote mode.
  *
- * Events: `dj-sort`, `dj-selection-change`, `dj-activate` (detail `{ row, index }`, where `row` is
+ * Events: `dj-sort`, `dj-selection-change` (detail `{ rows, ids, all, except, count }`), `dj-activate` (detail `{ row, index }`, where `row` is
  * the original row data), `dj-active-change` (detail `{ index, row }`), `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
  * first and last rendered row-model indices, the total row count, and the full index list; `start`
  * and `end` are -1 when nothing is rendered), `dj-rows-request` (detail `{ start, end, epoch, reason }`,
@@ -188,7 +201,12 @@ export class DjDataGrid extends DojoElement {
 	getRowId?: (row: Row, index: number) => string;
 
 	@state() sorting: SortingState = [];
+	/** TanStack's selection record, keyed by row id. While `allSelected` is true it is inverted:
+	 *  it holds the rows the user deselected. */
 	@state() rowSelection: RowSelectionState = {};
+	/** Remote mode: every row is selected except those in `rowSelection`. Set by `selectAll()`,
+	 *  cleared by `clearSelection()`. Always false outside remote mode. */
+	@state() allSelected = false;
 	@state() activeIndex = 0;
 	/** True between `beforeprint` and `afterprint`. Swaps the render loop from the virtualizer's
 	 *  rendered window to every row, since only the visible slice plus overscan is normally in the
@@ -230,6 +248,7 @@ export class DjDataGrid extends DojoElement {
 			refresh: () => this.requestUpdate(),
 			rowAt: (index: number) => this.#rowAt(index),
 			indexOf: (row: TableRow<Row>) => this.#indexOf(row),
+			rowIds: (first: number, last: number) => this.#rowIds(first, last),
 		} as unknown as DataGridContext;
 		Object.defineProperty(ctx, "table", { get: () => this.#table, enumerable: true });
 		return ctx;
@@ -297,6 +316,7 @@ export class DjDataGrid extends DojoElement {
 	setRows(start: number, rows: Row[], epoch: number): boolean {
 		if (!this.#isRemote || epoch !== this.#cache.epoch) return false;
 		this.#cache.put(start, rows, this.#rowTotal());
+		this.#capture(start, rows);
 		const r = this.#range;
 		this.#cache.evict(this.cacheSize, r?.start ?? -1, r?.end ?? -1);
 		this.#syncRemoteData();
@@ -309,6 +329,115 @@ export class DjDataGrid extends DojoElement {
 			}
 		}
 		return true;
+	}
+
+	/** The current selection as `{ ids, all, except, count }`; see `GridSelection`. */
+	get selection(): GridSelection {
+		const { ids, all, except, count } = this.#selectionDetail();
+		return { ids, all, except, count };
+	}
+
+	/**
+	 * Select every row. In remote mode this is every row on the server, loaded or not
+	 * (`allSelected`); elsewhere it selects every row in the row model. Needs
+	 * `selectionMode="multiple"`. Emits `dj-selection-change`.
+	 */
+	selectAll() {
+		if (this.selectionMode !== "multiple") return;
+		if (!this.#isRemote) { this.#table.toggleAllRowsSelected(true); return; }
+		this.#setSelection(true, {});
+	}
+
+	/** Deselect every row and turn `allSelected` off. Emits `dj-selection-change` if anything was
+	 *  selected. */
+	clearSelection() {
+		if (!this.allSelected && !Object.keys(this.#tstate.rowSelection ?? {}).length) return;
+		this.#setSelection(false, {});
+	}
+
+	/** Replace the selection state outright and announce it. */
+	#setSelection(all: boolean, record: RowSelectionState) {
+		this.allSelected = all && this.#isRemote;
+		this.#tstate = { ...this.#tstate, rowSelection: record };
+		this.rowSelection = record;
+		this.#table.setOptions((o) => ({ ...o, state: this.#tstate }));
+		this.emit("dj-selection-change", { detail: this.#selectionDetail() });
+		this.requestUpdate();
+	}
+
+	/** Whether a row is selected, reading `rowSelection` inverted while `allSelected` is on. */
+	#isSelected(row: TableRow<Row>): boolean {
+		return row.getIsSelected() !== this.allSelected;
+	}
+
+	/** The `dj-selection-change` detail. Outside remote mode `ids` are the ids of `rows`. */
+	#selectionDetail(): GridSelection & { rows: Row[] } {
+		const record = this.#tstate?.rowSelection ?? {};
+		const marked = Object.keys(record).filter((k) => record[k]);
+		if (this.#isRemote && this.allSelected) {
+			const rows = (this.#table?.getCoreRowModel().rows ?? []).filter((r) => !record[r.id]).map((r) => r.original);
+			return { rows, ids: [], all: true, except: marked, count: Math.max(0, this.#rowTotal() - marked.length) };
+		}
+		const sel = this.#table?.getSelectedRowModel().rows ?? [];
+		const ids = this.#isRemote ? marked : sel.map((r) => r.id);
+		return { rows: sel.map((r) => r.original), ids, all: false, except: [], count: ids.length };
+	}
+
+	// ---- Ranges over rows that are not loaded (remote mode) ----
+	/** A range waiting for its rows: ids collected as blocks arrive, so eviction cannot lose them. */
+	#pendingIds?: { first: number; ids: (string | undefined)[]; left: number; resolve: (ids: string[] | undefined) => void };
+
+	#idOf(row: Row, index: number): string {
+		return this.getRowId ? this.getRowId(row, index) : String(index);
+	}
+
+	/**
+	 * The ids of rows `first..last`. Rows not loaded are requested (`reason: "selection"`), and the
+	 * promise resolves once all of them have arrived; it resolves `undefined` if the epoch changes
+	 * first, or if another range replaces this one. Ids are never invented.
+	 */
+	#rowIds(first: number, last: number): Promise<string[] | undefined> {
+		const n = this.#rowTotal();
+		const lo = Math.max(0, Math.min(first, last));
+		const hi = Math.min(n - 1, Math.max(first, last));
+		if (hi < lo) return Promise.resolve([]);
+		if (!this.#isRemote) {
+			const ids: string[] = [];
+			for (let i = lo; i <= hi; i++) { const r = this.#rowAt(i); if (r) ids.push(r.id); }
+			return Promise.resolve(ids);
+		}
+		this.#dropPendingIds();
+		const ids: (string | undefined)[] = new Array(hi - lo + 1);
+		let left = ids.length;
+		for (let i = lo; i <= hi; i++) {
+			const row = this.#cache.get(i);
+			if (row !== undefined) { ids[i - lo] = this.#idOf(row, i); left--; }
+		}
+		if (!left) return Promise.resolve(ids as string[]);
+		return new Promise((resolve) => {
+			this.#pendingIds = { first: lo, ids, left, resolve };
+			this.#fetchRows(lo, hi, "selection");
+		});
+	}
+	/** Record ids for a pending range from rows just stored; resolve once none are missing. */
+	#capture(start: number, rows: Row[]) {
+		const p = this.#pendingIds;
+		if (!p) return;
+		rows.forEach((row, k) => {
+			const at = start + k - p.first;
+			if (at < 0 || at >= p.ids.length || p.ids[at] !== undefined) return;
+			p.ids[at] = this.#idOf(row, start + k);
+			p.left--;
+		});
+		if (p.left === 0) {
+			this.#pendingIds = undefined;
+			p.resolve(p.ids as string[]);
+		}
+	}
+	#dropPendingIds() {
+		const p = this.#pendingIds;
+		this.#pendingIds = undefined;
+		p?.resolve(undefined);
 	}
 
 	/**
@@ -396,6 +525,9 @@ export class DjDataGrid extends DojoElement {
 		// rows above it.
 		const above = first < 0 || at >= first ? 0 : delta > 0 ? delta : -Math.min(-delta, first - at);
 
+		// Removed rows that were loaded leave the selection (or the deselected set under select all).
+		const gone = delta < 0 ? this.#removedIds(at, -delta) : [];
+		this.#dropPendingIds();
 		this.#cache.shift(at, delta, rowCount);
 		if (inserted.length) this.#cache.put(at, inserted, rowCount);
 		clearTimeout(this.#settleTimer);
@@ -414,6 +546,12 @@ export class DjDataGrid extends DojoElement {
 
 		this.rowCount = rowCount;
 		this.#syncRemoteData();
+		const record = this.#tstate.rowSelection ?? {};
+		if (gone.some((id) => id in record)) {
+			const next = { ...record };
+			for (const id of gone) delete next[id];
+			this.#setSelection(this.allSelected, next);
+		}
 		const v = this.#virtualizer;
 		v?.setOptions({ ...v.options, count: rowCount });
 		if (v && above) {
@@ -423,6 +561,15 @@ export class DjDataGrid extends DojoElement {
 			v.scrollOffset = offset;
 			this.#scrollTo = offset;
 		}
+	}
+	/** Ids of the loaded rows among `at..at + count - 1`. */
+	#removedIds(at: number, count: number): string[] {
+		const out: string[] = [];
+		for (let i = at; i < at + count; i++) {
+			const row = this.#cache.get(i);
+			if (row !== undefined) out.push(this.#idOf(row, i));
+		}
+		return out;
 	}
 	/** A scrollTop for updated() to apply after an index shift. */
 	#scrollTo?: number;
@@ -457,6 +604,7 @@ export class DjDataGrid extends DojoElement {
 		this.#settleTimer = undefined;
 		this.#pendingActive = undefined;
 		this.#awaitScroll = false;
+		this.#dropPendingIds();
 		this.#cache.clear(this.blockSize);
 		this.#syncRemoteData();
 	}
@@ -533,7 +681,7 @@ export class DjDataGrid extends DojoElement {
 		}
 		if (this.#tstate.rowSelection !== prev.rowSelection) {
 			this.rowSelection = this.#tstate.rowSelection;
-			this.emit("dj-selection-change", { detail: { rows: this.#table.getSelectedRowModel().rows.map((r) => r.original) } });
+			this.emit("dj-selection-change", { detail: this.#selectionDetail() });
 		}
 		// Row count changes with filter/pagination/expansion plugins; keep the virtualizer in sync
 		// or it renders a stale row window.
@@ -906,7 +1054,7 @@ export class DjDataGrid extends DojoElement {
 									</div>`;
 								}
 								if (!row) return nothing;
-								const selected = row.getIsSelected();
+								const selected = this.#isSelected(row);
 								// With a renderDetail plugin, rows have variable height: each virtual item
 								// becomes a measured wrapper (data-index + measureElement ref, the TanStack
 								// dynamic-size contract) holding the fixed-height row plus its detail panel.
@@ -955,7 +1103,7 @@ export default DjDataGrid;
 declare global {
 	interface GlobalEventHandlersEventMap {
 		"dj-sort": CustomEvent<{ sorting: SortingState }>;
-		"dj-selection-change": CustomEvent<{ rows: Row[] }>;
+		"dj-selection-change": CustomEvent<GridSelection & { rows: Row[] }>;
 		"dj-activate": CustomEvent<{ row: Row; index: number }>;
 		"dj-active-change": CustomEvent<{ index: number; row: Row | undefined }>;
 		"dj-range-change": CustomEvent<{ start: number; end: number; count: number; rendered: number[] }>;

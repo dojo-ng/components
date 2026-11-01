@@ -613,3 +613,179 @@ test("RR6: insertRows and removeRows move the select plugin's Shift anchor", asy
 	await settle(el);
 	assert.deepEqual(el.rowSelection, { ...sel, m2: true }, "no anchor, so Shift-click toggles one row, not a range");
 });
+
+// ---- RR7: select all, ranges over unloaded rows, the event fields ----
+
+async function selectGrid(props = {}) {
+	const { selectColumnPlugin } = await import("../packages/data-grid-select/dist/index.js");
+	const g = await remoteGrid({ selectionMode: "multiple", plugins: [selectColumnPlugin()], settleMs: 0, ...props });
+	const changes = [];
+	g.el.addEventListener("dj-selection-change", (e) => changes.push(e.detail));
+	return { ...g, changes };
+}
+const headBox = (el) => el.renderRoot.querySelector(".dj-select-all");
+const rowBox = (el, i) => rowEl(el, i).querySelector(".dj-select-row");
+const clickEl = (box, shiftKey = false) => box.dispatchEvent(new globalThis.window.MouseEvent("click", { bubbles: true, composed: true, shiftKey }));
+
+test("RR7: select all on 100,000 rows is every row, loaded or not", async () => {
+	const { el, requests, changes } = await selectGrid();
+	answer(el, requests[0]);
+	await settle(el);
+	clickEl(headBox(el));
+	await settle(el);
+	assert.equal(el.allSelected, true);
+	const last = changes.at(-1);
+	assert.deepEqual({ all: last.all, except: last.except, count: last.count, ids: last.ids }, { all: true, except: [], count: 100000, ids: [] });
+	assert.equal(last.rows.length, 100, "rows is the loaded rows only");
+	assert.deepEqual(el.selection, { ids: [], all: true, except: [], count: 100000 });
+	assert.equal(headBox(el).checked, true);
+	assert.equal(headBox(el).indeterminate, false);
+	assert.ok(rowEl(el, 3).getAttribute("part").split(" ").includes("row--selected"));
+	assert.equal(rowBox(el, 3).checked, true);
+
+	// Rows that arrive later are selected too.
+	await scrollTo(el, 5000 * ROW_H);
+	el.setRows(5000, rowsFrom(5000, 5099), el.epoch);
+	await settle(el);
+	assert.equal(rowBox(el, 5005).checked, true, "a row loaded after select all is selected");
+	assert.equal(rowEl(el, 5005).getAttribute("aria-selected"), "true");
+});
+
+test("RR7: unticking two loaded rows under select all lists them in except, and the header is indeterminate", async () => {
+	const { el, requests, changes } = await selectGrid();
+	answer(el, requests[0]);
+	await settle(el);
+	el.selectAll();
+	await settle(el);
+	clickEl(rowBox(el, 2));
+	await settle(el);
+	clickEl(rowBox(el, 7));
+	await settle(el);
+	const last = changes.at(-1);
+	assert.deepEqual({ all: last.all, except: [...last.except].sort(), count: last.count }, { all: true, except: ["m2", "m7"], count: 99998 });
+	assert.deepEqual(el.rowSelection, { m2: true, m7: true }, "rowSelection holds the deselected rows");
+	assert.equal(rowBox(el, 2).checked, false);
+	assert.ok(!rowEl(el, 2).getAttribute("part").split(" ").includes("row--selected"));
+	assert.equal(headBox(el).checked, false);
+	assert.equal(headBox(el).indeterminate, true);
+
+	// Ticking one back, then the header (which clears everything from the indeterminate state).
+	clickEl(rowBox(el, 2));
+	await settle(el);
+	assert.deepEqual(changes.at(-1).except, ["m7"]);
+	assert.equal(changes.at(-1).count, 99999);
+	clickEl(headBox(el));
+	await settle(el);
+	assert.equal(el.allSelected, true, "an indeterminate header selects all again");
+	clickEl(headBox(el));
+	await settle(el);
+	assert.equal(el.allSelected, false);
+	assert.deepEqual(el.selection, { ids: [], all: false, except: [], count: 0 });
+});
+
+test("RR7: without select all, ids and count describe the selected rows, loaded or not", async () => {
+	const { el, requests, changes } = await selectGrid();
+	answer(el, requests[0]);
+	await settle(el);
+	clickEl(rowBox(el, 1));
+	await settle(el);
+	assert.deepEqual(changes.at(-1), { rows: [rowsFrom(1, 1)[0]], ids: ["m1"], all: false, except: [], count: 1 });
+	el.resetRows();
+	await settle(el);
+	assert.deepEqual(el.selection, { ids: ["m1"], all: false, except: [], count: 1 }, "an unloaded selected row still counts");
+});
+
+test("RR7: a Shift range from row 10 to row 5,010 asks for the missing rows and selects 5,001 ids after the last arrives", async () => {
+	const { el, requests, changes } = await selectGrid({ cacheSize: 300 });
+	answer(el, requests[0]);
+	await settle(el);
+	clickEl(rowBox(el, 10)); // the anchor
+	await settle(el);
+	await scrollTo(el, 5000 * ROW_H);
+	for (const r of requests.filter((q) => q.start >= 4900)) answer(el, r);
+	await settle(el);
+	const before = requests.length;
+	const changesBefore = changes.length;
+
+	clickEl(rowBox(el, 5010), true);
+	await settle(el);
+	const asked = requests.slice(before);
+	assert.ok(asked.length > 0, "the missing rows are requested");
+	assert.ok(asked.every((r) => r.reason === "selection"), "with reason selection");
+	assert.equal(asked[0].start, 100);
+	assert.equal(asked.at(-1).end, 4899);
+	assert.equal(changes.length, changesBefore, "nothing selected yet");
+
+	// Answer in pieces; with cacheSize 300 most of them are evicted again before the last lands.
+	for (let start = 100; start < 4900; start += 400) {
+		assert.equal(changes.length, changesBefore, `still nothing at ${start}`);
+		el.setRows(start, rowsFrom(start, Math.min(4899, start + 399)), el.epoch);
+		await settle(el);
+	}
+	assert.ok(el._cachedRowCount <= 300 + 200, "the cache was trimmed meanwhile");
+	assert.equal(changes.length, changesBefore + 1, "one selection change once every row arrived");
+	const sel = changes.at(-1);
+	assert.equal(sel.count, 5001);
+	assert.equal(sel.ids.length, 5001);
+	const want = new Set(rowsFrom(10, 5010).map((r) => r.id));
+	assert.ok(sel.ids.every((id) => want.has(id)), "exactly rows 10-5,010");
+});
+
+test("RR7: a resetRows while a Shift range waits drops it", async () => {
+	const { el, requests, changes } = await selectGrid();
+	answer(el, requests[0]);
+	await settle(el);
+	clickEl(rowBox(el, 10));
+	await settle(el);
+	await scrollTo(el, 1000 * ROW_H);
+	for (const r of requests.filter((q) => q.start >= 900)) answer(el, r);
+	await settle(el);
+	clickEl(rowBox(el, 1005), true);
+	await settle(el);
+	const pending = requests.filter((r) => r.reason === "selection");
+	assert.ok(pending.length > 0);
+	const selected = { ...el.rowSelection };
+	const count = changes.length;
+
+	el.resetRows();
+	await settle(el);
+	for (const r of pending) assert.equal(answer(el, r), false, "the old answers are refused");
+	for (const r of requests.filter((q) => q.epoch === el.epoch)) answer(el, r);
+	await settle(el);
+	assert.equal(changes.length, count, "no selection change");
+	assert.deepEqual(el.rowSelection, selected);
+});
+
+test("RR7: removing a loaded deselected row under select all keeps the count right", async () => {
+	const { el, requests, changes } = await selectGrid();
+	answer(el, requests[0]);
+	await settle(el);
+	el.selectAll();
+	clickEl(rowBox(el, 4));
+	await settle(el);
+	assert.equal(el.selection.count, 99999);
+	el.removeRows(4, 1);
+	await settle(el);
+	assert.equal(el.allSelected, true, "select all survives a removal");
+	assert.deepEqual(el.selection, { ids: [], all: true, except: [], count: 99999 }, "the removed row left except, and rowCount dropped");
+	assert.equal(changes.at(-1).count, 99999);
+});
+
+test("RR7: outside remote mode all is false and ids/count match rows", async () => {
+	const { selectColumnPlugin } = await import("../packages/data-grid-select/dist/index.js");
+	const el = await mount("dj-data-grid", { columns: COLUMNS, data: rowsFrom(0, 9), getRowId, selectionMode: "multiple", plugins: [selectColumnPlugin()] });
+	await settle(el);
+	const changes = [];
+	el.addEventListener("dj-selection-change", (e) => changes.push(e.detail));
+	el.selectAll();
+	await settle(el);
+	assert.equal(el.allSelected, false);
+	const d = changes.at(-1);
+	assert.equal(d.all, false);
+	assert.equal(d.count, 10);
+	assert.deepEqual(d.ids, d.rows.map((r) => r.id));
+	assert.deepEqual(d.except, []);
+	el.clearSelection();
+	await settle(el);
+	assert.equal(changes.at(-1).count, 0);
+});

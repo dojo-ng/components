@@ -51,6 +51,11 @@ export interface SelectColumnOptions {
  *  - `"none"`: renders nothing and adds no column at all.
  *
  * Shift-click a checkbox to select the range from the last one you clicked (the anchor).
+ *
+ * Remote mode (the grid's `rowCount`): the header checkbox selects every row on the server
+ * (`grid.selectAll()`, the grid's `allSelected`), and shows indeterminate once any row is
+ * unticked. A Shift range over rows that are not loaded waits for the grid to fetch them, then
+ * selects; if the list changes first, it is dropped and the selection stays as it was.
  */
 export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridPlugin {
 	const width = options.width ?? DEFAULT_WIDTH;
@@ -101,8 +106,12 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 			// Single-select has nothing to "select all" of; render an empty header cell.
 			if (modeOf(ctx) !== "multiple") return html`<span class="dj-select-head"></span>`;
 			const table = ctx.table;
-			const all = table.getIsAllRowsSelected();
-			const some = table.getIsSomeRowsSelected();
+			const host = ctx.host;
+			// Remote mode counts rows on the server, not the loaded ones TanStack can see.
+			const remote = typeof host.rowCount === "number";
+			const sel = remote ? host.selection : undefined;
+			const all = sel ? sel.all && sel.except.length === 0 : table.getIsAllRowsSelected();
+			const some = sel ? sel.count > 0 : table.getIsSomeRowsSelected();
 			// `indeterminate` is a DOM PROPERTY with no matching attribute, so it cannot be
 			// templated — `ref` sets it on the element itself after each render.
 			return html`<input
@@ -114,7 +123,11 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 				${ref((el) => { if (el) (el as HTMLInputElement).indeterminate = !all && some; })}
 				@keydown=${(e: KeyboardEvent) => { if (e.key === " ") e.stopPropagation(); }}
 				@click=${(e: Event) => e.stopPropagation()}
-				@change=${() => table.toggleAllRowsSelected(!all)}
+				@change=${() => {
+					if (!remote) table.toggleAllRowsSelected(!all);
+					else if (all) host.clearSelection();
+					else host.selectAll();
+				}}
 			/>`;
 		},
 
@@ -136,7 +149,7 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 				class="dj-select-row"
 				part="select-row"
 				aria-label=${nameFor(row.original as Row)}
-				.checked=${row.getIsSelected()}
+				.checked=${row.getIsSelected() !== ctx.host.allSelected}
 				?disabled=${!row.getCanSelect()}
 				@click=${(e: MouseEvent) => {
 					e.stopPropagation();
@@ -168,13 +181,31 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 }
 
 /** Select every row between two grid indices inclusive. Reads rows through `ctx.rowAt`, not the
- *  DOM, so a range spanning rows the virtualizer has never rendered still selects all of them. */
+ *  DOM, so a range spanning rows the virtualizer has never rendered still selects all of them.
+ *  When some rows are not loaded (remote mode), it waits for `ctx.rowIds` and then selects by id;
+ *  `undefined` from it means the list changed, and nothing is selected. */
 function selectRange(ctx: DataGridContext, from: number, to: number): void {
 	const [lo, hi] = from <= to ? [from, to] : [to, from];
-	const next: Record<string, boolean> = { ...ctx.table.getState().rowSelection };
+	const ids: string[] = [];
 	for (let i = lo; i <= hi; i++) {
 		const r = ctx.rowAt(i);
-		if (r?.getCanSelect()) next[r.id] = true;
+		if (!r) {
+			void ctx.rowIds(lo, hi).then((all) => { if (all) applyIds(ctx, all); });
+			return;
+		}
+		if (r.getCanSelect()) ids.push(r.id);
+	}
+	applyIds(ctx, ids);
+}
+
+/** Mark ids selected. Under the grid's `allSelected` the record is inverted (it lists the
+ *  deselected rows), so selecting means removing them from it. */
+function applyIds(ctx: DataGridContext, ids: string[]): void {
+	const inverted = ctx.host.allSelected;
+	const next: Record<string, boolean> = { ...ctx.table.getState().rowSelection };
+	for (const id of ids) {
+		if (inverted) delete next[id];
+		else next[id] = true;
 	}
 	ctx.table.setRowSelection(next);
 }

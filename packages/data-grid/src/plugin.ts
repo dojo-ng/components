@@ -18,6 +18,11 @@ export interface DataGridContext {
 	rowAt(index: number): TableRow<Row> | undefined;
 	/** The grid index of a row (absolute in remote mode), or -1. The inverse of `rowAt`. */
 	indexOf(row: TableRow<Row>): number;
+	/** The ids of rows `first..last` (inclusive). In remote mode rows that are not loaded are
+	 *  requested (`dj-rows-request` with `reason: "selection"`), and the promise resolves once all
+	 *  have arrived, or with `undefined` if the list changes first (a new epoch) or another call
+	 *  replaces this one. Outside remote mode it resolves at once with the row-model ids. */
+	rowIds(first: number, last: number): Promise<string[] | undefined>;
 }
 
 export interface DataGridPlugin {

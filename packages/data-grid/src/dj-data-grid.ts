@@ -134,6 +134,9 @@ export type ActivationMode = "none" | "click" | "double";
  *   of the full list, loaded or not. When the active row is not loaded yet, `dj-active-change`
  *   fires with `row: undefined`, then again with the row once it arrives. `dj-activate` does
  *   nothing on a placeholder.
+ * - Sorting is the host's job. A header click updates `sorting`, emits `dj-sort`, drops the
+ *   cached rows, scrolls to the top (the active row goes to 0), and requests the top rows in a
+ *   new epoch. Read `grid.sorting` when answering. The grid never reorders rows it is given.
  * - Give the grid a `getRowId`, so selection survives rows being dropped from the cache.
  * - Rows have a fixed height (`rowHeight`) in remote mode.
  *
@@ -255,6 +258,8 @@ export class DjDataGrid extends DojoElement {
 	#settleTimer?: ReturnType<typeof setTimeout>;
 	/** The active row announced with `row: undefined`; announced again when its block lands. */
 	#pendingActive?: number;
+	/** Set by a remote sort: skip requests until the rendered range moves (to the top). */
+	#awaitScroll = false;
 
 	get #isRemote(): boolean { return typeof this.rowCount === "number" && Number.isFinite(this.rowCount); }
 	/** Rows the virtualizer and the indices span: `rowCount` in remote mode, else the row model. */
@@ -310,6 +315,22 @@ export class DjDataGrid extends DojoElement {
 		if (!keepScroll) this.#virtualizer?.scrollToOffset(0);
 	}
 
+	/**
+	 * Remote mode, after a sort change: every cached row is in the old order, so drop the cache
+	 * (new epoch), go back to the top, and ask for the top rows at once. Until the scroll lands,
+	 * the stashed range still names the old position; `#awaitScroll` keeps that stale range from
+	 * being requested in the new epoch.
+	 */
+	#resortRemote() {
+		const r = this.#range;
+		this.#resetCache();
+		this.activeIndex = 0;
+		const rows = r && r.start >= 0 ? r.end - r.start + 1 : this.#viewportRows();
+		if (r && r.start > 0) this.#awaitScroll = true;
+		this.#virtualizer?.scrollToOffset(0);
+		this.#fetchRows(0, Math.min(this.#rowTotal(), rows) - 1, "range");
+	}
+
 	/** Rebuild TanStack's data from the cache. */
 	#syncRemoteData() {
 		const { rows, indices } = this.#cache.entries();
@@ -323,6 +344,7 @@ export class DjDataGrid extends DojoElement {
 		clearTimeout(this.#settleTimer);
 		this.#settleTimer = undefined;
 		this.#pendingActive = undefined;
+		this.#awaitScroll = false;
 		this.#cache.clear(this.blockSize);
 		this.#syncRemoteData();
 	}
@@ -345,6 +367,11 @@ export class DjDataGrid extends DojoElement {
 		this.#prevRange = r && { start: r.start, end: r.end };
 		if (!this.#isRemote || !r || r.start < 0) return;
 		const moved = !prev || prev.start !== r.start || prev.end !== r.end;
+		if (this.#awaitScroll) {
+			// The sort already asked for the top rows; the scroll there is ours, so no settle hold.
+			if (moved) { this.#awaitScroll = false; this.#fetchRows(r.start, r.end, "range"); }
+			return;
+		}
 		const jump = !!prev && prev.start >= 0 && Math.abs(r.start - prev.start) > this.#viewportRows();
 		if (this.settleMs > 0 && (jump || (this.#settleTimer !== undefined && moved))) {
 			clearTimeout(this.#settleTimer);
@@ -387,7 +414,11 @@ export class DjDataGrid extends DojoElement {
 		const prev = this.#tstate;
 		this.#tstate = functionalUpdate(updater, this.#tstate);
 		this.#table.setOptions((o) => ({ ...o, state: this.#tstate }));
-		if (this.#tstate.sorting !== prev.sorting) { this.sorting = this.#tstate.sorting; this.emit("dj-sort", { detail: { sorting: this.sorting } }); }
+		if (this.#tstate.sorting !== prev.sorting) {
+			this.sorting = this.#tstate.sorting;
+			this.emit("dj-sort", { detail: { sorting: this.sorting } });
+			if (this.#isRemote) this.#resortRemote();
+		}
 		if (this.#tstate.rowSelection !== prev.rowSelection) {
 			this.rowSelection = this.#tstate.rowSelection;
 			this.emit("dj-selection-change", { detail: { rows: this.#table.getSelectedRowModel().rows.map((r) => r.original) } });
@@ -410,6 +441,8 @@ export class DjDataGrid extends DojoElement {
 			getRowId: this.#rowIdFn(),
 			getCoreRowModel: getCoreRowModel(),
 			getSortedRowModel: getSortedRowModel(),
+			// Remote mode: the host sorts. TanStack only tracks `sorting` for the headers.
+			manualSorting: this.#isRemote,
 			renderFallbackValue: null,
 		};
 	}

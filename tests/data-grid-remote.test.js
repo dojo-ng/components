@@ -355,3 +355,71 @@ test("RR4: a missing getRowId warns once and keys selection by absolute index", 
 		warn.mock.restore();
 	}
 });
+
+// ---- RR5: sorting handed to the host ----
+
+const header = (el, i = 0) => el.renderRoot.querySelectorAll('[role="columnheader"]')[i];
+
+test("RR5: a header click emits dj-sort, drops the rows, and asks for 0-99 in a new epoch", async () => {
+	const { el, requests } = await remoteGrid();
+	answer(el, requests[0]);
+	await settle(el);
+	const old = requests[0];
+	const sorts = [];
+	el.addEventListener("dj-sort", (e) => sorts.push({ detail: e.detail, gridSorting: el.sorting }));
+
+	header(el).click();
+	await settle(el);
+	assert.equal(sorts.length, 1, "dj-sort fired");
+	assert.deepEqual(sorts[0].detail.sorting, [{ id: "a", desc: false }]);
+	assert.deepEqual(sorts[0].gridSorting, sorts[0].detail.sorting, "grid.sorting is already set when the host hears about it");
+	assert.equal(header(el).getAttribute("aria-sort"), "ascending", "aria-sort reflects the state");
+	assert.equal(loaded(el).length, 0, "the rows went back to placeholders");
+	assert.equal(el._cachedRowCount, 0);
+	assert.equal(requests.length, 2, "one new request");
+	assert.deepEqual({ start: requests[1].start, end: requests[1].end }, { start: 0, end: 99 });
+	assert.ok(requests[1].epoch > old.epoch, "with a higher epoch");
+
+	assert.equal(answer(el, old), false, "a late answer from the old epoch is ignored");
+	await settle(el);
+	assert.equal(loaded(el).length, 0);
+
+	// The host's order is what renders: the grid does not sort the rows it is given.
+	const sorted = rowsFrom(0, 99).reverse();
+	assert.equal(el.setRows(0, sorted, requests[1].epoch), true);
+	await settle(el);
+	assert.equal(el.renderRoot.querySelector("#r-0 .cell").textContent, "a99", "row 0 is the host's first row");
+	assert.equal(requests.length, 2, "nothing more requested");
+});
+
+test("RR5: sorting while scrolled deep goes to the top and asks only for the top rows", async () => {
+	const { el, requests } = await remoteGrid();
+	autoAnswer(el);
+	answer(el, requests[0]);
+	await settle(el);
+	for (let top = 300; top <= 3000; top += 300) await scrollTo(el, top);
+	el.activeIndex = 95;
+	await settle(el);
+	const before = requests.length;
+
+	header(el, 1).click();
+	await settle(el);
+	await syncScroll(el); // the scroll event a browser sends after the grid's scrollTo
+	await settle(el);
+	const scroll = el.renderRoot.querySelector(".scroll");
+	assert.equal(scroll.scrollTop, 0, "scrolled to the top");
+	assert.equal(el.activeIndex, 0, "the active row is back at the top");
+	const after = requests.slice(before);
+	assert.equal(after.length, 1, `one request after the sort (got ${JSON.stringify(after)})`);
+	assert.deepEqual({ start: after[0].start, end: after[0].end }, { start: 0, end: 99 }, "no request for the old position in the new epoch");
+	assert.equal(placeholders(el).length, 0, "the answered top rows render");
+});
+
+test("RR5: outside remote mode a header click still sorts in memory", async () => {
+	const el = await mount("dj-data-grid", { columns: COLUMNS, data: rowsFrom(0, 9).reverse(), rowHeight: ROW_H });
+	await settle(el);
+	assert.equal(el.renderRoot.querySelector("#r-0 .cell").textContent, "a9");
+	header(el).click();
+	await settle(el);
+	assert.equal(el.renderRoot.querySelector("#r-0 .cell").textContent, "a0", "sorted by the grid");
+});

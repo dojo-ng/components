@@ -75,6 +75,7 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 - Rows load in blocks of `blockSize` (default 100). The grid keeps at most `cacheSize` rows (default 2,000) and drops the blocks farthest from the screen first.
 - After a jump of more than one screen (a scrollbar drag, End), the grid waits until the rows on screen have held still for `settleMs` (default 100) before asking.
 - Every index is absolute: `activeIndex`, event indices, and `aria-rowindex` count from the top of the full list, loaded or not. When the active row is not loaded yet, `dj-active-change` fires with `row: undefined`, then again with the row once it arrives. `dj-activate` does nothing on a placeholder.
+- Sorting is the host's job. A header click updates `sorting`, emits `dj-sort`, drops the cached rows, scrolls to the top (the active row goes to 0), and requests the top rows in a new epoch. Read `grid.sorting` when answering. The grid never reorders rows it is given.
 - Give the grid a `getRowId`, so selection survives rows being dropped from the cache.
 - Rows have a fixed height (`rowHeight`) in remote mode.
 

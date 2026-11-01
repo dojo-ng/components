@@ -4126,7 +4126,7 @@
               "description": "The first and last row (inclusive) inside the viewport, without the overscan rows the grid also renders. A row partly in view counts. In remote mode the indices are absolute. Both are -1 when there are no rows. A host can read it before a refresh to keep what the user was looking at in place.",
               "return": {
                 "type": {
-                  "text": ""
+                  "text": "VisibleRange"
                 }
               }
             },

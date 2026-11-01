@@ -37,6 +37,8 @@ export interface GridColumn {
 	 *  hook; copied onto the ColumnDef). Core never sets it itself. */
 	aggregationFn?: AggregationFnOption<Row>;
 }
+/** Rows inside the viewport, inclusive; both -1 when there are none. From `getVisibleRange()`. */
+export interface VisibleRange { first: number; last: number }
 export type SelectionMode = "none" | "single" | "multiple";
 /**
  * What a plain click / Enter on a row MEANS.
@@ -370,7 +372,7 @@ export class DjDataGrid extends DojoElement {
 	 * -1 when there are no rows. A host can read it before a refresh to keep what the user was
 	 * looking at in place.
 	 */
-	getVisibleRange(): { first: number; last: number } {
+	getVisibleRange(): VisibleRange {
 		const v = this.#virtualizer;
 		const n = this.#rowTotal();
 		if (!v || !n) return { first: -1, last: -1 };

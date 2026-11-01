@@ -58,9 +58,9 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 	const nameFor = (data: Row) => options.label?.(data) ?? "Select row";
 	const selectAllLabel = options.selectAllLabel ?? "Select all rows";
 
-	// Anchor for shift-click ranges: the row-model index of the last plainly-clicked checkbox.
-	// Reset whenever the row model changes underneath us (see `setup`), so a stale anchor from
-	// a previous data set can never select a range the user never saw.
+	// Anchor for shift-click ranges: the grid index (`ctx.indexOf`, absolute in remote mode) of
+	// the last plainly-clicked checkbox. Reset when a sort reorders the rows (see `setup`), and
+	// moved with its row by the grid's `insertRows`/`removeRows` (see `shiftRows`).
 	let anchor: number | null = null;
 	// A shift-click is fully handled on `click`. Whether the following `change` still fires is
 	// engine-dependent (preventDefault suppresses it in browsers, not in every headless DOM), so
@@ -87,6 +87,13 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 			const reset = () => { anchor = null; };
 			host.addEventListener("dj-sort", reset);
 			return () => { host.removeEventListener("dj-sort", reset); anchor = null; };
+		},
+
+		shiftRows(at: number, delta: number) {
+			if (anchor === null || anchor < at) return;
+			// A removal that takes the anchor row itself leaves no anchor.
+			if (delta < 0 && anchor < at - delta) anchor = null;
+			else anchor += delta;
 		},
 
 		renderHeader(header: TableHeader<Row, unknown>, ctx: DataGridContext) {
@@ -136,10 +143,10 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 					if (!single && e.shiftKey && anchor !== null) {
 						e.preventDefault();
 						rangeHandled = true;
-						selectRange(ctx, anchor, row.index);
+						selectRange(ctx, anchor, ctx.indexOf(row));
 						return;
 					}
-					anchor = row.index;
+					anchor = ctx.indexOf(row);
 				}}
 				@keydown=${(e: KeyboardEvent) => {
 					// Space belongs to the focused control. The grid's own keydown handler sits on
@@ -160,14 +167,13 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 	});
 }
 
-/** Select every row between two row-model indices inclusive. Operates on the ROW MODEL, not the
+/** Select every row between two grid indices inclusive. Reads rows through `ctx.rowAt`, not the
  *  DOM, so a range spanning rows the virtualizer has never rendered still selects all of them. */
 function selectRange(ctx: DataGridContext, from: number, to: number): void {
-	const rows = ctx.table.getRowModel().rows;
 	const [lo, hi] = from <= to ? [from, to] : [to, from];
 	const next: Record<string, boolean> = { ...ctx.table.getState().rowSelection };
 	for (let i = lo; i <= hi; i++) {
-		const r = rows[i];
+		const r = ctx.rowAt(i);
 		if (r?.getCanSelect()) next[r.id] = true;
 	}
 	ctx.table.setRowSelection(next);

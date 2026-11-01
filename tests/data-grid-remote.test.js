@@ -423,3 +423,193 @@ test("RR5: outside remote mode a header click still sorts in memory", async () =
 	await settle(el);
 	assert.equal(el.renderRoot.querySelector("#r-0 .cell").textContent, "a0", "sorted by the grid");
 });
+
+// ---- RR6: inserts, removals, and reset ----
+
+const rowEl = (el, i) => el.renderRoot.querySelector(`#r-${i}`);
+const translateY = (row) => Number(/translateY\(([-\d.]+)px\)/.exec(row.getAttribute("style"))[1]);
+const scrollEl = (el) => el.renderRoot.querySelector(".scroll");
+
+test("RR6: inserting 3 rows at 0 while scrolled to row 500 keeps row 500's content in place", async () => {
+	const { el } = await remoteGrid({ settleMs: 0 });
+	autoAnswer(el);
+	await settle(el);
+	for (let top = 300; top <= 500 * ROW_H; top += 300) await scrollTo(el, top);
+	await settle(el);
+	assert.equal(el.getVisibleRange().first, 500);
+	const before = rowEl(el, 500);
+	assert.equal(before.querySelector(".cell").textContent, "a500");
+	const pos = translateY(before) - scrollEl(el).scrollTop;
+
+	el.insertRows(0, 3);
+	await settle(el);
+	await syncScroll(el);
+	assert.equal(el.rowCount, 100003);
+	assert.equal(el.getVisibleRange().first, 503, "the first visible row moved down by 3");
+	const after = rowEl(el, 503);
+	assert.equal(after.querySelector(".cell").textContent, "a500", "row 500's content is now row 503");
+	assert.equal(translateY(after) - scrollEl(el).scrollTop, pos, "at the same pixel position");
+	assert.equal(gridEl(el).getAttribute("aria-rowcount"), "100004");
+});
+
+test("RR6: an insert at the top while the view is at the top shows the new rows", async () => {
+	const { el, requests } = await remoteGrid({ settleMs: 0 });
+	answer(el, requests[0]);
+	await settle(el);
+	el.insertRows(0, [{ id: "new1", a: "NEW1", b: "" }, { id: "new2", a: "NEW2", b: "" }]);
+	await settle(el);
+	await syncScroll(el);
+	assert.equal(scrollEl(el).scrollTop, 0, "no scroll compensation at the top");
+	assert.equal(rowEl(el, 0).querySelector(".cell").textContent, "NEW1", "given rows are cached");
+	assert.equal(rowEl(el, 2).querySelector(".cell").textContent, "a0", "old rows moved down");
+	// Block 0 is the two new rows plus old rows 0-97: complete, so nothing is asked for. Block 1
+	// holds only old rows 98-99 and would be asked for when it comes on screen.
+	assert.equal(requests.length, 1, "a full block is not asked for again");
+	await scrollTo(el, 100 * ROW_H);
+	const last = requests.at(-1);
+	assert.deepEqual({ start: last.start, end: last.end }, { start: 100, end: 199 }, "the block with holes is asked for");
+	assert.ok(last.epoch > requests[0].epoch);
+	assert.equal(rowEl(el, 101).querySelector(".cell").textContent, "a99", "its cached rows still show meanwhile");
+});
+
+test("RR6: a stale setRows after insertRows is refused", async () => {
+	const { el, requests } = await remoteGrid({ settleMs: 0 });
+	const old = requests[0];
+	el.insertRows(10, 5);
+	await settle(el);
+	assert.ok(el.epoch > old.epoch, "the insert started a new epoch");
+	assert.equal(answer(el, old), false, "the old answer is refused");
+	await settle(el);
+	assert.equal(loaded(el).length, 0);
+	assert.ok(requests.some((r) => r.start === 0 && r.epoch === el.epoch), "and re-requested in the new epoch");
+});
+
+test("RR6: inserting at or above the active row moves it down; below leaves it", async () => {
+	const { el } = await remoteGrid();
+	el.activeIndex = 20;
+	el.insertRows(30, 2);
+	assert.equal(el.activeIndex, 20);
+	el.insertRows(20, 2);
+	assert.equal(el.activeIndex, 22);
+	el.insertRows(0, [rowsFrom(0, 0)[0]]);
+	assert.equal(el.activeIndex, 23);
+});
+
+test("RR6: removing the active row keeps activeIndex on the row that slid up into it", async () => {
+	// No auto-answer: this fake host does not know about the removal and would undo it.
+	const { el, requests } = await remoteGrid({ settleMs: 0 });
+	answer(el, requests[0]);
+	await settle(el);
+	key(el, "ArrowDown"); key(el, "ArrowDown"); key(el, "ArrowDown");
+	await settle(el);
+	assert.equal(el.activeIndex, 3);
+	el.removeRows(3, 1);
+	await settle(el);
+	assert.equal(el.activeIndex, 3, "same index");
+	assert.equal(el.rowCount, 99999);
+	assert.equal(rowEl(el, 3).querySelector(".cell").textContent, "a4", "now the row that was below it");
+	assert.ok(rowEl(el, 3).getAttribute("part").split(" ").includes("row--active"));
+	// Removing rows above the active row moves it up with its row.
+	el.removeRows(0, 2);
+	assert.equal(el.activeIndex, 1);
+});
+
+test("RR6: removing the last row clamps activeIndex", async () => {
+	const { el } = await remoteGrid({ rowCount: 50 });
+	key(el, "End");
+	await settle(el);
+	assert.equal(el.activeIndex, 49);
+	el.removeRows(49, 1);
+	await settle(el);
+	assert.equal(el.rowCount, 49);
+	assert.equal(el.activeIndex, 48);
+	el.removeRows(40, 100); // a count past the end is clamped
+	assert.equal(el.rowCount, 40);
+	assert.equal(el.activeIndex, 39);
+});
+
+test("RR6: removing rows above the screen scrolls up by the rows removed above it", async () => {
+	const { el } = await remoteGrid({ settleMs: 0 });
+	autoAnswer(el);
+	await settle(el);
+	for (let top = 300; top <= 500 * ROW_H; top += 300) await scrollTo(el, top);
+	await settle(el);
+	el.removeRows(100, 10);
+	await settle(el);
+	await syncScroll(el);
+	assert.equal(el.getVisibleRange().first, 490);
+	assert.equal(rowEl(el, 490).querySelector(".cell").textContent, "a500");
+	// A removal straddling the first visible row counts only the rows above it.
+	el.removeRows(485, 10);
+	await settle(el);
+	await syncScroll(el);
+	assert.equal(scrollEl(el).scrollTop, 485 * ROW_H);
+	assert.equal(el.getVisibleRange().first, 485);
+	assert.equal(rowEl(el, 485).querySelector(".cell").textContent, "a505");
+});
+
+test("RR6: resetRows({ keepScroll: true }) keeps scrollTop and asks again only for the rendered blocks", async () => {
+	const { el, requests } = await remoteGrid({ settleMs: 0 });
+	autoAnswer(el);
+	await settle(el);
+	for (let top = 300; top <= 3000 * ROW_H; top += 3000) await scrollTo(el, top);
+	await scrollTo(el, 3050 * ROW_H);
+	await settle(el);
+	const top = scrollEl(el).scrollTop;
+	const before = requests.length;
+	el.resetRows({ keepScroll: true });
+	await settle(el);
+	assert.equal(scrollEl(el).scrollTop, top, "scrollTop kept");
+	const after = requests.slice(before);
+	assert.deepEqual(after.map((r) => [r.start, r.end]), [[3000, 3099]], "only the rendered block");
+	assert.equal(after[0].epoch, el.epoch);
+	el.resetRows({ keepScroll: false });
+	await settle(el);
+	await syncScroll(el);
+	assert.equal(scrollEl(el).scrollTop, 0, "keepScroll: false goes to the top");
+});
+
+test("RR6: getVisibleRange has no overscan, and scrollToIndex works in both modes", async () => {
+	const local = await mount("dj-data-grid", { columns: COLUMNS, data: rowsFrom(0, 999), rowHeight: ROW_H });
+	await settle(local);
+	assert.deepEqual(local.getVisibleRange(), { first: 0, last: 13 }, "400 px of 30 px rows: rows 0-13, the last in part");
+	local.scrollToIndex(200, { align: "start" });
+	await syncScroll(local);
+	assert.deepEqual(local.getVisibleRange(), { first: 200, last: 213 });
+	assert.ok(local.renderRoot.querySelector("#r-200"));
+
+	const { el } = await remoteGrid();
+	el.scrollToIndex(50000, { align: "center" });
+	await syncScroll(el);
+	const { first, last } = el.getVisibleRange();
+	assert.ok(first <= 50000 && last >= 50000, `${first}..${last} contains 50,000`);
+	assert.ok(last - first === 13 || last - first === 14, "one viewport of rows, two of them maybe in part");
+
+	const empty = await mount("dj-data-grid", { columns: COLUMNS, data: [] });
+	assert.deepEqual(empty.getVisibleRange(), { first: -1, last: -1 });
+});
+
+test("RR6: insertRows and removeRows move the select plugin's Shift anchor", async () => {
+	const { selectColumnPlugin } = await import("../packages/data-grid-select/dist/index.js");
+	const { el, requests } = await remoteGrid({ selectionMode: "multiple", plugins: [selectColumnPlugin()], settleMs: 0 });
+	answer(el, requests[0]);
+	await settle(el);
+	const box = (i) => rowEl(el, i).querySelector(".dj-select-row");
+	const click = (i, shiftKey = false) => box(i).dispatchEvent(new globalThis.window.MouseEvent("click", { bubbles: true, composed: true, shiftKey }));
+	click(5);
+	await settle(el);
+	assert.deepEqual(el.rowSelection, { m5: true });
+
+	el.insertRows(0, [{ id: "n1", a: "", b: "" }, { id: "n2", a: "", b: "" }]); // m5 is now row 7, and so is the anchor
+	await settle(el);
+	click(9, true);
+	await settle(el);
+	assert.deepEqual(Object.keys(el.rowSelection).sort(), ["m5", "m6", "m7"], "the range runs from the anchor's row");
+
+	el.removeRows(7, 1); // the anchor row itself goes
+	await settle(el);
+	const sel = { ...el.rowSelection };
+	click(4, true);
+	await settle(el);
+	assert.deepEqual(el.rowSelection, { ...sel, m2: true }, "no anchor, so Shift-click toggles one row, not a range");
+});

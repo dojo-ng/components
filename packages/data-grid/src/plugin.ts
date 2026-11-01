@@ -54,6 +54,10 @@ export interface DataGridPlugin {
 	chromeBottom?(ctx: DataGridContext): TemplateResult | undefined;
 	/** Full-width detail content under an expanded row (master-detail). First non-undefined wins. */
 	renderDetail?(row: TableRow<Row>, ctx: DataGridContext): TemplateResult | undefined;
+	/** Remote mode: rows moved. `delta > 0` inserted `delta` rows at `at`; `delta < 0` removed rows
+	 *  `at..at - delta - 1`. Called by `insertRows`/`removeRows` so a plugin holding an index (the
+	 *  select plugin's Shift anchor) can follow its row. */
+	shiftRows?(at: number, delta: number, ctx: DataGridContext): void;
 }
 
 /** Identity helper for typing and authoring a plugin. */

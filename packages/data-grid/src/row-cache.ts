@@ -13,6 +13,8 @@ export class RowCache {
 	#epoch = 0;
 	#blocks = new Map<number, Row[]>();
 	#requested = new Set<number>();
+	/** Blocks holding some rows but not all, after a shift. They count as missing until answered. */
+	#partial = new Set<number>();
 
 	get epoch(): number { return this.#epoch; }
 	get blockSize(): number { return this.#blockSize; }
@@ -29,7 +31,50 @@ export class RowCache {
 		this.#blockSize = Math.max(1, Math.floor(blockSize));
 		this.#blocks.clear();
 		this.#requested.clear();
+		this.#partial.clear();
 		this.#epoch++;
+	}
+
+	/**
+	 * Move every cached row at index `at` or later by `delta`, for an insert (`delta > 0`) or a
+	 * removal of rows `at..at - delta - 1` (`delta < 0`, those rows are dropped). `rowCount` is the
+	 * count after the change. Starts a new epoch like `clear()`, but keeps the rows. Shifted rows
+	 * straddle block edges, so they are re-bucketed; a block left with holes stays cached for display
+	 * and counts as missing until a request fills it.
+	 */
+	shift(at: number, delta: number, rowCount: number) {
+		const { rows, indices } = this.entries();
+		this.#blocks.clear();
+		this.#requested.clear();
+		this.#partial.clear();
+		this.#epoch++;
+		const bs = this.#blockSize;
+		indices.forEach((index, k) => {
+			if (index >= at) {
+				if (delta < 0 && index < at - delta) return;
+				index += delta;
+			}
+			if (index < 0 || index >= rowCount) return;
+			const b = Math.floor(index / bs);
+			let block = this.#blocks.get(b);
+			if (!block) this.#blocks.set(b, (block = []));
+			block[index - b * bs] = rows[k];
+		});
+		this.#markPartial([...this.#blocks.keys()], rowCount);
+	}
+
+	/** Recheck which of `blocks` have holes, for rows up to `rowCount - 1`. */
+	#markPartial(blocks: Iterable<number>, rowCount: number) {
+		const bs = this.#blockSize;
+		for (const b of blocks) {
+			const block = this.#blocks.get(b);
+			if (!block) { this.#partial.delete(b); continue; }
+			const want = Math.min(bs, rowCount - b * bs);
+			let full = block.length >= want;
+			for (let i = 0; full && i < want; i++) if (block[i] === undefined) full = false;
+			if (full) this.#partial.delete(b);
+			else this.#partial.add(b);
+		}
 	}
 
 	get(index: number): Row | undefined {
@@ -41,7 +86,7 @@ export class RowCache {
 	missing(first: number, last: number): number[] {
 		const out: number[] = [];
 		for (let b = Math.floor(first / this.#blockSize); b <= Math.floor(last / this.#blockSize); b++) {
-			if (!this.#blocks.has(b) && !this.#requested.has(b)) out.push(b);
+			if ((!this.#blocks.has(b) || this.#partial.has(b)) && !this.#requested.has(b)) out.push(b);
 		}
 		return out;
 	}
@@ -64,6 +109,7 @@ export class RowCache {
 	/** Store rows from absolute index `start`. Rows outside `0..rowCount-1` are ignored. */
 	put(start: number, rows: Row[], rowCount: number) {
 		const bs = this.#blockSize;
+		const touched = new Set<number>();
 		rows.forEach((row, i) => {
 			const index = start + i;
 			if (index < 0 || index >= rowCount) return;
@@ -71,7 +117,9 @@ export class RowCache {
 			let block = this.#blocks.get(b);
 			if (!block) this.#blocks.set(b, (block = []));
 			block[index - b * bs] = row;
+			touched.add(b);
 		});
+		this.#markPartial(touched, rowCount);
 	}
 
 	/**
@@ -95,6 +143,7 @@ export class RowCache {
 			size -= this.#blocks.get(far)!.filter((r) => r !== undefined).length;
 			this.#blocks.delete(far);
 			this.#requested.delete(far);
+			this.#partial.delete(far);
 		}
 	}
 

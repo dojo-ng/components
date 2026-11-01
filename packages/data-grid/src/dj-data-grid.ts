@@ -137,6 +137,11 @@ export type ActivationMode = "none" | "click" | "double";
  * - Sorting is the host's job. A header click updates `sorting`, emits `dj-sort`, drops the
  *   cached rows, scrolls to the top (the active row goes to 0), and requests the top rows in a
  *   new epoch. Read `grid.sorting` when answering. The grid never reorders rows it is given.
+ * - When rows are added or removed on the server, call `insertRows(index, rowsOrCount)` or
+ *   `removeRows(index, count)`. Cached rows, `activeIndex`, and the Shift anchor move with their
+ *   rows, and a change above the screen scrolls by the same amount so nothing on screen jumps.
+ *   For anything else, `resetRows()`. `getVisibleRange()` and `scrollToIndex()` let a host keep
+ *   the user's place across a refresh.
  * - Give the grid a `getRowId`, so selection survives rows being dropped from the cache.
  * - Rows have a fixed height (`rowHeight`) in remote mode.
  *
@@ -314,6 +319,111 @@ export class DjDataGrid extends DojoElement {
 		this.#resetCache();
 		if (!keepScroll) this.#virtualizer?.scrollToOffset(0);
 	}
+
+	/**
+	 * Remote mode: `rowsOrCount` rows were added on the server at absolute index `index`. Pass the
+	 * new rows to cache them, or a count to show placeholders the grid will request. Cached rows,
+	 * `rowCount`, `activeIndex`, and the select plugin's Shift anchor move down with their rows;
+	 * selection is by id and does not move. When the insert is above the first visible row, the
+	 * view scrolls by the same amount so the rows on screen stay put. Starts a new epoch, so
+	 * answers to earlier requests are ignored. Does nothing outside remote mode.
+	 */
+	insertRows(index: number, rowsOrCount: Row[] | number) {
+		if (!this.#isRemote) return;
+		const rows = Array.isArray(rowsOrCount) ? rowsOrCount : [];
+		const count = Math.max(0, Math.floor(Array.isArray(rowsOrCount) ? rowsOrCount.length : rowsOrCount));
+		const n = this.#rowTotal();
+		const at = Math.min(n, Math.max(0, Math.floor(index)));
+		if (!count) return;
+		this.#shift(at, count, n + count, rows);
+	}
+
+	/**
+	 * Remote mode: rows `index..index + count - 1` were removed on the server. Cached rows after
+	 * them, `rowCount`, `activeIndex`, and the select plugin's Shift anchor move up. When the active
+	 * row is removed, the row that slides into the first removed slot becomes active (clamped to
+	 * the last row); this is silent, like any programmatic `activeIndex` change. Rows removed above
+	 * the first visible row scroll the view by the same amount, so the rows on screen stay put.
+	 * Starts a new epoch. Does nothing outside remote mode.
+	 */
+	removeRows(index: number, count: number) {
+		if (!this.#isRemote) return;
+		const n = this.#rowTotal();
+		const at = Math.max(0, Math.floor(index));
+		const k = Math.min(Math.max(0, Math.floor(count)), n - at);
+		if (k <= 0) return;
+		this.#shift(at, -k, n - k);
+	}
+
+	/**
+	 * Scroll so row `index` is in view. `align` is `"start"`, `"center"`, `"end"`, or `"auto"` (the
+	 * default: scroll only as far as needed). In remote mode the index is absolute. Works in both
+	 * modes.
+	 */
+	scrollToIndex(index: number, { align = "auto" }: { align?: "start" | "center" | "end" | "auto" } = {}) {
+		this.#virtualizer?.scrollToIndex(index, { align });
+	}
+
+	/**
+	 * The first and last row (inclusive) inside the viewport, without the overscan rows the grid
+	 * also renders. A row partly in view counts. In remote mode the indices are absolute. Both are
+	 * -1 when there are no rows. A host can read it before a refresh to keep what the user was
+	 * looking at in place.
+	 */
+	getVisibleRange(): { first: number; last: number } {
+		const v = this.#virtualizer;
+		const n = this.#rowTotal();
+		if (!v || !n) return { first: -1, last: -1 };
+		const top = v.scrollOffset ?? this.scrollEl?.scrollTop ?? 0;
+		const h = v.scrollRect?.height || this.scrollEl?.clientHeight || 0;
+		const first = v.getVirtualItemForOffset(top)?.index ?? 0;
+		const last = h > 0 ? (v.getVirtualItemForOffset(top + h - 1)?.index ?? n - 1) : first;
+		return { first, last: Math.max(first, Math.min(n - 1, last)) };
+	}
+
+	/**
+	 * The shared part of an insert (`delta > 0`) or removal (`delta < 0`) at `at`: move the cache,
+	 * the active row, and plugin-held indices; set the new count; and keep the rows on screen in
+	 * place when the change is above them. `rowCount` is the count after the change.
+	 */
+	#shift(at: number, delta: number, rowCount: number, inserted: Row[] = []) {
+		const removedEnd = delta < 0 ? at - delta : at; // first index after a removed run
+		const move = (i: number) => (i >= removedEnd ? i + delta : i >= at && delta < 0 ? -1 : i);
+		const first = this.getVisibleRange().first;
+		// Rows changed above the first visible row: inserts all count; a removal counts only the
+		// rows above it.
+		const above = first < 0 || at >= first ? 0 : delta > 0 ? delta : -Math.min(-delta, first - at);
+
+		this.#cache.shift(at, delta, rowCount);
+		if (inserted.length) this.#cache.put(at, inserted, rowCount);
+		clearTimeout(this.#settleTimer);
+		this.#settleTimer = undefined;
+		this.#awaitScroll = false;
+
+		const last = Math.max(0, rowCount - 1);
+		const active = move(this.activeIndex);
+		this.activeIndex = Math.min(last, active < 0 ? at : active);
+		if (this.#pendingActive !== undefined) {
+			const p = move(this.#pendingActive);
+			this.#pendingActive = p < 0 ? undefined : p;
+		}
+		if (this.#prevRange) this.#prevRange = { start: move(this.#prevRange.start), end: move(this.#prevRange.end) };
+		for (const p of this.plugins) p.shiftRows?.(at, delta, this.#ctx);
+
+		this.rowCount = rowCount;
+		this.#syncRemoteData();
+		const v = this.#virtualizer;
+		v?.setOptions({ ...v.options, count: rowCount });
+		if (v && above) {
+			// The virtualizer renders from its own offset, so move it now; the element follows in
+			// updated(), once the rowgroup has its new height and the browser cannot clamp it.
+			const offset = Math.max(0, (v.scrollOffset ?? 0) + above * this.rowHeight);
+			v.scrollOffset = offset;
+			this.#scrollTo = offset;
+		}
+	}
+	/** A scrollTop for updated() to apply after an index shift. */
+	#scrollTo?: number;
 
 	/**
 	 * Remote mode, after a sort change: every cached row is in the old order, so drop the cache
@@ -553,6 +663,10 @@ export class DjDataGrid extends DojoElement {
 			this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#rowTotal() });
 			this.#virtualizer?.measure();
 			this.requestUpdate();
+		}
+		if (this.#scrollTo !== undefined && this.scrollEl) {
+			this.scrollEl.scrollTop = this.#scrollTo;
+			this.#scrollTo = undefined;
 		}
 		this.#emitRangeChange();
 		this.#requestRows();

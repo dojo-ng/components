@@ -874,3 +874,64 @@ test("RR8: a remote drag resolves the row by absolute index and counts ids or on
 	assert.equal(sel.selection.count, 2);
 	assert.equal(dt.image, "2 rows");
 });
+
+// ---- RR9: unsupported plugins and printing ----
+
+test("RR9: unsupported plugins warn once per plugin set and are left out of the build", async () => {
+	const { treePlugin } = await import("../packages/data-grid-tree/dist/index.js");
+	const { filterPlugin } = await import("../packages/data-grid-filter/dist/index.js");
+	const warn = mock.method(console, "warn", () => {});
+	try {
+		const calls = { columns: 0, setup: 0, renderCell: 0 };
+		const fakeExport = { name: "export", columns(c) { calls.columns++; return c; }, setup() { calls.setup++; }, renderCell() { calls.renderCell++; } };
+		const kept = { name: "kept", setup() { calls.kept = true; } };
+		const plugins = [treePlugin(), filterPlugin(), fakeExport, kept];
+		const { el, requests } = await remoteGrid({ plugins });
+		answer(el, requests[0]);
+		await settle(el);
+		await scrollTo(el, 3000);
+		key(el, "ArrowDown");
+		await settle(el);
+		assert.equal(warn.mock.calls.length, 1, "one warning across many renders");
+		const msg = warn.mock.calls[0].arguments[0];
+		for (const name of ["tree", "filter", "export"]) assert.ok(msg.includes(name), `names ${name}: ${msg}`);
+		assert.ok(!msg.includes("kept"));
+		assert.deepEqual({ columns: calls.columns, setup: calls.setup, renderCell: calls.renderCell }, { columns: 0, setup: 0, renderCell: 0 }, "no hook of a left-out plugin ran");
+		assert.equal(calls.kept, true, "supported plugins still run");
+		assert.equal(el.renderRoot.querySelector("[part=chrome-top]"), null, "no quick-filter chrome");
+
+		el.remove();
+		document.body.appendChild(el); // a reconnect rebuilds the table but is the same plugin set
+		await settle(el);
+		assert.equal(warn.mock.calls.length, 1, "no new warning on reconnect");
+
+		el.plugins = [...plugins];
+		await settle(el);
+		assert.equal(warn.mock.calls.length, 2, "a new plugin set warns again");
+
+		el.rowCount = undefined;
+		await settle(el);
+		assert.ok(el.renderRoot.querySelector("[part=chrome-top]"), "leaving remote mode puts the plugins back");
+		assert.equal(warn.mock.calls.length, 2);
+	} finally {
+		warn.mock.restore();
+	}
+});
+
+test("RR9: printing in remote mode prints the cached rows with absolute ids", async () => {
+	const { el } = await remoteGrid({ settleMs: 0 });
+	el.setRows(0, rowsFrom(0, 99), el.epoch);
+	await scrollTo(el, 5000 * ROW_H);
+	el.setRows(5000, rowsFrom(5000, 5099), el.epoch);
+	await settle(el);
+	globalThis.window.dispatchEvent(new Event("beforeprint"));
+	await settle(el);
+	const trs = [...el.renderRoot.querySelectorAll(".print-table tbody tr")];
+	assert.equal(trs.length, el._cachedRowCount, "every cached row, nothing else");
+	assert.equal(trs.length, 200);
+	assert.equal(trs[100].id, "r-5000", "ids are absolute indices");
+	assert.equal(trs[100].querySelector("td").textContent, "a5000");
+	globalThis.window.dispatchEvent(new Event("afterprint"));
+	await settle(el);
+	assert.equal(el.renderRoot.querySelectorAll(".print-table tbody tr").length, 0);
+});

@@ -14,6 +14,9 @@ import styles from "./dj-data-grid.styles.js";
 
 export type Row = Record<string, unknown>;
 
+/** Plugins that need every row on the client, by `name`. Remote mode leaves them out. */
+const REMOTE_UNSUPPORTED = new Set(["tree", "groups", "filter", "pagination", "edit", "detail", "export"]);
+
 // Reconcile a plain attribute map onto a row element across re-renders and virtualizer recycling:
 // remove keys a plugin stopped returning, set the current ones. The `ref` callback runs every render.
 const rowAttrKeys = new WeakMap<Element, Set<string>>();
@@ -233,6 +236,23 @@ export class DjDataGrid extends DojoElement {
 	 *  connectedCallback and the first update flush (script-after-import order), which a
 	 *  changedProperties-based guard mistakes for the initial cycle. */
 	#builtPlugins?: DataGridPlugin[];
+	/** Whether the table was last built in remote mode; entering or leaving it rebuilds, since the
+	 *  plugin set differs (see `#active`). */
+	#builtRemote = false;
+	/** The plugins the grid uses: all of `plugins`, minus those remote mode cannot support. */
+	#active: DataGridPlugin[] = [];
+	#warnedFor?: DataGridPlugin[];
+	/** Choose `#active` for the current plugins and mode, warning once per plugin set. */
+	#pickPlugins() {
+		if (!this.#isRemote) { this.#active = this.plugins; this.#warnedFor = undefined; return; }
+		const dropped = this.plugins.filter((p) => REMOTE_UNSUPPORTED.has(p.name));
+		this.#active = dropped.length ? this.plugins.filter((p) => !dropped.includes(p)) : this.plugins;
+		// A reconnect rebuilds the table too; only a new plugin set or a return to remote mode warns.
+		if (dropped.length && this.#warnedFor !== this.plugins) {
+			this.#warnedFor = this.plugins;
+			console.warn(`dj-data-grid: remote mode (rowCount) does not support these plugins; they are left out: ${dropped.map((p) => p.name).join(", ")}.`);
+		}
+	}
 	#tstate!: TableState;
 	/**
 	 * The plugin context. A CLASS FIELD, so it exists before the first table does: `columns()`
@@ -542,7 +562,7 @@ export class DjDataGrid extends DojoElement {
 			this.#pendingActive = p < 0 ? undefined : p;
 		}
 		if (this.#prevRange) this.#prevRange = { start: move(this.#prevRange.start), end: move(this.#prevRange.end) };
-		for (const p of this.plugins) p.shiftRows?.(at, delta, this.#ctx);
+		for (const p of this.#active) p.shiftRows?.(at, delta, this.#ctx);
 
 		this.rowCount = rowCount;
 		this.#syncRemoteData();
@@ -656,7 +676,7 @@ export class DjDataGrid extends DojoElement {
 
 	/** Column list after every plugin's `columns()` transform, in array order. */
 	#computeColumns(): GridColumn[] {
-		return this.plugins.reduce((cols, p) => p.columns?.(cols, this.#ctx) ?? cols, this.columns);
+		return this.#active.reduce((cols, p) => p.columns?.(cols, this.#ctx) ?? cols, this.columns);
 	}
 	#columnDefs(): ColumnDef<Row>[] {
 		return this.#computeColumns().map((c) => {
@@ -722,7 +742,7 @@ export class DjDataGrid extends DojoElement {
 	 *  core's state/onStateChange applied LAST so a plugin can never clobber them. */
 	#mergedOptions(): TableOptionsResolved<Row> {
 		let opts = this.#coreOptions();
-		for (const p of this.plugins) {
+		for (const p of this.#active) {
 			const extra = p.tableOptions?.();
 			if (extra) opts = { ...opts, ...extra };
 		}
@@ -734,6 +754,7 @@ export class DjDataGrid extends DojoElement {
 	#buildTable() {
 		for (const d of this.#disposers) d();
 		this.#disposers = [];
+		this.#pickPlugins();
 
 		this.#table = createTable(this.#mergedOptions());
 		// The FULL initialState spread is load-bearing: a partial TanStack `state` crashes on an
@@ -742,11 +763,12 @@ export class DjDataGrid extends DojoElement {
 		this.#tstate = { ...this.#table.initialState, sorting: this.sorting, rowSelection: this.rowSelection };
 		this.#table.setOptions((o) => ({ ...o, state: this.#tstate }));
 
-		for (const p of this.plugins) {
+		for (const p of this.#active) {
 			const dispose = p.setup?.(this.#ctx);
 			if (dispose) this.#disposers.push(dispose);
 		}
 		this.#builtPlugins = this.plugins;
+		this.#builtRemote = this.#isRemote;
 		this.#virtualizer?.setOptions({ ...this.#virtualizer.options, count: this.#rowTotal() });
 	}
 
@@ -756,7 +778,7 @@ export class DjDataGrid extends DojoElement {
 		// Row models and setup() only exist at table creation, so a missed rebuild silently drops
 		// plugin behavior (this bit the playground: plugins assigned right after the upgrading
 		// import, inside the first update cycle).
-		if (this.#table && this.plugins !== this.#builtPlugins) {
+		if (this.#table && (this.plugins !== this.#builtPlugins || this.#isRemote !== this.#builtRemote)) {
 			this.#buildTable();
 			this.#virtualizer?.measure();
 		}
@@ -916,7 +938,7 @@ export class DjDataGrid extends DojoElement {
 	 *  `row--active` and `row--selected` survive alongside a rowstate plugin's `row--unread`. */
 	#rowAttributes(row: TableRow<Row>, index: number, selected: boolean): Record<string, string> {
 		let attrs: Record<string, string> = {};
-		for (const p of this.plugins) if (p.rowAttributes) attrs = { ...attrs, ...p.rowAttributes(row, this.#ctx) };
+		for (const p of this.#active) if (p.rowAttributes) attrs = { ...attrs, ...p.rowAttributes(row, this.#ctx) };
 		const parts = new Set(["row", ...(attrs.part ?? "").split(/\s+/).filter(Boolean)]);
 		if (index === this.activeIndex) parts.add("row--active");
 		if (selected) parts.add("row--selected");
@@ -925,12 +947,12 @@ export class DjDataGrid extends DojoElement {
 
 	#cellContent(cell: Cell<Row, unknown>): unknown {
 		let content: unknown = undefined;
-		for (const p of this.plugins) {
+		for (const p of this.#active) {
 			const r = p.renderCell?.(cell, this.#ctx);
 			if (r !== undefined) { content = r; break; }
 		}
 		if (content === undefined) content = String(cell.getValue() ?? "");
-		for (const p of this.plugins) if (p.decorateCell) content = p.decorateCell(cell, content, this.#ctx);
+		for (const p of this.#active) if (p.decorateCell) content = p.decorateCell(cell, content, this.#ctx);
 		return content;
 	}
 
@@ -938,7 +960,7 @@ export class DjDataGrid extends DojoElement {
 	 *  the core default (the column's `header` string, falling back to its id). Mirrors
 	 *  `#cellContent` so a plugin owning a column can also own that column's header control. */
 	#headerContent(header: TableHeader<Row, unknown>): unknown {
-		for (const p of this.plugins) {
+		for (const p of this.#active) {
 			const r = p.renderHeader?.(header, this.#ctx);
 			if (r !== undefined) return r;
 		}
@@ -948,7 +970,7 @@ export class DjDataGrid extends DojoElement {
 
 	/** Detail content for a row: the first plugin `renderDetail` returning non-undefined wins. */
 	#detailContent(row: TableRow<Row>): TemplateResult | undefined {
-		for (const p of this.plugins) {
+		for (const p of this.#active) {
 			const d = p.renderDetail?.(row, this.#ctx);
 			if (d !== undefined) return d;
 		}
@@ -957,7 +979,7 @@ export class DjDataGrid extends DojoElement {
 
 	override render() {
 		const headers = this.#table?.getHeaderGroups()[0]?.headers ?? [];
-		const hasDetail = this.plugins.some((p) => p.renderDetail);
+		const hasDetail = this.#active.some((p) => p.renderDetail);
 		this.#virtualizer?._willUpdate();
 		const virtualItems = this.#virtualizer?.getVirtualItems() ?? [];
 		const rows = this.#table?.getRowModel().rows ?? [];
@@ -1010,10 +1032,10 @@ export class DjDataGrid extends DojoElement {
 		const total = this.#virtualizer?.getTotalSize() ?? 0;
 		const items = virtualItems;
 		// Chrome regions (quick filter, pagination, totals) are full-width, outside the grid rows.
-		const chromeTops = this.plugins.map((p) => p.chromeTop?.(this.#ctx)).filter((x) => x !== undefined);
-		const chromeBottoms = this.plugins.map((p) => p.chromeBottom?.(this.#ctx)).filter((x) => x !== undefined);
+		const chromeTops = this.#active.map((p) => p.chromeTop?.(this.#ctx)).filter((x) => x !== undefined);
+		const chromeBottoms = this.#active.map((p) => p.chromeBottom?.(this.#ctx)).filter((x) => x !== undefined);
 		// Each plugin that returns subheaderCells contributes one extra header-area row.
-		const subRows = this.plugins.map((p) => p.subheaderCells?.(this.#ctx)).filter((x): x is Array<TemplateResult | null> => x !== undefined);
+		const subRows = this.#active.map((p) => p.subheaderCells?.(this.#ctx)).filter((x): x is Array<TemplateResult | null> => x !== undefined);
 		const headerRows = 1 + subRows.length;
 		// aria-activedescendant must point at a rendered row; with virtualization the active row can
 		// be scrolled out of the rendered window, so omit it then.
@@ -1093,7 +1115,7 @@ export class DjDataGrid extends DojoElement {
 					<tr part="head">${printing ? headers.map((h) => html`<th part="cell">${this.#headerContent(h)}</th>`) : ""}</tr>
 				</thead>
 				<tbody>
-					${printing ? rows.map((row, index) => html`<tr part="row" id=${`r-${index}`}>${row.getVisibleCells().map((cell) => html`<td part="cell">${this.#cellContent(cell)}</td>`)}</tr>`) : ""}
+					${printing ? rows.map((row, index) => html`<tr part="row" id=${`r-${remote ? this.#indexOf(row) : index}`}>${row.getVisibleCells().map((cell) => html`<td part="cell">${this.#cellContent(cell)}</td>`)}</tr>`) : ""}
 				</tbody>
 			</table>
 		`;

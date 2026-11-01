@@ -789,3 +789,88 @@ test("RR7: outside remote mode all is false and ids/count match rows", async () 
 	await settle(el);
 	assert.equal(changes.at(-1).count, 0);
 });
+
+// ---- RR8: drag carries the selection ----
+
+function stubTransfer() {
+	const store = {};
+	return {
+		store, effectAllowed: "", dropEffect: "none", image: null,
+		setData(t, v) { store[t] = v; },
+		getData(t) { return store[t] ?? ""; },
+		setDragImage(el) { this.image = el.textContent; },
+	};
+}
+function dragEvt(target, type, dt) {
+	const e = new Event(type, { bubbles: true, composed: true, cancelable: true });
+	Object.defineProperty(e, "dataTransfer", { value: dt });
+	target.dispatchEvent(e);
+	return e;
+}
+async function dragGrid() {
+	const { selectColumnPlugin } = await import("../packages/data-grid-select/dist/index.js");
+	const { rowDragPlugin } = await import("../packages/data-grid-drag/dist/index.js");
+	const drag = rowDragPlugin({ type: "x/rows", data: (rows, sel) => JSON.stringify({ n: rows.length, sel }) });
+	const g = await remoteGrid({ selectionMode: "multiple", plugins: [selectColumnPlugin(), drag], settleMs: 0 });
+	answer(g.el, g.requests[0]);
+	await settle(g.el);
+	const events = [];
+	g.el.addEventListener("dj-row-dragstart", (e) => events.push(["start", e.detail]));
+	g.el.addEventListener("dj-row-dragend", (e) => events.push(["end", e.detail]));
+	return { ...g, events };
+}
+
+test("RR8: with all selected, dragging a loaded row reports selection.all and the chip reads 100,000 rows", async () => {
+	const { el, events } = await dragGrid();
+	el.selectAll();
+	await settle(el);
+	const dt = stubTransfer();
+	const e = dragEvt(rowEl(el, 5).querySelector(".cell:last-child"), "dragstart", dt);
+	await settle(el);
+	assert.equal(e.defaultPrevented, false);
+	const [, start] = events[0];
+	assert.deepEqual(start.selection, { ids: [], all: true, except: [], count: 100000 });
+	assert.equal(start.rows.length, 100, "rows is the loaded rows");
+	assert.equal(dt.image, "100,000 rows");
+	assert.equal(dt.store["text/plain"], "100,000 rows");
+	assert.deepEqual(JSON.parse(dt.store["x/rows"]).sel.all, true, "data() gets the selection");
+	const dragging = () => rowEls(el).filter((r) => r.getAttribute("part").split(" ").includes("row--dragging")).length;
+	assert.ok(dragging() > 0, "selected rows show as dragging");
+
+	dt.dropEffect = "move";
+	dragEvt(rowEl(el, 5), "dragend", dt);
+	await settle(el);
+	const [kind, end] = events[1];
+	assert.equal(kind, "end");
+	assert.deepEqual(end.selection, start.selection);
+	assert.equal(end.dropEffect, "move");
+	assert.equal(dragging(), 0);
+});
+
+test("RR8: a remote drag resolves the row by absolute index and counts ids or one row", async () => {
+	const { el, events } = await dragGrid();
+	await scrollTo(el, 5000 * ROW_H);
+	el.setRows(5000, rowsFrom(5000, 5099), el.epoch);
+	await settle(el);
+	// An unselected row deep in the list: dragged alone, found through ctx.rowAt.
+	let dt = stubTransfer();
+	dragEvt(rowEl(el, 5003), "dragstart", dt);
+	assert.deepEqual(events[0][1].rows.map((r) => r.id), ["m5003"]);
+	assert.deepEqual(events[0][1].selection, { ids: ["m5003"], all: false, except: [], count: 1 });
+	assert.equal(dt.image, "1 row");
+	dragEvt(rowEl(el, 5003), "dragend", dt);
+
+	// Two selected rows, one of them no longer loaded.
+	el.toggleAt(5001);
+	el.toggleAt(5002);
+	el.resetRows();
+	el.setRows(5000, rowsFrom(5000, 5001), el.epoch);
+	await settle(el);
+	dt = stubTransfer();
+	dragEvt(rowEl(el, 5001), "dragstart", dt);
+	const sel = events.at(-1)[1];
+	assert.deepEqual(sel.rows.map((r) => r.id), ["m5001"], "rows is the loaded selected rows");
+	assert.deepEqual([...sel.selection.ids].sort(), ["m5001", "m5002"]);
+	assert.equal(sel.selection.count, 2);
+	assert.equal(dt.image, "2 rows");
+});

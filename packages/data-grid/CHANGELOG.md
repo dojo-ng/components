@@ -1,5 +1,14 @@
 # @dojo-ng/data-grid
 
+## 0.3.0
+
+### Minor Changes
+
+- Remote rows. Set `rowCount` to show a list that lives on a server: the scrollbar is sized from it, rows not loaded yet render as placeholder rows (part `row--placeholder`, `aria-busy`), and the grid asks for aligned blocks with `dj-rows-request` (`{ start, end, epoch, reason }`). Answer with `setRows(start, rows, epoch)`; an answer from an older epoch is ignored and the rows are asked for again. New properties `blockSize`, `cacheSize` (farthest blocks dropped first), and `settleMs` (fast jumps wait until the view holds still), and the `--dj-data-grid-placeholder` token. Every index is absolute, End reaches `rowCount - 1`, and PageUp/PageDown now work in both modes. Plugins reach rows through the new `ctx.rowAt(index)` and `ctx.indexOf(row)`. Plugins that need every row on the client (tree, groups, filter, pagination, edit, detail, export) are left out in remote mode with one console warning, and printing prints the cached rows. Outside remote mode nothing changes.
+- Remote rows, selection: `selectAll()` and `clearSelection()`, an `allSelected` state under which `rowSelection` lists the deselected rows, and a `selection` getter. `dj-selection-change` gains `ids`, `all`, `except`, and `count` (outside remote mode `all` is false and `ids`/`count` match `rows`). New context helper `ctx.rowIds(first, last)`. The select plugin's header checkbox selects every row on the server, and a Shift range over rows that are not loaded waits for them before selecting.
+- Remote rows: `insertRows(index, rowsOrCount)` and `removeRows(index, count)` move cached rows, `rowCount`, `activeIndex`, and the select plugin's Shift anchor with their rows, and keep the rows on screen in place when the change is above them. New public `scrollToIndex(index, { align })` and `getVisibleRange()` (returns the new exported `VisibleRange` type) in both modes. New plugin hook `shiftRows`. The select plugin's Shift range now uses grid indices (`ctx.indexOf`/`ctx.rowAt`).
+- Remote rows: sorting goes to the host. A header click updates `sorting`, emits `dj-sort`, drops the cached rows, scrolls to the top, and asks for the top rows in a new epoch; read `grid.sorting` when answering.
+
 ## 0.2.0
 
 ### Minor Changes

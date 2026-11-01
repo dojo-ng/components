@@ -1,5 +1,15 @@
 # @dojo-ng/data-grid-pagination
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @dojo-ng/data-grid@0.3.0
+
 ## 0.1.2
 
 ### Patch Changes

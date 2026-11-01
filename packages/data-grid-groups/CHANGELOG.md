@@ -1,5 +1,16 @@
 # @dojo-ng/data-grid-groups
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @dojo-ng/data-grid@0.3.0
+  - @dojo-ng/data-grid-tree@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes

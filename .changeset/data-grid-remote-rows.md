@@ -1,5 +1,0 @@
----
-"@dojo-ng/data-grid": minor
----
-
-Remote rows. Set `rowCount` to show a list that lives on a server: the scrollbar is sized from it, rows not loaded yet render as placeholder rows (part `row--placeholder`, `aria-busy`), and the grid asks for aligned blocks with `dj-rows-request` (`{ start, end, epoch, reason }`). Answer with `setRows(start, rows, epoch)`; an answer from an older epoch is ignored and the rows are asked for again. New properties `blockSize`, `cacheSize` (farthest blocks dropped first), and `settleMs` (fast jumps wait until the view holds still), and the `--dj-data-grid-placeholder` token. Every index is absolute, End reaches `rowCount - 1`, and PageUp/PageDown now work in both modes. Plugins reach rows through the new `ctx.rowAt(index)` and `ctx.indexOf(row)`. Plugins that need every row on the client (tree, groups, filter, pagination, edit, detail, export) are left out in remote mode with one console warning, and printing prints the cached rows. Outside remote mode nothing changes.

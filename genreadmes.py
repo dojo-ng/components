@@ -38,6 +38,13 @@ A checkbox selection column for `<dj-data-grid>`, with select-all and range sele
 - Shift-click a checkbox to select the range from the last one clicked. The range covers rows that
   are not rendered yet.
 
+#### Rows from a server
+- With the grid's `rowCount` set, the header checkbox selects every row on the server, loaded or
+  not (`grid.selectAll()`), and shows the mixed state once any row is unticked. Read the result
+  from `dj-selection-change`'s `ids`, `all`, `except`, and `count`.
+- A Shift range over rows that are not loaded waits for the grid to fetch them, then selects. If
+  the list changes first, the range is dropped.
+
 #### Open rows and select them
 - Combine it with `activation="click"` on the grid: a click opens a row (`dj-activate`), and the
   checkboxes build the set for bulk actions.
@@ -53,16 +60,21 @@ Drag rows out of a `<dj-data-grid>` with native HTML5 drag and drop, for example
 #### How it works
 - Every row becomes `draggable`. Dragging a selected row drags every selected row; dragging an
   unselected row drags it alone and leaves the selection as it was.
-- The payload is yours: `data(rows)` is written to the drag under the MIME type you name in `type`.
+- The payload is yours: `data(rows, selection)` is written to the drag under the MIME type you name in `type`.
   A drop target checks for that type, which is the only part of a payload the browser shows before
   the drop.
-- The drag image is a small chip. `label(rows)` sets its text (default "1 row" / "N rows").
+- The drag image is a small chip. `label(rows, selection)` sets its text (default "1 row" /
+  "N rows", counted from `selection.count`).
 - Clicking, double clicking, and the checkbox column work as before: a drag only starts once the
   pointer moves, and a drag that starts on a control inside a cell is canceled.
 
 #### Events
-- `dj-row-dragstart` (cancelable, detail `{ rows }`) and `dj-row-dragend` (detail
-  `{ rows, dropEffect }`). Dragged rows carry the `row--dragging` part until the drag ends.
+- `dj-row-dragstart` (cancelable, detail `{ rows, selection }`) and `dj-row-dragend` (detail
+  `{ rows, selection, dropEffect }`). Dragged rows carry the `row--dragging` part until the drag
+  ends.
+- `selection` is `{ ids, all, except, count }`, the same shape as the grid's `selection`. With the
+  grid's `rowCount` set, most dragged rows may not be loaded: `rows` is the loaded ones, and
+  `selection` names them all (with select all on, `all` is true and the chip reads "100,000 rows").
 
 #### Accessibility
 - Dragging has no keyboard form. Offer the same action another way, such as a Move command with a
@@ -334,6 +346,43 @@ EXAMPLES = {
     // index list, which is what precise eviction wants.
     console.log(`rendered rows ${start}-${end} of ${count}`, rendered.length);
   });
+</script>"""),
+  ("Rows from a server: 100,000 rows, loaded as you scroll", "Set `rowCount` and the grid asks for the rows it needs with `dj-rows-request`; answer with `setRows`, passing back the request's `epoch`. Sorting goes to the server: read `grid.sorting` when answering. The fake source below answers after 150 ms, the way a real API would.",
+   """<dj-data-grid id="inbox" height="320px" selection-mode="multiple"></dj-data-grid>
+<pre id="sel">selected: 0</pre>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { selectColumnPlugin } from "@dojo-ng/data-grid-select";
+
+  const TOTAL = 100_000;
+  // Stands in for your API: rows start..end in the order `sorting` names, after 150 ms.
+  const fetchRows = (start, end, sorting) => new Promise((resolve) => setTimeout(() => {
+    const desc = sorting[0]?.desc;
+    resolve(Array.from({ length: end - start + 1 }, (_, k) => {
+      const n = desc ? TOTAL - 1 - (start + k) : start + k;
+      return { id: "m" + n, from: "Sender " + (n % 97), subject: "Message " + n };
+    }));
+  }, 150));
+
+  const grid = document.getElementById("inbox");
+  grid.columns = [{ id: "from", header: "From" }, { id: "subject", header: "Subject" }];
+  grid.getRowId = (row) => row.id;
+  grid.plugins = [selectColumnPlugin({ label: (m) => `Select ${m.subject}` })];
+  grid.rowCount = TOTAL;
+
+  grid.addEventListener("dj-rows-request", async (e) => {
+    const { start, end, epoch } = e.detail;
+    const rows = await fetchRows(start, end, grid.sorting);
+    grid.setRows(start, rows, epoch); // ignored, and asked again, if the list changed meanwhile
+  });
+  // Select all covers rows that were never loaded: act on ids (or all/except) and count.
+  grid.addEventListener("dj-selection-change", (e) => {
+    const { all, except, count } = e.detail;
+    document.getElementById("sel").textContent =
+      `selected: ${count.toLocaleString()}` + (all ? ` (all but ${except.length})` : "");
+  });
+  // New mail at the top: the rows on screen stay where they are.
+  // grid.insertRows(0, [newMessage]);
 </script>"""),
  ],
  "rich-text": [

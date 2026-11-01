@@ -69,18 +69,47 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 
 ## Rows from a server: `rowCount`
 
-- Set `rowCount` to the total number of rows on the server to turn on remote mode. `data` is then ignored, and the scrollbar is sized from `rowCount`.
-- Rows the grid has not loaded render as placeholder rows (part `row--placeholder`, `aria-busy="true"`). Plugin cell and row hooks are not called for them.
-- The grid asks for rows with `dj-rows-request`, detail `{ start, end, epoch, reason }`: an inclusive, block-aligned range of absolute indices. Answer with `grid.setRows(start, rows, epoch)`, passing back the request's `epoch`. An answer with an older epoch is ignored, and the grid asks again.
-- Rows load in blocks of `blockSize` (default 100). The grid keeps at most `cacheSize` rows (default 2,000) and drops the blocks farthest from the screen first.
+Set `rowCount` to the total number of rows on the server to turn on remote mode. `data` is then ignored, the scrollbar is sized from `rowCount`, and the grid asks for the rows it needs.
+
+The recipe:
+
+- Give the grid `columns`, `rowCount`, and a `getRowId`, so selection survives rows being dropped from the cache.
+- Listen for `dj-rows-request`, detail `{ start, end, epoch, reason }`: an inclusive, block-aligned range of absolute indices. Fetch those rows, in the order `grid.sorting` names, and answer with `grid.setRows(start, rows, epoch)`, passing back the request's `epoch`.
+- `reason` is `"range"` for rows coming on screen and `"selection"` for a Shift range waiting on rows. Answer both the same way.
+- Rows not loaded yet render as placeholder rows (part `row--placeholder`, `aria-busy="true"`). Plugin cell and row hooks are not called for them.
+
+The epoch rule:
+
+- The grid starts a new epoch whenever the list changes under it: `insertRows`, `removeRows`, `resetRows`, and a sort. `setRows` with an older epoch keeps nothing and returns `false`, and the grid asks again for any rows still needed. So a host never has to cancel requests or reconcile late answers; it only passes the epoch back.
+
+Loading and the cache:
+
+- Rows load in blocks of `blockSize` (default 100), so a block is never fetched twice in an epoch.
+- The grid keeps at most `cacheSize` rows (default 2,000) and drops the blocks farthest from the screen first. Blocks on screen are never dropped.
 - After a jump of more than one screen (a scrollbar drag, End), the grid waits until the rows on screen have held still for `settleMs` (default 100) before asking.
-- Every index is absolute: `activeIndex`, event indices, and `aria-rowindex` count from the top of the full list, loaded or not. When the active row is not loaded yet, `dj-active-change` fires with `row: undefined`, then again with the row once it arrives. `dj-activate` does nothing on a placeholder.
-- Sorting is the host's job. A header click updates `sorting`, emits `dj-sort`, drops the cached rows, scrolls to the top (the active row goes to 0), and requests the top rows in a new epoch. Read `grid.sorting` when answering. The grid never reorders rows it is given.
+
+Indices, keyboard, and changes:
+
+- Every index is absolute: `activeIndex`, event indices, and `aria-rowindex` count from the top of the full list, loaded or not. End goes to `rowCount - 1`. When the active row is not loaded yet, `dj-active-change` fires with `row: undefined`, then again with the row once it arrives. `dj-activate` does nothing on a placeholder.
+- Sorting is the host's job. A header click updates `sorting`, emits `dj-sort`, drops the cached rows, scrolls to the top (the active row goes to 0), and requests the top rows in a new epoch. The grid never reorders rows it is given.
 - When rows are added or removed on the server, call `insertRows(index, rowsOrCount)` or `removeRows(index, count)`. Cached rows, `activeIndex`, and the Shift anchor move with their rows, and a change above the screen scrolls by the same amount so nothing on screen jumps. For anything else, `resetRows()`. `getVisibleRange()` and `scrollToIndex()` let a host keep the user's place across a refresh.
-- Give the grid a `getRowId`, so selection survives rows being dropped from the cache.
-- Select all means every row on the server, loaded or not: `selectAll()` turns on `allSelected`, and `rowSelection` then holds the rows the user deselected. `dj-selection-change` carries `{ rows, ids, all, except, count }`; `rows` is only the loaded selected rows, so use `ids` (or `all` and `except`) and `count`. Inserts, removals, resets, and sorts keep select all on.
-- A Shift range (`@dojo-ng/data-grid-select`) over rows that are not loaded asks for them (`reason: "selection"`) and selects once they have all arrived. If the list changes first (a new epoch), the range is dropped.
-- Rows have a fixed height (`rowHeight`) in remote mode.
+
+Selection:
+
+- Select all means every row on the server, loaded or not: `selectAll()` turns on `allSelected`, and `rowSelection` then holds the rows the user deselected. `clearSelection()` turns it off.
+- `dj-selection-change` carries `{ rows, ids, all, except, count }`. `rows` is only the loaded selected rows, so act on `ids` (or `all` and `except`) and `count`. `grid.selection` returns the same without `rows`. Inserts, removals, resets, and sorts keep select all on.
+- A Shift range (`@dojo-ng/data-grid-select`) over rows that are not loaded asks for them and selects once they have all arrived. If the list changes first, the range is dropped.
+
+Plugins:
+
+- Supported: `selectColumnPlugin`, `rowDragPlugin` (its events carry the same `selection`), `rowStatePlugin`, `cellComponentsPlugin`, and `formatsPlugin`.
+- Not supported, because they need every row on the client: `treePlugin`, `groupsPlugin`, `filterPlugin`, `paginationPlugin`, `editPlugin`, `detailPlugin`, and `exportPlugin`. The grid leaves them out and logs one console warning naming them. Filter, group, and thread on the server instead.
+
+Limits:
+
+- Rows have a fixed height (`rowHeight`).
+- Printing prints the cached rows only, not the whole list.
+- Browsers stop growing an element at about 17.8 million px (Firefox; Chromium and WebKit allow about 33 million). At the default 36 px row that is about 490,000 rows; past that the scrollbar cannot reach the end. Lower `rowHeight` raises the limit.
 
 ## Properties
 
@@ -209,6 +238,49 @@ The reason `activation` exists. A plain click opens a row in the detail pane and
     // index list, which is what precise eviction wants.
     console.log(`rendered rows ${start}-${end} of ${count}`, rendered.length);
   });
+</script>
+```
+
+### Rows from a server: 100,000 rows, loaded as you scroll
+
+Set `rowCount` and the grid asks for the rows it needs with `dj-rows-request`; answer with `setRows`, passing back the request's `epoch`. Sorting goes to the server: read `grid.sorting` when answering. The fake source below answers after 150 ms, the way a real API would.
+
+```html
+<dj-data-grid id="inbox" height="320px" selection-mode="multiple"></dj-data-grid>
+<pre id="sel">selected: 0</pre>
+<script type="module">
+  import "@dojo-ng/data-grid";
+  import { selectColumnPlugin } from "@dojo-ng/data-grid-select";
+
+  const TOTAL = 100_000;
+  // Stands in for your API: rows start..end in the order `sorting` names, after 150 ms.
+  const fetchRows = (start, end, sorting) => new Promise((resolve) => setTimeout(() => {
+    const desc = sorting[0]?.desc;
+    resolve(Array.from({ length: end - start + 1 }, (_, k) => {
+      const n = desc ? TOTAL - 1 - (start + k) : start + k;
+      return { id: "m" + n, from: "Sender " + (n % 97), subject: "Message " + n };
+    }));
+  }, 150));
+
+  const grid = document.getElementById("inbox");
+  grid.columns = [{ id: "from", header: "From" }, { id: "subject", header: "Subject" }];
+  grid.getRowId = (row) => row.id;
+  grid.plugins = [selectColumnPlugin({ label: (m) => `Select ${m.subject}` })];
+  grid.rowCount = TOTAL;
+
+  grid.addEventListener("dj-rows-request", async (e) => {
+    const { start, end, epoch } = e.detail;
+    const rows = await fetchRows(start, end, grid.sorting);
+    grid.setRows(start, rows, epoch); // ignored, and asked again, if the list changed meanwhile
+  });
+  // Select all covers rows that were never loaded: act on ids (or all/except) and count.
+  grid.addEventListener("dj-selection-change", (e) => {
+    const { all, except, count } = e.detail;
+    document.getElementById("sel").textContent =
+      `selected: ${count.toLocaleString()}` + (all ? ` (all but ${except.length})` : "");
+  });
+  // New mail at the top: the rows on screen stay where they are.
+  // grid.insertRows(0, [newMessage]);
 </script>
 ```
 

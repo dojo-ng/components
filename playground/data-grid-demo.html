@@ -14,7 +14,8 @@
 					"@tanstack/virtual-core": "https://esm.sh/@tanstack/virtual-core@3",
 					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
 					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
-					"@dojo-ng/data-grid": "../packages/data-grid/dist/index.js"
+					"@dojo-ng/data-grid": "../packages/data-grid/dist/index.js",
+					"@dojo-ng/data-grid-select": "../packages/data-grid-select/dist/index.js"
 				}
 			}
 		</script>
@@ -46,6 +47,87 @@
 		<pre id="range">range: (scroll the grid above)</pre>
 		<dj-data-grid id="feed" height="16rem" style="max-width: 46rem; display:block"></dj-data-grid>
 		<pre id="feedout">loaded: 100 rows</pre>
+		<h1>Remote rows — 100,000 rows from a server (<code>rowCount</code>)</h1>
+		<p class="hint">
+			The grid holds no data up front. It asks for blocks of 100 rows with <code>dj-rows-request</code>, and a fake
+			source answers after 150 ms with <code>setRows(start, rows, epoch)</code>. Unloaded rows show as placeholders.
+			Drag the scrollbar to the bottom: the grid waits until you stop before asking. Sort by a header (the source
+			sorts), select all with the header checkbox (every row, loaded or not), then untick a few.
+		</p>
+		<p>
+			<button id="r-insert">Insert 3 at the top</button>
+			<button id="r-remove">Remove the active row</button>
+			<button id="r-reset">Reset (keep scroll)</button>
+		</p>
+		<dj-data-grid id="remote" selection-mode="multiple" height="20rem" style="max-width: 46rem; display:block"></dj-data-grid>
+		<pre id="r-out">requests: 0</pre>
+		<pre id="r-log"></pre>
+		<script type="module">
+			import "@dojo-ng/data-grid";
+			import { selectColumnPlugin } from "@dojo-ng/data-grid-select";
+
+			// The "server": a list of ids, so inserts and removals have something to change.
+			let next = 100000;
+			let server = Array.from({ length: next }, (_, i) => i);
+			const toRow = (n) => ({ id: "m" + n, from: `Sender ${n % 97}`, subject: `Message ${n}` });
+			const fetchRows = (start, end, sorting) => new Promise((resolve) => setTimeout(() => {
+				const desc = sorting[0]?.desc;
+				const ids = desc ? [...server].reverse() : server;
+				resolve(ids.slice(start, end + 1).map(toRow));
+			}, 150));
+
+			const remote = document.getElementById("remote");
+			remote.columns = [{ id: "from", header: "From" }, { id: "subject", header: "Subject" }];
+			remote.getRowId = (row) => row.id;
+			remote.plugins = [selectColumnPlugin({ label: (m) => `Select ${m.subject}` })];
+			remote.rowCount = server.length;
+
+			// Live readout, counted in the page from the grid's events.
+			const stats = { requests: 0, inFlight: 0, rows: 0, stale: 0, selected: "0" };
+			const log = [];
+			const show = () => {
+				const { first, last } = remote.getVisibleRange();
+				document.getElementById("r-out").textContent =
+					`requests: ${stats.requests} (${stats.inFlight} in flight), rows received: ${stats.rows.toLocaleString()}, `
+					+ `stale answers: ${stats.stale}\nepoch: ${remote.epoch}, visible: ${first}–${last} of ${remote.rowCount.toLocaleString()}, `
+					+ `cache limit: ${remote.cacheSize.toLocaleString()} rows, selected: ${stats.selected}`;
+				document.getElementById("r-log").textContent = log.slice(-6).join("\n");
+			};
+			remote.addEventListener("dj-rows-request", async (e) => {
+				const { start, end, epoch, reason } = e.detail;
+				stats.requests++; stats.inFlight++;
+				log.push(`request ${start}–${end} (epoch ${epoch}, ${reason})`);
+				show();
+				const rows = await fetchRows(start, end, remote.sorting);
+				stats.inFlight--;
+				if (remote.setRows(start, rows, epoch)) stats.rows += rows.length;
+				else { stats.stale++; log.push(`stale answer ${start}–${end} dropped`); }
+				show();
+			});
+			remote.addEventListener("dj-selection-change", (e) => {
+				const { all, except, count } = e.detail;
+				stats.selected = count.toLocaleString() + (all ? ` (all but ${except.length})` : "");
+				show();
+			});
+			remote.addEventListener("dj-range-change", show);
+
+			// Both act on the order on screen: descending shows the server list reversed.
+			const desc = () => !!remote.sorting[0]?.desc;
+			document.getElementById("r-insert").addEventListener("click", () => {
+				const fresh = [next++, next++, next++];
+				server = desc() ? [...server, ...[...fresh].reverse()] : [...fresh, ...server];
+				remote.insertRows(0, fresh.map(toRow));
+			});
+			document.getElementById("r-remove").addEventListener("click", () => {
+				const i = remote.activeIndex;
+				const at = desc() ? server.length - 1 - i : i;
+				server = server.filter((_, k) => k !== at);
+				remote.removeRows(i, 1);
+			});
+			document.getElementById("r-reset").addEventListener("click", () => remote.resetRows({ keepScroll: true }));
+			show();
+		</script>
+
 		<script type="module">
 			import "@dojo-ng/data-grid";
 			const first = ["Ada","Bo","Cy","Dee","Eli","Fay","Gus","Hana","Ivy","Jo","Kai","Lena","Mo","Nia","Omar","Pia"];

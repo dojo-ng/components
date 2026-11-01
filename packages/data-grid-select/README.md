@@ -41,6 +41,11 @@ The intended combination. `activation="click"` makes a plain click open a row; t
 - `selection-mode="multiple"` gives checkboxes and a select-all checkbox in the header, with a real mixed state. `"single"` gives radio buttons and no header control. `"none"` adds no column.
 - Shift-click a checkbox to select the range from the last one clicked. The range covers rows that are not rendered yet.
 
+## Rows from a server
+
+- With the grid's `rowCount` set, the header checkbox selects every row on the server, loaded or not (`grid.selectAll()`), and shows the mixed state once any row is unticked. Read the result from `dj-selection-change`'s `ids`, `all`, `except`, and `count`.
+- A Shift range over rows that are not loaded waits for the grid to fetch them, then selects. If the list changes first, the range is dropped.
+
 ## Open rows and select them
 
 - Combine it with `activation="click"` on the grid: a click opens a row (`dj-activate`), and the checkboxes build the set for bulk actions.

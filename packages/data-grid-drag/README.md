@@ -53,13 +53,14 @@ The grid writes the dragged rows' ids under its own MIME type; the tree accepts 
 ## How it works
 
 - Every row becomes `draggable`. Dragging a selected row drags every selected row; dragging an unselected row drags it alone and leaves the selection as it was.
-- The payload is yours: `data(rows)` is written to the drag under the MIME type you name in `type`. A drop target checks for that type, which is the only part of a payload the browser shows before the drop.
-- The drag image is a small chip. `label(rows)` sets its text (default "1 row" / "N rows").
+- The payload is yours: `data(rows, selection)` is written to the drag under the MIME type you name in `type`. A drop target checks for that type, which is the only part of a payload the browser shows before the drop.
+- The drag image is a small chip. `label(rows, selection)` sets its text (default "1 row" / "N rows", counted from `selection.count`).
 - Clicking, double clicking, and the checkbox column work as before: a drag only starts once the pointer moves, and a drag that starts on a control inside a cell is canceled.
 
 ## Events
 
-- `dj-row-dragstart` (cancelable, detail `{ rows }`) and `dj-row-dragend` (detail `{ rows, dropEffect }`). Dragged rows carry the `row--dragging` part until the drag ends.
+- `dj-row-dragstart` (cancelable, detail `{ rows, selection }`) and `dj-row-dragend` (detail `{ rows, selection, dropEffect }`). Dragged rows carry the `row--dragging` part until the drag ends.
+- `selection` is `{ ids, all, except, count }`, the same shape as the grid's `selection`. With the grid's `rowCount` set, most dragged rows may not be loaded: `rows` is the loaded ones, and `selection` names them all (with select all on, `all` is true and the chip reads "100,000 rows").
 
 ## Accessibility
 

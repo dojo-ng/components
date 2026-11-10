@@ -20,7 +20,7 @@ const EMOJI_CSS = `
 dj-rich-text .dj-rt-emoji-panel { padding: var(--dj-spacing-small, 0.5rem); display: flex; flex-direction: column; gap: var(--dj-spacing-small, 0.5rem); }
 dj-rich-text .dj-rt-emoji-grid { display: grid; grid-template-columns: repeat(${COLS}, 2rem); gap: 2px; max-height: 12rem; overflow-y: auto; }
 dj-rich-text .dj-rt-emoji-grid button { background: transparent; border: 0; font-size: 1.25rem; line-height: 1; height: 2rem; padding: 0; border-radius: 4px; cursor: pointer; }
-dj-rich-text .dj-rt-emoji-grid button:hover { background: var(--dj-color-background-alt, #f3f4f6); }
+dj-rich-text .dj-rt-emoji-grid button:hover { background: var(--dj-color-neutral-100, #f3f4f6); }
 dj-rich-text .dj-rt-emoji-grid button:focus-visible { outline: 2px solid var(--dj-color-primary, #2563eb); outline-offset: -2px; }
 dj-rich-text .dj-rt-emoji-empty { color: var(--dj-color-text-muted, #6b7280); font-size: 0.875rem; padding: 0.25rem; }
 `;

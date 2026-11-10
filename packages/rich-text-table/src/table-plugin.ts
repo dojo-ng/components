@@ -8,6 +8,7 @@ import {
 	$isRootOrShadowRoot,
 	$isTextNode,
 	COMMAND_PRIORITY_EDITOR,
+	RootNode,
 	type LexicalNode,
 } from "lexical";
 import {
@@ -59,7 +60,7 @@ const TABLE_ICON = html`<svg viewBox="0 0 24 24" width="1em" height="1em" fill="
 const CONTENT_CSS = `
 dj-rich-text table { border-collapse: collapse; width: 100%; }
 dj-rich-text td, dj-rich-text th { border: 1px solid var(--dj-color-border, #d1d5db); padding: .35rem .5rem; }
-dj-rich-text th { background: var(--dj-color-background-alt, #f3f4f6); }
+dj-rich-text th { background: var(--dj-color-neutral-100, #f3f4f6); color: var(--dj-color-text, #1f2937); }
 `;
 
 /** Chrome styles for the grid picker and table menu (the popups render in the toolbar's light DOM). */
@@ -73,6 +74,19 @@ const PICKER_CSS = `
 `;
 
 const GRID_MAX = 8;
+
+/**
+ * The fill Lexical's `TableCellNode.exportDOM` writes inline on header cells that have no color of their
+ * own. A `value` round trip imports it back as the cell's color, which then paints the editor's header
+ * cells light in dark themes (CB14). Matched in both the hex form and the browser's rgb() form.
+ */
+const LEXICAL_HEADER_FILL = new Set(["#f2f3f5", "rgb(242, 243, 245)"]);
+
+/** True when a header cell's color is only Lexical's default header fill, not a color someone chose. */
+function isDefaultHeaderFill(cell: TableCellNode): boolean {
+	const bg = cell.getBackgroundColor();
+	return cell.hasHeader() && bg !== null && LEXICAL_HEADER_FILL.has(bg.trim().toLowerCase());
+}
 
 let warned = false;
 function warnOnce(err: unknown): void {
@@ -240,6 +254,18 @@ export function createTablePlugin(_options: TablePluginOptions = {}): RichTextPl
 					},
 					COMMAND_PRIORITY_EDITOR,
 				),
+				// CB15: a table that ends the document (from `value`, a paste, or deleting the line after
+				// it) leaves the caret nowhere to go, so keep a paragraph after a final table.
+				ctx.editor.registerNodeTransform(RootNode, (root) => {
+					const last = root.getLastChild();
+					if ($isTableNode(last)) last.insertAfter($createParagraphNode());
+				}),
+				// CB14: drop Lexical's exported header fill when it comes back in, so the theme's header
+				// color applies in the editor. Export still writes the fill, so mail and other HTML
+				// consumers keep it.
+				ctx.editor.registerNodeTransform(TableCellNode, (cell) => {
+					if (isDefaultHeaderFill(cell)) cell.setBackgroundColor(null);
+				}),
 				// Grid mouse-selection + Tab/arrow cell navigation for each table as it is created.
 				ctx.editor.registerMutationListener(TableNode, (mutations) => {
 					try {

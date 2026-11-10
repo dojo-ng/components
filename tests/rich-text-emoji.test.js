@@ -97,3 +97,18 @@ test("createEmojiPlugin({ shortcodes: false }) registers no transform", () => {
 	const dispose = p.setup(ctx);
 	assert.equal(dispose, undefined); // no transform disposer when shortcodes are off
 });
+
+test("CB14: grid hover uses a theme token, not the undefined background-alt", () => {
+	const editor = createEditor({ onError: (e) => { throw e; } });
+	const dispose = emojiPlugin.setup({
+		editor,
+		host: document.createElement("div"),
+		command: (type, payload) => editor.dispatchCommand(type, payload),
+		onSelectionChange: () => () => {},
+		activeFormats: () => new Set(),
+	});
+	const css = document.getElementById("dj-rich-text-emoji")?.textContent ?? "";
+	assert.match(css, /button:hover \{ background: var\(--dj-color-neutral-100/);
+	assert.equal(css.includes("background-alt"), false);
+	if (typeof dispose === "function") dispose();
+});

@@ -121,3 +121,97 @@ test("a pasted table survives the sanitizer with structure and colspan/rowspan i
 	assert.match(out, /colspan="2"/);
 	assert.match(out, /rowspan="2"/);
 });
+
+// Editor + plugin setup, as the host component would run it.
+const setupEditor = () => {
+	const editor = makeEditor();
+	const ctx = {
+		editor,
+		host: document.createElement("div"),
+		command: (type, payload) => editor.dispatchCommand(type, payload),
+		onSelectionChange: () => () => {},
+		activeFormats: () => new Set(),
+	};
+	const dispose = tablePlugin.setup(ctx);
+	return { editor, dispose };
+};
+
+test("CB15: a table that ends the document gets a paragraph after it", () => {
+	const { editor, dispose } = setupEditor();
+	// Set content directly, the way a `value` ending in a <table> lands (no INSERT_TABLE_COMMAND).
+	editor.update(
+		() => {
+			const root = $getRoot();
+			root.clear();
+			root.append($createTableNodeWithDimensions(2, 2, true));
+		},
+		{ discrete: true },
+	);
+	let types = [];
+	editor.getEditorState().read(() => {
+		types = $getRoot().getChildren().map((n) => n.getType());
+	});
+	assert.deepEqual(types, ["table", "paragraph"]);
+
+	// Deleting the paragraph after the table brings it back.
+	editor.update(() => $getRoot().getLastChild().remove(), { discrete: true });
+	editor.getEditorState().read(() => {
+		types = $getRoot().getChildren().map((n) => n.getType());
+	});
+	assert.deepEqual(types, ["table", "paragraph"]);
+	if (typeof dispose === "function") dispose();
+});
+
+test("CB15: no extra paragraph when the table is not last", () => {
+	const { editor, dispose } = setupEditor();
+	editor.update(
+		() => {
+			const root = $getRoot();
+			root.clear();
+			root.append($createTableNodeWithDimensions(2, 2, true), $createParagraphNode());
+		},
+		{ discrete: true },
+	);
+	let count = 0;
+	editor.getEditorState().read(() => {
+		count = $getRoot().getChildrenSize();
+	});
+	assert.equal(count, 2);
+	if (typeof dispose === "function") dispose();
+});
+
+test("CB14: Lexical's imported header fill is dropped; chosen colors are kept", () => {
+	const { editor, dispose } = setupEditor();
+	editor.update(
+		() => {
+			const root = $getRoot();
+			root.clear();
+			const table = $createTableNodeWithDimensions(2, 3, true);
+			root.append(table, $createParagraphNode());
+			const [head, body] = table.getChildren();
+			const [h0, h1, h2] = head.getChildren();
+			h0.setBackgroundColor("#f2f3f5"); // Lexical's export fill, hex form
+			h1.setBackgroundColor("rgb(242, 243, 245)"); // same fill as a browser reports it
+			h2.setBackgroundColor("#ff0000"); // a color someone chose
+			body.getChildren()[1].setBackgroundColor("#f2f3f5"); // body cell: not the header default
+		},
+		{ discrete: true },
+	);
+	let colors = [];
+	editor.getEditorState().read(() => {
+		const [table] = $nodesOfType(TableNode);
+		const [head, body] = table.getChildren();
+		colors = [...head.getChildren(), body.getChildren()[1]].map((c) => c.getBackgroundColor());
+	});
+	assert.deepEqual(colors, [null, null, "#ff0000", "#f2f3f5"]);
+	if (typeof dispose === "function") dispose();
+});
+
+test("CB14: header cells use theme tokens, not the undefined background-alt", () => {
+	const { dispose } = setupEditor();
+	const css = document.getElementById("dj-rich-text-table")?.textContent ?? "";
+	assert.match(css, /th \{[^}]*background: var\(--dj-color-neutral-100/);
+	assert.match(css, /th \{[^}]*color: var\(--dj-color-text/);
+	assert.equal(css.includes("background-alt"), false);
+	if (typeof dispose === "function") dispose();
+});

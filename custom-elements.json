@@ -5544,7 +5544,7 @@
           "name": "DjHelperText",
           "customElement": true,
           "tagName": "dj-helper-text",
-          "description": "supporting text shown under a form control. Provide text via the `text` attribute, or slot richer content. `valid` (tri-state) tints the text.",
+          "description": "supporting text shown under a form control. Provide text via the `text` attribute, or slot richer content. `valid` (tri-state) tints the text. The text is exposed to assistive tech; the form controls point their native control's `aria-describedby` at it, so it is read as the control's description.",
           "superclass": {
             "name": "DojoElement"
           },

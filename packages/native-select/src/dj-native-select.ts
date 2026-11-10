@@ -76,6 +76,7 @@ export class DjNativeSelect extends FormControl(DojoElement) implements Partial<
 					size=${this.size ?? nothing}
 					aria-label=${this.label ?? nothing}
 					aria-invalid=${this.valid === false ? "true" : nothing}
+					aria-describedby=${this.helperText ? "helper" : nothing}
 					?disabled=${this.isDisabled}
 					?required=${this.required}
 					@change=${this.onChange}
@@ -91,7 +92,7 @@ export class DjNativeSelect extends FormControl(DojoElement) implements Partial<
 					<dj-icon><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg></dj-icon>
 				</span>
 			</div>
-			<dj-helper-text part="helper-text" .text=${this.helperText ?? ""} .valid=${this.valid}></dj-helper-text>
+			<dj-helper-text id="helper" part="helper-text" .text=${this.helperText ?? ""} .valid=${this.valid}></dj-helper-text>
 		`;
 	}
 }

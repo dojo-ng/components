@@ -124,7 +124,7 @@ Deviates from the Dojo widget in one name: the visually-hidden flag is `visually
 
 ### `<dj-helper-text>` · `@dojo-ng/helper-text`
 
-Supporting text shown under a form control. Provide text via the `text` attribute, or slot richer content. `valid` (tri-state) tints the text.
+Supporting text shown under a form control. Provide text via the `text` attribute, or slot richer content. `valid` (tri-state) tints the text. The text is exposed to assistive tech; the form controls point their native control's `aria-describedby` at it, so it is read as the control's description.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|

@@ -91,7 +91,8 @@ export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFo
 			<button
 				part="trigger" class="trigger ${this.valid === false ? "trigger--invalid" : ""}" type="button"
 				role="combobox" aria-haspopup="listbox" aria-expanded=${this.open ? "true" : "false"}
-				aria-label=${this.label ?? nothing} ?disabled=${this.isDisabled}
+				aria-label=${this.label ?? nothing} aria-describedby=${this.helperText ? "helper" : nothing}
+				aria-invalid=${this.valid === false ? "true" : nothing} ?disabled=${this.isDisabled}
 				@click=${() => (this.open ? this.close() : this.openMenu())} @keydown=${this.onTriggerKey}
 			>
 				<span class=${this.value ? "" : "placeholder"}>${this.value ? this.selectedLabel : (this.placeholder ?? messages.resolve("dj", this.#i18n.locale, "selectPlaceholder") ?? "Select…")}</span>
@@ -100,7 +101,7 @@ export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFo
 			<dj-popup .anchor=${this.trigger} .open=${this.open} position=${this.position} @dj-close=${() => this.close()} .scrollLock=${false}>
 				<dj-list style=${`width:${width}`} .options=${this.options} .value=${this.value} @change=${(e: Event) => this.onSelect(e)}></dj-list>
 			</dj-popup>
-			<dj-helper-text part="helper-text" .text=${this.helperText ?? ""} .valid=${this.valid}></dj-helper-text>
+			<dj-helper-text id="helper" part="helper-text" .text=${this.helperText ?? ""} .valid=${this.valid}></dj-helper-text>
 		`;
 	}
 }

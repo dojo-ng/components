@@ -96,6 +96,7 @@ export class DjTextArea extends FormControl(DojoElement) implements Partial<Dojo
 					maxlength=${this.maxlength ?? nothing}
 					aria-label=${this.label ?? nothing}
 					aria-invalid=${this.valid === false ? "true" : nothing}
+					aria-describedby=${helper ? "helper" : nothing}
 					?disabled=${this.isDisabled}
 					?readonly=${this.readonly}
 					?required=${this.required}
@@ -105,7 +106,7 @@ export class DjTextArea extends FormControl(DojoElement) implements Partial<Dojo
 					@blur=${() => { this.focused = false; this.dirty = true; this.syncValidity(); }}
 				></textarea>
 			</div>
-			<dj-helper-text part="helper-text" .text=${helper ?? ""} .valid=${this.valid}></dj-helper-text>
+			<dj-helper-text id="helper" part="helper-text" .text=${helper ?? ""} .valid=${this.valid}></dj-helper-text>
 		`;
 	}
 }

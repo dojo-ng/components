@@ -5,7 +5,9 @@ import styles from "./dj-helper-text.styles.js";
 
 /**
  * `<dj-helper-text>` — supporting text shown under a form control. Provide text via the
- * `text` attribute, or slot richer content. `valid` (tri-state) tints the text.
+ * `text` attribute, or slot richer content. `valid` (tri-state) tints the text. The text is
+ * exposed to assistive tech; the form controls point their native control's
+ * `aria-describedby` at it, so it is read as the control's description.
  *
  * Parts: `base`, `text`.
  */
@@ -23,7 +25,7 @@ export class DjHelperText extends DojoElement {
 		}`;
 		return html`<div part="base" class=${cls}>
 			${this.text
-				? html`<p part="text" class="text" aria-hidden="true" title=${this.text}>${this.text}</p>`
+				? html`<p part="text" class="text" title=${this.text}>${this.text}</p>`
 				: html`<slot></slot>`}
 		</div>`;
 	}

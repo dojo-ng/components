@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Provide text via the `text` attribute, or slot richer content. `valid` (tri-state) tints the text.
+Provide text via the `text` attribute, or slot richer content. `valid` (tri-state) tints the text. The text is exposed to assistive tech; the form controls point their native control's `aria-describedby` at it, so it is read as the control's description.
 
 ## Install
 

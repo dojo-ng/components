@@ -28,9 +28,17 @@ const REMOVE = new Set([
 	"audio", "video", "source", "track", "canvas", "applet", "frame", "frameset",
 ]);
 
-/** True for URLs safe to keep: http(s)/mailto/tel, or relative/anchor. Any other scheme is rejected. */
+/**
+ * True for URLs safe to keep: http(s)/mailto/tel, or relative/anchor. Any other scheme is rejected.
+ *
+ * Browsers drop tabs and newlines anywhere in a URL and strip leading control characters and
+ * spaces, so `java\tscript:` and `\x01javascript:` both run as `javascript:`. Remove every
+ * character in U+0000–U+0020 before testing the scheme, so the test sees what the browser sees.
+ * This only shapes the check; the attribute keeps its original value.
+ */
 function safeUrl(url: string): boolean {
-	const v = url.trim();
+	// eslint-disable-next-line no-control-regex -- matching control characters is the point
+	const v = url.replace(/[\x00-\x20]/g, "");
 	if (/^(https?:|mailto:|tel:)/i.test(v)) return true;
 	if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return false; // some other scheme (javascript:, data:, vbscript:, …)
 	return true; // relative path, query, or #anchor

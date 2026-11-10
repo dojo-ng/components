@@ -38,6 +38,30 @@ test("drops javascript: and data: hrefs but keeps the link element and text", ()
 	assert.equal(data.includes("href"), false);
 });
 
+test("drops javascript: hrefs hidden by tabs, newlines, or control characters (CB17)", () => {
+	const hidden = [
+		"java\tscript:alert(1)",
+		"java\nscript:alert(1)",
+		"java\rscript:alert(1)",
+		"\x01javascript:alert(1)",
+		" \x1fjavascript:alert(1)",
+		"java&#9;script:alert(1)",
+		"&#1;javascript:alert(1)",
+		"java&#x0A;script:alert(1)",
+		"\tdata:text/html,evil",
+	];
+	for (const href of hidden) {
+		const out = sanitizeHtml(`<a href="${href}">x</a>`);
+		assert.equal(out.includes("href"), false, `href dropped for ${JSON.stringify(href)}`);
+		assert.equal(out.includes(">x</a>"), true);
+	}
+});
+
+test("keeps safe hrefs that carry stray whitespace, unchanged", () => {
+	assert.match(sanitizeHtml('<a href=" https://dojo.io ">d</a>'), /href=" https:\/\/dojo\.io "/);
+	assert.match(sanitizeHtml('<a href="/a b">r</a>'), /href="\/a b"/);
+});
+
 test("keeps safe http/mailto/relative hrefs", () => {
 	assert.match(sanitizeHtml('<a href="https://dojo.io">d</a>'), /href="https:\/\/dojo\.io"/);
 	assert.match(sanitizeHtml('<a href="mailto:a@b.com">m</a>'), /href="mailto:a@b\.com"/);

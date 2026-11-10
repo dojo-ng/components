@@ -49,7 +49,7 @@ export class DjCalendar extends FormControl(DojoElement) implements Partial<Dojo
 	constructor() { super(); this.#internals = this.attachInternals(); }
 	get validity(): ValidityState { return this.#internals.validity; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
-	formResetCallback() { this.value = this.getAttribute("value") ?? ""; this.sync(); }
+	formResetCallback() { this.value = this.defaultValue; this.sync(); }
 
 	private sync() { this.#internals.setFormValue(this.value || null); }
 

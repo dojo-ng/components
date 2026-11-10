@@ -29,6 +29,16 @@ export interface FormControlMixinInterface {
 	readonly validationMessage: string;
 	checkValidity(): boolean;
 	reportValidity(): boolean;
+	/**
+	 * The value a form reset returns to: the `value` attribute, or `""` without one (a native
+	 * input's `defaultValue`). Setting it sets the attribute, which also sets the value.
+	 */
+	defaultValue: string;
+	/**
+	 * Forget that the user has interacted, so the `user-valid`/`user-invalid` states clear.
+	 * A native form's reset does this for you; `dj-form`'s `reset()` calls it too.
+	 */
+	resetInteraction(): void;
 }
 
 /**
@@ -43,6 +53,8 @@ export interface FormControlMixinInterface {
  *    via `restoreFormState`, which defaults to the string `value` (setting it runs
  *    the control's existing `updated()`/sync). Controls whose value is not a plain
  *    string (checked, number, array, range) override `restoreFormState`.
+ *  - `defaultValue` is the `value` attribute, the value a form reset returns to, as on a
+ *    native input. Controls reset to it in their `formResetCallback`.
  *  - **Validation-state styling hook.** The mixin mirrors the control's current
  *    validity onto the host as data attributes so consumers can style invalid/valid
  *    states from outside the shadow root (`data-dj-required`, `data-dj-valid` /
@@ -106,8 +118,26 @@ export function FormControl<T extends Constructor<DojoElement>>(
 			return this.#internals?.reportValidity() ?? true;
 		}
 
+		get defaultValue(): string {
+			return this.getAttribute("value") ?? "";
+		}
+		set defaultValue(value: string) {
+			this.setAttribute("value", String(value));
+		}
+
+		resetInteraction(): void {
+			this.#inputHappened = false;
+			this.#interacted = false;
+			this.#syncValidityAttributes();
+		}
+
 		formDisabledCallback(disabled: boolean): void {
 			this.formDisabled = disabled;
+			// The browser also calls this when the control's own `disabled` attribute changes,
+			// which happens while Lit reflects it mid-update, after `render()`. Lit drops a
+			// property change made at that point, so render again once the update finishes, with
+			// `formDisabled` marked changed so `updated()` hooks that watch it still run.
+			if (this.isUpdatePending) void this.updateComplete.then(() => this.requestUpdate("formDisabled", !this.formDisabled));
 		}
 
 		formStateRestoreCallback(state: FormRestoreState, _mode: string): void {
@@ -176,11 +206,7 @@ export function FormControl<T extends Constructor<DojoElement>>(
 			const ac = (this.#formListeners = new AbortController());
 			const opts = { signal: ac.signal };
 			form.addEventListener("submit", () => this.#markInteracted(), opts);
-			form.addEventListener("reset", () => {
-				this.#inputHappened = false;
-				this.#interacted = false;
-				this.#syncValidityAttributes();
-			}, opts);
+			form.addEventListener("reset", () => this.resetInteraction(), opts);
 		}
 
 		#markInteracted(): void {

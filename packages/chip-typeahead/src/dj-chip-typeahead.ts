@@ -10,6 +10,12 @@ import type { ListOption, DjList } from "@dojo-ng/list";
 import type { PopupPosition } from "@dojo-ng/popup";
 import styles from "./dj-chip-typeahead.styles.js";
 
+/** The list a form reset returns to: the `value` attribute as a JSON array (as Lit parses it), or `[]`. */
+function defaultList(attr: string | null): string[] {
+	if (!attr) return [];
+	try { const v: unknown = JSON.parse(attr); return Array.isArray(v) ? v.map(String) : []; } catch { return []; }
+}
+
 registerDefaults("dj", { suggestions: "Suggestions" });
 
 /**
@@ -62,7 +68,7 @@ export class DjChipTypeahead extends FormControl(DojoElement) implements Partial
 	get validity(): ValidityState { return this.#internals.validity; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
 	override focus(o?: FocusOptions) { this.input?.focus(o); }
-	formResetCallback() { this.value = []; this.query = ""; this.sync(); }
+	formResetCallback() { this.value = defaultList(this.getAttribute("value")); this.query = ""; this.sync(); }
 	override restoreFormState(state: File | string | FormData | null) { const base = this.name ?? "values"; this.value = state instanceof FormData ? state.getAll(base).map(String) : []; }
 
 	#disposeFocusOut?: () => void;

@@ -24,7 +24,7 @@ export class DjDateInput extends FormControl(DojoElement) implements Partial<Doj
 	constructor(){ super(); this.#internals=this.attachInternals(); }
 	get validity(){ return this.#internals.validity; }
 	checkValidity(){ return this.#internals.checkValidity(); }
-	formResetCallback(){ this.value=this.getAttribute("value")??""; this.sync(); }
+	formResetCallback(){ this.value=this.defaultValue; this.sync(); }
 	#disposeFocusOut?: () => void;
 	override connectedCallback(){ super.connectedCallback(); this.#disposeFocusOut = dismissOnFocusOut(this, () => { this.open = false; }); }
 	override disconnectedCallback(){ super.disconnectedCallback(); this.#disposeFocusOut?.(); }

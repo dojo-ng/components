@@ -41,7 +41,7 @@ export class DjNativeSelect extends FormControl(DojoElement) implements Partial<
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
 	reportValidity(): boolean { return this.#internals.reportValidity(); }
 	override focus(options?: FocusOptions) { this.select?.focus(options); }
-	formResetCallback() { this.value = this.getAttribute("value") ?? ""; this.valid = undefined; this.sync(); }
+	formResetCallback() { this.value = this.defaultValue; this.valid = undefined; this.sync(); }
 
 	private sync() {
 		this.#internals.setFormValue(this.value || null);

@@ -710,12 +710,17 @@ A layout wrapper that gathers values from its named child controls and emits `dj
 #### Submitting
 
 - `submit()` checks every named control first. When one is invalid, the browser shows its message on the first invalid control, `dj-submit` is not emitted, and `submit()` returns false. Set `novalidate` to skip the check.
+- The fields are the named form controls inside it: `dj-*` form controls and native inputs, selects, and text areas. Other named elements, such as buttons or a title pane, are not fields.
 - Values follow the rules of a native form: a checkbox or switch counts only when it is checked, disabled controls are left out, and a name used by several checked controls gives an array.
 - Enter in a field submits, except in a text area or other multi-line editor, where Enter adds a new line.
 
 #### A native form instead
 
 - The controls are form-associated, so they also work in a native `<form>`, which adds posting to a URL, `FormData`, and reset buttons. A native form can sit inside `dj-form` for its layout.
+
+#### Resetting
+
+- `reset()` returns each field to its default, as a native form's reset does: the `value` attribute for most controls, the `checked` attribute for a checkbox, radio, or switch. It also clears the `user-valid`/`user-invalid` states.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -804,7 +809,7 @@ Put the trigger, usually a `<dj-button>`, in the `trigger` slot, and the menu, u
 
 #### Other content
 
-- Content that is not a `<dj-list>` works as a plain anchored panel. The dropdown then only opens, closes, handles Escape, and returns focus.
+- Content that is not a `<dj-list>` works as a plain anchored panel. The dropdown then only opens, closes, handles Escape, and returns focus. Inputs in the panel can change without closing it; only a choice from the menu list closes it.
 - For an anchored panel with no menu behavior, use `dj-trigger-popup`. For a right-click menu, use `dj-context-menu`.
 
 #### Accessibility

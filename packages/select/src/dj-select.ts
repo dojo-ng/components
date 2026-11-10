@@ -45,7 +45,7 @@ export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFo
 	get validity(): ValidityState { return this.#internals.validity; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
 	reportValidity(): boolean { return this.#internals.reportValidity(); }
-	formResetCallback() { this.value = ""; this.valid = undefined; this.sync(); }
+	formResetCallback() { this.value = this.defaultValue; this.valid = undefined; this.sync(); }
 	override focus(o?: FocusOptions) { this.trigger?.focus(o); }
 
 	#disposeFocusOut?: () => void;

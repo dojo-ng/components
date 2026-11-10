@@ -102,3 +102,28 @@ test("non-list content: opens without steering and without error", async () => {
 	await raf();
 	assert.equal(dd.open, true, "still opens as a plain panel");
 });
+
+test("CB31: a change from an input in a plain panel leaves the dropdown open", async () => {
+	const { dd, content } = await makeDropdown({ listContent: false });
+	const input = document.createElement("input");
+	content.appendChild(input);
+	dd.open = true;
+	await settled(dd);
+	input.dispatchEvent(new Event("change", { bubbles: true }));
+	await settled(dd);
+	assert.equal(dd.open, true, "typing in a panel input does not close it");
+});
+
+test("CB31: a change from an input next to the menu list leaves it open; the list's change closes it", async () => {
+	const { dd, content } = await makeDropdown();
+	const input = document.createElement("input");
+	dd.appendChild(input);
+	dd.open = true;
+	await settled(dd);
+	input.dispatchEvent(new Event("change", { bubbles: true }));
+	await settled(dd);
+	assert.equal(dd.open, true, "an input's change does not close the menu");
+	content.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
+	await settled(dd);
+	assert.equal(dd.open, false, "the list's change still closes it");
+});

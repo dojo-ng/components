@@ -39,7 +39,7 @@ export class DjRangeSlider extends FormControl(DojoElement) implements Partial<D
 	get value(): RangeValue { return { min: this.valueMin, max: this.valueMax }; }
 	get validity(): ValidityState { return this.#internals.validity; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
-	formResetCallback() { this.valueMin = this.min; this.valueMax = this.max; this.sync(); }
+	formResetCallback() { this.valueMin = Number(this.getAttribute("value-min") ?? this.min); this.valueMax = Number(this.getAttribute("value-max") ?? this.max); this.sync(); }
 	override restoreFormState(state: File | string | FormData | null) { if (!(state instanceof FormData)) return; const base = this.name ?? "range"; const lo = state.get(base + "_min"); const hi = state.get(base + "_max"); if (lo != null) this.valueMin = Number(lo); if (hi != null) this.valueMax = Number(hi); }
 
 	private sync() {

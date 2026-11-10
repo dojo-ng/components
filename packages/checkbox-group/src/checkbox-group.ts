@@ -2,6 +2,12 @@ import { html, css, nothing } from "lit"; import { property } from "lit/decorato
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import DojoElement, { DojoFormControl, FormControl } from "@dojo-ng/dojo-element";
 import "@dojo-ng/checkbox"; import "@dojo-ng/label";
+
+/** The list a form reset returns to: the `value` attribute as a JSON array (as Lit parses it), or `[]`. */
+function defaultList(attr: string | null): string[] {
+	if (!attr) return [];
+	try { const v: unknown = JSON.parse(attr); return Array.isArray(v) ? v.map(String) : []; } catch { return []; }
+}
 export interface CheckboxOption { value: string; label?: string; disabled?: boolean; }
 registerDefaults("dj", { selectAtLeastOne: "Please select at least one option." });
 
@@ -28,7 +34,7 @@ export class DjCheckboxGroup extends FormControl(DojoElement) implements Partial
 	get validationMessage(){ return this.#internals.validationMessage; }
 	reportValidity(){ return this.#internals.reportValidity(); }
 	checkValidity(){ return this.#internals.checkValidity(); }
-	formResetCallback(){ this.value=[]; this.sync(); }
+	formResetCallback(){ this.value=defaultList(this.getAttribute("value")); this.sync(); }
 	override restoreFormState(state: File | string | FormData | null) { const base = this.name ?? "values"; this.value = state instanceof FormData ? state.getAll(base).map(String) : []; }
 	private sync(){
 		const fd=new FormData(); const base=this.name??"values"; for(const v of this.value) fd.append(base,v); this.#internals.setFormValue(fd);

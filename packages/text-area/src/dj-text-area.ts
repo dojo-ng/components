@@ -52,7 +52,7 @@ export class DjTextArea extends FormControl(DojoElement) implements Partial<Dojo
 	setCustomValidity(message: string) { this.input.setCustomValidity(message); this.syncValidity(); }
 	override focus(options?: FocusOptions) { this.input?.focus(options); }
 	override blur() { this.input?.blur(); }
-	formResetCallback() { this.value = this.getAttribute("value") ?? ""; this.dirty = false; this.valid = undefined; this.syncValidity(); }
+	formResetCallback() { this.value = this.defaultValue; this.dirty = false; this.valid = undefined; this.syncValidity(); }
 
 	private syncValidity() {
 		const input = this.input;

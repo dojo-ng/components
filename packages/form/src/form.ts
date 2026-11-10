@@ -9,7 +9,52 @@ type Field = HTMLElement & {
 	checkValidity?: () => boolean;
 	reportValidity?: () => boolean;
 	formResetCallback?: () => void;
+	resetInteraction?: () => void;
 };
+
+/** Input types that are buttons, not fields: a native form leaves them out too. */
+const BUTTON_TYPES = new Set(["button", "submit", "reset", "image"]);
+
+/**
+ * Whether `el` is a form field: a named native `input`/`select`/`textarea` (not a button), or a
+ * named form-associated custom element. Other named elements (a title pane, a button, an icon)
+ * are not fields.
+ */
+function isField(el: Element): boolean {
+	if (!el.getAttribute("name")) return false;
+	if (el instanceof HTMLInputElement) return !BUTTON_TYPES.has(el.type);
+	if (el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) return true;
+	const ctor = customElements.get(el.localName) as { formAssociated?: boolean } | undefined;
+	return ctor?.formAssociated === true;
+}
+
+/** Reset a native field the way a native form's reset does. */
+function resetNative(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): void {
+	if (el instanceof HTMLSelectElement) {
+		for (const option of el.options) option.selected = option.defaultSelected;
+	} else if (el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")) {
+		el.checked = el.defaultChecked;
+	} else if (el instanceof HTMLInputElement && el.type === "file") {
+		el.value = "";
+	} else {
+		el.value = el.defaultValue;
+	}
+}
+
+/** The values a field submits: none when unchecked, one per selected option of a multi-select. */
+function submittedValues(el: Field): unknown[] {
+	if (el instanceof HTMLInputElement) {
+		if ((el.type === "checkbox" || el.type === "radio") && !el.checked) return [];
+		if (el.type === "file") return Array.from(el.files ?? []);
+		return [el.value];
+	}
+	if (el instanceof HTMLSelectElement && el.multiple) {
+		return Array.from(el.selectedOptions, (o) => o.value);
+	}
+	if (el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) return [el.value];
+	if (typeof el.checked === "boolean" && !el.checked) return [];
+	return [el.value];
+}
 
 /**
  * `<dj-form>` — a layout wrapper that gathers values from its named child controls and emits
@@ -19,6 +64,9 @@ type Field = HTMLElement & {
  * - `submit()` checks every named control first. When one is invalid, the browser shows its
  *   message on the first invalid control, `dj-submit` is not emitted, and `submit()` returns
  *   false. Set `novalidate` to skip the check.
+ * - The fields are the named form controls inside it: `dj-*` form controls and native
+ *   inputs, selects, and text areas. Other named elements, such as buttons or a title pane,
+ *   are not fields.
  * - Values follow the rules of a native form: a checkbox or switch counts only when it is
  *   checked, disabled controls are left out, and a name used by several checked controls
  *   gives an array.
@@ -29,6 +77,11 @@ type Field = HTMLElement & {
  * - The controls are form-associated, so they also work in a native `<form>`, which adds
  *   posting to a URL, `FormData`, and reset buttons. A native form can sit inside
  *   `dj-form` for its layout.
+ *
+ * #### Resetting
+ * - `reset()` returns each field to its default, as a native form's reset does: the `value`
+ *   attribute for most controls, the `checked` attribute for a checkbox, radio, or switch. It
+ *   also clears the `user-valid`/`user-invalid` states.
  *
  * Events: `dj-submit` (`{ data }`), `dj-reset`.
  * Methods: `submit()`, `reset()`.
@@ -42,12 +95,12 @@ export class DjForm extends DojoElement {
 	@property({type:Boolean,reflect:true,attribute:"novalidate"}) noValidate=false;
 
 	private fields(): Field[] {
-		return Array.from(this.querySelectorAll("[name]")) as Field[];
+		return Array.from(this.querySelectorAll("[name]")).filter(isField) as Field[];
 	}
 
 	/** Check the named controls, then emit `dj-submit`. Returns false when a control is invalid. */
 	submit(): boolean {
-		const fields = this.fields().filter((el) => !(el.isDisabled ?? el.disabled));
+		const fields = this.fields().filter((el) => !(el.isDisabled ?? el.disabled) && !el.matches(":disabled"));
 		if (!this.noValidate) {
 			// checkValidity() on every field (not just until the first failure), so each invalid
 			// control receives its `invalid` event and shows as user-invalid.
@@ -61,11 +114,11 @@ export class DjForm extends DojoElement {
 		for (const el of fields) {
 			const name = el.getAttribute("name");
 			if (!name) continue;
-			if (typeof el.checked === "boolean" && !el.checked) continue;
-			const value = el.value;
-			if (!(name in data)) data[name] = value;
-			else if (Array.isArray(data[name])) (data[name] as unknown[]).push(value);
-			else data[name] = [data[name], value];
+			for (const value of submittedValues(el)) {
+				if (!(name in data)) data[name] = value;
+				else if (Array.isArray(data[name])) (data[name] as unknown[]).push(value);
+				else data[name] = [data[name], value];
+			}
 		}
 		this.emit("dj-submit", { detail: { data } });
 		return true;
@@ -73,8 +126,13 @@ export class DjForm extends DojoElement {
 
 	reset() {
 		for (const el of this.fields()) {
+			if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
+				resetNative(el);
+				continue;
+			}
 			if (typeof el.formResetCallback === "function") el.formResetCallback();
 			else if ("value" in el) el.value = "";
+			el.resetInteraction?.();
 		}
 		this.emit("dj-reset");
 	}

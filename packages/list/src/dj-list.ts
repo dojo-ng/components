@@ -87,7 +87,7 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 	}
 	get validity(): ValidityState { return this.#internals.validity; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
-	formResetCallback() { this.value = ""; this.sync(); }
+	formResetCallback() { this.value = this.defaultValue; this.sync(); }
 	private sync() { this.#internals.setFormValue(this.value || null); }
 	override focus(options?: FocusOptions) { this.listEl?.focus(options); }
 	protected override firstUpdated() { this.sync(); }

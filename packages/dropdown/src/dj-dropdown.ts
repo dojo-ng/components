@@ -28,7 +28,8 @@ interface DjListLike extends HTMLElement {
  *
  * #### Other content
  * - Content that is not a `<dj-list>` works as a plain anchored panel. The dropdown then only opens,
- *   closes, handles Escape, and returns focus.
+ *   closes, handles Escape, and returns focus. Inputs in the panel can change without closing it;
+ *   only a choice from the menu list closes it.
  * - For an anchored panel with no menu behavior, use `dj-trigger-popup`. For a right-click menu,
  *   use `dj-context-menu`.
  *
@@ -65,10 +66,12 @@ export class DjDropdown extends DojoElement {
 		}
 		// Enter/Space fire a native click on a button trigger, which #onTriggerClick handles.
 	};
-	#onContentChange = (): void => {
+	#onContentChange = (event: Event): void => {
 		// A selection from the slotted list closes the menu and returns focus; the `change`
-		// event itself keeps propagating to the consumer untouched (no re-emit).
-		this.#closeMenu(true);
+		// event itself keeps propagating to the consumer untouched (no re-emit). A `change`
+		// from anything else in the panel (an input, a checkbox) leaves it open.
+		const list = this.#contentList();
+		if (list && event.target === list) this.#closeMenu(true);
 	};
 
 	override connectedCallback(): void {

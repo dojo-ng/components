@@ -30,7 +30,7 @@ export class DjRate extends FormControl(DojoElement) implements Partial<DojoForm
 	constructor(){ super(); this.#internals=this.attachInternals(); }
 	get validity(){ return this.#internals.validity; }
 	checkValidity(){ return this.#internals.checkValidity(); }
-	formResetCallback(){ this.value=0; this.sync(); }
+	formResetCallback(){ this.value=Number(this.getAttribute("value") ?? 0) || 0; this.sync(); }
 	override restoreFormState(state: File | string | FormData | null) { this.value = state == null ? 0 : Number(state); }
 	private sync(){ this.#internals.setFormValue(String(this.value)); }
 	protected override firstUpdated(){ this.sync(); }

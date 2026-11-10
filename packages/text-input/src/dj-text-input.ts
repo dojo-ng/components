@@ -74,7 +74,7 @@ export class DjTextInput extends FormControl(DojoElement) implements Partial<Doj
 	override blur() { this.input?.blur(); }
 
 	formResetCallback() {
-		this.value = this.getAttribute("value") ?? "";
+		this.value = this.defaultValue;
 		this.dirty = false;
 		this.valid = undefined;
 		this.syncValidity();

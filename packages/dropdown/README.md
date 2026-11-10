@@ -44,7 +44,7 @@ A button trigger plus a dj-list menu. Enter/Arrow keys drive it; choosing an ite
 
 ## Other content
 
-- Content that is not a `<dj-list>` works as a plain anchored panel. The dropdown then only opens, closes, handles Escape, and returns focus.
+- Content that is not a `<dj-list>` works as a plain anchored panel. The dropdown then only opens, closes, handles Escape, and returns focus. Inputs in the panel can change without closing it; only a choice from the menu list closes it.
 - For an anchored panel with no menu behavior, use `dj-trigger-popup`. For a right-click menu, use `dj-context-menu`.
 
 ## Accessibility

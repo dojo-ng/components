@@ -38,12 +38,17 @@ Import the package to register the custom element, then use the tag.
 ## Submitting
 
 - `submit()` checks every named control first. When one is invalid, the browser shows its message on the first invalid control, `dj-submit` is not emitted, and `submit()` returns false. Set `novalidate` to skip the check.
+- The fields are the named form controls inside it: `dj-*` form controls and native inputs, selects, and text areas. Other named elements, such as buttons or a title pane, are not fields.
 - Values follow the rules of a native form: a checkbox or switch counts only when it is checked, disabled controls are left out, and a name used by several checked controls gives an array.
 - Enter in a field submits, except in a text area or other multi-line editor, where Enter adds a new line.
 
 ## A native form instead
 
 - The controls are form-associated, so they also work in a native `<form>`, which adds posting to a URL, `FormData`, and reset buttons. A native form can sit inside `dj-form` for its layout.
+
+## Resetting
+
+- `reset()` returns each field to its default, as a native form's reset does: the `value` attribute for most controls, the `checked` attribute for a checkbox, radio, or switch. It also clears the `user-valid`/`user-invalid` states.
 
 ## Properties
 

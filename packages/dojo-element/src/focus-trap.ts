@@ -2,7 +2,7 @@
 
 /** Native focusable elements (custom elements are handled separately, by marker). */
 export const NATIVE_FOCUSABLE_SELECTOR =
-	'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+	'a[href],area[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),iframe,audio[controls],video[controls],details>summary:first-of-type,[contenteditable]:not([contenteditable="false"]),[tabindex]:not([tabindex="-1"])';
 
 /**
  * Kept for backwards compatibility / first-focus lookups. Custom-element focus
@@ -24,10 +24,48 @@ function isDisabled(el: Element): boolean {
 	return el.matches("[disabled]") || (el as unknown as { disabled?: boolean }).disabled === true;
 }
 
-/** Whether `el` is a keyboard focus stop: a native focusable, or a marked dj- element. */
+/** True when a negative `tabindex` takes `el` out of the Tab order (it can still take focus from code). */
+function hasNegativeTabIndex(el: Element): boolean {
+	const attr = el.getAttribute("tabindex");
+	return attr != null && attr.trim() !== "" && Number(attr) < 0;
+}
+
+/** The parent in the flat tree: the slot a node is assigned to, else its parent, else its shadow host. */
+function flatParent(el: Element): Element | null {
+	if (el.assignedSlot) return el.assignedSlot;
+	if (el.parentElement) return el.parentElement;
+	const root = el.parentNode;
+	return root instanceof ShadowRoot ? root.host : null;
+}
+
+/**
+ * True when `el` cannot take focus because it, or anything above it in the flat tree, is
+ * `inert` or not rendered (`hidden`, `display: none`, or `visibility: hidden`).
+ */
+function isHiddenOrInert(el: Element): boolean {
+	for (let n: Element | null = el; n; n = flatParent(n)) {
+		if (n.hasAttribute("inert")) return true;
+	}
+	// A `display: contents` element has no box of its own, so judge it by its parent.
+	let box: Element | null = el;
+	while (box && getComputedStyle(box).display === "contents") box = flatParent(box);
+	if (!box) return true;
+	if (typeof box.checkVisibility === "function") return !box.checkVisibility({ visibilityProperty: true });
+	// Engines without checkVisibility (Safari before 17.4): walk the flat tree for display: none.
+	for (let n: Element | null = box; n; n = flatParent(n)) {
+		if (getComputedStyle(n).display === "none") return true;
+	}
+	return getComputedStyle(box).visibility === "hidden";
+}
+
+/**
+ * Whether `el` is a keyboard focus stop: a native focusable, or a marked dj- element, that is
+ * not disabled, not taken out of the Tab order by a negative `tabindex`, and not hidden or inert.
+ */
 export function isFocusable(el: Element): boolean {
-	if (isDisabled(el)) return false;
-	return isMarkedFocusableElement(el) || el.matches(NATIVE_FOCUSABLE_SELECTOR);
+	if (isDisabled(el) || hasNegativeTabIndex(el)) return false;
+	if (!isMarkedFocusableElement(el) && !el.matches(NATIVE_FOCUSABLE_SELECTOR)) return false;
+	return !isHiddenOrInert(el);
 }
 
 /** The truly-focused element, walking down through nested shadow roots. */
@@ -101,13 +139,19 @@ export function trapTabKey(event: KeyboardEvent, focusables: HTMLElement[]): voi
 	if (focusables.length === 0) return;
 	const active = deepActiveElement();
 	const idx = focusables.findIndex((el) => el === active || (el.shadowRoot != null && el.shadowRoot.contains(active)));
-	const moveTo = (el: HTMLElement) => {
-		el.focus();
-		if (focusLandedOn(el)) event.preventDefault();
+	// Try each candidate in turn, so a stop that refuses focus is skipped instead of letting
+	// focus escape the overlay.
+	const moveTo = (candidates: HTMLElement[]) => {
+		for (const el of candidates) {
+			el.focus();
+			if (focusLandedOn(el)) { event.preventDefault(); return; }
+		}
 	};
-	if (idx === -1) { moveTo(focusables[0]); return; }
-	if (event.shiftKey && idx === 0) moveTo(focusables[focusables.length - 1]);
-	else if (!event.shiftKey && idx === focusables.length - 1) moveTo(focusables[0]);
+	const forward = focusables;
+	const backward = [...focusables].reverse();
+	if (idx === -1) moveTo(forward);
+	else if (event.shiftKey && idx === 0) moveTo(backward);
+	else if (!event.shiftKey && idx === focusables.length - 1) moveTo(forward);
 }
 
 /**

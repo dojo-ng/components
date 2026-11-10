@@ -40,6 +40,8 @@ export class DjRadioGroup extends FormControl(DojoElement) implements Partial<Do
 	@property({ type: Boolean, reflect: true }) disabled = false;
 	@property({ type: Boolean, reflect: true }) required = false;
 	@state() private valid?: boolean;
+	/** Slotted radios this group disabled, so it re-enables only those. */
+	#disabledByGroup = new WeakSet<DjRadio>();
 
 	constructor() {
 		super();
@@ -50,7 +52,7 @@ export class DjRadioGroup extends FormControl(DojoElement) implements Partial<Do
 	get validity(): ValidityState { return this.#internals.validity; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
 	reportValidity(): boolean { return this.#internals.reportValidity(); }
-	formResetCallback() { this.value = ""; this.valid = undefined; this.sync(); }
+	formResetCallback() { this.value = this.defaultValue; this.valid = undefined; this.sync(); }
 
 	private radios(): DjRadio[] {
 		const root = this.renderRoot as ShadowRoot;
@@ -84,14 +86,17 @@ export class DjRadioGroup extends FormControl(DojoElement) implements Partial<Do
 			for (const r of radios) {
 				r.checked = r.value === this.value;
 				r.tabbable = r.value === rv;
-				if (this.isDisabled) r.disabled = true;
+				// Disable the radios while the group is disabled, and re-enable only the ones the
+				// group disabled, so a radio the page disabled itself stays disabled.
+				if (this.isDisabled && !r.disabled) { r.disabled = true; this.#disabledByGroup.add(r); }
+				else if (!this.isDisabled && this.#disabledByGroup.delete(r)) r.disabled = false;
 			}
 		}
 	}
 
 	protected override firstUpdated() { this.sync(); this.renderRoot.addEventListener("change", this.onChildChange as EventListener); }
 	protected override updated(changed: Map<PropertyKey, unknown>) {
-		if (changed.has("value") || changed.has("disabled")) this.sync();
+		if (changed.has("value") || changed.has("disabled") || changed.has("formDisabled")) this.sync();
 	}
 
 	private onChildChange = (event: Event) => {
@@ -99,13 +104,18 @@ export class DjRadioGroup extends FormControl(DojoElement) implements Partial<Do
 		if (!radio) return;
 		event.stopPropagation();
 		if (!radio.checked) return;
-		if (this.value !== radio.value) {
-			this.value = radio.value;
-			this.valid = this.required ? true : undefined;
-			this.sync();
-			this.emit("change");
-		}
+		this.#select(radio.value);
 	};
+
+	/** Select `value` as the user's choice: update validity styling, sync, and emit `change`. */
+	#select(value: string): boolean {
+		if (this.value === value) return false;
+		this.value = value;
+		this.valid = this.required ? true : undefined;
+		this.sync();
+		this.emit("change");
+		return true;
+	}
 
 	private onKeyDown = (event: KeyboardEvent) => {
 		const keys = ["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"];
@@ -117,10 +127,8 @@ export class DjRadioGroup extends FormControl(DojoElement) implements Partial<Do
 		const forward = event.key === "ArrowDown" || event.key === "ArrowRight";
 		const next = current === -1 ? 0 : (current + (forward ? 1 : -1) + enabled.length) % enabled.length;
 		const target = enabled[next];
-		this.value = target.value;
-		this.sync();
+		this.#select(target.value);
 		target.focus();
-		this.emit("change");
 	};
 
 	override render() {

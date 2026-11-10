@@ -44,7 +44,7 @@ export class DjTypeahead extends FormControl(DojoElement) implements Partial<Doj
 	get validity(): ValidityState { return this.#internals.validity; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
 	override focus(o?: FocusOptions) { this.field?.focus(o); }
-	formResetCallback() { this.value = ""; this.query = ""; this.sync(); }
+	formResetCallback() { this.value = this.defaultValue; this.query = ""; this.sync(); }
 
 	#disposeFocusOut?: () => void;
 	override connectedCallback() { super.connectedCallback(); this.#disposeFocusOut = dismissOnFocusOut(this, () => { this.open = false; }); }

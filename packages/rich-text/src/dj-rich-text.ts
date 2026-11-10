@@ -144,7 +144,7 @@ export class DjRichText extends FormControl(DojoElement) implements Partial<Dojo
 	get validity(): ValidityState { return this.#internals.validity; }
 	checkValidity(): boolean { return this.#internals.checkValidity(); }
 	override focus(o?: FocusOptions) { this.editable?.focus(o); }
-	formResetCallback() { this.#applyValue(this.getAttribute("value") ?? "", HTML_FORMAT); }
+	formResetCallback() { this.#applyValue(this.defaultValue, HTML_FORMAT); }
 
 	override disconnectedCallback() {
 		super.disconnectedCallback();

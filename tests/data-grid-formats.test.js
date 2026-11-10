@@ -43,7 +43,8 @@ test("date is formatted through Intl (matches Intl.DateTimeFormat exactly)", asy
 		[{ id: "when", header: "When", accessorKey: "when", format: { kind: "date" } }],
 		[{ when: value }],
 	);
-	const expected = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(value));
+	// A date-only string is a calendar day, so it shows as Jul 2 in every time zone (CB23).
+	const expected = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(value));
 	assert.equal(cellText(el)[0], expected);
 });
 

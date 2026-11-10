@@ -18,8 +18,8 @@ afterEach(() => setDefaultLocale("en"));
 
 // --- localeChain ---
 
-test("localeChain strips region to the base language for 3-part tags", () => {
-	expect(localeChain("zh-Hant-CN", "en")).toEqual(["zh-hant-cn", "zh", "en"]);
+test("localeChain walks every prefix of a 3-part tag (CB23: zh-Hant was skipped)", () => {
+	expect(localeChain("zh-Hant-CN", "en")).toEqual(["zh-hant-cn", "zh-hant", "zh", "en"]);
 });
 
 test("localeChain lower-cases and de-duplicates", () => {

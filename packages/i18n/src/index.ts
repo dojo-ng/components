@@ -3,6 +3,8 @@ export {
 	getLocale,
 	getDir,
 	localeChain,
+	loadChain,
+	normalizeLocale,
 	setDefaultLocale,
 	getDefaultLocale,
 	onLocaleChange,

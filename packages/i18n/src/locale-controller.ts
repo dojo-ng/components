@@ -1,9 +1,11 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { getLocale, getDir, onLocaleChange } from "./locale.js";
+import { messages } from "./messages.js";
 
 /**
  * A Lit reactive controller that tracks the host's effective locale and direction and
- * re-renders the host when either changes. It reads `lang`/`dir` from the nearest ancestor
+ * re-renders the host when either changes, or when translations are registered or loaded into
+ * the shared `messages` store after the host rendered. It reads `lang`/`dir` from the nearest ancestor
  * that sets them, so no provider element is required.
  *
  * ```ts
@@ -14,6 +16,7 @@ import { getLocale, getDir, onLocaleChange } from "./locale.js";
 export class LocaleController implements ReactiveController {
 	private host: ReactiveControllerHost & HTMLElement;
 	private dispose?: () => void;
+	private disposeMessages?: () => void;
 
 	locale: string;
 	dir: "ltr" | "rtl";
@@ -28,11 +31,14 @@ export class LocaleController implements ReactiveController {
 	hostConnected(): void {
 		this.sync();
 		this.dispose = onLocaleChange(() => this.sync());
+		this.disposeMessages = messages.subscribe(() => this.host.requestUpdate());
 	}
 
 	hostDisconnected(): void {
 		this.dispose?.();
 		this.dispose = undefined;
+		this.disposeMessages?.();
+		this.disposeMessages = undefined;
 	}
 
 	private sync(): void {

@@ -1,7 +1,7 @@
 import type { Messages, FormatParams } from "./types.js";
 import type { MessageLoader } from "./loader.js";
 import { format } from "./format.js";
-import { localeChain, getDefaultLocale } from "./locale.js";
+import { localeChain, loadChain, getDefaultLocale } from "./locale.js";
 
 /**
  * A registry of message bundles keyed by namespace then locale, with locale-fallback
@@ -13,6 +13,8 @@ export class MessageStore {
 	#loader?: MessageLoader;
 	#inflight = new Map<string, Promise<void>>();
 	#version = 0;
+	#listeners = new Set<() => void>();
+	#notifyQueued = false;
 
 	constructor(loader?: MessageLoader) {
 		this.#loader = loader;
@@ -27,6 +29,28 @@ export class MessageStore {
 		return this.#version;
 	}
 
+	/**
+	 * Call `listener` after bundles change. Changes made in the same task are batched into one
+	 * call. Returns an unsubscribe function. `LocaleController` uses this to re-render
+	 * components when translations arrive after they first rendered.
+	 */
+	subscribe(listener: () => void): () => void {
+		this.#listeners.add(listener);
+		return () => {
+			this.#listeners.delete(listener);
+		};
+	}
+
+	#changed(): void {
+		this.#version++;
+		if (this.#notifyQueued || this.#listeners.size === 0) return;
+		this.#notifyQueued = true;
+		queueMicrotask(() => {
+			this.#notifyQueued = false;
+			for (const l of [...this.#listeners]) l();
+		});
+	}
+
 	/** Add or merge messages for a namespace and locale. */
 	register(namespace: string, locale: string, messages: Messages): void {
 		let byLocale = this.#bundles.get(namespace);
@@ -36,7 +60,7 @@ export class MessageStore {
 		}
 		const key = locale.toLowerCase();
 		byLocale.set(key, { ...byLocale.get(key), ...messages });
-		this.#version++;
+		this.#changed();
 	}
 
 	has(namespace: string, locale: string): boolean {
@@ -60,12 +84,24 @@ export class MessageStore {
 		return template === undefined ? undefined : format(template, params);
 	}
 
-	/** Lazily load a namespace and locale through the loader, then register it. De-duplicated. */
+	/**
+	 * Lazily load a namespace through the loader for every locale in the fallback chain that is
+	 * not registered yet, then register each one. `load("dj", "fr-CA")` asks the loader for
+	 * `fr-CA`, then `fr`, then the default locale and `en` if they are missing. Each request is
+	 * de-duplicated.
+	 */
 	async load(namespace: string, locale: string): Promise<void> {
-		if (!this.#loader || this.has(namespace, locale)) return;
+		if (!this.#loader) return;
+		const pending = loadChain(locale, getDefaultLocale())
+			.filter((l) => !this.has(namespace, l))
+			.map((l) => this.#loadOne(namespace, l));
+		await Promise.all(pending);
+	}
+
+	#loadOne(namespace: string, locale: string): Promise<void> {
 		const key = `${namespace}|${locale.toLowerCase()}`;
 		let p = this.#inflight.get(key);
-		if (!p) {
+		if (!p && this.#loader) {
 			p = this.#loader
 				.load(namespace, locale)
 				.then((messages) => {
@@ -76,7 +112,7 @@ export class MessageStore {
 				});
 			this.#inflight.set(key, p);
 		}
-		return p;
+		return p ?? Promise.resolve();
 	}
 }
 

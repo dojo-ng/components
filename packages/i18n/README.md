@@ -28,29 +28,31 @@ Register French strings for the `dj` namespace, then set `lang`. Components on t
 
 ## Locale and direction
 
-- `getLocale(el)` and `getDir(el)` return the locale and direction that apply to an element. They also look outside shadow roots.
-- `LocaleController` keeps a Lit component's `locale` and `dir` current, and re-renders the component when either one changes.
+- `getLocale(el)` and `getDir(el)` return the locale and direction that apply to an element. They also look outside shadow roots. `lang="en_US"` is read as `en-US`.
+- `LocaleController` keeps a Lit component's `locale` and `dir` current. It re-renders the component when either one changes, and when translations are registered or loaded later.
 - `setDefaultLocale()` sets the locale to use when no `lang` is found. The default is `en`.
 - Only changes to `lang` and `dir` in the light DOM are observed. That is where they are usually set.
 
 ## Formatting
 
-- `formatDate`, `formatNumber`, `formatList`, and `plural` use the native `Intl` APIs and take an explicit locale.
+- `formatDate`, `formatNumber`, `formatList`, and `plural` use the native `Intl` APIs and take an explicit locale. A tag that `Intl` rejects falls back to the default locale.
+- `formatDate("2026-11-10")` shows that calendar day in every time zone.
 - The `Intl` objects are cached by locale and options, because they are slow to create.
 - `format(template, params)` fills `{name}` placeholders.
 
 ## Messages
 
 - `messages` is the shared `MessageStore`. It keeps message bundles by namespace and locale.
-- A lookup tries the locale, then its base language, then the default locale, then `en`. For example, `fr-CA` tries `fr-ca`, then `fr`, then `en`.
+- A lookup tries the locale, then each shorter form of it, then the default locale, then `en`. For example, `fr-CA` tries `fr-ca`, then `fr`, then `en`, and `zh-Hant-TW` tries `zh-hant-tw`, then `zh-hant`, then `zh`.
 - Every component registers its English strings under `en`, so it always has labels, even with no translations loaded.
 - The built-in component strings use the `dj` namespace.
-- Register translations before the components render, or before you change `lang`. Registering messages does not re-render components that are already on the page.
+- Components already on the page re-render when you register or load translations, so you can load them after the page renders.
 
 ## Loaders
 
 - `staticLoader(data)` serves bundles that you include at build time.
 - `fetchLoader(pattern)` fetches one JSON file for each namespace and locale. The default pattern is `/i18n/{ns}.{locale}.json`.
+- `messages.load(ns, locale)` asks the loader for each locale in the lookup chain that is not registered yet. `load("dj", "fr-CA")` asks for `fr-CA`, then `fr`.
 - For your own transport or cache, write an object with a `load(namespace, locale)` method that returns a promise of messages.
 
 ## Examples

@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { property, query } from "lit/decorators.js";
-import DojoElement, { DojoFormControl, FormControl } from "@dojo-ng/dojo-element";
+import DojoElement, { DojoFormControl, FormControl, defaultTrueBoolean } from "@dojo-ng/dojo-element";
 import { LocaleController, formatNumber } from "@dojo-ng/i18n";
 import "@dojo-ng/label";
 import styles from "./dj-slider.styles.js";
@@ -25,7 +25,7 @@ export class DjSlider extends FormControl(DojoElement) implements Partial<DojoFo
 	@property({ type: Number }) value = 0;
 	@property({ reflect: true }) name?: string;
 	@property() label?: string;
-	@property({ attribute: "show-output", type: Boolean }) showOutput = true;
+	@property({ attribute: "show-output", type: Boolean, converter: defaultTrueBoolean }) showOutput = true;
 	@property({ type: Boolean, reflect: true }) disabled = false;
 	@property({ type: Boolean, reflect: true }) readonly = false;
 	@property({ type: Boolean, reflect: true }) required = false;

@@ -2,7 +2,7 @@ import { html, svg, nothing, type TemplateResult } from "lit";
 import { scaleLinear } from "d3-scale";
 import { property, state } from "lit/decorators.js";
 import { ref } from "lit/directives/ref.js";
-import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
+import DojoElement, { reducedMotion, defaultTrueBoolean } from "@dojo-ng/dojo-element";
 import { LocaleController, formatNumber, messages, registerDefaults } from "@dojo-ng/i18n";
 import styles from "./dj-chart.styles.js";
 import type { ChartDatum, ChartSeries, ChartType, ChartMargin, ChartRenderer, MissingMode, ScaleKind, ValueScale, Scales } from "./types.js";
@@ -134,8 +134,8 @@ export class DjChart extends DojoElement {
 	 * it applies only to `bar` charts and ignores `brush` and a secondary (right) axis (v1). */
 	@property({ reflect: true }) orientation: "vertical" | "horizontal" = "vertical";
 	@property({ type: Boolean }) stacked = false;
-	@property({ attribute: "show-legend", type: Boolean }) showLegend = true;
-	@property({ attribute: "show-grid", type: Boolean }) showGrid = true;
+	@property({ attribute: "show-legend", type: Boolean, converter: defaultTrueBoolean }) showLegend = true;
+	@property({ attribute: "show-grid", type: Boolean, converter: defaultTrueBoolean }) showGrid = true;
 	@property({ attribute: "x-label" }) xLabel?: string;
 	@property({ attribute: "y-label" }) yLabel?: string;
 	/** Title for the secondary (right) y-axis, shown when a series sets `axis: "right"`. */

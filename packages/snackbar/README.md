@@ -6,6 +6,8 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 `open` shows it; `type` success/error tints; slots: default (message), `actions`.
 
+Announcements: the snackbar keeps two empty live regions in the accessibility tree at all times, hidden or not, and copies the message text into one when it opens. `type="error"` uses the assertive region (`role="alert"`); every other type uses the polite one (`role="status"`). Changing the message while open announces the new text. The visible message is hidden from assistive tech so it is not read twice; the `actions` slot stays reachable.
+
 ## Install
 
 ```bash

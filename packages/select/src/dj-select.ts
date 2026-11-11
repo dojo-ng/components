@@ -16,7 +16,9 @@ registerDefaults("dj", { selectPlaceholder: "Select…", selectAnOption: "Please
 /**
  * `<dj-select>` — a form-associated single-select combobox. A trigger shows the selected
  * option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>`
- * of `options`. Selecting sets `value`, closes, and returns focus. ARIA combobox/listbox.
+ * of `options`. Selecting, Escape, and a click outside all close it and return focus to the
+ * trigger; tabbing away closes it and leaves focus where it went. ARIA combobox/listbox.
+ * Changing `required` revalidates at once.
  * Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.
  */
 export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFormControl> {
@@ -60,14 +62,20 @@ export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFo
 	}
 	protected override firstUpdated() { this.sync(); }
 	protected override updated(c: Map<PropertyKey, unknown>) {
-		if (c.has("value")) this.sync();
+		if (c.has("required") && !this.required && this.valid === false) this.valid = undefined;
+		if (c.has("value") || c.has("required")) this.sync();
 		if (c.has("open") && this.open) {
 			void this.updateComplete.then(() => this.renderRoot.querySelector<HTMLElement & { focus(): void }>("dj-list")?.focus());
 		}
 	}
 
 	private openMenu() { if (!this.isDisabled) this.open = true; }
-	private close() { this.open = false; }
+	private close(refocus = false) {
+		if (!this.open) return;
+		this.open = false;
+		// The list had focus and is about to vanish; without this, focus falls to <body>.
+		if (refocus) this.trigger?.focus();
+	}
 
 	private onSelect(e: Event) {
 		e.stopPropagation();
@@ -98,7 +106,7 @@ export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFo
 				<span class=${this.value ? "" : "placeholder"}>${this.value ? this.selectedLabel : (this.placeholder ?? messages.resolve("dj", this.#i18n.locale, "selectPlaceholder") ?? "Select…")}</span>
 				<span class="arrow"><dj-icon><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2"/></svg></dj-icon></span>
 			</button>
-			<dj-popup .anchor=${this.trigger} .open=${this.open} position=${this.position} @dj-close=${() => this.close()} .scrollLock=${false}>
+			<dj-popup .anchor=${this.trigger} .open=${this.open} position=${this.position} @dj-close=${() => this.close(true)} .scrollLock=${false}>
 				<dj-list style=${`width:${width}`} .options=${this.options} .value=${this.value} @change=${(e: Event) => this.onSelect(e)}></dj-list>
 			</dj-popup>
 			<dj-helper-text id="helper" part="helper-text" .text=${this.helperText ?? ""} .valid=${this.valid}></dj-helper-text>

@@ -5,7 +5,8 @@ import "@dojo-ng/popup";
 
 /**
  * `<dj-context-popup>` — right-click (contextmenu) on the trigger (default slot) opens a
- * `<dj-popup>` at the cursor, holding the `content` slot.
+ * `<dj-popup>` at the cursor, holding the `content` slot. Emits `dj-open` when it opens and
+ * `dj-close` (on this element; it does not bubble) when it closes.
  */
 export class DjContextPopup extends DojoElement {
 	static override styles = css`:host { display: inline-block; }`;
@@ -21,6 +22,12 @@ export class DjContextPopup extends DojoElement {
 		this.emit("dj-open");
 	}
 
+	#onPopupClose() {
+		if (!this.open) return;
+		this.open = false;
+		this.emit("dj-close", { bubbles: false, composed: false });
+	}
+
 	override render() {
 		return html`
 			<span class="trigger" @contextmenu=${(e: MouseEvent) => this.onContextMenu(e)}><slot></slot></span>
@@ -28,10 +35,10 @@ export class DjContextPopup extends DojoElement {
 				.open=${this.open}
 				.xLeft=${this.x} .xRight=${this.x} .yTop=${this.y} .yBottom=${this.y}
 				position="below"
-				@dj-close=${() => { this.open = false; }}
+				@dj-close=${() => this.#onPopupClose()}
 			><slot name="content"></slot></dj-popup>
 		`;
 	}
 }
 export default DjContextPopup;
-declare global { interface GlobalEventHandlersEventMap { "dj-open": CustomEvent<Record<string, never>>; } }
+declare global { interface GlobalEventHandlersEventMap { "dj-open": CustomEvent<Record<string, never>>; "dj-close": CustomEvent<Record<string, never>>; } }

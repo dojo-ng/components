@@ -15,8 +15,16 @@ export default css`
 	.arrow { display: inline-flex; transition: transform var(--dj-transition-fast, 150ms); }
 	:host([open]) .arrow { transform: rotate(90deg); }
 	/* Animated collapse via grid-template-rows 0fr -> 1fr */
-	.collapse { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dj-transition-fast, 150ms) ease; }
-	:host([open]) .collapse { grid-template-rows: 1fr; }
+	/* Collapsed content also turns visibility:hidden, so it is neither read nor focusable. On close
+	   the visibility switch waits for the row animation to finish; on open it flips at once. */
+	.collapse {
+		display: grid; grid-template-rows: 0fr; visibility: hidden;
+		transition: grid-template-rows var(--dj-transition-fast, 150ms) ease, visibility 0s linear var(--dj-transition-fast, 150ms);
+	}
+	:host([open]) .collapse {
+		grid-template-rows: 1fr; visibility: visible;
+		transition: grid-template-rows var(--dj-transition-fast, 150ms) ease, visibility 0s;
+	}
 	.content { overflow: hidden; }
 	.content__inner { padding: var(--dj-spacing-medium, 1rem); }
 `;

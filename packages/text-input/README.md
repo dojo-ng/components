@@ -1,10 +1,8 @@
 # @dojo-ng/text-input
 
-`<dj-text-input>` — A form-associated text field that composes `<dj-label>` and `<dj-helper-text>`.
+`<dj-text-input>`
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
-
-It participates in native forms via ElementInternals: it sets its form value and mirrors the inner input's constraint validity to the host.
 
 ## Install
 

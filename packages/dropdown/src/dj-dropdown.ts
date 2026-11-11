@@ -39,7 +39,7 @@ interface DjListLike extends HTMLElement {
  *
  * Slots: `trigger` (the button), default (the menu list or panel).
  * Parts: `panel` (the content wrapper inside the popup).
- * Events: `dj-open`, `dj-close`.
+ * Events: `dj-open`, `dj-close` (once per close, on the dropdown itself; it does not bubble).
  */
 export class DjDropdown extends DojoElement {
 	static override styles: CSSResultGroup = styles;
@@ -96,7 +96,8 @@ export class DjDropdown extends DojoElement {
 	#closeMenu(refocus = false): void {
 		if (!this.open) return;
 		this.open = false;
-		this.emit("dj-close");
+		// Not bubbling, like dj-popup's: one dj-close per close, heard only on this element.
+		this.emit("dj-close", { bubbles: false, composed: false });
 		if (refocus) this.#trigger?.focus?.();
 	}
 

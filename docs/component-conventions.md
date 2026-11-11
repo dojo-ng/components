@@ -71,6 +71,11 @@ plain button. Reserve `emit()` for semantics that have no native equivalent, and
 re-emit a native event under its own name (the prototype did this and it produced
 duplicate events).
 
+A boolean property that defaults to `true` uses the `defaultTrueBoolean` converter from
+`@dojo-ng/dojo-element`: `@property({ type: Boolean, converter: defaultTrueBoolean }) closeable = true;`.
+Lit's stock `Boolean` converter reads any present attribute as `true`, so without it the
+property can never be turned off from HTML. With it, `closeable="false"` means `false`.
+
 ## Encapsulation and theming
 
 Components render into a shadow root. Theming is driven by `--dj-*` CSS custom
@@ -103,6 +108,14 @@ their built `dist/`, and a script adds a component to the page at runtime.
 Set `aria-disabled` alongside the native `disabled` attribute, use `:focus-visible` for
 focus rings, and forward `focus()`/`blur()` to the internal interactive node so the host
 can drive focus through the custom element.
+
+Overlays (dialogs, panes, popups, tooltips, menus) never add their own `document` keydown
+listener. While open they register with `pushOverlay({ onEscape, onTab })` from
+`@dojo-ng/dojo-element` and call the returned release when they close or disconnect. One
+shared listener sends Escape to the overlay opened last and Tab to the last one that traps
+focus, so one Escape closes one overlay. An overlay's `dj-close` is emitted with
+`{ bubbles: false, composed: false }`, so an inner popup closing is never heard by a listener
+on an outer dialog.
 
 ## Accessibility and mobile (standing requirements)
 

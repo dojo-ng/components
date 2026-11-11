@@ -14,6 +14,12 @@ export default css`
 		pointer-events: none;
 	}
 	.content[hidden] { display: none; }
+	/* Top layer (Popover API): positioned against the viewport by the component, so the
+	   orientation classes' offsets and the UA popover chrome (inset, margin, border, colors)
+	   are reset here. */
+	.content:popover-open {
+		position: fixed; inset: auto; margin: 0; border: 0; transform: none; overflow: visible;
+	}
 	.content--top { bottom: calc(100% + 0.4rem); left: 50%; transform: translateX(-50%); }
 	.content--bottom { top: calc(100% + 0.4rem); left: 50%; transform: translateX(-50%); }
 	.content--left { right: calc(100% + 0.4rem); top: 50%; transform: translateY(-50%); }

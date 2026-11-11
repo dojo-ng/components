@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-`match-width` sizes the popup to the trigger.
+`match-width` sizes the popup to the trigger; set `match-width="false"` to size it to its content. Emits `dj-open` when it opens and `dj-close` (on this element; it does not bubble) when it closes.
 
 ## Install
 
@@ -44,6 +44,7 @@ The `trigger` slot toggles the default-slot content.
 ## Events
 
 - `dj-open`
+- `dj-close`
 
 ## Theming
 

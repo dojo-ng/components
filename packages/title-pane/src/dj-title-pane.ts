@@ -1,12 +1,15 @@
 import { html } from "lit";
 import { property } from "lit/decorators.js";
-import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
+import DojoElement, { reducedMotion, defaultTrueBoolean } from "@dojo-ng/dojo-element";
 import "@dojo-ng/icon";
 import styles from "./dj-title-pane.styles.js";
 
 /**
  * `<dj-title-pane>` — a collapsible panel with a title bar. Content goes in the default
  * slot. Click the title (when `closeable`) to toggle; emits `dj-toggle` with `{ open }`.
+ * Collapsed content is hidden from assistive tech and cannot take focus (`inert` plus
+ * `visibility: hidden` once the collapse animation ends). The title button names the content
+ * region it controls with `aria-controls`. `closeable="false"` turns toggling off.
  * Parts: `title`, `button`, `content`.
  */
 export class DjTitlePane extends DojoElement {
@@ -15,7 +18,7 @@ export class DjTitlePane extends DojoElement {
 
 	@property() name = "";
 	@property({ type: Boolean, reflect: true }) open = false;
-	@property({ type: Boolean }) closeable = true;
+	@property({ type: Boolean, converter: defaultTrueBoolean }) closeable = true;
 	@property({ attribute: "heading-level", type: Number }) headingLevel?: number;
 
 	private toggle() {
@@ -32,6 +35,7 @@ export class DjTitlePane extends DojoElement {
 					class="button"
 					type="button"
 					aria-expanded=${this.open ? "true" : "false"}
+					aria-controls="content"
 					?disabled=${!this.closeable}
 					@click=${() => this.toggle()}
 				>
@@ -39,7 +43,7 @@ export class DjTitlePane extends DojoElement {
 					<span>${this.name}</span>
 				</button>
 			</div>
-			<div part="content" class="collapse">
+			<div part="content" class="collapse" id="content" ?inert=${!this.open}>
 				<div class="content"><div class="content__inner"><slot></slot></div></div>
 			</div>
 		`;

@@ -4,7 +4,13 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role="alertdialog"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close`. Parts: `underlay`, `dialog`, `title`, `close`, `content`, `actions`.
+Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role="alertdialog"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close` on the dialog itself; it does not bubble, so a listener on an outer element never hears an inner overlay close.
+
+Escape closes only the overlay opened last: a select's list open inside the dialog closes first, and the dialog stays open until the next Escape. The dialog always traps focus and is announced as modal (`aria-modal="true"`); `modal` only stops an underlay click from closing it.
+
+Accessible name: the `title` slot names the dialog. With no title, put `aria-label` on `<dj-dialog>` and it is passed to the inner dialog element.
+
+`role` picks `dialog` or `alertdialog` for the inner dialog element. A `role` attribute written on `<dj-dialog>` is read into the property and then removed from the host, so assistive tech sees one dialog, not two nested ones.
 
 ## Install
 
@@ -46,7 +52,8 @@ Toggle `open`; listen for `dj-close`.
 | `closeable` | closeable | `boolean` | `true` |
 | `modal` | modal | `boolean` | `false` |
 | `underlay` | underlay | `boolean` | `true` |
-| `role` | role ↻ | `"dialog" \| "alertdialog"` | `"dialog"` |
+| `role` | role | `"dialog" \| "alertdialog"` | `"dialog"` |
+| `ariaLabel` | aria-label | `string \| null` | `null` |
 | `closeText` | close-text | `string` | — |
 
 ## Slots

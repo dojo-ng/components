@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import { property, state, query } from "lit/decorators.js";
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
-import DojoElement, { DojoFormControl, dismissOnFocusOut, FormControl } from "@dojo-ng/dojo-element";
+import DojoElement, { DojoFormControl, dismissOnFocusOut, FormControl, defaultTrueBoolean } from "@dojo-ng/dojo-element";
 import "@dojo-ng/text-input";
 import "@dojo-ng/popup";
 import "@dojo-ng/list";
@@ -34,7 +34,7 @@ export class DjTypeahead extends FormControl(DojoElement) implements Partial<Doj
 	@property({ attribute: "helper-text" }) helperText?: string;
 	@property({ type: Boolean, reflect: true }) disabled = false;
 	@property({ type: Boolean, reflect: true }) required = false;
-	@property({ type: Boolean }) strict = true;
+	@property({ type: Boolean, converter: defaultTrueBoolean }) strict = true;
 	@property({ reflect: true }) position: PopupPosition = "below";
 	@state() private open = false;
 	@state() private query = "";

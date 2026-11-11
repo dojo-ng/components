@@ -138,8 +138,6 @@ Supporting text shown under a form control. Provide text via the `text` attribut
 
 ### `<dj-text-input>` · `@dojo-ng/text-input`
 
-A form-associated text field that composes `<dj-label>` and `<dj-helper-text>`. It participates in native forms via ElementInternals: it sets its form value and mirrors the inner input's constraint validity to the host.
-
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `value` | value | `string` | `""` |
@@ -267,7 +265,7 @@ A form-associated wrapper over a native `<select>`, driven by an `options` array
 
 ### `<dj-select>` · `@dojo-ng/select`
 
-A form-associated single-select combobox. A trigger shows the selected option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>` of `options`. Selecting sets `value`, closes, and returns focus. ARIA combobox/listbox. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.
+A form-associated single-select combobox. A trigger shows the selected option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>` of `options`. Selecting, Escape, and a click outside all close it and return focus to the trigger; tabbing away closes it and leaves focus where it went. ARIA combobox/listbox. Changing `required` revalidates at once. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -741,7 +739,7 @@ A layout wrapper that gathers values from its named child controls and emits `dj
 
 Positions slotted content as an overlay, flipping to the opposite side when there isn't room in the preferred position. Anchor it by setting the `anchor` property to an element, or supply viewport coordinates via the `x-*`/`y-*` attributes.
 
-While open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event. Content goes in the default slot.
+While open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event on the popup itself. The event does not bubble, so a popup closing inside a select or a dialog is never heard by listeners on the outer element. Escape closes only the overlay opened last (see `pushOverlay` in `@dojo-ng/dojo-element`). Content goes in the default slot.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -767,7 +765,7 @@ While open it locks body scroll and closes on Escape or underlay click, emitting
 
 ### `<dj-trigger-popup>` · `@dojo-ng/trigger-popup`
 
-Clicking the trigger (default slot) opens a `<dj-popup>` anchored to it, holding the `content` slot. `match-width` sizes the popup to the trigger.
+Clicking the trigger (default slot) opens a `<dj-popup>` anchored to it, holding the `content` slot. `match-width` sizes the popup to the trigger; set `match-width="false"` to size it to its content. Emits `dj-open` when it opens and `dj-close` (on this element; it does not bubble) when it closes.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -778,12 +776,12 @@ Clicking the trigger (default slot) opens a `<dj-popup>` anchored to it, holding
 
 **Slots:** default, `content`
 
-**Events:** `dj-open`
+**Events:** `dj-open`, `dj-close`
 
 
 ### `<dj-context-popup>` · `@dojo-ng/context-popup`
 
-Right-click (contextmenu) on the trigger (default slot) opens a `<dj-popup>` at the cursor, holding the `content` slot.
+Right-click (contextmenu) on the trigger (default slot) opens a `<dj-popup>` at the cursor, holding the `content` slot. Emits `dj-open` when it opens and `dj-close` (on this element; it does not bubble) when it closes.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -791,7 +789,7 @@ Right-click (contextmenu) on the trigger (default slot) opens a `<dj-popup>` at 
 
 **Slots:** default, `content`
 
-**Events:** `dj-open`
+**Events:** `dj-open`, `dj-close`
 
 
 ### `<dj-dropdown>` · `@dojo-ng/dropdown`
@@ -826,7 +824,7 @@ Put the trigger, usually a `<dj-button>`, in the `trigger` slot, and the menu, u
 
 **Parts:** `panel` (the content wrapper inside the popup)
 
-**Events:** `dj-open`, `dj-close`
+**Events:** `dj-open`, `dj-close` (once per close, on the dropdown itself; it does not bubble)
 
 
 ### `<dj-popup-confirmation>` · `@dojo-ng/popup-confirmation`
@@ -859,7 +857,13 @@ Right-click the trigger (default slot) to open a menu of `options`; emits `dj-se
 
 ### `<dj-dialog>` · `@dojo-ng/dialog`
 
-A modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role="alertdialog"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close`. Parts: `underlay`, `dialog`, `title`, `close`, `content`, `actions`.
+A modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role="alertdialog"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close` on the dialog itself; it does not bubble, so a listener on an outer element never hears an inner overlay close.
+
+Escape closes only the overlay opened last: a select's list open inside the dialog closes first, and the dialog stays open until the next Escape. The dialog always traps focus and is announced as modal (`aria-modal="true"`); `modal` only stops an underlay click from closing it.
+
+Accessible name: the `title` slot names the dialog. With no title, put `aria-label` on `<dj-dialog>` and it is passed to the inner dialog element.
+
+`role` picks `dialog` or `alertdialog` for the inner dialog element. A `role` attribute written on `<dj-dialog>` is read into the property and then removed from the host, so assistive tech sees one dialog, not two nested ones.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -867,7 +871,8 @@ A modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll 
 | `closeable` | closeable | `boolean` | `true` |
 | `modal` | modal | `boolean` | `false` |
 | `underlay` | underlay | `boolean` | `true` |
-| `role` | role ↻ | `"dialog" \| "alertdialog"` | `"dialog"` |
+| `role` | role | `"dialog" \| "alertdialog"` | `"dialog"` |
+| `ariaLabel` | aria-label | `string \| null` | `null` |
 | `closeText` | close-text | `string` | — |
 
 **Slots:** `title`, default (content), `actions`
@@ -883,7 +888,7 @@ A modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll 
 
 ### `<dj-slide-pane>` · `@dojo-ng/slide-pane`
 
-A panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.
+A panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open, traps focus, and returns focus to where it was on close. Escape closes only the overlay opened last, so a popup open inside the pane closes first. Emits `dj-close` on the pane itself; it does not bubble. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -906,7 +911,11 @@ A panel that slides in from an edge. Slots: `title`, default (content). Closes o
 
 ### `<dj-tooltip>` · `@dojo-ng/tooltip`
 
-Shows tip content next to its trigger on hover/focus. The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown. Escape hides a tip that hover or focus showed, without moving the pointer or focus; entering or focusing the trigger again shows it again.
+Shows tip content next to its trigger on hover/focus. The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown. Escape hides a tip that hover or focus showed, without moving the pointer or focus; entering or focusing the trigger again shows it again. When a tooltip is open over a dialog, Escape hides the tip first and leaves the dialog open.
+
+The tip describes its trigger: the slotted trigger element gets `aria-describedby` pointing at the slotted tip (an `id` is generated for the tip when it has none). Put the tooltip around an element that carries the role, such as a native `<button>`; a custom element whose focusable part sits in its own shadow root cannot receive the reference.
+
+The tip renders in the browser top layer where the Popover API exists, so an `overflow: hidden` or transformed ancestor cannot clip it. It sits on the `orientation` side and flips to the opposite side when there is no room there, then stays inside the viewport.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -923,6 +932,8 @@ Shows tip content next to its trigger on hover/focus. The trigger goes in the de
 ### `<dj-snackbar>` · `@dojo-ng/snackbar`
 
 A toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`.
+
+Announcements: the snackbar keeps two empty live regions in the accessibility tree at all times, hidden or not, and copies the message text into one when it opens. `type="error"` uses the assertive region (`role="alert"`); every other type uses the polite one (`role="status"`). Changing the message while open announces the new text. The visible message is hidden from assistive tech so it is not read twice; the `actions` slot stays reachable.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1071,7 +1082,7 @@ Leading/center/trailing slots; collapses on narrow containers.
 
 ### `<dj-title-pane>` · `@dojo-ng/title-pane`
 
-A collapsible panel with a title bar. Content goes in the default slot. Click the title (when `closeable`) to toggle; emits `dj-toggle` with `{ open }`.
+A collapsible panel with a title bar. Content goes in the default slot. Click the title (when `closeable`) to toggle; emits `dj-toggle` with `{ open }`. Collapsed content is hidden from assistive tech and cannot take focus (`inert` plus `visibility: hidden` once the collapse animation ends). The title button names the content region it controls with `aria-controls`. `closeable="false"` turns toggling off.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1244,7 +1255,7 @@ Page navigation over `total` pages. Emits `dj-page` with the new page. Parts: `n
 
 ### `<dj-tab-container>` · `@dojo-ng/tab-container`
 
-Tabbed interface. `tabs` describes the buttons; the panels are slotted children in the same order (one per tab). The active panel is shown, the rest hidden. ARIA tablist/tab/tabpanel with roving arrow/Home/End keyboard. Local coordination of slotted panels — no store needed.
+Tabbed interface. `tabs` describes the buttons; the panels are slotted children in the same order (one per tab). The active panel is shown, the rest hidden. ARIA tablist/tab/tabpanel with roving arrow/Home/End keyboard; arrows, Home and End skip disabled tabs. Delete closes a `closeable` tab (the tab advertises it with `aria-keyshortcuts`); its close icon is for the pointer only, so no button sits inside a tab. If `active-index` points at no tab or a disabled one, the first enabled tab keeps the Tab-key stop. Each tab controls its panel (`aria-controls`, where the browser supports element references) and each panel is labelled with its tab's name unless it has its own label. Inactive panels stay hidden even when page CSS sets their `display`. Local coordination of slotted panels — no store needed.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|

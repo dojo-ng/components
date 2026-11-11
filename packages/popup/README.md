@@ -6,7 +6,7 @@ Part of [Dojo NG](../../README.md), a framework-agnostic web component library b
 
 Anchor it by setting the `anchor` property to an element, or supply viewport coordinates via the `x-*`/`y-*` attributes.
 
-While open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event. Content goes in the default slot.
+While open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event on the popup itself. The event does not bubble, so a popup closing inside a select or a dialog is never heard by listeners on the outer element. Escape closes only the overlay opened last (see `pushOverlay` in `@dojo-ng/dojo-element`). Content goes in the default slot.
 
 ## Install
 

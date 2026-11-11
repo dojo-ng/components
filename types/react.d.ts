@@ -300,6 +300,7 @@ declare module "react" {
         "modal"?: DjDialog["modal"];
         "underlay"?: DjDialog["underlay"];
         "role"?: DjDialog["role"];
+        "aria-label"?: DjDialog["ariaLabel"];
         "close-text"?: DjDialog["closeText"];
       };
       "dj-dropdown": DjProps<DjDropdown> & {

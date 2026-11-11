@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.
+Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open, traps focus, and returns focus to where it was on close. Escape closes only the overlay opened last, so a popup open inside the pane closes first. Emits `dj-close` on the pane itself; it does not bubble. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.
 
 ## Install
 

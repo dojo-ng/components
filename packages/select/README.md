@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-A trigger shows the selected option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>` of `options`. Selecting sets `value`, closes, and returns focus. ARIA combobox/listbox. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.
+A trigger shows the selected option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>` of `options`. Selecting, Escape, and a click outside all close it and return focus to the trigger; tabbing away closes it and leaves focus where it went. ARIA combobox/listbox. Changing `required` revalidates at once. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.
 
 ## Install
 

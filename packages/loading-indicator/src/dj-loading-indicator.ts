@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { property } from "lit/decorators.js";
-import DojoElement from "@dojo-ng/dojo-element";
+import DojoElement, { defaultTrueBoolean } from "@dojo-ng/dojo-element";
 import styles from "./dj-loading-indicator.styles.js";
 
 export type LoadingType = "linear" | "circular-small" | "circular-medium" | "circular-large";
@@ -17,7 +17,7 @@ export class DjLoadingIndicator extends DojoElement {
 	static override styles = styles;
 	static override version = "0.1.1";
 
-	@property({ type: Boolean, reflect: true }) active = true;
+	@property({ type: Boolean, reflect: true, converter: defaultTrueBoolean }) active = true;
 	@property({ reflect: true }) type: LoadingType = "linear";
 	@property() label?: string;
 

@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-`tabs` describes the buttons; the panels are slotted children in the same order (one per tab). The active panel is shown, the rest hidden. ARIA tablist/tab/tabpanel with roving arrow/Home/End keyboard. Local coordination of slotted panels — no store needed.
+`tabs` describes the buttons; the panels are slotted children in the same order (one per tab). The active panel is shown, the rest hidden. ARIA tablist/tab/tabpanel with roving arrow/Home/End keyboard; arrows, Home and End skip disabled tabs. Delete closes a `closeable` tab (the tab advertises it with `aria-keyshortcuts`); its close icon is for the pointer only, so no button sits inside a tab. If `active-index` points at no tab or a disabled one, the first enabled tab keeps the Tab-key stop. Each tab controls its panel (`aria-controls`, where the browser supports element references) and each panel is labelled with its tab's name unless it has its own label. Inactive panels stay hidden even when page CSS sets their `display`. Local coordination of slotted panels — no store needed.
 
 ## Install
 

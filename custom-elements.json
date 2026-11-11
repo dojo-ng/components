@@ -3716,7 +3716,7 @@
           "name": "DjContextPopup",
           "customElement": true,
           "tagName": "dj-context-popup",
-          "description": "right-click (contextmenu) on the trigger (default slot) opens a `<dj-popup>` at the cursor, holding the `content` slot.",
+          "description": "right-click (contextmenu) on the trigger (default slot) opens a `<dj-popup>` at the cursor, holding the `content` slot. Emits `dj-open` when it opens and `dj-close` (on this element; it does not bubble) when it closes.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -3754,6 +3754,13 @@
           "events": [
             {
               "name": "dj-open",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            },
+            {
+              "name": "dj-close",
               "type": {
                 "text": "CustomEvent"
               },
@@ -4513,7 +4520,7 @@
           "name": "DjDialog",
           "customElement": true,
           "tagName": "dj-dialog",
-          "description": "a modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role=\"alertdialog\"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close`. Parts: `underlay`, `dialog`, `title`, `close`, `content`, `actions`.",
+          "description": "a modal dialog. Slots: `title`, default (content), `actions`. Locks body scroll while open, closes on Escape and the close button, and on underlay click unless `modal`. `role=\"alertdialog\"` is always modal. Restores focus to the previously focused element on close. Emits `dj-close` on the dialog itself; it does not bubble, so a listener on an outer element never hears an inner overlay close.\n\nEscape closes only the overlay opened last: a select's list open inside the dialog closes first, and the dialog stays open until the next Escape. The dialog always traps focus and is announced as modal (`aria-modal=\"true\"`); `modal` only stops an underlay click from closing it.\n\nAccessible name: the `title` slot names the dialog. With no title, put `aria-label` on `<dj-dialog>` and it is passed to the inner dialog element.\n\n`role` picks `dialog` or `alertdialog` for the inner dialog element. A `role` attribute written on `<dj-dialog>` is read into the property and then removed from the host, so assistive tech sees one dialog, not two nested ones.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -4562,8 +4569,18 @@
                 "text": "\"dialog\" | \"alertdialog\""
               },
               "default": "\"dialog\"",
-              "attribute": "role",
-              "reflects": true
+              "description": "`dialog` or `alertdialog`. Applied to the inner dialog element, never to the host.",
+              "attribute": "role"
+            },
+            {
+              "kind": "field",
+              "name": "ariaLabel",
+              "type": {
+                "text": "string | null"
+              },
+              "default": "null",
+              "description": "Accessible name used when the `title` slot is empty. Mirrors the host's `aria-label`.",
+              "attribute": "aria-label"
             },
             {
               "kind": "field",
@@ -4612,7 +4629,16 @@
               "type": {
                 "text": "\"dialog\" | \"alertdialog\""
               },
-              "fieldName": "role"
+              "fieldName": "role",
+              "description": "`dialog` or `alertdialog`. Applied to the inner dialog element, never to the host."
+            },
+            {
+              "name": "aria-label",
+              "type": {
+                "text": "string | null"
+              },
+              "fieldName": "ariaLabel",
+              "description": "Accessible name used when the `title` slot is empty. Mirrors the host's `aria-label`."
             },
             {
               "name": "close-text",
@@ -4798,7 +4824,7 @@
               "type": {
                 "text": "CustomEvent"
               },
-              "description": ""
+              "description": "once per close, on the dropdown itself; it does not bubble"
             }
           ]
         }
@@ -7107,7 +7133,7 @@
           "name": "DjPopup",
           "customElement": true,
           "tagName": "dj-popup",
-          "description": "positions slotted content as an overlay, flipping to the opposite side when there isn't room in the preferred position. Anchor it by setting the `anchor` property to an element, or supply viewport coordinates via the `x-*`/`y-*` attributes.\n\nWhile open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event. Content goes in the default slot.",
+          "description": "positions slotted content as an overlay, flipping to the opposite side when there isn't room in the preferred position. Anchor it by setting the `anchor` property to an element, or supply viewport coordinates via the `x-*`/`y-*` attributes.\n\nWhile open it locks body scroll and closes on Escape or underlay click, emitting a `dj-close` event on the popup itself. The event does not bubble, so a popup closing inside a select or a dialog is never heard by listeners on the outer element. Escape closes only the overlay opened last (see `pushOverlay` in `@dojo-ng/dojo-element`). Content goes in the default slot.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -8825,7 +8851,7 @@
           "name": "DjSelect",
           "customElement": true,
           "tagName": "dj-select",
-          "description": "a form-associated single-select combobox. A trigger shows the selected option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>` of `options`. Selecting sets `value`, closes, and returns focus. ARIA combobox/listbox. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.",
+          "description": "a form-associated single-select combobox. A trigger shows the selected option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>` of `options`. Selecting, Escape, and a click outside all close it and return focus to the trigger; tabbing away closes it and leaves focus where it went. ARIA combobox/listbox. Changing `required` revalidates at once. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -9124,7 +9150,7 @@
           "name": "DjSlidePane",
           "customElement": true,
           "tagName": "dj-slide-pane",
-          "description": "a panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.",
+          "description": "a panel that slides in from an edge. Slots: `title`, default (content). Closes on Escape, the close button, and underlay click. Locks body scroll while open, traps focus, and returns focus to where it was on close. Escape closes only the overlay opened last, so a popup open inside the pane closes first. Emits `dj-close` on the pane itself; it does not bubble. Width/height comes from `width` (px). Parts: `underlay`, `pane`, `title`, `close`, `content`.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -9569,7 +9595,7 @@
           "name": "DjSnackbar",
           "customElement": true,
           "tagName": "dj-snackbar",
-          "description": "a toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`.",
+          "description": "a toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`.\n\nAnnouncements: the snackbar keeps two empty live regions in the accessibility tree at all times, hidden or not, and copies the message text into one when it opens. `type=\"error\"` uses the assertive region (`role=\"alert\"`); every other type uses the polite one (`role=\"status\"`). Changing the message while open announces the new text. The visible message is hidden from assistive tech so it is not read twice; the `actions` slot stays reachable.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -10231,7 +10257,7 @@
           "name": "DjTabContainer",
           "customElement": true,
           "tagName": "dj-tab-container",
-          "description": "tabbed interface. `tabs` describes the buttons; the panels are slotted children in the same order (one per tab). The active panel is shown, the rest hidden. ARIA tablist/tab/tabpanel with roving arrow/Home/End keyboard. Local coordination of slotted panels \u2014 no store needed.",
+          "description": "tabbed interface. `tabs` describes the buttons; the panels are slotted children in the same order (one per tab). The active panel is shown, the rest hidden. ARIA tablist/tab/tabpanel with roving arrow/Home/End keyboard; arrows, Home and End skip disabled tabs. Delete closes a `closeable` tab (the tab advertises it with `aria-keyshortcuts`); its close icon is for the pointer only, so no button sits inside a tab. If `active-index` points at no tab or a disabled one, the first enabled tab keeps the Tab-key stop. Each tab controls its panel (`aria-controls`, where the browser supports element references) and each panel is labelled with its tab's name unless it has its own label. Inactive panels stay hidden even when page CSS sets their `display`. Local coordination of slotted panels \u2014 no store needed.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -10792,7 +10818,7 @@
           "name": "DjTextInput",
           "customElement": true,
           "tagName": "dj-text-input",
-          "description": "a form-associated text field that composes `<dj-label>` and `<dj-helper-text>`. It participates in native forms via ElementInternals: it sets its form value and mirrors the inner input's constraint validity to the host.",
+          "description": "",
           "superclass": {
             "name": "DojoElement"
           },
@@ -11465,7 +11491,7 @@
           "name": "DjTitlePane",
           "customElement": true,
           "tagName": "dj-title-pane",
-          "description": "a collapsible panel with a title bar. Content goes in the default slot. Click the title (when `closeable`) to toggle; emits `dj-toggle` with `{ open }`.",
+          "description": "a collapsible panel with a title bar. Content goes in the default slot. Click the title (when `closeable`) to toggle; emits `dj-toggle` with `{ open }`. Collapsed content is hidden from assistive tech and cannot take focus (`inert` plus `visibility: hidden` once the collapse animation ends). The title button names the content region it controls with `aria-controls`. `closeable=\"false\"` turns toggling off.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -11723,7 +11749,7 @@
           "name": "DjTooltip",
           "customElement": true,
           "tagName": "dj-tooltip",
-          "description": "shows tip content next to its trigger on hover/focus. The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown. Escape hides a tip that hover or focus showed, without moving the pointer or focus; entering or focusing the trigger again shows it again.",
+          "description": "shows tip content next to its trigger on hover/focus. The trigger goes in the default slot, the tip in the `content` slot. Set `open` to force it shown. Escape hides a tip that hover or focus showed, without moving the pointer or focus; entering or focusing the trigger again shows it again. When a tooltip is open over a dialog, Escape hides the tip first and leaves the dialog open.\n\nThe tip describes its trigger: the slotted trigger element gets `aria-describedby` pointing at the slotted tip (an `id` is generated for the tip when it has none). Put the tooltip around an element that carries the role, such as a native `<button>`; a custom element whose focusable part sits in its own shadow root cannot receive the reference.\n\nThe tip renders in the browser top layer where the Popover API exists, so an `overflow: hidden` or transformed ancestor cannot clip it. It sits on the `orientation` side and flips to the opposite side when there is no room there, then stays inside the viewport.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -12227,7 +12253,7 @@
           "name": "DjTriggerPopup",
           "customElement": true,
           "tagName": "dj-trigger-popup",
-          "description": "clicking the trigger (default slot) opens a `<dj-popup>` anchored to it, holding the `content` slot. `match-width` sizes the popup to the trigger.",
+          "description": "clicking the trigger (default slot) opens a `<dj-popup>` anchored to it, holding the `content` slot. `match-width` sizes the popup to the trigger; set `match-width=\"false\"` to size it to its content. Emits `dj-open` when it opens and `dj-close` (on this element; it does not bubble) when it closes.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -12314,6 +12340,13 @@
           "events": [
             {
               "name": "dj-open",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            },
+            {
+              "name": "dj-close",
               "type": {
                 "text": "CustomEvent"
               },

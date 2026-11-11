@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { property } from "lit/decorators.js";
-import DojoElement, { lockBodyScroll } from "@dojo-ng/dojo-element";
+import DojoElement, { lockBodyScroll, defaultTrueBoolean, pushOverlay } from "@dojo-ng/dojo-element";
 import styles from "./dj-popup.styles.js";
 
 export type PopupPosition = "above" | "below" | "left" | "right";
@@ -11,7 +11,10 @@ export type PopupPosition = "above" | "below" | "left" | "right";
  * property to an element, or supply viewport coordinates via the `x-*`/`y-*` attributes.
  *
  * While open it locks body scroll and closes on Escape or underlay click, emitting a
- * `dj-close` event. Content goes in the default slot.
+ * `dj-close` event on the popup itself. The event does not bubble, so a popup closing inside a
+ * select or a dialog is never heard by listeners on the outer element. Escape closes only the
+ * overlay opened last (see `pushOverlay` in `@dojo-ng/dojo-element`). Content goes in the
+ * default slot.
  *
  * Parts: `underlay`, `wrapper`.
  *
@@ -26,7 +29,7 @@ export class DjPopup extends DojoElement {
 	@property({ reflect: true }) position: PopupPosition = "below";
 	@property({ type: Boolean, attribute: "underlay-visible", reflect: true }) underlayVisible = false;
 	/** Lock body scroll while open (default true). Dropdowns set this false. */
-	@property({ type: Boolean, attribute: "scroll-lock" }) scrollLock = true;
+	@property({ type: Boolean, attribute: "scroll-lock", converter: defaultTrueBoolean }) scrollLock = true;
 
 	/** Viewport-coordinate fallbacks used when no `anchor` element is set. */
 	@property({ type: Number, attribute: "y-top" }) yTop = 0;
@@ -48,17 +51,14 @@ export class DjPopup extends DojoElement {
 	#repositionWatching = false;
 	#resizeObserver?: ResizeObserver;
 
-	private readonly onKeyDown = (event: KeyboardEvent) => {
-		if (event.key === "Escape" && this.open) {
-			this.close();
-		}
-	};
+	#releaseOverlay?: () => void;
+	#overlay = { onEscape: () => this.close() };
 
 	/** Close the popup and emit `dj-close`. */
 	close() {
 		if (!this.open) return;
 		this.open = false;
-		this.emit("dj-close");
+		this.emit("dj-close", { bubbles: false, composed: false });
 	}
 
 	private anchorRect() {
@@ -164,12 +164,13 @@ export class DjPopup extends DojoElement {
 
 	override connectedCallback() {
 		super.connectedCallback();
-		document.addEventListener("keydown", this.onKeyDown);
+		if (this.open) this.#releaseOverlay ??= pushOverlay(this.#overlay);
 	}
 
 	override disconnectedCallback() {
 		super.disconnectedCallback();
-		document.removeEventListener("keydown", this.onKeyDown);
+		this.#releaseOverlay?.();
+		this.#releaseOverlay = undefined;
 		this.unlockScroll();
 		this.stopRepositionWatch();
 	}
@@ -212,8 +213,11 @@ export class DjPopup extends DojoElement {
 				// Enter the top layer BEFORE reposition() measures the wrapper — a popover is
 				// display:none until shown, which would yield a zero-size rect.
 				this.promoteTopLayer();
+				this.#releaseOverlay ??= pushOverlay(this.#overlay);
 				if (this.scrollLock) this.lockScroll();
 			} else {
+				this.#releaseOverlay?.();
+				this.#releaseOverlay = undefined;
 				this.unlockScroll();
 				this.stopRepositionWatch();
 			}

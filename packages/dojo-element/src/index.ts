@@ -7,6 +7,9 @@ export { lockBodyScroll } from "./scroll-lock.js";
 export { FormControl } from "./form-control.js";
 export type { FormRestoreState, FormControlMixinInterface } from "./form-control.js";
 export { TokenFlagController } from "./token-flag-controller.js";
+export { defaultTrueBoolean } from "./boolean-attribute.js";
+export { pushOverlay, isTopOverlay, overlayCount } from "./overlay-stack.js";
+export type { OverlayEntry } from "./overlay-stack.js";
 
 // Match registered event types whose detail is a required, non-empty object.
 type EventTypeRequiresDetail<T> = T extends keyof GlobalEventHandlersEventMap

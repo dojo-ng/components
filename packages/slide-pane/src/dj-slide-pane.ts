@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { property } from "lit/decorators.js";
-import DojoElement, { collectFocusables, trapTabKey, firstFocusable, reducedMotion, lockBodyScroll } from "@dojo-ng/dojo-element";
+import DojoElement, { collectFocusables, trapTabKey, firstFocusable, reducedMotion, lockBodyScroll, defaultTrueBoolean, deepActiveElement, pushOverlay } from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import "@dojo-ng/icon";
 import styles from "./dj-slide-pane.styles.js";
@@ -12,7 +12,9 @@ export type SlidePaneAlign = "left" | "right" | "top" | "bottom";
 /**
  * `<dj-slide-pane>` — a panel that slides in from an edge. Slots: `title`, default
  * (content). Closes on Escape, the close button, and underlay click. Locks body scroll
- * while open. Emits `dj-close`. Width/height comes from `width` (px). Parts: `underlay`,
+ * while open, traps focus, and returns focus to where it was on close. Escape closes only the
+ * overlay opened last, so a popup open inside the pane closes first. Emits `dj-close` on the pane
+ * itself; it does not bubble. Width/height comes from `width` (px). Parts: `underlay`,
  * `pane`, `title`, `close`, `content`.
  *
  * @cssprop [--dj-slide-pane-size=320px] - Width (left/right) or height (top/bottom) of the pane.
@@ -26,31 +28,42 @@ export class DjSlidePane extends DojoElement {
 	@property({ type: Boolean, reflect: true }) open = false;
 	@property({ reflect: true }) align: SlidePaneAlign = "left";
 	@property({ type: Number }) width = 320;
-	@property({ type: Boolean }) underlay = true;
+	@property({ type: Boolean, converter: defaultTrueBoolean }) underlay = true;
 	@property({ attribute: "close-text" }) closeText?: string;
 
 	#i18n = new LocaleController(this);
 	#releaseScroll?: () => void;
 
-	private readonly onKeyDown = (event: KeyboardEvent) => {
-		if (!this.open) return;
-		if (event.key === "Escape") { event.stopPropagation(); this.close(); return; }
-		if (event.key === "Tab") trapTabKey(event, collectFocusables(this.renderRoot as ShadowRoot, this));
+	#releaseOverlay?: () => void;
+	#previousFocus: HTMLElement | null = null;
+	#overlay = {
+		onEscape: () => this.close(),
+		onTab: (event: KeyboardEvent) => trapTabKey(event, collectFocusables(this.renderRoot as ShadowRoot, this)),
 	};
-	close() { if (!this.open) return; this.open = false; this.emit("dj-close"); }
+	close() { if (!this.open) return; this.open = false; this.emit("dj-close", { bubbles: false, composed: false }); }
 
-	connectedCallback() { super.connectedCallback(); document.addEventListener("keydown", this.onKeyDown); }
-	disconnectedCallback() { super.disconnectedCallback(); document.removeEventListener("keydown", this.onKeyDown); this.unlock(); }
+	override connectedCallback() { super.connectedCallback(); if (this.open) this.#register(); }
+	override disconnectedCallback() { super.disconnectedCallback(); this.#release(); this.unlock(); }
+	#register() { if (!this.#releaseOverlay) this.#releaseOverlay = pushOverlay(this.#overlay); }
+	#release() { this.#releaseOverlay?.(); this.#releaseOverlay = undefined; }
+	protected override willUpdate(changed: Map<PropertyKey, unknown>) {
+		super.willUpdate(changed);
+		if (changed.has("open") && this.open) this.#previousFocus = deepActiveElement() as HTMLElement | null;
+	}
 	private lock() { if (!this.#releaseScroll) this.#releaseScroll = lockBodyScroll(); }
 	private unlock() { this.#releaseScroll?.(); this.#releaseScroll = undefined; }
 	protected override updated(changed: Map<PropertyKey, unknown>) {
 		if (!changed.has("open")) return;
 		if (this.open) {
+			this.#register();
 			this.lock();
 			const first = firstFocusable(this) ?? this.renderRoot.querySelector<HTMLElement>("[part=close]");
 			first?.focus();
-		} else {
+		} else if (changed.get("open") === true) {
+			this.#release();
 			this.unlock();
+			if (this.#previousFocus?.isConnected) this.#previousFocus.focus?.();
+			this.#previousFocus = null;
 		}
 	}
 
@@ -65,10 +78,12 @@ export class DjSlidePane extends DojoElement {
 				class="pane pane--${this.align} ${this.open ? "pane--open" : ""}"
 				style=${`--dj-slide-pane-size:${this.width}px`}
 				role="dialog"
+				aria-modal=${this.open ? "true" : nothing}
+				aria-labelledby="title"
 				aria-hidden=${this.open ? "false" : "true"}
 			>
 				<div part="title" class="title">
-					<span class="title__text"><slot name="title"></slot></span>
+					<span class="title__text" id="title"><slot name="title"></slot></span>
 					<button part="close" class="close" type="button" aria-label=${this.closeText ?? messages.resolve("dj", this.#i18n.locale, "close") ?? "Close"} @click=${() => this.close()}>
 						<dj-icon><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none"/></svg></dj-icon>
 					</button>

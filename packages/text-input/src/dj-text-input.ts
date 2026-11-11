@@ -17,6 +17,9 @@ export type TextInputType = "text" | "email" | "number" | "password" | "search" 
  * Events: native `input` (composed, crosses the shadow boundary) and a re-dispatched
  * `change`.
  */
+/** Properties that change what the inner input accepts; see `updated()`. */
+const VALIDATION_PROPS = ["value", "type", "required", "pattern", "min", "max", "step", "minlength", "maxlength"];
+
 export class DjTextInput extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles: CSSResultGroup = [styles, reducedMotion];
 	static override version = "0.1.4";
@@ -106,7 +109,11 @@ export class DjTextInput extends FormControl(DojoElement) implements Partial<Doj
 	}
 
 	protected override firstUpdated() { this.syncValidity(); }
-	protected override updated(changed: Map<PropertyKey, unknown>) { if (changed.has("value")) this.syncValidity(); }
+	/** Properties that change what the inner input accepts. A change to any of them revalidates,
+	 * so adding `required` or a `pattern` to a field updates `validity` and the form at once. */
+	protected override updated(changed: Map<PropertyKey, unknown>) {
+		if (VALIDATION_PROPS.some((p) => changed.has(p))) this.syncValidity();
+	}
 
 	private onInput(event: Event) {
 		this.value = (event.target as HTMLInputElement).value;

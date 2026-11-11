@@ -73,7 +73,7 @@ A button trigger plus a dj-list menu. Enter/Arrow keys drive it; choosing an ite
 ## Events
 
 - `dj-open`
-- `dj-close`
+- `dj-close`: Once per close, on the dropdown itself; it does not bubble.
 
 ## Examples
 

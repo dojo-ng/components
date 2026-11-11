@@ -302,6 +302,7 @@ declare module "@dojo-ng/framework" {
         "modal"?: DjDialog["modal"];
         "underlay"?: DjDialog["underlay"];
         "role"?: DjDialog["role"];
+        "aria-label"?: DjDialog["ariaLabel"];
         "close-text"?: DjDialog["closeText"];
       };
       "dj-dropdown": DjVNodeBase & {

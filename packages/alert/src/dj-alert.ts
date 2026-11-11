@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import type { CSSResultGroup, TemplateResult } from "lit";
 import { property } from "lit/decorators.js";
-import DojoElement, { baseStyles } from "@dojo-ng/dojo-element";
+import DojoElement, { baseStyles, defaultTrueBoolean } from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import "@dojo-ng/icon";
 import styles from "./dj-alert.styles.js";
@@ -54,7 +54,7 @@ export class DjAlert extends DojoElement {
 	/** Show a close button. */
 	@property({ type: Boolean }) closable = false;
 	/** Whether the alert is shown. Reflected; defaults true so markup alerts appear. */
-	@property({ type: Boolean, reflect: true }) open = true;
+	@property({ type: Boolean, reflect: true, converter: defaultTrueBoolean }) open = true;
 
 	#i18n = new LocaleController(this);
 

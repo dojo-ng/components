@@ -67,7 +67,10 @@ export class DjTextArea extends FormControl(DojoElement) implements Partial<Dojo
 		this.valid = this.dirty ? v.valid : undefined;
 	}
 	protected override firstUpdated() { this.syncValidity(); }
-	protected override updated(changed: Map<PropertyKey, unknown>) { if (changed.has("value")) this.syncValidity(); }
+	/** A change to `required` or a length limit revalidates at once, like a change to `value`. */
+	protected override updated(changed: Map<PropertyKey, unknown>) {
+		if (["value", "required", "minlength", "maxlength"].some((p) => changed.has(p))) this.syncValidity();
+	}
 
 	private onInput(event: Event) {
 		this.value = (event.target as HTMLTextAreaElement).value;

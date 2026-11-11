@@ -4,6 +4,8 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
+Emits `dj-open` when it opens and `dj-close` (on this element; it does not bubble) when it closes.
+
 ## Install
 
 ```bash
@@ -39,6 +41,7 @@ The default slot is the trigger; `content` is shown on right-click.
 ## Events
 
 - `dj-open`
+- `dj-close`
 
 ## Theming
 

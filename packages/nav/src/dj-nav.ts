@@ -9,6 +9,7 @@ import DojoElement, {
 	trapTabKey,
 	dismissOnFocusOut,
 	lockBodyScroll,
+	pushOverlay,
 } from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import { getHistory, whenHistory, type HistoryInstance, type NavigateDetail } from "@dojo-ng/history/handle";
@@ -148,6 +149,11 @@ export class DjNav extends DojoElement {
 
 		if (!changed.has("open") && !changed.has("panel")) return;
 
+		// Escape goes through the shared overlay stack while the panel is open, so a popup
+		// opened inside the panel closes first and the panel stays open.
+		if (this.open) this.#releaseOverlay ??= pushOverlay(this.#overlay);
+		else { this.#releaseOverlay?.(); this.#releaseOverlay = undefined; }
+
 		if (this.open && (this.panel === "overlay" || this.panel === "drawer")) {
 			if (!this.#releaseScroll) this.#releaseScroll = lockBodyScroll();
 		} else {
@@ -165,14 +171,15 @@ export class DjNav extends DojoElement {
 
 	override connectedCallback() {
 		super.connectedCallback();
-		document.addEventListener("keydown", this.#onDocumentKeydown);
+		if (this.open) this.#releaseOverlay ??= pushOverlay(this.#overlay);
 		this.addEventListener("click", this.#onLinkClick);
 		this.#follow();
 	}
 
 	override disconnectedCallback() {
 		super.disconnectedCallback();
-		document.removeEventListener("keydown", this.#onDocumentKeydown);
+		this.#releaseOverlay?.();
+		this.#releaseOverlay = undefined;
 		this.removeEventListener("click", this.#onLinkClick);
 		this.#stop();
 		this.#releaseScroll?.();
@@ -224,24 +231,13 @@ export class DjNav extends DojoElement {
 		this.#collapse.refresh();
 	}
 
-	/** Document-level, not shadow-tree-scoped — the same shape `dj-slide-pane`, `dj-dialog`, and
-	 * `dj-popup` already use for their own Escape handling, and for the same reason: a listener
-	 * that only fires while the event bubbles up FROM wherever focus happens to be depends on
-	 * focus actually still being somewhere inside this component when Escape is pressed. Drawer
-	 * already gets this for free (`dj-slide-pane`'s own document listener, mirrored into `hide()`
-	 * via the `dj-close` handler in `#renderPanel`); dropdown and overlay had no such handler of
-	 * their own until this one, relying on `#onTabKeydown` below, which — being shadow-scoped —
-	 * cannot close the panel once focus has ended up outside this component's tree by any route
-	 * other than a Tab this component itself trapped. Calling `hide()` twice in the same tick
-	 * (this listener and, for drawer, slide-pane's own) is harmless: `#close()` no-ops once
-	 * `open` is already false. */
-	#onDocumentKeydown = (event: KeyboardEvent) => {
-		if (!this.open) return;
-		if (event.key === "Escape") {
-			event.stopPropagation();
-			this.hide();
-		}
-	};
+	/** Escape closes the open panel from anywhere, not only while focus is inside this component:
+	 * the panel registers with the shared overlay stack (`pushOverlay`) while open. The stack
+	 * hands Escape to the overlay opened last, so a popup open inside the panel closes first.
+	 * For drawer, `dj-slide-pane` registers too; whichever is on top calls `hide()`, and the
+	 * other no-ops once `open` is false. */
+	#releaseOverlay?: () => void;
+	#overlay = { onEscape: () => { if (this.open) this.hide(); } };
 
 	/** Bound on the wrapper around BOTH the trigger and the panel, not on the panel alone: the
 	 * trigger is the overlay trap's own first stop (see the ordering note on

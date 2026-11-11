@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Content goes in the default slot. Click the title (when `closeable`) to toggle; emits `dj-toggle` with `{ open }`.
+Content goes in the default slot. Click the title (when `closeable`) to toggle; emits `dj-toggle` with `{ open }`. Collapsed content is hidden from assistive tech and cannot take focus (`inert` plus `visibility: hidden` once the collapse animation ends). The title button names the content region it controls with `aria-controls`. `closeable="false"` turns toggling off.
 
 ## Install
 

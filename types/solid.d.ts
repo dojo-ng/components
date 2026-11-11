@@ -296,6 +296,7 @@ declare module "solid-js" {
         "modal"?: DjDialog["modal"];
         "underlay"?: DjDialog["underlay"];
         "role"?: DjDialog["role"];
+        "aria-label"?: DjDialog["ariaLabel"];
         "close-text"?: DjDialog["closeText"];
       };
       "dj-dropdown": JSX.HTMLAttributes<DjDropdown> & {

@@ -16,6 +16,9 @@ export default css`
 	.tab:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: -2px; }
 	.close { display: inline-flex; align-items: center; justify-content: center; border: none; background: transparent; cursor: pointer; color: inherit; padding: 0; width: 1.5rem; height: 1.5rem; border-radius: var(--dj-input-border-radius-small, 0.1875rem); }
 	.close svg, .close .icon { width: 1rem; height: 1rem; }
+	/* Inner !important beats page rules, so an inactive panel stays hidden even when the page
+	   gives panels a display of their own. */
+	::slotted([hidden]) { display: none !important; }
 	.panels { padding: var(--dj-spacing-medium, 1rem) 0; }
 	:host([align-buttons="bottom"]) { display: flex; flex-direction: column; }
 	:host([align-buttons="bottom"]) .tablist { order: 2; border-bottom: none; border-top: 1px solid var(--dj-color-border, #d1d5db); }

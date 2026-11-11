@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
-import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
+import DojoElement, { reducedMotion, defaultTrueBoolean } from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults, getDir } from "@dojo-ng/i18n";
 import styles from "./dj-carousel.styles.js";
 
@@ -62,7 +62,7 @@ export class DjCarousel extends DojoElement {
 	/** Items shown at once; each item gets `1/n` of the viewport, gap-adjusted. */
 	@property({ attribute: "per-view", type: Number }) perView = 1;
 	/** Show prev/next buttons (disabled at the ends). */
-	@property({ type: Boolean }) nav = true;
+	@property({ type: Boolean, converter: defaultTrueBoolean }) nav = true;
 	/** Show one navigation dot per page (a page is a leading position; see `per-view`). */
 	@property({ type: Boolean }) dots = false;
 	/** Accessible name for the carousel region (recommended). */

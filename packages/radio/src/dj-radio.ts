@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { property, state, query } from "lit/decorators.js";
-import DojoElement, { DojoFormControl, reducedMotion, FormControl } from "@dojo-ng/dojo-element";
+import DojoElement, { DojoFormControl, reducedMotion, FormControl, defaultTrueBoolean } from "@dojo-ng/dojo-element";
 import "@dojo-ng/label";
 import styles from "./dj-radio.styles.js";
 
@@ -39,7 +39,7 @@ export class DjRadio extends FormControl(DojoElement) implements Partial<DojoFor
 	@property({ type: Boolean, reflect: true }) required = false;
 	@property({ attribute: "label-hidden", type: Boolean }) labelHidden = false;
 	/** Whether this radio is in the tab order. The group sets this for roving tabindex. */
-	@property({ type: Boolean }) tabbable = true;
+	@property({ type: Boolean, converter: defaultTrueBoolean }) tabbable = true;
 	@state() private valid?: boolean;
 
 	constructor() { super(); this.#internals = this.attachInternals(); }

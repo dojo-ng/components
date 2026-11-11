@@ -88,7 +88,7 @@ function submittedValues(el: Field): unknown[] {
  */
 
 export class DjForm extends DojoElement {
-	static override version="0.1.2";
+	static override version="0.1.3";
 	static override styles=css`:host{display:flex;flex-wrap:wrap;gap:var(--dj-spacing-medium,1rem);} :host([column]){flex-direction:column;}`;
 	@property({type:Boolean,reflect:true}) column=false;
 	/** Skip the validity check in `submit()`, like a native form's `novalidate`. */

@@ -43,7 +43,7 @@ interface DjListLike extends HTMLElement {
  */
 export class DjDropdown extends DojoElement {
 	static override styles: CSSResultGroup = styles;
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 
 	/** Whether the menu is open. Reflected so page CSS can target `:host([open])`. */
 	@property({ type: Boolean, reflect: true }) open = false;

@@ -1,5 +1,23 @@
 # @dojo-ng/radio-group
 
+## 0.1.3
+
+### Patch Changes
+
+- Fix form reset and `dj-form` (CB30).
+
+  - Every form control now has `defaultValue`, the `value` attribute, as on a native input. A form reset returns each control to it. Before, some controls went back to the attribute and others (`dj-select`, `dj-list`, `dj-radio-group`, `dj-time-picker`, `dj-typeahead`, `dj-rate`, `dj-checkbox-group`, `dj-chip-typeahead`, `dj-range-slider`) always went back to empty.
+  - `dj-form` treats only form controls as fields: `dj-*` form controls and native inputs, selects, and text areas. A named title pane, button, or icon is no longer gathered on submit or cleared on reset.
+  - `dj-form` submits native controls the way a native form does. A native text input was left out before, because it has a `checked` property that is always false. A multi-select now submits every selected option.
+  - `dj-form`'s `reset()` resets native controls the native way (a checkbox goes back to its `checked` attribute instead of having its value erased), and it clears the `user-valid`/`user-invalid` states, as a native form reset does. Form controls get a `resetInteraction()` method for this.
+  - A required `dj-radio-group` now shows as valid when the choice is made with the arrow keys, not only with a click.
+
+- Fix form controls that stayed disabled after `disabled` was turned back off (CB34). The browser reports the control's own `disabled` change while Lit is part way through an update, and that change was lost, so the inner control (the `dj-select` trigger, the native input) stayed disabled even though the host looked enabled. The control now renders again once the update finishes. `dj-radio-group` also re-enables the slotted radios it disabled when the group is enabled again, and leaves alone any radio the page disabled itself.
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @dojo-ng/dojo-element@0.1.4
+
 ## 0.1.2
 
 ### Patch Changes

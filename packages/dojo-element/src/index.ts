@@ -9,6 +9,7 @@ export type { FormRestoreState, FormControlMixinInterface } from "./form-control
 export { TokenFlagController } from "./token-flag-controller.js";
 export { defaultTrueBoolean } from "./boolean-attribute.js";
 export { pushOverlay, isTopOverlay, overlayCount } from "./overlay-stack.js";
+export { isTextEntryTarget } from "./text-entry.js";
 export type { OverlayEntry } from "./overlay-stack.js";
 
 // Match registered event types whose detail is a required, non-empty object.

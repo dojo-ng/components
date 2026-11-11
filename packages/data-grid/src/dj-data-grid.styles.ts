@@ -15,7 +15,13 @@ export default css`
 	   minmax(0,1fr) template) instead of forcing the track wider and breaking alignment. */
 	.subcell { min-width: 0; padding: var(--dj-spacing-3x-small, .25rem) var(--dj-spacing-small, .75rem); }
 	.hcell { min-width: 0; overflow: hidden; display: flex; align-items: center; gap: .25rem; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); font-weight: var(--dj-font-weight-semibold, 600); color: var(--dj-color-text-muted, #6b7280); user-select: none; }
-	.hcell.sortable { cursor: pointer; } .hcell.sortable:hover { color: var(--dj-color-text, #1f2937); }
+	/* A sortable header's button fills the cell, so the whole cell stays the click target. */
+	.hcell.sortable { padding: 0; } .hcell.sortable:hover { color: var(--dj-color-text, #1f2937); }
+	.sortbtn { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: .25rem; width: 100%; min-width: 0; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); cursor: pointer; }
+	.sortbtn:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: -2px; }
+	.label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* The keyboard position on the header row, shown while the grid is focused. */
+	.grid:focus .hcell--active { color: var(--dj-color-text, #1f2937); box-shadow: inset 0 -3px 0 var(--dj-color-primary-600, #2563eb); }
 	.sortind { display: inline-flex; opacity: .7; width: 1em; }
 	.scroll { overflow: auto; outline: none; }
 	/* The ring goes on .grid because that is the element with tabindex; .scroll never takes focus. */
@@ -42,6 +48,7 @@ export default css`
 	   an outline for the active (keyboard) row so both remain visible. */
 	@media (forced-colors: active) {
 		.vrow--active { background: Canvas; outline: 2px solid Highlight; outline-offset: -2px; }
+		.grid:focus .hcell--active { outline: 2px solid Highlight; outline-offset: -2px; }
 		.vrow--selected, .vrow--selected:hover { background: Highlight; color: HighlightText; }
 	}
 	/* Printing (dj-data-grid.ts's #renderPrintTable, plain row path only): a genuine <table>/<thead>,

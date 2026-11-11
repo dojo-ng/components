@@ -62,6 +62,13 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 - The active row (the keyboard cursor) and each selected row carry extra parts, `row--active` and `row--selected`, alongside `row`, so a consumer can restyle them: `dj-data-grid::part(row--selected) { color: inherit }`. Plugin-contributed row parts (from `@dojo-ng/data-grid-rowstate`) are kept alongside them. Match rows with `[part~="row"]`, not `[part="row"]`, since a row can carry several parts.
 - `dj-active-change` fires when the user moves the active row with the keyboard or a click, with detail `{ index, row }`, where `row` is the original row data. Setting `activeIndex` from code does not fire it, the same way setting a native input's `value` fires no `change`.
 
+## Keyboard
+
+- The grid is one tab stop. ArrowUp and ArrowDown move the active row, PageUp and PageDown move by a screen, Home and End go to the first and last row, Space selects, and Enter activates (see `activation`).
+- Sorting from the keyboard: ArrowUp on the first row moves to the header row. Left and Right move between headers (mirrored in right-to-left layouts), Home and End go to the first and last header, Enter or Space sorts the column, and ArrowDown returns to the first row.
+- A sortable header holds a `<button part="sort-button">`, which is not a tab stop of its own. `aria-sort` is `ascending` or `descending` on the sorted column and absent elsewhere. A column with `sortable: false` gets no button, so a plugin control in its header (the select-all checkbox) is never inside one.
+- Keys typed into a control inside the grid (a filter input, an edit field) go to that control, not the grid.
+
 ## Printing
 
 - When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and browsers repeat the header on each printed page. This does not apply to rows drawn by the detail plugin (`@dojo-ng/data-grid-detail`).
@@ -141,6 +148,7 @@ Limits:
 - `chrome-top`
 - `chrome-bottom`
 - `subhead`
+- `sort-button`
 - `detail`
 
 ## Events

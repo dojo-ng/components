@@ -1,6 +1,9 @@
 // dj-board, in a real browser: it groups records into lanes and renders cards, and clicking a
 // card emits dj-card-click; plus axe on a populated board. (Drag-to-move is pointer/dnd-heavy
 // and controlled by the app; the click + render + a11y are the reliable browser checks here.)
+import { html } from "lit";
+import { sendKeys } from "@web/test-runner-commands";
+import { deepActiveElement } from "../../packages/dojo-element/dist/index.js";
 import { mount, cleanup, make, assert, assertEqual } from "./helpers.js";
 import { assertNoViolations } from "./a11y.js";
 import "../../packages/board/dist/index.js";
@@ -41,5 +44,35 @@ describe("dj-board", () => {
 		const el = await mount(build());
 		await el.updateComplete;
 		await assertNoViolations(el);
+	});
+
+	// GA1 (CB18's sibling): keys typed in a control inside a custom card belong to the control.
+	it("keys typed in an input inside renderCard reach the input, not the board", async () => {
+		const el = build();
+		el.renderCard = (c) => html`<input aria-label=${`Note for ${c.title}`}>`;
+		await mount(el);
+		await el.updateComplete;
+		let clicks = 0;
+		el.addEventListener("dj-card-click", () => clicks++);
+		const input = el.shadowRoot.querySelector('[part="card"] input');
+		input.focus();
+		await sendKeys({ type: "ab" });
+		await sendKeys({ press: "Space" });
+		await sendKeys({ type: "m" });
+		await sendKeys({ press: "ArrowLeft" });
+		assertEqual(input.selectionStart, 3, "ArrowLeft moved the caret");
+		// Home/End caret moves differ by platform, so check that nothing preventDefaults them.
+		const prevented = [];
+		const spy = (e) => { if (e.defaultPrevented) prevented.push(e.key); };
+		document.addEventListener("keydown", spy);
+		for (const key of ["Home", "End", "ArrowDown", "ArrowRight"]) await sendKeys({ press: key });
+		document.removeEventListener("keydown", spy);
+		await sendKeys({ press: "Enter" });
+		await el.updateComplete;
+		assertEqual(prevented.join(), "", "no key was preventDefaulted");
+		assertEqual(input.value, "ab m", "Space and m reached the input");
+		assertEqual(deepActiveElement(), input, "focus stayed in the input");
+		assertEqual(el.menu, null, "no move menu opened");
+		assertEqual(clicks, 0, "Enter did not emit dj-card-click");
 	});
 });

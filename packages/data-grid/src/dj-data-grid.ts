@@ -1,7 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { property, state, query } from "lit/decorators.js";
 import { ref } from "lit/directives/ref.js";
-import DojoElement from "@dojo-ng/dojo-element";
+import DojoElement, { isTextEntryTarget } from "@dojo-ng/dojo-element";
 import {
 	createTable, getCoreRowModel, getSortedRowModel, functionalUpdate,
 	type Table, type TableOptionsResolved, type TableState, type ColumnDef, type Cell, type Header as TableHeader,
@@ -121,6 +121,20 @@ export type ActivationMode = "none" | "click" | "double";
  *   with detail `{ index, row }`, where `row` is the original row data. Setting `activeIndex`
  *   from code does not fire it, the same way setting a native input's `value` fires no `change`.
  *
+ * #### Keyboard
+ * - The grid is one tab stop. ArrowUp and ArrowDown move the active row, PageUp and PageDown
+ *   move by a screen, Home and End go to the first and last row, Space selects, and Enter
+ *   activates (see `activation`).
+ * - Sorting from the keyboard: ArrowUp on the first row moves to the header row. Left and Right
+ *   move between headers (mirrored in right-to-left layouts), Home and End go to the first and
+ *   last header, Enter or Space sorts the column, and ArrowDown returns to the first row.
+ * - A sortable header holds a `<button part="sort-button">`, which is not a tab stop of its own.
+ *   `aria-sort` is `ascending` or `descending` on the sorted column and absent elsewhere. A column
+ *   with `sortable: false` gets no button, so a plugin control in its header (the select-all
+ *   checkbox) is never inside one.
+ * - Keys typed into a control inside the grid (a filter input, an edit field) go to that
+ *   control, not the grid.
+ *
  * #### Printing
  * - When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and
  *   browsers repeat the header on each printed page. This does not apply to rows drawn by the
@@ -199,7 +213,7 @@ export type ActivationMode = "none" | "click" | "double";
  * first and last rendered row-model indices, the total row count, and the full index list; `start`
  * and `end` are -1 when nothing is rendered), `dj-rows-request` (detail `{ start, end, epoch, reason }`,
  * remote mode only). Parts: `grid`, `head`, `row`, `row--active`, `row--selected`,
- * `row--placeholder`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`.
+ * `row--placeholder`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`, `sort-button`.
  *
  * @cssprop --dj-data-grid-placeholder - The bar drawn in each cell of a row that is not loaded yet.
  */
@@ -242,6 +256,9 @@ export class DjDataGrid extends DojoElement {
 	 *  cleared by `clearSelection()`. Always false outside remote mode. */
 	@state() allSelected = false;
 	@state() activeIndex = 0;
+	/** The header cell holding the keyboard position, or null while it is on a body row. ArrowUp
+	 *  from row 0 moves it into the header row; ArrowDown or a row click moves it back. */
+	@state() private headerCol: number | null = null;
 	/** True between `beforeprint` and `afterprint`. Swaps the render loop from the virtualizer's
 	 *  rendered window to every row, since only the visible slice plus overscan is normally in the
 	 *  DOM and printing would otherwise yield one screenful followed by blank space. */
@@ -892,6 +909,7 @@ export class DjDataGrid extends DojoElement {
 	/** Move the active row on a user gesture and announce it. Programmatic `activeIndex`
 	 *  assignments bypass this on purpose, so they stay silent. */
 	#setActive(index: number) {
+		this.headerCol = null;
 		if (index === this.activeIndex) return;
 		this.activeIndex = index;
 		const row = this.#rowAt(index);
@@ -906,10 +924,17 @@ export class DjDataGrid extends DojoElement {
 		this.#virtualizer?.scrollToIndex(this.activeIndex, { align: "auto" });
 	}
 	private onKeyDown(e: KeyboardEvent) {
+		// Keys typed into a filter input (or any text control in the grid) belong to that control.
+		if (isTextEntryTarget(e)) return;
+		if (this.headerCol !== null) { this.#onHeaderKey(e); return; }
 		const n = this.#rowTotal();
 		switch (e.key) {
 			case "ArrowDown": e.preventDefault(); this.move(1); break;
-			case "ArrowUp": e.preventDefault(); this.move(-1); break;
+			case "ArrowUp":
+				e.preventDefault();
+				if (this.activeIndex <= 0 && this.#headers().length) this.headerCol = 0;
+				else this.move(-1);
+				break;
 			case "PageDown": e.preventDefault(); this.move(this.#viewportRows()); break;
 			case "PageUp": e.preventDefault(); this.move(-this.#viewportRows()); break;
 			case "Home": e.preventDefault(); if (n) this.#setActive(0); this.#virtualizer?.scrollToIndex(0); break;
@@ -924,6 +949,39 @@ export class DjDataGrid extends DojoElement {
 				break;
 		}
 	}
+	/** Keys while the position is on the header row: Left/Right (mirrored in RTL), Home/End move
+	 *  between headers, Enter/Space sort a sortable one, ArrowDown returns to row 0. */
+	#onHeaderKey(e: KeyboardEvent) {
+		const headers = this.#headers();
+		const last = headers.length - 1;
+		const col = Math.min(this.headerCol ?? 0, last);
+		const rtl = getComputedStyle(this).direction === "rtl";
+		const go = (i: number) => { e.preventDefault(); this.headerCol = Math.max(0, Math.min(last, i)); };
+		switch (e.key) {
+			case "ArrowLeft": go(col + (rtl ? 1 : -1)); break;
+			case "ArrowRight": go(col + (rtl ? -1 : 1)); break;
+			case "Home": go(0); break;
+			case "End": go(last); break;
+			case "ArrowUp": e.preventDefault(); break;
+			case "ArrowDown":
+				e.preventDefault();
+				this.headerCol = null;
+				if (this.#rowTotal()) { this.#setActive(0); this.#virtualizer?.scrollToIndex(0); }
+				break;
+			case "Enter":
+			case " ": {
+				e.preventDefault();
+				const column = headers[col]?.column;
+				if (column?.getCanSort()) column.toggleSorting();
+				break;
+			}
+		}
+	}
+
+	#headers(): TableHeader<Row, unknown>[] {
+		return this.#table?.getHeaderGroups()[0]?.headers ?? [];
+	}
+
 	toggleAt(index: number) {
 		if (this.selectionMode === "none") return;
 		this.#rowAt(index)?.toggleSelected();
@@ -1009,7 +1067,7 @@ export class DjDataGrid extends DojoElement {
 	}
 
 	override render() {
-		const headers = this.#table?.getHeaderGroups()[0]?.headers ?? [];
+		const headers = this.#headers();
 		const hasDetail = this.#active.some((p) => p.renderDetail);
 		this.#virtualizer?._willUpdate();
 		const virtualItems = this.#virtualizer?.getVirtualItems() ?? [];
@@ -1071,24 +1129,35 @@ export class DjDataGrid extends DojoElement {
 		// aria-activedescendant must point at a rendered row; with virtualization the active row can
 		// be scrolled out of the rendered window, so omit it then.
 		const activeRendered = virtualItems.some((vi) => vi.index === this.activeIndex);
+		const headerCol = this.headerCol === null || !headers.length ? null : Math.min(this.headerCol, headers.length - 1);
+		const activeId = headerCol !== null ? `h-${headerCol}` : n && activeRendered ? `r-${this.activeIndex}` : nothing;
 		return html`
 			<div class="wrap" style=${printing ? "display:none" : nothing}>
 				${chromeTops.map((c) => html`<div part="chrome-top" class="chrome">${c}</div>`)}
-				<div part="grid" class="grid" role="grid" tabindex="0" aria-rowcount=${n + headerRows} aria-multiselectable=${this.selectionMode === "multiple" ? "true" : nothing} aria-activedescendant=${n && activeRendered ? `r-${this.activeIndex}` : nothing} @keydown=${this.onKeyDown}>
+				<div part="grid" class="grid" role="grid" tabindex="0" aria-rowcount=${n + headerRows} aria-colcount=${headers.length} aria-multiselectable=${this.selectionMode === "multiple" ? "true" : nothing} aria-activedescendant=${activeId} @keydown=${this.onKeyDown}>
 					<div part="head" class="head row" role="row" aria-rowindex="1" style=${`grid-template-columns:${template}`}>
-						${headers.map((h) => {
+						${headers.map((h, i) => {
 							const sortable = h.column.getCanSort();
 							const dir = h.column.getIsSorted();
 							const label = this.#headerContent(h);
-							return html`<div class="hcell ${sortable ? "sortable" : ""}" role="columnheader"
-								aria-sort=${dir === "asc" ? "ascending" : dir === "desc" ? "descending" : sortable ? "none" : nothing}
+							// APG sortable table: a real button names and operates the sort, aria-sort sits on
+							// the columnheader, and the glyph is hidden. The button is not a tab stop; the grid
+							// stays one, and the keyboard reaches headers with ArrowUp from row 0. A column that
+							// cannot sort gets no button, so a plugin control (select-all) is never nested in one. The
+							// click handler stays on the cell, so a click anywhere in it (or on the button) sorts.
+							const glyph = html`<span class="sortind" aria-hidden="true">${dir === "asc" ? "▲" : dir === "desc" ? "▼" : ""}</span>`;
+							return html`<div id=${`h-${i}`} class="hcell ${sortable ? "sortable" : ""} ${i === headerCol ? "hcell--active" : ""}" role="columnheader"
+								aria-colindex=${i + 1}
+								aria-sort=${dir === "asc" ? "ascending" : dir === "desc" ? "descending" : nothing}
 								@click=${sortable ? () => h.column.toggleSorting() : nothing}>
-								<span>${label}</span><span class="sortind">${dir === "asc" ? "▲" : dir === "desc" ? "▼" : ""}</span>
+								${sortable
+									? html`<button part="sort-button" class="sortbtn" type="button" tabindex="-1"><span class="label">${label}</span>${glyph}</button>`
+									: html`<span class="label">${label}</span>`}
 							</div>`;
 						})}
 					</div>
 					${subRows.map((cells, i) => html`<div part="subhead" class="subhead row" role="row" aria-rowindex=${i + 2} style=${`grid-template-columns:${template}`}>
-						${cells.map((cell) => html`<div class="subcell" role="gridcell">${cell ?? nothing}</div>`)}
+						${cells.map((cell, i) => html`<div class="subcell" role="gridcell" aria-colindex=${i + 1}>${cell ?? nothing}</div>`)}
 					</div>`)}
 					<div class="scroll" role="presentation" style=${`height:${this.height}`}>
 						<div role="rowgroup" style=${`height:${total}px;position:relative`}>
@@ -1103,7 +1172,7 @@ export class DjDataGrid extends DojoElement {
 										role="row" aria-rowindex=${vi.index + headerRows + 1} aria-busy="true"
 										style=${`transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`}
 										@click=${() => this.#setActive(vi.index)}>
-										${headers.map(() => html`<div part="cell" class="cell" role="gridcell"><span class="ph"></span></div>`)}
+										${headers.map((_, i) => html`<div part="cell" class="cell" role="gridcell" aria-colindex=${i + 1}><span class="ph"></span></div>`)}
 									</div>`;
 								}
 								if (!row) return nothing;
@@ -1123,7 +1192,7 @@ export class DjDataGrid extends DojoElement {
 									${ref((el) => el && applyRowAttrs(el as Element, this.#rowAttributes(row, vi.index, selected)))}
 									@click=${(e: MouseEvent) => this.#onRowClick(e, vi.index)}
 									@dblclick=${(e: MouseEvent) => this.#onRowDblClick(e, vi.index)}>
-									${row.getVisibleCells().map((cell) => html`<div part="cell" class="cell" role="gridcell">${this.#cellContent(cell)}</div>`)}
+									${row.getVisibleCells().map((cell, i) => html`<div part="cell" class="cell" role="gridcell" aria-colindex=${i + 1}>${this.#cellContent(cell)}</div>`)}
 								</div>`;
 								if (!hasDetail) return rowTpl;
 								const detail = this.#detailContent(row);
@@ -1132,7 +1201,7 @@ export class DjDataGrid extends DojoElement {
 									${ref((el) => { if (el) this.#virtualizer?.measureElement(el as HTMLElement); })}>
 									${rowTpl}
 									${detail !== undefined
-										? html`<div class="vdetail" role="row"><div part="detail" class="detail" role="gridcell">${detail}</div></div>`
+										? html`<div class="vdetail" role="row"><div part="detail" class="detail" role="gridcell" aria-colindex="1" aria-colspan=${headers.length}>${detail}</div></div>`
 										: nothing}
 								</div>`;
 							})}

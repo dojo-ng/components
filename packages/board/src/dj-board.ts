@@ -1,7 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { property, state } from "lit/decorators.js";
 import { repeat } from "lit/directives/repeat.js";
-import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
+import DojoElement, { reducedMotion, isTextEntryTarget } from "@dojo-ng/dojo-element";
 import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import { DragZoneController } from "@dojo-ng/dnd";
 import type { ListOption } from "@dojo-ng/list";
@@ -356,6 +356,8 @@ export class DjBoard extends DojoElement {
 	// ------------------------------------------------------------------ keyboard
 
 	#onKeydown(e: KeyboardEvent) {
+		// Keys typed into a control inside a custom card (renderCard) belong to that control.
+		if (isTextEntryTarget(e)) return;
 		const shell = (e.target as HTMLElement).closest?.('[role="listitem"]') as HTMLElement | null;
 		if (!shell) return;
 		const key = shell.getAttribute("data-key");

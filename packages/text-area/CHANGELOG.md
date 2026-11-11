@@ -1,5 +1,14 @@
 # @dojo-ng/text-area
 
+## 0.1.5
+
+### Patch Changes
+
+- `dj-select` returns focus to its trigger when Escape or a click outside closes the list, instead of dropping it on the page body, and revalidates when `required` changes (CB26). `dj-text-input` revalidates when `required`, `pattern`, `min`, `max`, `step`, `minlength`, `maxlength` or `type` changes, and `dj-text-area` when `required`, `minlength` or `maxlength` changes, so `validity` and the form agree at once.
+- Updated dependencies
+- Updated dependencies
+  - @dojo-ng/dojo-element@0.1.5
+
 ## 0.1.4
 
 ### Patch Changes

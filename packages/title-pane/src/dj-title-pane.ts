@@ -14,7 +14,7 @@ import styles from "./dj-title-pane.styles.js";
  */
 export class DjTitlePane extends DojoElement {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 
 	@property() name = "";
 	@property({ type: Boolean, reflect: true }) open = false;

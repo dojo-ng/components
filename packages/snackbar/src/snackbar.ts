@@ -9,7 +9,7 @@ import { html, css } from "lit"; import { property } from "lit/decorators.js"; i
  *
  * @cssprop [--dj-snackbar-z-index=960] - Stacking order of the snackbar. */
 export class DjSnackbar extends DojoElement {
-	static override version="0.1.2";
+	static override version="0.1.3";
 	static override styles = css`
 		:host{position:fixed;left:50%;bottom:1rem;transform:translateX(-50%);z-index:var(--dj-snackbar-z-index,960);}
 		/* Closed: the bar is not rendered, but the host stays in the tree so its live regions do. */

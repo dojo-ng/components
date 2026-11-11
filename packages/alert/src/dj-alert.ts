@@ -47,7 +47,7 @@ const GLYPHS: Record<AlertVariant, TemplateResult> = {
  */
 export class DjAlert extends DojoElement {
 	static override styles: CSSResultGroup = [baseStyles, styles];
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 
 	/** Semantic variant. Reflected so `:host([variant="…"])` and page CSS can target it. */
 	@property({ reflect: true }) variant: AlertVariant = "info";

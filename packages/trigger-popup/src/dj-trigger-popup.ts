@@ -12,7 +12,7 @@ import type { PopupPosition } from "@dojo-ng/popup";
  */
 export class DjTriggerPopup extends DojoElement {
 	static override styles = css`:host { display: inline-block; } .content { box-sizing: border-box; }`;
-	static override version = "0.1.1";
+	static override version = "0.1.2";
 	@property({ type: Boolean, reflect: true }) open = false;
 	@property({ reflect: true }) position: PopupPosition = "below";
 	@property({ attribute: "match-width", type: Boolean, converter: defaultTrueBoolean }) matchWidth = true;

@@ -23,7 +23,7 @@ export type SlidePaneAlign = "left" | "right" | "top" | "bottom";
  */
 export class DjSlidePane extends DojoElement {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.2";
+	static override version = "0.1.3";
 
 	@property({ type: Boolean, reflect: true }) open = false;
 	@property({ reflect: true }) align: SlidePaneAlign = "left";

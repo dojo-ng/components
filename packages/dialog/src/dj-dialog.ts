@@ -32,7 +32,7 @@ registerDefaults("dj", { close: "Close" });
  */
 export class DjDialog extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.2";
+	static override version = "0.1.3";
 
 	@property({ type: Boolean, reflect: true }) open = false;
 	@property({ type: Boolean, converter: defaultTrueBoolean }) closeable = true;

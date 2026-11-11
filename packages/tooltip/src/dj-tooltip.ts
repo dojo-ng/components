@@ -31,7 +31,7 @@ let nextId = 0;
  */
 export class DjTooltip extends DojoElement {
 	static override styles = styles;
-	static override version = "0.1.2";
+	static override version = "0.1.3";
 
 	/** Force the tooltip open regardless of hover/focus. */
 	@property({ type: Boolean }) open = false;

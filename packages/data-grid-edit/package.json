@@ -1,6 +1,6 @@
 {
   "name": "@dojo-ng/data-grid-edit",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "BSD-3-Clause",
   "description": "Controlled inline cell editing for @dojo-ng/data-grid",
   "type": "module",
@@ -16,7 +16,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@dojo-ng/data-grid": "^0.3.0",
+    "@dojo-ng/data-grid": "^0.4.0",
     "@dojo-ng/text-input": "^0.1.1",
     "@dojo-ng/number-input": "^0.1.1",
     "@dojo-ng/native-select": "^0.1.1",

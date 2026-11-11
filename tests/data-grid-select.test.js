@@ -257,3 +257,114 @@ test("an explicit width option still wins", async () => {
 	const rowStyle = el.renderRoot.querySelector('[part~="row"]').getAttribute("style");
 	assert.ok(rowStyle.includes("grid-template-columns:4rem"), rowStyle);
 });
+
+// ---------------------------------------------------------------- the cell as the hit target
+// Perry, 2026-11-11: a click beside the checkbox fell on the row and opened the message instead of
+// ticking the box. The whole cell is now the target.
+
+const hits = (el) => [...el.renderRoot.querySelectorAll(".dj-select-hit")];
+const bodyRows = (el) => [...el.renderRoot.querySelectorAll('[part~="row"][aria-selected]')];
+const clickRow = (row, init = {}) =>
+	row.dispatchEvent(new globalThis.window.MouseEvent("click", { bubbles: true, composed: true, ...init }));
+
+test("a click in the checkbox cell beside the control toggles the row and does not activate it", async () => {
+	const el = await grid({ selectionMode: "multiple", activation: "click", plugins: [selectColumnPlugin()] });
+	const seen = [];
+	el.addEventListener("dj-activate", (e) => seen.push(e.detail.index));
+
+	clickBox(hits(el)[2]);
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection), ["2"], "the cell ticked its row");
+	assert.equal(boxes(el)[2].checked, true, "and the checkbox shows it");
+	assert.deepEqual(seen, [], "the row did not open");
+
+	clickBox(hits(el)[2]);
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection), [], "a second click unticks it");
+});
+
+test("the hit target covers the cell's padding", async () => {
+	const el = await grid({ selectionMode: "multiple", plugins: [selectColumnPlugin()] });
+	const style = hits(el)[0].getAttribute("style") || "";
+	assert.match(style, /margin:calc\(-1 \* var\(--dj-spacing-x-small/, "pulled out over the vertical padding");
+	assert.match(style, /calc\(-1 \* var\(--dj-spacing-small/, "and the horizontal padding");
+	assert.match(style, /height:100%/, "fills the row's height");
+	assert.ok(hits(el)[0].contains(boxes(el)[0]), "and holds the control");
+});
+
+test("Shift-click in the cell extends a range from the anchor", async () => {
+	const el = await grid({ selectionMode: "multiple", plugins: [selectColumnPlugin()] });
+	clickBox(hits(el)[1]);
+	await settled(el);
+	clickBox(hits(el)[3], { shiftKey: true });
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection).sort(), ["1", "2", "3"]);
+});
+
+test("in single mode the cell selects its row as a radio would", async () => {
+	const el = await grid({ selectionMode: "single", plugins: [selectColumnPlugin()] });
+	clickBox(hits(el)[1]);
+	await settled(el);
+	clickBox(hits(el)[1]);
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection), ["1"], "a second click keeps it selected");
+});
+
+// ---------------------------------------------------------------- Shift-click on rows
+
+test("Shift-click on a row selects the range from the row that was clicked open, and opens nothing", async () => {
+	const el = await grid({ selectionMode: "multiple", activation: "click", plugins: [selectColumnPlugin()] });
+	const seen = [];
+	el.addEventListener("dj-activate", (e) => seen.push(e.detail.index));
+
+	clickRow(bodyRows(el)[1]);          // opens row 1, which becomes the anchor
+	await settled(el);
+	clickRow(bodyRows(el)[3], { shiftKey: true });
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection).sort(), ["1", "2", "3"], "range 1..3");
+	assert.deepEqual(seen, [1], "only the plain click opened anything");
+	assert.equal(el.activeIndex, 3, "the cursor moved to the Shift-clicked row");
+});
+
+test("a second Shift-click extends from the same anchor", async () => {
+	const el = await grid({ selectionMode: "multiple", activation: "click", plugins: [selectColumnPlugin()] });
+	clickRow(bodyRows(el)[2]);
+	await settled(el);
+	clickRow(bodyRows(el)[4], { shiftKey: true });
+	await settled(el);
+	clickRow(bodyRows(el)[0], { shiftKey: true });
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection).sort(), ["0", "1", "2", "3", "4"], "2..4, then 0..2");
+});
+
+test("the keyboard cursor is an anchor too", async () => {
+	const el = await grid({ selectionMode: "multiple", activation: "click", plugins: [selectColumnPlugin()] });
+	clickRow(bodyRows(el)[0]);
+	await settled(el);
+	el.renderRoot.querySelector('[part="grid"]').dispatchEvent(
+		new globalThis.window.KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, composed: true }));
+	await settled(el);
+	assert.equal(el.activeIndex, 1);
+	clickRow(bodyRows(el)[3], { shiftKey: true });
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection).sort(), ["1", "2", "3"], "range from where the arrow left the cursor");
+});
+
+test("Cmd-click on a row still toggles it and moves the anchor", async () => {
+	const el = await grid({ selectionMode: "multiple", activation: "click", plugins: [selectColumnPlugin()] });
+	clickRow(bodyRows(el)[1], { metaKey: true });
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection), ["1"]);
+	clickRow(bodyRows(el)[3], { shiftKey: true });
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection).sort(), ["1", "2", "3"]);
+});
+
+test("Shift-click on a row does nothing to selection when selectionMode is single", async () => {
+	const el = await grid({ selectionMode: "single", activation: "click", plugins: [selectColumnPlugin()] });
+	clickRow(bodyRows(el)[1]);
+	await settled(el);
+	clickRow(bodyRows(el)[3], { shiftKey: true });
+	await settled(el);
+	assert.deepEqual(Object.keys(el.rowSelection), [], "no range in single mode");
+});

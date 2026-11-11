@@ -63,6 +63,11 @@ export interface DataGridPlugin {
 	 *  `at..at - delta - 1`. Called by `insertRows`/`removeRows` so a plugin holding an index (the
 	 *  select plugin's Shift anchor) can follow its row. */
 	shiftRows?(at: number, delta: number, ctx: DataGridContext): void;
+	/** A pointer click on a body row, before the core acts on it. Return `true` to claim the
+	 *  gesture: the core still moves the active row to `index` but does not toggle or activate.
+	 *  Asked before the active row moves, so `ctx.host.activeIndex` is still where the cursor was.
+	 *  The select plugin uses this for Shift-click ranges, which the core leaves to it. */
+	rowClick?(e: MouseEvent, index: number, ctx: DataGridContext): boolean | void;
 }
 
 /** Identity helper for typing and authoring a plugin. */

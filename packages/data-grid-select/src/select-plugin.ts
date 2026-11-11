@@ -50,7 +50,13 @@ export interface SelectColumnOptions {
  *  - `"single"`: radios, and NO header control (select-all is meaningless).
  *  - `"none"`: renders nothing and adds no column at all.
  *
- * Shift-click a checkbox to select the range from the last one you clicked (the anchor).
+ * Shift-click a checkbox, or a row, to select the range from the anchor to it. The anchor is the
+ * last checkbox you clicked or the grid's active row, whichever moved last: clicking a row,
+ * Cmd/Ctrl-clicking one, or arrowing to one all move it, and a Shift-click does not. Shift-click on
+ * a row never opens it.
+ *
+ * The whole checkbox cell is the click target, not just the control, so a click that lands
+ * beside a small checkbox ticks it instead of opening the row.
  *
  * Remote mode (the grid's `rowCount`): the header checkbox selects every row on the server
  * (`grid.selectAll()`, the grid's `allSelected`), and shows indeterminate once any row is
@@ -63,10 +69,15 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 	const nameFor = (data: Row) => options.label?.(data) ?? "Select row";
 	const selectAllLabel = options.selectAllLabel ?? "Select all rows";
 
-	// Anchor for shift-click ranges: the grid index (`ctx.indexOf`, absolute in remote mode) of
-	// the last plainly-clicked checkbox. Reset when a sort reorders the rows (see `setup`), and
-	// moved with its row by the grid's `insertRows`/`removeRows` (see `shiftRows`).
+	// Anchor for shift-click ranges: a grid index (`ctx.indexOf`, absolute in remote mode). Set
+	// by a plain checkbox click and by every move of the grid's active row (see `setup`). Reset
+	// when a sort reorders the rows, and moved with its row by the grid's `insertRows`/`removeRows`
+	// (see `shiftRows`).
 	let anchor: number | null = null;
+	// A Shift-click on a row moves the grid's active row too, and that must not move the anchor:
+	// a second Shift-click extends from the same place. `rowClick` names the index whose
+	// `dj-active-change` to skip.
+	let skipActive: number | null = null;
 	// A shift-click is fully handled on `click`. Whether the following `change` still fires is
 	// engine-dependent (preventDefault suppresses it in browsers, not in every headless DOM), so
 	// the range sets this flag and the change handler consumes it instead of toggling the row
@@ -90,8 +101,33 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 			// A data replacement invalidates the anchor: row indices no longer mean the same rows.
 			const host = ctx.host;
 			const reset = () => { anchor = null; };
+			const follow = (e: Event) => {
+				const index = (e as CustomEvent<{ index: number }>).detail.index;
+				if (index === skipActive) { skipActive = null; return; }
+				anchor = index;
+			};
 			host.addEventListener("dj-sort", reset);
-			return () => { host.removeEventListener("dj-sort", reset); anchor = null; };
+			host.addEventListener("dj-active-change", follow);
+			return () => {
+				host.removeEventListener("dj-sort", reset);
+				host.removeEventListener("dj-active-change", follow);
+				anchor = null;
+			};
+		},
+
+		rowClick(e: MouseEvent, index: number, ctx: DataGridContext) {
+			if (!e.shiftKey || modeOf(ctx) !== "multiple") return false;
+			const row = ctx.rowAt(index);
+			if (row && !row.getCanSelect()) return true;
+			// No anchor yet: this row becomes it, selected on its own.
+			if (anchor === null) {
+				anchor = index;
+				selectRange(ctx, index, index);
+				return true;
+			}
+			if (index !== ctx.host.activeIndex) skipActive = index;
+			selectRange(ctx, anchor, index);
+			return true;
 		},
 
 		shiftRows(at: number, delta: number) {
@@ -143,7 +179,29 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 			// cell only applies to overflowing INLINE content, so a block-level control can never
 			// make the cell paint an ellipsis beside the checkbox however narrow the track gets.
 			// `margin: 0 auto` also drops the UA's own checkbox margin and centres it in the track.
-			return html`<input
+			//
+			// The span around it is the hit target. Its negative margins pull it out over the cell's
+			// own padding, and `height:100%` plus the same padding fill the row's height, so a click
+			// anywhere in the cell lands here instead of on the row (which would open it). A click
+			// on the input itself never reaches the span: the input stops it first.
+			const pick = (e: MouseEvent) => {
+				e.stopPropagation();
+				e.preventDefault();
+				if (!row.getCanSelect()) return;
+				if (!single && e.shiftKey && anchor !== null) {
+					selectRange(ctx, anchor, ctx.indexOf(row));
+					return;
+				}
+				anchor = ctx.indexOf(row);
+				if (single) row.toggleSelected(true);
+				else row.toggleSelected();
+			};
+			return html`<span
+				class="dj-select-hit"
+				part="select-hit"
+				style="display:flex;align-items:center;justify-content:center;box-sizing:content-box;height:100%;cursor:pointer;margin:calc(-1 * var(--dj-spacing-x-small, .5rem)) calc(-1 * var(--dj-spacing-small, .75rem));padding:var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem)"
+				@click=${pick}
+			><input
 				style="display:block;margin:0 auto"
 				type=${single ? "radio" : "checkbox"}
 				class="dj-select-row"
@@ -175,7 +233,7 @@ export function selectColumnPlugin(options: SelectColumnOptions = {}): DataGridP
 					if (single) row.toggleSelected(true);
 					else row.toggleSelected();
 				}}
-			/>`;
+			/></span>`;
 		},
 	});
 }

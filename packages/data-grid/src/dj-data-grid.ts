@@ -85,7 +85,8 @@ export type ActivationMode = "none" | "click" | "double";
  *   `row` is the original row data. Selection does not change.
  * - With activation on, Enter opens the row and Space selects it.
  * - Modifier clicks always select and never open: Ctrl or Cmd-click toggles a row, and Shift-click
- *   selects a range.
+ *   selects a range when the checkbox column from `@dojo-ng/data-grid-select` is installed (without
+ *   it, Shift-click only moves the active row).
  * - `"double"` uses the browser's own `dblclick`, so the two clicks inside a double click never
  *   open the row on their own.
  * - Activation works with any `selection-mode`, including `"none"`, so a read-only list can have
@@ -1003,7 +1004,12 @@ export class DjDataGrid extends DojoElement {
 	 * activating a row while the user is building a selection is the surprise this design removes.
 	 */
 	#onRowClick(e: MouseEvent, index: number) {
+		// A plugin may claim the gesture (the select plugin owns Shift ranges). Ask before the
+		// cursor moves, so the plugin can still see where it was.
+		let claimed = false;
+		for (const p of this.#active) if (p.rowClick?.(e, index, this.#ctx) === true) { claimed = true; break; }
 		this.#setActive(index);
+		if (claimed) return;
 		if (this.activation === "none") { this.toggleAt(index); return; }
 		// Ctrl/Cmd toggles this row; Shift is the range gesture (owned by the select plugin).
 		if (e.ctrlKey || e.metaKey) { this.toggleAt(index); return; }

@@ -41,7 +41,7 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 - `"none"` (the default): click, Space, and Enter all toggle selection.
 - `"click"` (the mail and preview-pane idiom) or `"double"` (the file-manager idiom): a plain click, or a double click, opens the row and emits `dj-activate` with `{ row, index }`, where `row` is the original row data. Selection does not change.
 - With activation on, Enter opens the row and Space selects it.
-- Modifier clicks always select and never open: Ctrl or Cmd-click toggles a row, and Shift-click selects a range.
+- Modifier clicks always select and never open: Ctrl or Cmd-click toggles a row, and Shift-click selects a range when the checkbox column from `@dojo-ng/data-grid-select` is installed (without it, Shift-click only moves the active row).
 - `"double"` uses the browser's own `dblclick`, so the two clicks inside a double click never open the row on their own.
 - Activation works with any `selection-mode`, including `"none"`, so a read-only list can have clickable rows.
 - To open rows by clicking while the user also builds a set for bulk actions, combine `activation="click"`, `selection-mode="multiple"`, and the checkbox column from `@dojo-ng/data-grid-select`.

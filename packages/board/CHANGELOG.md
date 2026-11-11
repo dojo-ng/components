@@ -1,5 +1,13 @@
 # @dojo-ng/board
 
+## 0.1.3
+
+### Patch Changes
+
+- Keys typed into a control inside a custom card (`renderCard`) now reach that control. Space, m, Enter and the arrow keys used to open the move menu, emit `dj-card-click`, or move focus to another card.
+- Updated dependencies
+  - @dojo-ng/dojo-element@0.1.6
+
 ## 0.1.2
 
 ### Patch Changes

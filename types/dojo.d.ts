@@ -372,12 +372,13 @@ declare module "@dojo-ng/framework" {
       };
       "dj-list": DjVNodeBase & {
         "options"?: DjList["options"];
-        "value"?: DjList["value"];
+        "multiple"?: DjList["multiple"];
         "name"?: DjList["name"];
         "label"?: DjList["label"];
         "menu"?: DjList["menu"];
         "loading"?: DjList["loading"];
         "reorderable"?: DjList["reorderable"];
+        "virtual-threshold"?: DjList["virtualThreshold"];
       };
       "dj-loading-indicator": DjVNodeBase & {
         "active"?: DjLoadingIndicator["active"];
@@ -500,7 +501,6 @@ declare module "@dojo-ng/framework" {
       };
       "dj-select": DjVNodeBase & {
         "options"?: DjSelect["options"];
-        "value"?: DjSelect["value"];
         "name"?: DjSelect["name"];
         "label"?: DjSelect["label"];
         "helper-text"?: DjSelect["helperText"];
@@ -509,6 +509,10 @@ declare module "@dojo-ng/framework" {
         "required"?: DjSelect["required"];
         "position"?: DjSelect["position"];
         "open"?: DjSelect["open"];
+        "multiple"?: DjSelect["multiple"];
+        "select-all"?: DjSelect["selectAll"];
+        "remote"?: DjSelect["remote"];
+        "selected-options"?: DjSelect["selectedOptions"];
       };
       "dj-skeleton": DjVNodeBase & {
         "effect"?: DjSkeleton["effect"];
@@ -690,6 +694,9 @@ declare module "@dojo-ng/framework" {
         "required"?: DjTypeahead["required"];
         "strict"?: DjTypeahead["strict"];
         "position"?: DjTypeahead["position"];
+        "remote"?: DjTypeahead["remote"];
+        "request-delay"?: DjTypeahead["requestDelay"];
+        "selected-options"?: DjTypeahead["selectedOptions"];
       };
       "dj-video": DjVNodeBase & {
         "sources"?: DjVideo["sources"];

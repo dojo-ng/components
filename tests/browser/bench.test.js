@@ -14,6 +14,8 @@ import { compareBench, isBaselineEmpty } from "../bench-compare.js";
 import { nextFrame } from "./helpers.js";
 import "../../packages/data-grid/dist/index.js";
 import "../../packages/chart/dist/index.js";
+import "../../packages/list/dist/index.js";
+import "../../packages/typeahead/dist/index.js";
 import { candlestickPlugin, volumePlugin, indicatorPlugin } from "../../packages/chart-financial/dist/index.js";
 
 // @tanstack/table-core reads process.env.NODE_ENV (a bundler defines it in an app).
@@ -24,6 +26,8 @@ const ROWS = 5000;
 const POINTS = 5000;
 const COLUMNS = [{ id: "id", header: "ID" }, { id: "name", header: "Name" }, { id: "value", header: "Value" }];
 const gridData = (n) => Array.from({ length: n }, (_, i) => ({ id: i, name: `Row ${i}`, value: i }));
+const LIST_OPTIONS = 10000;
+const listOptions = (n) => Array.from({ length: n }, (_, i) => ({ value: `v${i}`, label: `Option ${i}` }));
 const chartData = (n) => Array.from({ length: n }, (_, i) => ({ x: String(i), y: Math.sin(i / 40) * 50 + 50 }));
 
 // Deterministic daily OHLCV, strictly alternating so both up and down candles exist regardless of n.
@@ -131,6 +135,41 @@ describe("component benchmarks (relative 2× gate)", () => {
 		results.financialChart500 = await benchFinancialChart(500);
 		results.financialChart2000 = await benchFinancialChart(2000);
 
+		// --- list: open a 10,000-option dj-list (VS1, virtual-list-select-spec.md) until its window renders ---
+		const list = document.createElement("dj-list");
+		list.label = "Bench";
+		list.options = listOptions(LIST_OPTIONS);
+		t0 = performance.now();
+		document.body.append(list);
+		await list.updateComplete;
+		await settle();
+		results.listOpen10k = performance.now() - t0;
+		const listRows = list.shadowRoot.querySelectorAll('[part="list"] > li').length;
+		document.body.removeChild(list);
+		if (!(listRows > 0 && listRows < 60)) throw new Error(`list did not virtualize (rendered ${listRows} rows)`);
+
+		// --- typeahead: type "Option 99" one key at a time over 10,000 options (VS2), each key
+		// filtering and re-rendering the popup list ---
+		const ta = document.createElement("dj-typeahead");
+		ta.label = "Bench";
+		ta.options = listOptions(LIST_OPTIONS);
+		document.body.append(ta);
+		await ta.updateComplete;
+		const field = ta.shadowRoot.querySelector("dj-text-input");
+		const text = "Option 99";
+		t0 = performance.now();
+		for (let i = 1; i <= text.length; i++) {
+			field.value = text.slice(0, i);
+			field.dispatchEvent(new Event("input", { bubbles: true }));
+			await ta.updateComplete;
+			await ta.shadowRoot.querySelector("dj-list").updateComplete;
+		}
+		await settle();
+		results.typeaheadFilter10k = performance.now() - t0;
+		const left = ta.shadowRoot.querySelector("dj-list").options.length;
+		document.body.removeChild(ta);
+		if (left !== 111) throw new Error(`typeahead filter left ${left} options, expected 111`);
+
 		// --- seed on first run, else compare against the baseline ---
 		const baseline = await executeServerCommand("read-bench-baseline");
 		if (isBaselineEmpty(baseline)) {
@@ -139,6 +178,7 @@ describe("component benchmarks (relative 2× gate)", () => {
 			return;
 		}
 		const report = compareBench(results, baseline, TOLERANCE);
+		console.log(`[bench] all results: ${JSON.stringify(results)}`);
 		console.log(`[bench] measured vs baseline @ ${TOLERANCE}×:\n${report.table}`);
 		if (!report.pass) throw new Error(`[bench] a metric exceeded its ${TOLERANCE}× baseline (see the table above)`);
 	});

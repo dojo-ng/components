@@ -32,8 +32,23 @@ Provide `options`; read `value` from the `change` event.
 
 The list is one tab stop (the active-descendant pattern).
 
-- The arrow keys, Home, and End move the active item.
+- The arrow keys, Home, End, PageUp, and PageDown move the active item.
+- Typing a letter (or the start of a label) moves to the next option whose label starts with it.
 - Enter or Space selects it.
+- On focus with nothing active, the selected option becomes active.
+
+## Long lists
+
+- Above `virtual-threshold` rows (default 200, dividers included) the list is virtual: only the rows in view plus a few either side are in the DOM. Keyboard and type-ahead still cover every option, and the active option is always rendered.
+- Every row has one height, `--dj-list-item-height`, or the first option's height measured once. Labels stay on one line and are cut with an ellipsis.
+- The list scrolls inside `--dj-list-max-height` (20rem by default while virtual).
+- Rendered options carry `aria-posinset` and `aria-setsize`, so a screen reader reports "item 812 of 5,000".
+- `dj-scroll-end` fires when the user scrolls (or moves) within a few rows of the end, once per option count. Use it to load the next page.
+
+## Multiple selection
+
+- With `multiple`, choosing an option toggles it, `value` is a string array, and the listbox is `aria-multiselectable`. The form value has one entry per value under `name`.
+- In markup, give the starting values as a JSON array: `value='["a","b"]'`.
 
 ## Options
 
@@ -44,12 +59,7 @@ The list is one tab stop (the active-descendant pattern).
 
 - With `reorderable`, items can be dragged with a pointer or touch, or moved with the keyboard: Space to grab, the arrow keys to move, Space to drop, and Escape to cancel.
 - Reordering is controlled: the list emits `dj-reorder`, and you reorder `options`.
-
-## Not built
-
-- Virtualization for very long lists.
-
-Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
+- Reordering is off while the list is virtual; the list warns once in the console.
 
 ## Properties
 
@@ -58,12 +68,13 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `options` | options | `ListOption[]` | `[]` |
-| `value` | value | `string` | `""` |
+| `multiple` | multiple ↻ | `boolean` | `false` |
 | `name` | name ↻ | `string` | — |
 | `label` | label | `string` | — |
 | `menu` | menu | `boolean` | `false` |
 | `loading` | loading | `boolean` | `false` |
 | `reorderable` | reorderable ↻ | `boolean` | `false` |
+| `virtualThreshold` | virtual-threshold | `number` | `200` |
 
 ## CSS parts
 
@@ -73,6 +84,7 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 
 ## Events
 
+- `dj-scroll-end`
 - `change`
 - `dj-reorder`
 

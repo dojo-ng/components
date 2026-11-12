@@ -265,12 +265,38 @@ A form-associated wrapper over a native `<select>`, driven by an `options` array
 
 ### `<dj-select>` · `@dojo-ng/select`
 
-A form-associated single-select combobox. A trigger shows the selected option; clicking (or ArrowDown/Enter/Space) opens a `<dj-popup>` containing a `<dj-list>` of `options`. Selecting, Escape, and a click outside all close it and return focus to the trigger; tabbing away closes it and leaves focus where it went. ARIA combobox/listbox. Changing `required` revalidates at once. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `helper-text`.
+A form-associated select: a trigger shows the selection, and opening it shows a `<dj-list>` of `options` in a `<dj-popup>`. ARIA combobox and listbox.
+
+#### Single selection
+
+- Click, ArrowDown, Enter, or Space on the trigger opens the list, with the selected option active and in view.
+- Choosing, Escape, and a click outside close it and return focus to the trigger; tabbing away closes it and leaves focus where it went.
+
+#### Multiple selection: `multiple`
+
+- `value` is a string array. Choosing toggles an option and the list stays open.
+- Selected values show as chips in the trigger, each with a remove button. Backspace on the trigger removes the last one. Chips that do not fit collapse to "+N", and the trigger's accessible name lists every selected label.
+- `select-all` adds a "Select all" row at the top.
+- `required` means at least one value.
+- The form value has one entry per value under `name`; `dj-form` gives the array under `name`. In markup, give starting values as JSON: `value='["a","b"]'`.
+- For free entry of new tags, use `dj-chip-typeahead` instead.
+
+#### Long lists
+
+- The list is virtual above its threshold (200 options), so thousands of options are fine.
+
+#### Options from a server: `remote`
+
+- With `remote`, the select emits `dj-options-request` (detail `{ query, offset, epoch }`) when it first opens with no options, and again with `offset` set to the number loaded when the user scrolls near the end.
+- Answer with `setOptions(options, { epoch, total, append })`, passing back the request's `epoch`. An answer with an older epoch is dropped and `setOptions` returns false. `append` adds a page after the loaded options; `total`, when known, stops paging there.
+- `selectedOptions` holds `{ value, label }` for selected values whose option is not loaded, so the trigger can show their labels. The select adds to it as the user chooses.
+- While a request is out the list shows a spinner and announces "Loading options".
+
+Changing `required` revalidates at once. Composes label, helper-text, icon, popup, list. Parts: `label`, `trigger`, `chip`, `more`, `helper-text`.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `options` | options | `ListOption[]` | `[]` |
-| `value` | value | `string` | `""` |
 | `name` | name ↻ | `string` | — |
 | `label` | label | `string` | — |
 | `helperText` | helper-text | `string` | — |
@@ -279,17 +305,33 @@ A form-associated single-select combobox. A trigger shows the selected option; c
 | `required` | required ↻ | `boolean` | `false` |
 | `position` | position ↻ | `PopupPosition` | `"below"` |
 | `open` | open ↻ | `boolean` | `false` |
+| `multiple` | multiple ↻ | `boolean` | `false` |
+| `selectAll` | select-all | `boolean` | `false` |
+| `remote` | remote ↻ | `boolean` | `false` |
+| `selectedOptions` | selected-options | `ListOption[]` | `[]` |
 
-**Parts:** `label`, `trigger`, `helper-text`
+**Parts:** `label`, `trigger`, `chip`, `more`, `helper-text`
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `focus(o: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `reportValidity(): boolean`, `restoreFormState(state: File | string | FormData | null)`, `focus(o: FocusOptions)`, `setOptions(options: ListOption[], init: SetOptionsInit): boolean` (Remote mode: answer a `dj-options-request`. Returns false, and changes nothing, when `epoch` is not the current one.)
 
 
 ### `<dj-typeahead>` · `@dojo-ng/typeahead`
 
 An editable combobox: type to filter `options`, pick from a popup `<dj-list>`. `strict` (default true) requires the value to match an option. Composes text-input, popup, list. Form-associated. Event: `change`.
+
+#### Long lists
+
+- The popup list is virtual above 200 options, and filtering 10,000 options keeps up with typing.
+- The popup opens with the selected option in view.
+
+#### Options from a server: `remote`
+
+- With `remote`, the typeahead does not filter `options` itself. Typing emits `dj-options-request` (detail `{ query, offset, epoch }`) after `request-delay` ms (default 200) without a keystroke, and scrolling near the end of the list asks for the next page with `offset` set to the number of options loaded.
+- Answer with `setOptions(options, { epoch, total, append })`, passing back the request's `epoch`. An answer with an older epoch is dropped and `setOptions` returns false, so a slow answer to an earlier query never replaces a newer one. You never need to cancel a request.
+- `selectedOptions` holds `{ value, label }` for a selected value whose option is not loaded, so the field shows its label. The typeahead adds to it when the user chooses.
+- While a request is out the list shows a spinner and announces "Loading options".
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -303,10 +345,13 @@ An editable combobox: type to filter `options`, pick from a popup `<dj-list>`. `
 | `required` | required ↻ | `boolean` | `false` |
 | `strict` | strict | `boolean` | `true` |
 | `position` | position ↻ | `PopupPosition` | `"below"` |
+| `remote` | remote ↻ | `boolean` | `false` |
+| `requestDelay` | request-delay | `number` | `200` |
+| `selectedOptions` | selected-options | `ListOption[]` | `[]` |
 
 **Events:** `change`
 
-**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`
+**Methods:** `checkValidity(): boolean`, `focus(o: FocusOptions)`, `setOptions(options: ListOption[], init: SetOptionsInit): boolean` (Remote mode: answer a `dj-options-request`. Returns false, and changes nothing, when `epoch` is not the current one.)
 
 
 ### `<dj-chip-typeahead>` · `@dojo-ng/chip-typeahead`
@@ -1546,8 +1591,23 @@ Coming from Dojo's Listbox? Use this component: it has the listbox role and keyb
 
 The list is one tab stop (the active-descendant pattern).
 
-- The arrow keys, Home, and End move the active item.
+- The arrow keys, Home, End, PageUp, and PageDown move the active item.
+- Typing a letter (or the start of a label) moves to the next option whose label starts with it.
 - Enter or Space selects it.
+- On focus with nothing active, the selected option becomes active.
+
+#### Long lists
+
+- Above `virtual-threshold` rows (default 200, dividers included) the list is virtual: only the rows in view plus a few either side are in the DOM. Keyboard and type-ahead still cover every option, and the active option is always rendered.
+- Every row has one height, `--dj-list-item-height`, or the first option's height measured once. Labels stay on one line and are cut with an ellipsis.
+- The list scrolls inside `--dj-list-max-height` (20rem by default while virtual).
+- Rendered options carry `aria-posinset` and `aria-setsize`, so a screen reader reports "item 812 of 5,000".
+- `dj-scroll-end` fires when the user scrolls (or moves) within a few rows of the end, once per option count. Use it to load the next page.
+
+#### Multiple selection
+
+- With `multiple`, choosing an option toggles it, `value` is a string array, and the listbox is `aria-multiselectable`. The form value has one entry per value under `name`.
+- In markup, give the starting values as a JSON array: `value='["a","b"]'`.
 
 #### Options
 
@@ -1558,26 +1618,22 @@ The list is one tab stop (the active-descendant pattern).
 
 - With `reorderable`, items can be dragged with a pointer or touch, or moved with the keyboard: Space to grab, the arrow keys to move, Space to drop, and Escape to cancel.
 - Reordering is controlled: the list emits `dj-reorder`, and you reorder `options`.
-
-#### Not built
-
-- Virtualization for very long lists.
-
-Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
+- Reordering is off while the list is virtual; the list warns once in the console.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `options` | options | `ListOption[]` | `[]` |
-| `value` | value | `string` | `""` |
+| `multiple` | multiple ↻ | `boolean` | `false` |
 | `name` | name ↻ | `string` | — |
 | `label` | label | `string` | — |
 | `menu` | menu | `boolean` | `false` |
 | `loading` | loading | `boolean` | `false` |
 | `reorderable` | reorderable ↻ | `boolean` | `false` |
+| `virtualThreshold` | virtual-threshold | `number` | `200` |
 
 **Parts:** `list`, `item`, `drop-indicator`
 
-**Events:** `change`, `dj-reorder`
+**Events:** `dj-scroll-end`, `change`, `dj-reorder`
 
 **Methods:** `checkValidity(): boolean`, `focus(options: FocusOptions)`, `moveActive(delta: 1 | -1)` (Move the highlighted (active) option by one selectable step, wrapping; skips disabled items and dividers.), `activateFirst()` (Highlight the first selectable option (skipping disabled items and dividers); clears the highlight if none.), `chooseActive(): boolean` (Select the active option, firing the normal `change`. Returns false and fires nothing if none is active.)
 

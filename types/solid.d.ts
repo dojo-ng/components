@@ -366,12 +366,13 @@ declare module "solid-js" {
       };
       "dj-list": JSX.HTMLAttributes<DjList> & {
         "options"?: DjList["options"];
-        "value"?: DjList["value"];
+        "multiple"?: DjList["multiple"];
         "name"?: DjList["name"];
         "label"?: DjList["label"];
         "menu"?: DjList["menu"];
         "loading"?: DjList["loading"];
         "reorderable"?: DjList["reorderable"];
+        "virtual-threshold"?: DjList["virtualThreshold"];
       };
       "dj-loading-indicator": JSX.HTMLAttributes<DjLoadingIndicator> & {
         "active"?: DjLoadingIndicator["active"];
@@ -494,7 +495,6 @@ declare module "solid-js" {
       };
       "dj-select": JSX.HTMLAttributes<DjSelect> & {
         "options"?: DjSelect["options"];
-        "value"?: DjSelect["value"];
         "name"?: DjSelect["name"];
         "label"?: DjSelect["label"];
         "helper-text"?: DjSelect["helperText"];
@@ -503,6 +503,10 @@ declare module "solid-js" {
         "required"?: DjSelect["required"];
         "position"?: DjSelect["position"];
         "open"?: DjSelect["open"];
+        "multiple"?: DjSelect["multiple"];
+        "select-all"?: DjSelect["selectAll"];
+        "remote"?: DjSelect["remote"];
+        "selected-options"?: DjSelect["selectedOptions"];
       };
       "dj-skeleton": JSX.HTMLAttributes<DjSkeleton> & {
         "effect"?: DjSkeleton["effect"];
@@ -684,6 +688,9 @@ declare module "solid-js" {
         "required"?: DjTypeahead["required"];
         "strict"?: DjTypeahead["strict"];
         "position"?: DjTypeahead["position"];
+        "remote"?: DjTypeahead["remote"];
+        "request-delay"?: DjTypeahead["requestDelay"];
+        "selected-options"?: DjTypeahead["selectedOptions"];
       };
       "dj-video": JSX.HTMLAttributes<DjVideo> & {
         "sources"?: DjVideo["sources"];
@@ -731,6 +738,7 @@ declare module "solid-js" {
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
       "dj-forward": CustomEvent;
+      "dj-scroll-end": CustomEvent;
       "dj-reorder": CustomEvent;
       "dj-nav-collapse": CustomEvent;
       "dj-nav-toggle": CustomEvent;
@@ -778,6 +786,7 @@ declare module "solid-js" {
       "dj-submit": CustomEvent;
       "dj-reset": CustomEvent;
       "dj-forward": CustomEvent;
+      "dj-scroll-end": CustomEvent;
       "dj-reorder": CustomEvent;
       "dj-nav-collapse": CustomEvent;
       "dj-nav-toggle": CustomEvent;

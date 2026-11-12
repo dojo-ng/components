@@ -30,6 +30,18 @@ Import the package to register the custom element, then use the tag.
 </script>
 ```
 
+## Long lists
+
+- The popup list is virtual above 200 options, and filtering 10,000 options keeps up with typing.
+- The popup opens with the selected option in view.
+
+## Options from a server: `remote`
+
+- With `remote`, the typeahead does not filter `options` itself. Typing emits `dj-options-request` (detail `{ query, offset, epoch }`) after `request-delay` ms (default 200) without a keystroke, and scrolling near the end of the list asks for the next page with `offset` set to the number of options loaded.
+- Answer with `setOptions(options, { epoch, total, append })`, passing back the request's `epoch`. An answer with an older epoch is dropped and `setOptions` returns false, so a slow answer to an earlier query never replaces a newer one. You never need to cancel a request.
+- `selectedOptions` holds `{ value, label }` for a selected value whose option is not loaded, so the field shows its label. The typeahead adds to it when the user chooses.
+- While a request is out the list shows a spinner and announces "Loading options".
+
 ## Properties
 
 `↻` marks an attribute reflected to the DOM; a dash means the property is set in JavaScript only.
@@ -46,6 +58,9 @@ Import the package to register the custom element, then use the tag.
 | `required` | required ↻ | `boolean` | `false` |
 | `strict` | strict | `boolean` | `true` |
 | `position` | position ↻ | `PopupPosition` | `"below"` |
+| `remote` | remote ↻ | `boolean` | `false` |
+| `requestDelay` | request-delay | `number` | `200` |
+| `selectedOptions` | selected-options | `ListOption[]` | `[]` |
 
 ## Events
 
@@ -55,6 +70,7 @@ Import the package to register the custom element, then use the tag.
 
 - `checkValidity(): boolean`
 - `focus(o: FocusOptions)`
+- `setOptions(options: ListOption[], init: SetOptionsInit): boolean`: Remote mode: answer a `dj-options-request`. Returns false, and changes nothing, when `epoch` is not the current one.
 
 ## Theming
 

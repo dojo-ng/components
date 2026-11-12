@@ -4,5 +4,7 @@
   "gridScroll": 268.20000000298023,
   "financialChart250": 45,
   "financialChart500": 60,
-  "financialChart2000": 195
+  "financialChart2000": 195,
+  "listOpen10k": 10,
+  "typeaheadFilter10k": 25
 }

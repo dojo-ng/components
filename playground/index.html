@@ -61,6 +61,7 @@
 					"@dojo-ng/header-card": "../packages/header-card/dist/index.js",
 					"@dojo-ng/wizard": "../packages/wizard/dist/index.js",
 					"@dojo-ng/list": "../packages/list/dist/index.js",
+					"@tanstack/virtual-core": "https://esm.sh/@tanstack/virtual-core@3",
 					"@dojo-ng/dnd": "../packages/dnd/dist/index.js",
 					"@dojo-ng/email-input": "../packages/email-input/dist/index.js",
 					"@dojo-ng/number-input": "../packages/number-input/dist/index.js",
@@ -161,7 +162,7 @@
 			tuned for a first-time visitor and it stays <code>noindex</code>. A separate, live, no-install,
 			multi-framework playground is planned (see the site plan) but not built yet; this page is not a
 			preview of it.</p>
-			<p class="header-stats"><!-- GENERATED:HEADER-STATS BEGIN -->41 demo sections across 8 groups, covering 69 of 115 shipped packages (see the coverage list at the foot of the page). Built from Dojo NG v0.1.0.<!-- GENERATED:HEADER-STATS END --></p>
+			<p class="header-stats"><!-- GENERATED:HEADER-STATS BEGIN -->42 demo sections across 8 groups, covering 69 of 115 shipped packages (see the coverage list at the foot of the page). Built from Dojo NG v0.1.0.<!-- GENERATED:HEADER-STATS END --></p>
 		</header>
 
 		<div class="toolbar">
@@ -192,6 +193,7 @@
 					<li><a href="#button">Button</a></li>
 					<li><a href="#form-controls">Form controls + native form participation</a></li>
 					<li><a href="#select-typeahead-family">Select / typeahead family</a></li>
+					<li><a href="#long-and-remote-lists">Long lists, multiple selection, and server options</a></li>
 					<li><a href="#sliders">Sliders</a></li>
 					<li><a href="#color-picker">Color picker</a></li>
 					<li><a href="#file-input">File input</a></li>
@@ -303,6 +305,18 @@
 			<dj-typeahead id="typeahead" label="Search fruit"></dj-typeahead>
 			<dj-chip-typeahead id="chip-typeahead" label="Pick several"></dj-chip-typeahead>
 			<dj-chip-typeahead id="chip-typeahead-new" allow-new label="Tags (type a new one + Enter)"></dj-chip-typeahead>
+		</div>
+		</section>
+<section id="long-and-remote-lists" data-dj-packages="select typeahead list">
+		<h3>Long lists, multiple selection, and server options</h3>
+		<p class="section-purpose">10,000 options in a select and a typeahead (the popup list is virtual), a multi-select with chips and select-all, and a typeahead and a select fed by a fake server that answers late and out of order.</p>
+		<div class="col">
+			<dj-select id="select-10k" label="10,000 options" value="v8123"></dj-select>
+			<dj-typeahead id="typeahead-10k" label="Filter 10,000 options"></dj-typeahead>
+			<dj-select id="select-multiple" label="Fruit (several)" multiple select-all value='["apple","cherry"]' style="max-width: 20rem"></dj-select>
+			<dj-typeahead id="typeahead-remote" remote label="City (from a fake server)"></dj-typeahead>
+			<dj-select id="select-remote" remote label="City (paged from a fake server)"></dj-select>
+			<span id="remote-log" style="color: var(--dj-color-text-muted); font-size: 0.875rem">requests: 0</span>
 		</div>
 		</section>
 <section id="sliders" data-dj-packages="slider range-slider">
@@ -1507,6 +1521,28 @@
 			document.getElementById("chip-typeahead-new").options = [
 				{ value: "urgent", label: "urgent" }, { value: "later", label: "later" }, { value: "waiting", label: "waiting" },
 			];
+
+			// Long lists and server options (virtual-list-select-spec.md)
+			const tenK = Array.from({ length: 10000 }, (_, i) => ({ value: `v${i}`, label: `Option ${i}` }));
+			document.getElementById("select-10k").options = tenK;
+			document.getElementById("typeahead-10k").options = tenK;
+			document.getElementById("select-multiple").options = fruit;
+			const cities = Array.from({ length: 5000 }, (_, i) => ({ value: `c${i}`, label: `City ${i}` }));
+			let remoteRequests = 0;
+			// The fake server answers after 100 to 900 ms, so answers often arrive out of order;
+			// setOptions drops any answer whose epoch is no longer current.
+			const fakeServer = (e) => {
+				const { query, offset, epoch } = e.detail;
+				const el = e.currentTarget;
+				remoteRequests++;
+				setTimeout(() => {
+					const hits = cities.filter((c) => c.label.toLowerCase().includes(query.toLowerCase()));
+					const taken = el.setOptions(hits.slice(offset, offset + 50), { epoch, total: hits.length, append: offset > 0 });
+					document.getElementById("remote-log").textContent = `requests: ${remoteRequests}, last answer ${taken ? "taken" : "dropped (old epoch)"}`;
+				}, 100 + Math.random() * 800);
+			};
+			document.getElementById("typeahead-remote").addEventListener("dj-options-request", fakeServer);
+			document.getElementById("select-remote").addEventListener("dj-options-request", fakeServer);
 
 			// List options + readout
 			const list = document.getElementById("list-demo");

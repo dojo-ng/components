@@ -370,12 +370,13 @@ declare module "react" {
       };
       "dj-list": DjProps<DjList> & {
         "options"?: DjList["options"];
-        "value"?: DjList["value"];
+        "multiple"?: DjList["multiple"];
         "name"?: DjList["name"];
         "label"?: DjList["label"];
         "menu"?: DjList["menu"];
         "loading"?: DjList["loading"];
         "reorderable"?: DjList["reorderable"];
+        "virtual-threshold"?: DjList["virtualThreshold"];
       };
       "dj-loading-indicator": DjProps<DjLoadingIndicator> & {
         "active"?: DjLoadingIndicator["active"];
@@ -498,7 +499,6 @@ declare module "react" {
       };
       "dj-select": DjProps<DjSelect> & {
         "options"?: DjSelect["options"];
-        "value"?: DjSelect["value"];
         "name"?: DjSelect["name"];
         "label"?: DjSelect["label"];
         "helper-text"?: DjSelect["helperText"];
@@ -507,6 +507,10 @@ declare module "react" {
         "required"?: DjSelect["required"];
         "position"?: DjSelect["position"];
         "open"?: DjSelect["open"];
+        "multiple"?: DjSelect["multiple"];
+        "select-all"?: DjSelect["selectAll"];
+        "remote"?: DjSelect["remote"];
+        "selected-options"?: DjSelect["selectedOptions"];
       };
       "dj-skeleton": DjProps<DjSkeleton> & {
         "effect"?: DjSkeleton["effect"];
@@ -688,6 +692,9 @@ declare module "react" {
         "required"?: DjTypeahead["required"];
         "strict"?: DjTypeahead["strict"];
         "position"?: DjTypeahead["position"];
+        "remote"?: DjTypeahead["remote"];
+        "request-delay"?: DjTypeahead["requestDelay"];
+        "selected-options"?: DjTypeahead["selectedOptions"];
       };
       "dj-video": DjProps<DjVideo> & {
         "sources"?: DjVideo["sources"];

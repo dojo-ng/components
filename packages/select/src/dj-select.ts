@@ -78,7 +78,7 @@ const ALL = "__dj-select-all__";
  */
 export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = [styles, reducedMotion];
-	static override version = "0.1.5";
+	static override version = "0.2.0";
 	static override focusable = true;
 	static formAssociated = true;
 

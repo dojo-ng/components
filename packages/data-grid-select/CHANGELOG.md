@@ -1,5 +1,12 @@
 # @dojo-ng/data-grid-select
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @dojo-ng/data-grid@0.6.0
+
 ## 0.3.1
 
 ### Patch Changes

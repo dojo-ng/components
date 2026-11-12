@@ -1,5 +1,12 @@
 # @dojo-ng/data-grid-drag
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @dojo-ng/data-grid@0.6.0
+
 ## 0.2.2
 
 ### Patch Changes

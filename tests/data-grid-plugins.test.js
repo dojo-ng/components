@@ -10,12 +10,12 @@ import assert from "node:assert/strict";
 import { html } from "lit";
 import "../packages/data-grid/dist/index.js";
 
-// Give `.scroll` a non-zero offsetHeight/Width so getRect() reports a viewport and rows render.
+// Give the `.grid` scroller a non-zero offsetHeight/Width so getRect() reports a viewport and rows render.
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientHeight", 400], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 

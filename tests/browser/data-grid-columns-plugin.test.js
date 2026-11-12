@@ -18,12 +18,9 @@ const COLUMNS = [
 ];
 const DATA = Array.from({ length: 20 }, (_, r) => ({ a: `a${r}`, b: `b${r}`, c: r === 3 ? "a much longer value in this one cell" : `c${r}`, d: `d${r}` }));
 
-async function grid({ dir = "ltr", columns = COLUMNS, options, rows = DATA.length } = {}) {
-	// axe flags any grid whose rows overflow (scrollable-region-focusable): the keyboard reaches
-	// the rows through the focused grid element, which axe cannot see. The axe checks below use a
-	// grid that fits, so they audit what this plugin adds.
+async function grid({ dir = "ltr", columns = COLUMNS, options, rows = DATA.length, width = "640px" } = {}) {
 	const g = make("dj-data-grid", { columns, data: DATA.slice(0, rows), height: "300px" });
-	g.style.width = "640px";
+	g.style.width = width;
 	g.setAttribute("dir", dir);
 	g.plugins = [columnsPlugin(options)];
 	await mount(g);
@@ -241,7 +238,7 @@ describe("dj-data-grid columns plugin: menu and chooser (GC4)", () => {
 	});
 
 	it("the chooser shows and hides columns, and Reset restores the declared layout", async () => {
-		const g = await grid({ rows: 4 });
+		const g = await grid();
 		g.columnState = { order: ["d", "c", "b", "a"], sizing: { a: 150 } };
 		await settle(g);
 		await choose(g, 0, "Columns…");
@@ -293,10 +290,43 @@ describe("dj-data-grid columns plugin: menu and chooser (GC4)", () => {
 		assertEqual(getComputedStyle(head(g2, "a").querySelector('[part="column-menu-button"]')).opacity, "1");
 	});
 
+	// CB35: the role="grid" element is also the scroller, so a click on a row or the empty area
+	// under the rows leaves focus on it (a header click focuses the sort button inside it), and a header control's own
+	// click still works. Kept in this file because Firefox shares the mouse between test pages
+	// run side by side, and this file's drags must not overlap another file's clicks.
+	it("clicks on a row, a header, or the empty area keep focus on the grid", async () => {
+		const g = await grid({ rows: 3 });
+		const sc = g.shadowRoot.querySelector(".grid");
+		await sendMouse({ type: "click", position: center(g.shadowRoot.querySelector("#r-1")) });
+		await settle(g);
+		assertEqual(g.shadowRoot.activeElement, sc, "row click");
+		assertEqual(g.activeIndex, 1);
+		const box = sc.getBoundingClientRect();
+		await sendMouse({ type: "click", position: [Math.round(box.x + 40), Math.round(box.bottom - 20)] });
+		await settle(g);
+		assertEqual(g.shadowRoot.activeElement, sc, "empty-area click");
+		const label = head(g, "b").querySelector(".label");
+		await sendMouse({ type: "click", position: center(label) });
+		await settle(g);
+		assertEqual(g.sorting[0]?.id, "b", "a header click still sorts");
+		// The sort button (tabindex=-1) takes the click focus, as before; keys still reach the grid.
+		assert(sc.contains(g.shadowRoot.activeElement), `header click keeps focus in the grid: ${g.shadowRoot.activeElement?.className}`);
+	});
+
+	// Rows overflow the 300px height (20 rows), and the narrow variant overflows sideways too:
+	// the grid is its own focusable scroller (CB35), so axe audits the real, scrolling case.
 	it("passes axe with the controls in place", async () => {
-		const g = await grid({ rows: 4 });
+		const g = await grid();
 		g.columnState = { pinning: { start: ["a"], end: ["d"] } };
 		await settle(g);
+		await assertNoViolations(g);
+	});
+	it("passes axe with the controls in place when the columns overflow too", async () => {
+		const g = await grid({ width: "320px" });
+		g.columnState = { pinning: { start: ["a"], end: ["d"] } };
+		await settle(g);
+		const sc = g.shadowRoot.querySelector(".grid");
+		assert(sc.scrollWidth > sc.clientWidth && sc.scrollHeight > sc.clientHeight, "overflows both ways");
 		await assertNoViolations(g);
 	});
 });

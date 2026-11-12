@@ -21,7 +21,7 @@ const settle = async (g) => { await g.updateComplete; await settleFrames(); awai
 const headerIds = (g) => [...g.shadowRoot.querySelectorAll('[role="columnheader"]')].map((h) => h.dataset.column);
 const head = (g, id) => g.shadowRoot.querySelector(`.head [data-column="${id}"]`);
 const bodyCell = (g, id) => g.shadowRoot.querySelector(`#r-0 [data-column="${id}"]`);
-const scroller = (g) => g.shadowRoot.querySelector(".scroll");
+const scroller = (g) => g.shadowRoot.querySelector(".grid");
 const near = (a, b, msg) => assert(Math.abs(a - b) <= 1, `${msg}: ${a} vs ${b}`);
 
 describe("dj-data-grid column state (GC1)", () => {
@@ -90,8 +90,7 @@ describe("dj-data-grid sideways keyboard scroll (GC1)", () => {
 		await sendKeys({ press: "ArrowRight" });
 		await settle(g);
 		assert(sc.scrollLeft > 0, "ArrowRight scrolled");
-		const head = g.shadowRoot.querySelector(".headwrap");
-		near(head.scrollLeft, sc.scrollLeft, "the header follows");
+		near(head(g, "c4").getBoundingClientRect().left, bodyCell(g, "c4").getBoundingClientRect().left, "the header follows");
 		await sendKeys({ press: "ArrowLeft" });
 		await settle(g);
 		assertEqual(sc.scrollLeft, 0, "ArrowLeft scrolled back");

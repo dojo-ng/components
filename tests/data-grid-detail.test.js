@@ -11,10 +11,10 @@ import { detailPlugin } from "../packages/data-grid-detail/dist/index.js";
 import "../packages/data-grid/dist/index.js";
 
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientHeight", 400], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 

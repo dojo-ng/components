@@ -16,10 +16,10 @@ import { detailPlugin } from "../packages/data-grid-detail/dist/index.js";
 import "../packages/data-grid/dist/index.js";
 
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientHeight", 400], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 
@@ -48,7 +48,7 @@ async function gridWithRanges(props = {}) {
 
 /** Scroll the grid's viewport and let the virtualizer react. */
 async function scrollTo(el, top) {
-	const scroll = el.renderRoot.querySelector(".scroll");
+	const scroll = el.renderRoot.querySelector(".grid");
 	scroll.scrollTop = top;
 	scroll.dispatchEvent(new Event("scroll"));
 	await settled(el);

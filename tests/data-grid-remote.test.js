@@ -2,7 +2,7 @@
 // placeholder rows, `dj-rows-request` / `setRows` with the epoch, the settle hold on jumps, the
 // cache and its eviction, and the keyboard and active row across rows that are not loaded.
 //
-// HARNESS: the same `.scroll` offsetHeight stub as data-grid-viewport.test.js, so the virtualizer
+// HARNESS: the same the `.grid` scroller offsetHeight stub as data-grid-viewport.test.js, so the virtualizer
 // measures a 400 px viewport and renders a real moving window. Rows use the fixed `rowHeight`.
 import { mount, settled } from "./setup.js";
 import test, { mock } from "node:test";
@@ -10,26 +10,26 @@ import assert from "node:assert/strict";
 import "../packages/data-grid/dist/index.js";
 
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 
 // The virtualizer clamps a keyboard jump (End) to scrollHeight - clientHeight, and happy-dom
-// reports both as 0. Give `.scroll` the values a browser would: its content height (the rowgroup)
+// reports both as 0. Give the `.grid` scroller the values a browser would: its content height (the rowgroup)
 // and the stubbed viewport.
 Object.defineProperty(proto, "scrollHeight", {
 	configurable: true,
 	get() {
-		if (!this.classList?.contains("scroll")) return 0;
-		return parseFloat(/height:(\d+)px/.exec(this.firstElementChild?.getAttribute("style") ?? "")?.[1] ?? "0");
+		if (!this.classList?.contains("grid")) return 0;
+		return parseFloat(/height:(\d+)px/.exec(this.querySelector('[role="rowgroup"]')?.getAttribute("style") ?? "")?.[1] ?? "0");
 	},
 });
 Object.defineProperty(proto, "clientHeight", {
 	configurable: true,
-	get() { return this.classList?.contains("scroll") ? 400 : 0; },
+	get() { return this.classList?.contains("grid") ? 400 : 0; },
 });
 
 const COLUMNS = [{ id: "a", header: "A", accessorKey: "a" }, { id: "b", header: "B", accessorKey: "b" }];
@@ -57,14 +57,14 @@ async function settle(el) {
 	for (let i = 0; i < 4; i++) await settled(el);
 }
 async function scrollTo(el, top) {
-	const scroll = el.renderRoot.querySelector(".scroll");
+	const scroll = el.renderRoot.querySelector(".grid");
 	scroll.scrollTop = top;
 	scroll.dispatchEvent(new Event("scroll"));
 	await settle(el);
 }
 /** Fire the scroll event a browser would send after the grid scrolled itself. */
 async function syncScroll(el) {
-	el.renderRoot.querySelector(".scroll").dispatchEvent(new Event("scroll"));
+	el.renderRoot.querySelector(".grid").dispatchEvent(new Event("scroll"));
 	await settle(el);
 }
 /** Answer every request at once, as a host with an instant source would. */
@@ -406,7 +406,7 @@ test("RR5: sorting while scrolled deep goes to the top and asks only for the top
 	await settle(el);
 	await syncScroll(el); // the scroll event a browser sends after the grid's scrollTo
 	await settle(el);
-	const scroll = el.renderRoot.querySelector(".scroll");
+	const scroll = el.renderRoot.querySelector(".grid");
 	assert.equal(scroll.scrollTop, 0, "scrolled to the top");
 	assert.equal(el.activeIndex, 0, "the active row is back at the top");
 	const after = requests.slice(before);
@@ -428,7 +428,7 @@ test("RR5: outside remote mode a header click still sorts in memory", async () =
 
 const rowEl = (el, i) => el.renderRoot.querySelector(`#r-${i}`);
 const translateY = (row) => Number(/translateY\(([-\d.]+)px\)/.exec(row.getAttribute("style"))[1]);
-const scrollEl = (el) => el.renderRoot.querySelector(".scroll");
+const scrollEl = (el) => el.renderRoot.querySelector(".grid");
 
 test("RR6: inserting 3 rows at 0 while scrolled to row 500 keeps row 500's content in place", async () => {
 	const { el } = await remoteGrid({ settleMs: 0 });

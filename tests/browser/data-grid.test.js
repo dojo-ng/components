@@ -41,7 +41,7 @@ describe("dj-data-grid", () => {
 		assert(initial > 0 && initial < 80, `only a window of rows renders, not all 5,000 (got ${initial})`);
 		assert(grid.shadowRoot.querySelector("#r-0"), "row 0 is in the initial window");
 
-		const scroll = grid.shadowRoot.querySelector(".scroll");
+		const scroll = grid.shadowRoot.querySelector(".grid");
 		scroll.scrollTop = 90000; // ~row 3000
 		await settleFrames();
 		await settleFrames();

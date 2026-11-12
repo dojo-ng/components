@@ -3,7 +3,7 @@
 // dj-activate and stop a plain click from toggling selection. Modifier clicks are reserved
 // for selection and must never activate.
 //
-// Same viewport shim as data-grid-plugins.test.js: happy-dom does no layout, so `.scroll`
+// Same viewport shim as data-grid-plugins.test.js: happy-dom does no layout, so the `.grid` scroller
 // needs a non-zero offset size before the TanStack virtualizer renders body rows to click.
 import { mount, settled } from "./setup.js";
 import test from "node:test";
@@ -11,10 +11,10 @@ import assert from "node:assert/strict";
 import "../packages/data-grid/dist/index.js";
 
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientHeight", 400], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 

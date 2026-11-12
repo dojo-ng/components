@@ -298,7 +298,15 @@ export class DjDataGrid extends DojoElement {
 	 *  DOM and printing would otherwise yield one screenful followed by blank space. */
 	@state() private printing = false;
 
-	@query(".scroll") private scrollEl!: HTMLElement;
+	/** The `role="grid"` element. It holds the keyboard focus AND is the one scroll container:
+	 *  the header rows are a sticky strip inside it, above the rows. One element for both is what
+	 *  makes the scrolled region reachable by keyboard for assistive tech and axe (CB35). */
+	@query(".grid") private scrollEl!: HTMLElement;
+	/** Height of the sticky header strip (header row plus plugin subheaders), in px. The virtualizer
+	 *  starts rows below it (`scrollMargin`) and keeps the active row clear of it
+	 *  (`scrollPaddingStart`); the grid adds it to `height` so `height` stays the rows' viewport. */
+	#headH = 0;
+	#headObserver?: ResizeObserver;
 
 	#table!: Table<Row>;
 	/** Read-only access to the live TanStack table, so consumers outside a plugin (CSV export,
@@ -609,8 +617,10 @@ export class DjDataGrid extends DojoElement {
 		const v = this.#virtualizer;
 		const n = this.#rowTotal();
 		if (!v || !n) return { first: -1, last: -1 };
-		const top = v.scrollOffset ?? this.scrollEl?.scrollTop ?? 0;
-		const h = v.scrollRect?.height || this.scrollEl?.clientHeight || 0;
+		// Rows sit under the sticky header strip: the visible row band starts headH below the
+		// scroll offset (item offsets already include the header as scrollMargin).
+		const top = (v.scrollOffset ?? this.scrollEl?.scrollTop ?? 0) + this.#headH;
+		const h = (v.scrollRect?.height || this.scrollEl?.clientHeight || 0) - this.#headH;
 		const first = v.getVirtualItemForOffset(top)?.index ?? 0;
 		const last = h > 0 ? (v.getVirtualItemForOffset(top + h - 1)?.index ?? n - 1) : first;
 		return { first, last: Math.max(first, Math.min(n - 1, last)) };
@@ -713,9 +723,9 @@ export class DjDataGrid extends DojoElement {
 		this.#syncRemoteData();
 	}
 
-	/** Whole rows that fit the scroll viewport (at least 1). */
+	/** Whole rows that fit the scroll viewport below the header strip (at least 1). */
 	#viewportRows(): number {
-		const h = this.#virtualizer?.scrollRect?.height || this.scrollEl?.offsetHeight || 0;
+		const h = (this.#virtualizer?.scrollRect?.height || this.scrollEl?.clientHeight || 0) - this.#headH;
 		return Math.max(1, Math.floor(h / this.rowHeight));
 	}
 
@@ -849,10 +859,17 @@ export class DjDataGrid extends DojoElement {
 		}
 		if (changed) this.requestUpdate();
 	}
-	#onScroll = (e: Event) => {
-		const head = this.renderRoot.querySelector<HTMLElement>(".headwrap");
-		if (head) head.scrollLeft = (e.currentTarget as HTMLElement).scrollLeft;
-	};
+	/** Measure the sticky header strip and hand its height to the virtualizer. Skipped while
+	 *  printing, when the screen grid is display:none and measures 0. */
+	#syncHead() {
+		if (this.printing) return;
+		const h = this.renderRoot.querySelector<HTMLElement>(".headwrap")?.offsetHeight ?? 0;
+		if (h === this.#headH) return;
+		this.#headH = h;
+		const v = this.#virtualizer;
+		if (v) v.setOptions({ ...v.options, scrollMargin: h, scrollPaddingStart: h });
+		this.requestUpdate();
+	}
 
 	/** Column list after every plugin's `columns()` transform, in array order. */
 	#computeColumns(): GridColumn[] {
@@ -974,9 +991,12 @@ export class DjDataGrid extends DojoElement {
 		this.#buildTable();
 		window.addEventListener("beforeprint", this.#onBeforePrint);
 		window.addEventListener("afterprint", this.#onAfterPrint);
+		const head = this.renderRoot?.querySelector?.(".headwrap");
+		if (head) this.#headObserver?.observe(head);
 	}
 	override disconnectedCallback() {
 		super.disconnectedCallback();
+		this.#headObserver?.disconnect();
 		for (const d of this.#disposers) d();
 		this.#disposers = [];
 		this.#cleanup?.();
@@ -987,13 +1007,29 @@ export class DjDataGrid extends DojoElement {
 	}
 
 	protected override firstUpdated() {
+		const head = this.renderRoot.querySelector<HTMLElement>(".headwrap");
+		this.#headH = head?.offsetHeight ?? 0;
+		// The header strip changes height without a render of ours (fonts loading, a plugin's
+		// subheader control wrapping): follow it.
+		if (head && typeof ResizeObserver !== "undefined") {
+			this.#headObserver = new ResizeObserver(() => this.#syncHead());
+			this.#headObserver.observe(head);
+		}
 		this.#virtualizer = new Virtualizer({
 			count: this.#rowTotal(),
 			getScrollElement: () => this.scrollEl,
 			estimateSize: () => this.rowHeight,
 			overscan: 8,
 			scrollToFn: elementScroll,
-			observeElementRect,
+			// Rows start below the sticky header strip, and scrollToIndex keeps them clear of it.
+			scrollMargin: this.#headH,
+			scrollPaddingStart: this.#headH,
+			// The viewport is the grid's client box: its border-box size (the default) would count
+			// the border and any horizontal scrollbar as room for rows.
+			observeElementRect: (inst, cb) => observeElementRect(inst, () => {
+				const el = inst.scrollElement;
+				if (el) cb({ width: el.clientWidth, height: el.clientHeight });
+			}),
 			observeElementOffset,
 			// Used only when a renderDetail plugin switches rows to measured wrappers. Falls back to
 			// the row-height estimate when layout reports no size (headless test DOM).
@@ -1025,6 +1061,7 @@ export class DjDataGrid extends DojoElement {
 		this.#emitRangeChange();
 		this.#requestRows();
 		this.#measurePinned();
+		this.#syncHead();
 		if (c.has("headerCol") && this.headerCol !== null) this.#revealHeader(this.headerCol);
 	}
 	/** Scroll the body sideways so header `i` is not off screen or under a pinned column. */
@@ -1032,10 +1069,7 @@ export class DjDataGrid extends DojoElement {
 		const sc = this.scrollEl;
 		const cell = this.renderRoot.querySelector<HTMLElement>(`#h-${i}`);
 		if (!sc || !cell || cell.classList.contains("pin") || sc.scrollWidth <= sc.clientWidth) return;
-		// The header strip follows the body on `scroll`, which Firefox and WebKit fire a frame
-		// later: sync it now so a quick run of key presses measures where the header really is.
-		const head = this.renderRoot.querySelector<HTMLElement>(".headwrap");
-		if (head) head.scrollLeft = sc.scrollLeft;
+		// The header strip lives inside the scroller, so it is always where the body is.
 		const rtl = getComputedStyle(this).direction === "rtl";
 		let coverLeft = 0, coverRight = 0;
 		for (const p of this.renderRoot.querySelectorAll<HTMLElement>(".head .pin")) {
@@ -1044,10 +1078,10 @@ export class DjDataGrid extends DojoElement {
 		}
 		const box = sc.getBoundingClientRect();
 		const r = cell.getBoundingClientRect();
-		const left = box.left + coverLeft, right = box.left + sc.clientWidth - coverRight;
+		const inner = box.left + sc.clientLeft; // inside the border (and a left scrollbar in RTL)
+		const left = inner + coverLeft, right = inner + sc.clientWidth - coverRight;
 		if (r.left < left) sc.scrollBy({ left: r.left - left });
 		else if (r.right > right) sc.scrollBy({ left: Math.min(r.right - right, r.left - left) });
-		if (head) head.scrollLeft = sc.scrollLeft;
 	}
 
 	/**
@@ -1270,10 +1304,10 @@ export class DjDataGrid extends DojoElement {
 		// practice, confirmed against a real print preview (Bill, 2026-08-18). Two more real bugs
 		// shipped and got fixed the same day, both from a version that returned the print table IN
 		// PLACE OF the whole template rather than alongside it:
-		//  1. That unmounted `.scroll` — the element the TanStack virtualizer's ResizeObserver/scroll
+		//  1. That unmounted scroller (`.grid`) — the element the TanStack virtualizer's ResizeObserver/scroll
 		//     listeners were attached to in firstUpdated() — and the grid came back permanently empty
 		//     once printing ended, because the virtualizer never recovered once its tracked element
-		//     was destroyed. Hiding `.wrap` via `display:none` instead keeps `.scroll` mounted and
+		//     was destroyed. Hiding `.wrap` via `display:none` instead keeps `.grid` mounted and
 		//     observed the whole time; the observers just report a zero-size rect while hidden and a
 		//     real one again once printing ends.
 		//  2. The print table was nested inside `.wrap` (display:flex), and a flex-item table doesn't
@@ -1311,6 +1345,8 @@ export class DjDataGrid extends DojoElement {
 		};
 		const pins = headers.map((h) => pinOf(h.column.id));
 		const total = this.#virtualizer?.getTotalSize() ?? 0;
+		// Virtual item offsets include the header strip (scrollMargin); the rowgroup starts below it.
+		const m = this.#virtualizer?.options.scrollMargin ?? 0;
 		const items = virtualItems;
 		// Chrome regions (quick filter, pagination, totals) are full-width, outside the grid rows.
 		const chromeTops = this.#active.map((p) => p.chromeTop?.(this.#ctx)).filter((x) => x !== undefined);
@@ -1326,7 +1362,7 @@ export class DjDataGrid extends DojoElement {
 		return html`
 			<div class="wrap" style=${printing ? "display:none" : nothing}>
 				${chromeTops.map((c) => html`<div part="chrome-top" class="chrome">${c}</div>`)}
-				<div part="grid" class="grid" role="grid" tabindex="0" aria-rowcount=${n + headerRows} aria-colcount=${headers.length} aria-multiselectable=${this.selectionMode === "multiple" ? "true" : nothing} aria-activedescendant=${activeId} @keydown=${this.onKeyDown}>
+				<div part="grid" class="grid" role="grid" tabindex="0" style=${`height:calc(${this.height} + ${this.#headH}px)`} aria-rowcount=${n + headerRows} aria-colcount=${headers.length} aria-multiselectable=${this.selectionMode === "multiple" ? "true" : nothing} aria-activedescendant=${activeId} @keydown=${this.onKeyDown}>
 					<div class="headwrap" role="presentation">
 					<div part="head" class="head row" role="row" aria-rowindex="1" style=${`grid-template-columns:${template}${rowWidth}`}>
 						${headers.map((h, i) => {
@@ -1356,53 +1392,51 @@ export class DjDataGrid extends DojoElement {
 						${cells.map((cell, i) => html`<div class="subcell ${pins[i]?.cls ?? ""}" style=${pins[i]?.style || nothing} role="gridcell" aria-colindex=${i + 1}>${cell ?? nothing}</div>`)}
 					</div>`)}
 					</div>
-					<div class="scroll" role="presentation" style=${`height:${this.height}`} @scroll=${this.#onScroll}>
-						<div role="rowgroup" style=${`height:${total}px;position:relative${rowWidth}`}>
-							${items.map((vi) => {
-								const row = remote ? this.#rowAt(vi.index) : rows[vi.index];
-								if (!row && remote) {
-									// Not loaded yet: a real row with a real index, but no data to give plugins.
-									const active = vi.index === this.activeIndex;
-									return html`<div id=${`r-${vi.index}`}
-										class="vrow vrow--placeholder ${active ? "vrow--active" : ""}"
-										part=${active ? "row row--placeholder row--active" : "row row--placeholder"}
-										role="row" aria-rowindex=${vi.index + headerRows + 1} aria-busy="true"
-										style=${`transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`}
-										@click=${() => this.#setActive(vi.index)}>
-										${headers.map((h, i) => html`<div part="cell" class="cell ${pins[i].cls}" style=${pins[i].style || nothing} data-column=${h.column.id} role="gridcell" aria-colindex=${i + 1}><span class="ph"></span></div>`)}
-									</div>`;
-								}
-								if (!row) return nothing;
-								const selected = this.#isSelected(row);
-								// With a renderDetail plugin, rows have variable height: each virtual item
-								// becomes a measured wrapper (data-index + measureElement ref, the TanStack
-								// dynamic-size contract) holding the fixed-height row plus its detail panel.
-								// (Printing with a detail plugin also lands here, unmaterialized — see
-								// #renderPrintTable for why only the plain row path gets a print template.)
-								const rowStyle = hasDetail
-									? `position:static;height:${this.rowHeight}px;grid-template-columns:${template}`
-									: `transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`;
-								const rowTpl = html`<div id=${`r-${vi.index}`}
-									class="vrow ${vi.index === this.activeIndex ? "vrow--active" : ""} ${selected ? "vrow--selected" : ""}"
-									role="row" aria-rowindex=${vi.index + headerRows + 1} aria-selected=${this.selectionMode !== "none" ? (selected ? "true" : "false") : nothing}
-									style=${rowStyle}
-									${ref((el) => el && applyRowAttrs(el as Element, this.#rowAttributes(row, vi.index, selected)))}
-									@click=${(e: MouseEvent) => this.#onRowClick(e, vi.index)}
-									@dblclick=${(e: MouseEvent) => this.#onRowDblClick(e, vi.index)}>
-									${row.getVisibleCells().map((cell, i) => html`<div part="cell" class="cell ${pins[i]?.cls ?? ""}" style=${pins[i]?.style || nothing} data-column=${cell.column.id} role="gridcell" aria-colindex=${i + 1}>${this.#cellContent(cell)}</div>`)}
+					<div role="rowgroup" style=${`height:${total}px;position:relative${rowWidth}`}>
+						${items.map((vi) => {
+							const row = remote ? this.#rowAt(vi.index) : rows[vi.index];
+							if (!row && remote) {
+								// Not loaded yet: a real row with a real index, but no data to give plugins.
+								const active = vi.index === this.activeIndex;
+								return html`<div id=${`r-${vi.index}`}
+									class="vrow vrow--placeholder ${active ? "vrow--active" : ""}"
+									part=${active ? "row row--placeholder row--active" : "row row--placeholder"}
+									role="row" aria-rowindex=${vi.index + headerRows + 1} aria-busy="true"
+									style=${`transform:translateY(${vi.start - m}px);height:${vi.size}px;grid-template-columns:${template}`}
+									@click=${() => this.#setActive(vi.index)}>
+									${headers.map((h, i) => html`<div part="cell" class="cell ${pins[i].cls}" style=${pins[i].style || nothing} data-column=${h.column.id} role="gridcell" aria-colindex=${i + 1}><span class="ph"></span></div>`)}
 								</div>`;
-								if (!hasDetail) return rowTpl;
-								const detail = this.#detailContent(row);
-								return html`<div class="vwrap" data-index=${vi.index}
-									style=${`transform:translateY(${vi.start}px)`}
-									${ref((el) => { if (el) this.#virtualizer?.measureElement(el as HTMLElement); })}>
-									${rowTpl}
-									${detail !== undefined
-										? html`<div class="vdetail" role="row"><div part="detail" class="detail" role="gridcell" aria-colindex="1" aria-colspan=${headers.length}>${detail}</div></div>`
-										: nothing}
-								</div>`;
-							})}
-						</div>
+							}
+							if (!row) return nothing;
+							const selected = this.#isSelected(row);
+							// With a renderDetail plugin, rows have variable height: each virtual item
+							// becomes a measured wrapper (data-index + measureElement ref, the TanStack
+							// dynamic-size contract) holding the fixed-height row plus its detail panel.
+							// (Printing with a detail plugin also lands here, unmaterialized — see
+							// #renderPrintTable for why only the plain row path gets a print template.)
+							const rowStyle = hasDetail
+								? `position:static;height:${this.rowHeight}px;grid-template-columns:${template}`
+								: `transform:translateY(${vi.start - m}px);height:${vi.size}px;grid-template-columns:${template}`;
+							const rowTpl = html`<div id=${`r-${vi.index}`}
+								class="vrow ${vi.index === this.activeIndex ? "vrow--active" : ""} ${selected ? "vrow--selected" : ""}"
+								role="row" aria-rowindex=${vi.index + headerRows + 1} aria-selected=${this.selectionMode !== "none" ? (selected ? "true" : "false") : nothing}
+								style=${rowStyle}
+								${ref((el) => el && applyRowAttrs(el as Element, this.#rowAttributes(row, vi.index, selected)))}
+								@click=${(e: MouseEvent) => this.#onRowClick(e, vi.index)}
+								@dblclick=${(e: MouseEvent) => this.#onRowDblClick(e, vi.index)}>
+								${row.getVisibleCells().map((cell, i) => html`<div part="cell" class="cell ${pins[i]?.cls ?? ""}" style=${pins[i]?.style || nothing} data-column=${cell.column.id} role="gridcell" aria-colindex=${i + 1}>${this.#cellContent(cell)}</div>`)}
+							</div>`;
+							if (!hasDetail) return rowTpl;
+							const detail = this.#detailContent(row);
+							return html`<div class="vwrap" data-index=${vi.index}
+								style=${`transform:translateY(${vi.start - m}px)`}
+								${ref((el) => { if (el) this.#virtualizer?.measureElement(el as HTMLElement); })}>
+								${rowTpl}
+								${detail !== undefined
+									? html`<div class="vdetail" role="row"><div part="detail" class="detail" role="gridcell" aria-colindex="1" aria-colspan=${headers.length}>${detail}</div></div>`
+									: nothing}
+							</div>`;
+						})}
 					</div>
 				</div>
 				${chromeBottoms.map((c) => html`<div part="chrome-bottom" class="chrome">${c}</div>`)}

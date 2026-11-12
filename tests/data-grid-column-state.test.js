@@ -145,12 +145,12 @@ test("sumLengths and isFixedLength", () => {
 
 // ---- The grid wiring ----
 
-// happy-dom does no layout: give .scroll a size so the virtualizer renders body rows.
+// happy-dom does no layout: give the .grid scroller a size so the virtualizer renders body rows.
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientHeight", 400], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 

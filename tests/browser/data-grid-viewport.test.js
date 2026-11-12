@@ -51,7 +51,7 @@ function domIndices(grid) {
 
 /** Scroll and let the virtualizer react. */
 async function scrollTo(grid, top) {
-	const scroll = grid.shadowRoot.querySelector(".scroll");
+	const scroll = grid.shadowRoot.querySelector(".grid");
 	scroll.scrollTop = top;
 	await settleFrames();
 	await settleFrames();
@@ -125,7 +125,7 @@ describe("dj-data-grid dj-range-change", () => {
 		await reemitTopWindow(grid);
 		assert(seen[seen.length - 1].end < 499, "not at the end while at the top");
 
-		const scroll = grid.shadowRoot.querySelector(".scroll");
+		const scroll = grid.shadowRoot.querySelector(".grid");
 		await scrollTo(grid, scroll.scrollHeight); // all the way down
 
 		assert(endReached > 0, "scrolling to the bottom satisfied end >= count - 1");

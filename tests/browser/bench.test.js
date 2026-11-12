@@ -94,7 +94,7 @@ describe("component benchmarks (relative 2× gate)", () => {
 		if (!(rendered > 0 && rendered < 120)) throw new Error(`grid did not virtualize (rendered ${rendered} rows)`);
 
 		// --- data-grid: scroll through the full range, re-rendering the window each step ---
-		const scroll = grid.shadowRoot.querySelector(".scroll");
+		const scroll = grid.shadowRoot.querySelector(".grid");
 		const totalPx = grid.rowHeight * ROWS;
 		const STEPS = 20;
 		t0 = performance.now();

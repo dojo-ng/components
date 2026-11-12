@@ -4,7 +4,7 @@
 // 3.6 million px scroll height, and real scroll events.
 //
 // WTR cannot drag a native scrollbar thumb, so the drag is simulated the way a thumb drag reaches
-// the page: `.scroll` scrollTop moving to its maximum in steps, one per animation frame, each step
+// the page: the grid scroller's scrollTop moving to its maximum in steps, one per animation frame, each step
 // far more than a screen. The grid sees the same jump-and-hold it would see from a real thumb.
 import { mount, cleanup, make, assert, assertEqual, nextFrame, settleFrames } from "./helpers.js";
 import "../../packages/data-grid/dist/index.js";
@@ -48,7 +48,7 @@ describe("dj-data-grid remote rows", () => {
 			assert(realRows(grid).length > 0, "the top rows render");
 
 			// The drag: 20 steps, one per frame, top to bottom.
-			const scroll = grid.renderRoot.querySelector(".scroll");
+			const scroll = grid.renderRoot.querySelector(".grid");
 			const max = scroll.scrollHeight - scroll.clientHeight;
 			assert(max > 3000000, `a real 3.6M px scroll height (max scrollTop ${max})`);
 			for (let i = 1; i <= 20; i++) {

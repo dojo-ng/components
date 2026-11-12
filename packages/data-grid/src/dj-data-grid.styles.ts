@@ -1,19 +1,21 @@
 import { css } from "lit";
 export default css`
-	/* isolation: isolate contains the sticky .head's z-index inside this shadow tree, so a
+	/* isolation: isolate contains the sticky header strip's z-index inside this shadow tree, so a
 	   consumer's own stacking (e.g. a sibling panel with no z-index of its own, which is auto
 	   and loses to any explicit value regardless of DOM order) never has to compete with it. */
 	:host { display: block; isolation: isolate; }
 	:host([hidden]) { display: none; }
 	.wrap { display: flex; flex-direction: column; }
 	.chrome { display: flex; align-items: center; gap: var(--dj-spacing-small, .75rem); padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); }
-	.grid { position: relative; border: 1px solid var(--dj-color-border, #d1d5db); border-radius: var(--dj-input-border-radius-medium, .25rem); overflow: hidden; font-size: var(--dj-font-size-medium, 1rem); background: var(--dj-color-background, #fff); color: var(--dj-color-text, #1f2937); }
+	.grid { position: relative; border: 1px solid var(--dj-color-border, #d1d5db); border-radius: var(--dj-input-border-radius-medium, .25rem); overflow: auto; scrollbar-gutter: stable; font-size: var(--dj-font-size-medium, 1rem); background: var(--dj-color-background, #fff); color: var(--dj-color-text, #1f2937); }
 	.row { display: grid; align-items: center; }
-	/* The header rows scroll sideways with the body (dj-data-grid.ts syncs scrollLeft). Both
-	   reserve the same scrollbar gutter, so the header and body tracks resolve to the same widths
-	   and inline-end pinned columns line up. */
-	.headwrap { overflow: hidden; scrollbar-gutter: stable; }
-	.head { position: sticky; top: 0; z-index: 1; background: var(--dj-color-neutral-50, #f9fafb); border-bottom: 1px solid var(--dj-color-border, #d1d5db); }
+	/* .grid is the one scroll container and the focused element (CB35: a scroller axe and AT can
+	   reach by keyboard). The header rows are a sticky strip inside it, so they scroll sideways
+	   with the body for free and share its scrollbar gutter, and their pinned cells stick against
+	   the same scrollport as the body's. z-index 3 keeps the strip above body cells, pinned ones
+	   (z 1) included. dj-data-grid.ts adds the strip's height to \`height\` and starts rows below it. */
+	.headwrap { position: sticky; top: 0; z-index: 3; }
+	.head { background: var(--dj-color-neutral-50, #f9fafb); border-bottom: 1px solid var(--dj-color-border, #d1d5db); }
 	.subhead { background: var(--dj-color-neutral-50, #f9fafb); border-bottom: 1px solid var(--dj-color-border, #d1d5db); }
 	/* min-width:0 on grid-item cells so they shrink to their track (paired with the
 	   minmax(0,1fr) template) instead of forcing the track wider and breaking alignment. */
@@ -27,7 +29,6 @@ export default css`
 	/* The keyboard position on the header row, shown while the grid is focused. */
 	.grid:focus .hcell--active { color: var(--dj-color-text, #1f2937); box-shadow: inset 0 -3px 0 var(--dj-color-primary-600, #2563eb); }
 	.sortind { display: inline-flex; opacity: .7; width: 1em; }
-	.scroll { overflow: auto; outline: none; scrollbar-gutter: stable; }
 	/* Plugin controls at the inline end of a header (column menu, resize handle). */
 	.hextras { display: inline-flex; align-items: center; margin-inline-start: auto; flex: none; }
 	/* Pinned columns: sticky at their offset (set inline), opaque so cells scroll under them. */
@@ -35,7 +36,7 @@ export default css`
 	.hcell.pin { z-index: 2; }
 	.pin--start.pin--edge { border-inline-end: 1px solid var(--dj-color-border, #d1d5db); }
 	.pin--end.pin--edge { border-inline-start: 1px solid var(--dj-color-border, #d1d5db); }
-	/* The ring goes on .grid because that is the element with tabindex; .scroll never takes focus. */
+	/* The ring goes on .grid: it is the element with tabindex, and the scroller. */
 	.grid:focus { outline: none; }
 	.grid:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: -2px; }
 	.vrow { position: absolute; left: 0; right: 0; display: grid; align-items: center; border-bottom: 1px solid var(--dj-color-neutral-100, #f3f4f6); background: var(--dj-color-background, #fff); }
@@ -74,7 +75,7 @@ export default css`
 	   places the table as a SIBLING of .wrap, not nested inside it — .wrap is display:flex, and a
 	   table that is a flex item does not get a browser's native repeating-thead behavior either
 	   (the second bug this shipped with, alongside .wrap staying mounted-but-hidden rather than
-	   unmounted while printing so the virtualizer's observers on .scroll survive the round trip). */
+	   unmounted while printing so the virtualizer's observers on .grid survive the round trip). */
 	.print-table { width: 100%; border-collapse: collapse; font-size: var(--dj-font-size-medium, 1rem); color: var(--dj-color-text, #1f2937); }
 	.print-table th, .print-table td { text-align: left; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); border-bottom: 1px solid var(--dj-color-neutral-100, #f3f4f6); }
 	.print-table thead th { background: var(--dj-color-neutral-50, #f9fafb); font-weight: var(--dj-font-weight-semibold, 600); color: var(--dj-color-text-muted, #6b7280); }

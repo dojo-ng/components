@@ -1,5 +1,5 @@
 // data-grid-drag (row-drag-tree-drop-spec RD2): rows as native drag sources. happy-dom has no
-// DataTransfer, so a stub records what the plugin writes. Same `.scroll` offset shim as the other
+// DataTransfer, so a stub records what the plugin writes. Same the `.grid` scroller offset shim as the other
 // grid plugin tests: without layout the virtualizer would render no body rows.
 import { mount, settled } from "./setup.js";
 import test from "node:test";
@@ -9,10 +9,10 @@ import { selectColumnPlugin } from "../packages/data-grid-select/dist/index.js";
 import { rowDragPlugin } from "../packages/data-grid-drag/dist/index.js";
 
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientHeight", 400], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 

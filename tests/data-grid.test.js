@@ -26,16 +26,18 @@ test("the header row is aria-rowindex 1", async () => {
 	assert.equal(el.renderRoot.querySelector(".head").getAttribute("aria-rowindex"), "1");
 });
 
-test("the sizer is a rowgroup and the scroller stays presentational", async () => {
+test("the sizer is a rowgroup and the grid element is the scroller (CB35)", async () => {
 	const el = await grid(20);
-	assert.ok(el.renderRoot.querySelector('[role="rowgroup"]'), "sizer div carries role=rowgroup");
-	// The scroller is presentational AND not focusable, so its role is not voided —
-	// it stays transparent in the a11y tree, keeping the rowgroup a child of the grid.
-	// (A focusable presentation element would be exposed as generic and break the chain.)
-	const scroll = el.renderRoot.querySelector(".scroll");
-	assert.equal(scroll.getAttribute("role"), "presentation");
-	assert.equal(scroll.getAttribute("tabindex"), null, "scroller is not focusable");
-	assert.equal(scroll.getAttribute("aria-activedescendant"), null, "activedescendant lives on the grid, not the scroller");
+	const g = el.renderRoot.querySelector(".grid");
+	const sizer = el.renderRoot.querySelector('[role="rowgroup"]');
+	assert.ok(sizer, "sizer div carries role=rowgroup");
+	// One element holds focus, the grid role, aria-activedescendant, AND the scrolling, so axe's
+	// scrollable-region-focusable sees a keyboard-reachable scroller. No inner scroller remains.
+	assert.equal(sizer.parentElement, g, "the rowgroup sits directly in the grid");
+	assert.equal(g.getAttribute("role"), "grid");
+	assert.equal(g.getAttribute("tabindex"), "0");
+	assert.equal(el.renderRoot.querySelector(".scroll"), null, "no separate scroller");
+	assert.match(g.getAttribute("style") ?? "", /height:calc\(20rem \+ \d+px\)/, "height plus the header strip");
 });
 
 test("grid is the focusable active-descendant manager; keydown moves the active row", async () => {

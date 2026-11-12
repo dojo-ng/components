@@ -1,6 +1,6 @@
 // data-grid focus and active-row API (spec track GF): focus() forwarding, the row--active and
 // row--selected parts, and dj-active-change. Same viewport shim as data-grid-activation.test.js:
-// happy-dom does no layout, so `.scroll` needs a size before the virtualizer renders rows.
+// happy-dom does no layout, so the `.grid` scroller needs a size before the virtualizer renders rows.
 import { mount, settled } from "./setup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -8,10 +8,10 @@ import "../packages/data-grid/dist/index.js";
 import { rowStatePlugin } from "../packages/data-grid-rowstate/dist/index.js";
 
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientHeight", 400], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 

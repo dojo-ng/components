@@ -17,16 +17,16 @@
 //
 // TWO BUGS BILL FOUND IN THE FIRST VERSION (2026-08-18), both from a version that returned a wholly
 // separate template while printing instead of the current always-present/toggled-visibility approach:
-//   1. The grid came back permanently empty after printing ended, because unmounting `.scroll`
+//   1. The grid came back permanently empty after printing ended, because unmounting the `.grid` scroller
 //      (rather than hiding it) orphaned the TanStack virtualizer's observers. Not reproducible in
-//      happy-dom (this harness stubs `.scroll`'s offsetHeight directly rather than driving the
+//      happy-dom (this harness stubs the `.grid` scroller's offsetHeight directly rather than driving the
 //      virtualizer through real observer callbacks), so what's tested below is the structural half of
-//      the fix — `.scroll` stays mounted throughout — which is necessary though not sufficient proof.
+//      the fix — the `.grid` scroller stays mounted throughout — which is necessary though not sufficient proof.
 //   2. The header didn't repeat past page 1 because the print table was nested inside `.wrap`
 //      (display:flex), and a flex-item table doesn't get native thead-repeat. Tested below by
 //      asserting the table is not a descendant of `.wrap`.
 //
-// HARNESS: happy-dom does no layout, so the virtualizer renders zero rows unless `.scroll` reports a
+// HARNESS: happy-dom does no layout, so the virtualizer renders zero rows unless the `.grid` scroller reports a
 // real offsetHeight (the same stub tests/data-grid-viewport.test.js uses). Each test file gets its
 // own process under `node --test`, so this stub is local to this file.
 import { mount, settled } from "./setup.js";
@@ -37,10 +37,10 @@ import { detailPlugin } from "../packages/data-grid-detail/dist/index.js";
 import "../packages/data-grid/dist/index.js";
 
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientHeight", 400], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 
@@ -74,13 +74,13 @@ test("the print table exists but empty/hidden before printing; beforeprint popul
 	assert.equal(table.style.display, "", "shown while printing");
 	assert.ok(table.querySelector("thead th"), "a genuine <thead> — browsers repeat this natively, no CSS trick needed");
 	assert.equal(table.querySelectorAll("tbody tr").length, 200, "every row is in the print table");
-	// Bug 1 (Bill, 2026-08-18): a prior version REMOVED `.scroll` from the DOM while printing, which
+	// Bug 1 (Bill, 2026-08-18): a prior version REMOVED the `.grid` scroller from the DOM while printing, which
 	// orphaned the virtualizer's observers and left the grid empty forever after. `.wrap` (the
 	// scroll container's ancestor) must stay mounted, just hidden.
 	const wrap = el.renderRoot.querySelector(".wrap");
 	assert.ok(wrap, ".wrap is still in the DOM while printing (hidden, not removed)");
 	assert.equal(wrap.style.display, "none", ".wrap is hidden via display:none, not removed");
-	assert.ok(el.renderRoot.querySelector(".scroll"), ".scroll is still mounted while printing — never removed");
+	assert.ok(el.renderRoot.querySelector(".grid"), "the .grid scroller is still mounted while printing — never removed");
 	// Bug 2 (Bill, 2026-08-18): the print table nested inside `.wrap` (display:flex) doesn't get a
 	// browser's native repeating-<thead> print behavior. It must be a sibling, not a descendant.
 	assert.ok(!wrap.contains(table), "the print table is NOT nested inside .wrap (which is display:flex)");

@@ -2,7 +2,7 @@
 // Checkboxes read/write TanStack's existing row selection, so `selectionMode`, `rowSelection`
 // and `dj-selection-change` stay the single source of truth.
 //
-// Same `.scroll` offset shim as the other grid plugin tests: happy-dom does no layout, so the
+// Same the `.grid` scroller offset shim as the other grid plugin tests: happy-dom does no layout, so the
 // virtualizer renders zero body rows without it and there'd be no checkbox to click.
 import { mount, settled } from "./setup.js";
 import test from "node:test";
@@ -11,10 +11,10 @@ import "../packages/data-grid/dist/index.js";
 import { selectColumnPlugin, SELECT_COLUMN_ID } from "../packages/data-grid-select/dist/index.js";
 
 const proto = globalThis.window.HTMLElement.prototype;
-for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320]]) {
+for (const [prop, val] of [["offsetHeight", 400], ["offsetWidth", 320], ["clientHeight", 400], ["clientWidth", 320]]) {
 	Object.defineProperty(proto, prop, {
 		configurable: true,
-		get() { return this.classList?.contains("scroll") ? val : 0; },
+		get() { return this.classList?.contains("grid") ? val : 0; },
 	});
 }
 

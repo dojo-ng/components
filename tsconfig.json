@@ -342,6 +342,9 @@
     },
     {
       "path": "packages/nav-history"
+    },
+    {
+      "path": "packages/data-grid-columns"
     }
   ]
 }

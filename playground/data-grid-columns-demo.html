@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr" data-dj-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Dojo NG — data-grid columns demo</title>
+		<link rel="stylesheet" href="../packages/theme/theme.css" />
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://esm.sh/lit@3.3.0",
+					"lit/": "https://esm.sh/lit@3.3.0/",
+					"@tanstack/table-core": "https://esm.sh/@tanstack/table-core@8",
+					"@tanstack/virtual-core": "https://esm.sh/@tanstack/virtual-core@3",
+					"@dojo-ng/dojo-element": "../packages/dojo-element/dist/index.js",
+					"@dojo-ng/dojo-element/base-styles.js": "../packages/dojo-element/dist/base-styles.js",
+					"@dojo-ng/i18n": "../packages/i18n/dist/index.js",
+					"@dojo-ng/icon": "../packages/icon/dist/index.js",
+					"@dojo-ng/label": "../packages/label/dist/index.js",
+					"@dojo-ng/loading-indicator": "../packages/loading-indicator/dist/index.js",
+					"@dojo-ng/button": "../packages/button/dist/index.js",
+					"@dojo-ng/checkbox": "../packages/checkbox/dist/index.js",
+					"@dojo-ng/dialog": "../packages/dialog/dist/index.js",
+					"@dojo-ng/dnd": "../packages/dnd/dist/index.js",
+					"@dojo-ng/popup": "../packages/popup/dist/index.js",
+					"@dojo-ng/list": "../packages/list/dist/index.js",
+					"@dojo-ng/dropdown": "../packages/dropdown/dist/index.js",
+					"@dojo-ng/data-grid": "../packages/data-grid/dist/index.js",
+					"@dojo-ng/data-grid-select": "../packages/data-grid-select/dist/index.js",
+					"@dojo-ng/data-grid-columns": "../packages/data-grid-columns/dist/index.js"
+				}
+			}
+		</script>
+		<style>
+			body { font-family: system-ui, sans-serif; margin: 2rem; background: var(--dj-color-background); color: var(--dj-color-text); }
+			h1 { font-size: 1.2rem; } .hint, ul { color: var(--dj-color-text-muted); max-width: 52rem; }
+			pre { background: var(--dj-color-neutral-100); padding: .5rem .75rem; border-radius: .375rem; max-width: 52rem; white-space: pre-wrap; }
+			label { margin-inline-end: 1rem; }
+		</style>
+	</head>
+	<body>
+		<h1>Data grid columns: 30 columns, 10,000 rows</h1>
+		<p class="hint">
+			Drag a header's end edge to resize it (double-click the edge to fit), drag a header to move it, or open the
+			⋮ menu on a header for Wider, Narrower, Move, Pin, Hide, and the column chooser. The layout is saved in this
+			browser and restored when you reload.
+		</p>
+		<ul>
+			<li>Keyboard: Tab to the grid, ArrowUp to the header row, Left and Right to pick a column. Space grabs it, Left and Right move it, Space drops it. Alt+ArrowDown opens its menu.</li>
+			<li>In the body, Left and Right scroll the columns sideways. Pinned columns stay put.</li>
+		</ul>
+		<p>
+			<label><input type="checkbox" id="rtl" /> Right to left</label>
+			<label><input type="checkbox" id="always" /> Menu button always visible</label>
+			<button id="forget">Forget the saved layout</button>
+		</p>
+		<dj-data-grid id="grid" selection-mode="multiple" height="26rem" style="display:block"></dj-data-grid>
+		<pre id="out">columnState: (change something)</pre>
+		<script type="module">
+			import "@dojo-ng/data-grid";
+			import { selectColumnPlugin } from "@dojo-ng/data-grid-select";
+			import { columnsPlugin } from "@dojo-ng/data-grid-columns";
+
+			const KEY = "dj-demo-columns";
+			const grid = document.getElementById("grid");
+			const out = document.getElementById("out");
+			const COUNT = 30;
+			const columns = Array.from({ length: COUNT }, (_, i) => ({
+				id: `c${i}`,
+				header: i === 0 ? "ID" : `Column ${i}`,
+				width: i === 0 ? "80px" : i % 5 === 1 ? "minmax(0, 1fr)" : `${110 + (i % 4) * 20}px`,
+				...(i === 0 ? { pinned: "start", hideable: false, reorderable: false } : {}),
+				...(i === COUNT - 1 ? { pinned: "end" } : {}),
+			}));
+			grid.columns = columns;
+			grid.getRowId = (r) => String(r.c0);
+			grid.data = Array.from({ length: 10000 }, (_, r) =>
+				Object.fromEntries(columns.map((c, i) => [c.id, i === 0 ? r + 1 : `r${r + 1} · ${c.header}${r % 7 === 0 && i === 3 ? " — a longer value to fit" : ""}`])),
+			);
+			const plugins = (always) => [selectColumnPlugin({ label: (r) => `Select row ${r.c0}` }), columnsPlugin({ menuButton: always ? "always" : "hover" })];
+			grid.plugins = plugins(false);
+
+			try {
+				const saved = localStorage.getItem(KEY);
+				if (saved) grid.columnState = JSON.parse(saved);
+			} catch { /* storage unavailable */ }
+			const show = (s) => { out.textContent = `columnState: ${JSON.stringify(s)}`; };
+			grid.addEventListener("dj-column-state-change", (e) => {
+				show(e.detail);
+				try { localStorage.setItem(KEY, JSON.stringify(e.detail)); } catch { /* storage unavailable */ }
+			});
+			document.getElementById("rtl").addEventListener("change", (e) => { document.documentElement.dir = e.target.checked ? "rtl" : "ltr"; });
+			document.getElementById("always").addEventListener("change", (e) => { grid.plugins = plugins(e.target.checked); });
+			document.getElementById("forget").addEventListener("click", () => {
+				try { localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
+				grid.columnState = undefined;
+				show(grid.columnState);
+			});
+		</script>
+	</body>
+</html>

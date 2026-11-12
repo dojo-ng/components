@@ -1,6 +1,7 @@
 import { DjDataGrid } from "./dj-data-grid.js";
 export * from "./dj-data-grid.js";
 export * from "./plugin.js";
+export type { GridColumnState } from "./column-layout.js";
 export default DjDataGrid;
 DjDataGrid.define("dj-data-grid", DjDataGrid);
 declare global { interface HTMLElementTagNameMap { "dj-data-grid": DjDataGrid; } }

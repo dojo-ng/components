@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
+  "include": ["src"],
+  "references": [
+    { "path": "../data-grid" },
+    { "path": "../button" },
+    { "path": "../checkbox" },
+    { "path": "../dialog" },
+    { "path": "../dnd" },
+    { "path": "../dropdown" },
+    { "path": "../i18n" },
+    { "path": "../list" }
+  ]
+}

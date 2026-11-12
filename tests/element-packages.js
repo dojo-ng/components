@@ -122,6 +122,7 @@ export const SUPPORT_PACKAGES = [
 	"data-grid-rowstate",
 	"data-grid-select",
 	"data-grid-drag",
+	"data-grid-columns",
 ];
 
 /** Where a listed package's built entry lives, keyed by name — `packages/<name>` for every

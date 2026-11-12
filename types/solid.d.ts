@@ -724,6 +724,7 @@ declare module "solid-js" {
       "dj-active-change": CustomEvent;
       "dj-selection-change": CustomEvent;
       "dj-rows-request": CustomEvent;
+      "dj-column-state-change": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-range-change": CustomEvent;
       "dj-activate": CustomEvent;
@@ -770,6 +771,7 @@ declare module "solid-js" {
       "dj-active-change": CustomEvent;
       "dj-selection-change": CustomEvent;
       "dj-rows-request": CustomEvent;
+      "dj-column-state-change": CustomEvent;
       "dj-sort": CustomEvent;
       "dj-range-change": CustomEvent;
       "dj-activate": CustomEvent;

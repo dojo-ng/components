@@ -7,14 +7,18 @@ export default css`
 	:host([hidden]) { display: none; }
 	.wrap { display: flex; flex-direction: column; }
 	.chrome { display: flex; align-items: center; gap: var(--dj-spacing-small, .75rem); padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); }
-	.grid { border: 1px solid var(--dj-color-border, #d1d5db); border-radius: var(--dj-input-border-radius-medium, .25rem); overflow: hidden; font-size: var(--dj-font-size-medium, 1rem); background: var(--dj-color-background, #fff); color: var(--dj-color-text, #1f2937); }
+	.grid { position: relative; border: 1px solid var(--dj-color-border, #d1d5db); border-radius: var(--dj-input-border-radius-medium, .25rem); overflow: hidden; font-size: var(--dj-font-size-medium, 1rem); background: var(--dj-color-background, #fff); color: var(--dj-color-text, #1f2937); }
 	.row { display: grid; align-items: center; }
+	/* The header rows scroll sideways with the body (dj-data-grid.ts syncs scrollLeft). Both
+	   reserve the same scrollbar gutter, so the header and body tracks resolve to the same widths
+	   and inline-end pinned columns line up. */
+	.headwrap { overflow: hidden; scrollbar-gutter: stable; }
 	.head { position: sticky; top: 0; z-index: 1; background: var(--dj-color-neutral-50, #f9fafb); border-bottom: 1px solid var(--dj-color-border, #d1d5db); }
 	.subhead { background: var(--dj-color-neutral-50, #f9fafb); border-bottom: 1px solid var(--dj-color-border, #d1d5db); }
 	/* min-width:0 on grid-item cells so they shrink to their track (paired with the
 	   minmax(0,1fr) template) instead of forcing the track wider and breaking alignment. */
 	.subcell { min-width: 0; padding: var(--dj-spacing-3x-small, .25rem) var(--dj-spacing-small, .75rem); }
-	.hcell { min-width: 0; overflow: hidden; display: flex; align-items: center; gap: .25rem; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); font-weight: var(--dj-font-weight-semibold, 600); color: var(--dj-color-text-muted, #6b7280); user-select: none; }
+	.hcell { position: relative; min-width: 0; overflow: hidden; display: flex; align-items: center; gap: .25rem; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); font-weight: var(--dj-font-weight-semibold, 600); color: var(--dj-color-text-muted, #6b7280); user-select: none; }
 	/* A sortable header's button fills the cell, so the whole cell stays the click target. */
 	.hcell.sortable { padding: 0; } .hcell.sortable:hover { color: var(--dj-color-text, #1f2937); }
 	.sortbtn { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: .25rem; width: 100%; min-width: 0; padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); cursor: pointer; }
@@ -23,11 +27,18 @@ export default css`
 	/* The keyboard position on the header row, shown while the grid is focused. */
 	.grid:focus .hcell--active { color: var(--dj-color-text, #1f2937); box-shadow: inset 0 -3px 0 var(--dj-color-primary-600, #2563eb); }
 	.sortind { display: inline-flex; opacity: .7; width: 1em; }
-	.scroll { overflow: auto; outline: none; }
+	.scroll { overflow: auto; outline: none; scrollbar-gutter: stable; }
+	/* Plugin controls at the inline end of a header (column menu, resize handle). */
+	.hextras { display: inline-flex; align-items: center; margin-inline-start: auto; flex: none; }
+	/* Pinned columns: sticky at their offset (set inline), opaque so cells scroll under them. */
+	.pin { position: sticky; z-index: 1; background: inherit; }
+	.hcell.pin { z-index: 2; }
+	.pin--start.pin--edge { border-inline-end: 1px solid var(--dj-color-border, #d1d5db); }
+	.pin--end.pin--edge { border-inline-start: 1px solid var(--dj-color-border, #d1d5db); }
 	/* The ring goes on .grid because that is the element with tabindex; .scroll never takes focus. */
 	.grid:focus { outline: none; }
 	.grid:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: -2px; }
-	.vrow { position: absolute; left: 0; right: 0; display: grid; align-items: center; border-bottom: 1px solid var(--dj-color-neutral-100, #f3f4f6); }
+	.vrow { position: absolute; left: 0; right: 0; display: grid; align-items: center; border-bottom: 1px solid var(--dj-color-neutral-100, #f3f4f6); background: var(--dj-color-background, #fff); }
 	/* Measured wrapper for master-detail: carries the absolute positioning; the row inside is static. */
 	.vwrap { position: absolute; left: 0; right: 0; }
 	.vdetail { border-bottom: 1px solid var(--dj-color-neutral-100, #f3f4f6); background: var(--dj-color-neutral-50, #f9fafb); }
@@ -41,6 +52,8 @@ export default css`
 	/* The keyboard cursor matters most while the keyboard is live: mark it with an inset bar while
 	   the grid is focused. A bar rather than a tint, so it still reads on a selected row. */
 	.grid:focus .vrow--active { box-shadow: inset 3px 0 0 var(--dj-color-primary-600, #2563eb); }
+	/* A pinned first cell is opaque and would cover that bar, so it draws the bar itself. */
+	.grid:focus .vrow--active > .pin--start:first-child { box-shadow: inset 3px 0 0 var(--dj-color-primary-600, #2563eb); }
 	/* A row that is not loaded yet (remote mode): one faint bar per cell. */
 	.vrow--placeholder .ph { display: block; height: .6em; width: 60%; border-radius: .3em; background: var(--dj-data-grid-placeholder, var(--dj-color-neutral-100, #f3f4f6)); }
 	.cell { padding: var(--dj-spacing-x-small, .5rem) var(--dj-spacing-small, .75rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -69,6 +69,15 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 - A sortable header holds a `<button part="sort-button">`, which is not a tab stop of its own. `aria-sort` is `ascending` or `descending` on the sorted column and absent elsewhere. A column with `sortable: false` gets no button, so a plugin control in its header (the select-all checkbox) is never inside one.
 - Keys typed into a control inside the grid (a filter input, an edit field) go to that control, not the grid.
 
+## Columns: `columnState`
+
+- `columnState` is the user's column layout: `{ sizing, order, pinning, visibility }`. `sizing` holds pixel widths by column id, `order` every column id in display order, `pinning` the ids pinned to the inline `start` and `end`, and `visibility` `false` for each hidden column.
+- Set it from saved settings to restore a layout. Ids the grid no longer has are dropped, and columns added since come back at their declared place. Setting it emits nothing.
+- `dj-column-state-change` fires with the whole state when the user changes the layout through a plugin, so storing it is one listener: store `e.detail`, set `columnState` on load.
+- Pinned columns stay put while the body scrolls sideways (`position: sticky`, so right-to-left layouts mirror them). A pinned column needs a fixed width; one with a flexible track is measured once and kept at that width. `GridColumn.pinned` sets the starting value.
+- `minWidth` and `maxWidth` on a column limit its width, and `minWidth` is also the floor of a flexible track. When the columns are wider than the grid, the body scrolls sideways and the header follows; Left and Right on a body row scroll it from the keyboard.
+- The UI to resize, reorder, pin, and hide columns is the `columnsPlugin` from `@dojo-ng/data-grid-columns`. A plugin column placed before every app column (the checkbox column) stays first, and joins the pinned start group when there is one.
+
 ## Printing
 
 - When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and browsers repeat the header on each printed page. This does not apply to rows drawn by the detail plugin (`@dojo-ng/data-grid-detail`).
@@ -109,7 +118,7 @@ Selection:
 
 Plugins:
 
-- Supported: `selectColumnPlugin`, `rowDragPlugin` (its events carry the same `selection`), `rowStatePlugin`, `cellComponentsPlugin`, and `formatsPlugin`.
+- Supported: `selectColumnPlugin`, `rowDragPlugin` (its events carry the same `selection`), `rowStatePlugin`, `cellComponentsPlugin`, `formatsPlugin`, and `columnsPlugin`.
 - Not supported, because they need every row on the client: `treePlugin`, `groupsPlugin`, `filterPlugin`, `paginationPlugin`, `editPlugin`, `detailPlugin`, and `exportPlugin`. The grid leaves them out and logs one console warning naming them. Filter, group, and thread on the server instead.
 
 Limits:
@@ -157,6 +166,7 @@ Limits:
 - `dj-selection-change`: Detail `{ rows, ids, all, except, count }`.
 - `dj-rows-request`: Detail `{ start, end, epoch, reason }`,
 remote mode only.
+- `dj-column-state-change`: Detail: the `columnState`.
 - `dj-sort`
 - `dj-range-change`: Detail `{ start, end, count, rendered }` — inclusive
 first and last rendered row-model indices, the total row count, and the full index list; `start`

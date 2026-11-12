@@ -1,6 +1,7 @@
 import type { TemplateResult } from "lit";
 import type { Cell, Header as TableHeader, Row as TableRow, Table, TableOptionsResolved } from "@tanstack/table-core";
 import type { DjDataGrid, GridColumn, Row } from "./dj-data-grid.js";
+import type { GridColumnState } from "./column-layout.js";
 
 /** What a plugin can see and do. Created once per table build, BEFORE the table itself, so the
  *  `columns()` hook can read host state while the column list is still being decided. */
@@ -23,6 +24,13 @@ export interface DataGridContext {
 	 *  have arrived, or with `undefined` if the list changes first (a new epoch) or another call
 	 *  replaces this one. Outside remote mode it resolves at once with the row-model ids. */
 	rowIds(first: number, last: number): Promise<string[] | undefined>;
+	/** Replace the column state on the user's behalf: like setting `host.columnState`, but it
+	 *  emits `dj-column-state-change` when the state changed. Pass `{ emit: false }` for a live
+	 *  preview (a resize drag) and emit once at the end. */
+	setColumnState(state: Partial<GridColumnState>, options?: { emit?: boolean }): void;
+	/** The column state the grid starts with: declared order, declared `pinned`, nothing sized
+	 *  or hidden. What a "Reset" restores. */
+	defaultColumnState(): GridColumnState;
 }
 
 export interface DataGridPlugin {
@@ -46,6 +54,13 @@ export interface DataGridPlugin {
 	 *  returned content renders inside it, so make a column `sortable: false` if a control in its
 	 *  header would fight the sort click. */
 	renderHeader?(header: TableHeader<Row, unknown>, ctx: DataGridContext): TemplateResult | string | undefined;
+	/** Extra controls at the inline end of a column header, outside its sort button (a column
+	 *  menu button, a resize handle). Every plugin's result renders, in array order. A click
+	 *  inside them never sorts the column. */
+	headerControls?(header: TableHeader<Row, unknown>, ctx: DataGridContext): TemplateResult | undefined;
+	/** A key on the header row, before the core acts. `header` is the header holding the
+	 *  keyboard position. Return `true` to claim the key; the core then ignores it. */
+	headerKey?(e: KeyboardEvent, header: TableHeader<Row, unknown>, ctx: DataGridContext): boolean | void;
 	/** WRAP a cell's content (indent, expander, badges). Applied in array order after renderCell. */
 	decorateCell?(cell: Cell<Row, unknown>, content: unknown, ctx: DataGridContext): unknown;
 	/** Merge attributes onto each rendered row element (aria-level, aria-expanded…). Array order;

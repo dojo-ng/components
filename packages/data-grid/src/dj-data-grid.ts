@@ -10,6 +10,7 @@ import {
 import { Virtualizer, elementScroll, observeElementOffset, observeElementRect } from "@tanstack/virtual-core";
 import type { DataGridPlugin, DataGridContext } from "./plugin.js";
 import { RowCache } from "./row-cache.js";
+import { PINNED_FALLBACK, layoutColumns, resolveColumnState, sameColumnState, type ColumnLayout, type GridColumnState } from "./column-layout.js";
 import styles from "./dj-data-grid.styles.js";
 
 export type Row = Record<string, unknown>;
@@ -39,6 +40,19 @@ export interface GridColumn {
 	/** TanStack aggregation for this column when grouping (set by the groups plugin's columns()
 	 *  hook; copied onto the ColumnDef). Core never sets it itself. */
 	aggregationFn?: AggregationFnOption<Row>;
+	/** The narrowest the column may be resized, in pixels. Also the floor of a flexible track. */
+	minWidth?: number;
+	/** The widest the column may be resized, in pixels. */
+	maxWidth?: number;
+	/** Pin the column to the inline start or end at first. Only the starting value: the live
+	 *  value is `columnState.pinning`. */
+	pinned?: "start" | "end";
+	/** With `@dojo-ng/data-grid-columns`: whether the user may resize it. Default `true`. */
+	resizable?: boolean;
+	/** With `@dojo-ng/data-grid-columns`: whether the user may move it. Default `true`. */
+	reorderable?: boolean;
+	/** With `@dojo-ng/data-grid-columns`: whether the user may hide it. Default `true`. */
+	hideable?: boolean;
 }
 /**
  * What is selected, in a form that works when most rows are not loaded. `all` false: `ids` are the
@@ -136,6 +150,24 @@ export type ActivationMode = "none" | "click" | "double";
  * - Keys typed into a control inside the grid (a filter input, an edit field) go to that
  *   control, not the grid.
  *
+ * #### Columns: `columnState`
+ * - `columnState` is the user's column layout: `{ sizing, order, pinning, visibility }`. `sizing`
+ *   holds pixel widths by column id, `order` every column id in display order, `pinning` the ids
+ *   pinned to the inline `start` and `end`, and `visibility` `false` for each hidden column.
+ * - Set it from saved settings to restore a layout. Ids the grid no longer has are dropped, and
+ *   columns added since come back at their declared place. Setting it emits nothing.
+ * - `dj-column-state-change` fires with the whole state when the user changes the layout through
+ *   a plugin, so storing it is one listener: store `e.detail`, set `columnState` on load.
+ * - Pinned columns stay put while the body scrolls sideways (`position: sticky`, so right-to-left
+ *   layouts mirror them). A pinned column needs a fixed width; one with a flexible track is
+ *   measured once and kept at that width. `GridColumn.pinned` sets the starting value.
+ * - `minWidth` and `maxWidth` on a column limit its width, and `minWidth` is also the floor of a
+ *   flexible track. When the columns are wider than the grid, the body scrolls sideways and the
+ *   header follows; Left and Right on a body row scroll it from the keyboard.
+ * - The UI to resize, reorder, pin, and hide columns is the `columnsPlugin` from
+ *   `@dojo-ng/data-grid-columns`. A plugin column placed before every app column (the checkbox
+ *   column) stays first, and joins the pinned start group when there is one.
+ *
  * #### Printing
  * - When the page is printed, every row becomes part of a real `<table>` with a `<thead>`, and
  *   browsers repeat the header on each printed page. This does not apply to rows drawn by the
@@ -196,7 +228,7 @@ export type ActivationMode = "none" | "click" | "double";
  *
  * Plugins:
  * - Supported: `selectColumnPlugin`, `rowDragPlugin` (its events carry the same `selection`),
- *   `rowStatePlugin`, `cellComponentsPlugin`, and `formatsPlugin`.
+ *   `rowStatePlugin`, `cellComponentsPlugin`, `formatsPlugin`, and `columnsPlugin`.
  * - Not supported, because they need every row on the client: `treePlugin`, `groupsPlugin`,
  *   `filterPlugin`, `paginationPlugin`, `editPlugin`, `detailPlugin`, and `exportPlugin`. The grid
  *   leaves them out and logs one console warning naming them. Filter, group, and thread on the
@@ -213,8 +245,9 @@ export type ActivationMode = "none" | "click" | "double";
  * the original row data), `dj-active-change` (detail `{ index, row }`), `dj-range-change` (detail `{ start, end, count, rendered }` — inclusive
  * first and last rendered row-model indices, the total row count, and the full index list; `start`
  * and `end` are -1 when nothing is rendered), `dj-rows-request` (detail `{ start, end, epoch, reason }`,
- * remote mode only). Parts: `grid`, `head`, `row`, `row--active`, `row--selected`,
- * `row--placeholder`, `cell`, `chrome-top`, `chrome-bottom`, `subhead`, `sort-button`.
+ * remote mode only), `dj-column-state-change` (detail: the `columnState`). Parts: `grid`, `head`,
+ * `row`, `row--active`, `row--selected`, `row--placeholder`, `cell`, `chrome-top`, `chrome-bottom`,
+ * `subhead`, `sort-button`.
  *
  * @cssprop --dj-data-grid-placeholder - The bar drawn in each cell of a row that is not loaded yet.
  */
@@ -318,6 +351,8 @@ export class DjDataGrid extends DojoElement {
 			rowAt: (index: number) => this.#rowAt(index),
 			indexOf: (row: TableRow<Row>) => this.#indexOf(row),
 			rowIds: (first: number, last: number) => this.#rowIds(first, last),
+			setColumnState: (state: Partial<GridColumnState>, options?: { emit?: boolean }) => this.#setColumnState(state, options?.emit ?? true),
+			defaultColumnState: () => resolveColumnState(this.#computeColumns(), undefined, this.#userIds()),
 		} as unknown as DataGridContext;
 		Object.defineProperty(ctx, "table", { get: () => this.#table, enumerable: true });
 		return ctx;
@@ -723,6 +758,102 @@ export class DjDataGrid extends DojoElement {
 		}
 	}
 
+	// ---- Column state (order, widths, pinning, visibility) ----
+	/** What the column state is resolved from: the app's `columnState`, or the last state the
+	 *  user made. Kept as given, so ids for columns that arrive later are not lost. */
+	#colInput?: Partial<GridColumnState>;
+	/** The resolved state and the layout drawn from it, refreshed before each render. */
+	#colState?: GridColumnState;
+	#layout?: ColumnLayout;
+	/** Pixel widths read from the page for pinned columns with a flexible track. */
+	#measured: Record<string, number> = {};
+	/** The header the keyboard was on when the column state last changed, so it can follow. */
+	#headerColId?: string;
+
+	/**
+	 * The user's column layout: `{ sizing, order, pinning, visibility }` (see `GridColumnState`).
+	 * Set it from saved settings to restore a layout; ids the grid no longer has are dropped and
+	 * columns added since come back at their declared place. Setting it does not emit
+	 * `dj-column-state-change`. Reading it always returns a complete, resolved copy.
+	 */
+	get columnState(): GridColumnState {
+		const s = this.#resolveColumns();
+		return { sizing: { ...s.sizing }, order: [...s.order], pinning: { start: [...s.pinning.start], end: [...s.pinning.end] }, visibility: { ...s.visibility } };
+	}
+	set columnState(value: Partial<GridColumnState> | undefined) {
+		this.#rememberHeader();
+		this.#colDirty = false;
+		this.#colInput = value ?? undefined;
+		this.requestUpdate();
+	}
+	#userIds(): Set<string> { return new Set((this.columns ?? []).map((c) => c.id)); }
+	#resolveColumns(): GridColumnState {
+		return resolveColumnState(this.#computeColumns(), this.#colInput, this.#userIds());
+	}
+	/** A silent change (a live resize preview) happened since the last event, so the next
+	 *  emitting change reports even if it lands where the preview already was. */
+	#colDirty = false;
+	#setColumnState(next: Partial<GridColumnState>, emit: boolean) {
+		const prev = this.#resolveColumns();
+		this.#rememberHeader();
+		this.#colInput = next;
+		const now = this.columnState;
+		const changed = !sameColumnState(prev, now);
+		if (changed) this.requestUpdate();
+		if (!emit) { this.#colDirty ||= changed; return; }
+		if (!changed && !this.#colDirty) return;
+		this.#colDirty = false;
+		this.emit("dj-column-state-change", { detail: now });
+	}
+	#rememberHeader() {
+		if (this.headerCol !== null) this.#headerColId = this.#headers()[this.headerCol]?.column.id;
+	}
+	/** Resolve the column state, lay it out, and hand TanStack its order, pinning, visibility,
+	 *  and sizing when they changed. */
+	#syncColumns() {
+		if (!this.#table) return;
+		const cols = this.#computeColumns();
+		const users = this.#userIds();
+		this.#colState = resolveColumnState(cols, this.#colInput, users);
+		for (const id of Object.keys(this.#measured)) {
+			if (!this.#colState.pinning.start.includes(id) && !this.#colState.pinning.end.includes(id)) delete this.#measured[id];
+		}
+		this.#layout = layoutColumns(cols, this.#colState, users, this.#measured);
+		const t = this.#layout.tanstack;
+		const cur = this.#tstate;
+		const same = JSON.stringify([cur.columnOrder, cur.columnPinning, cur.columnVisibility, cur.columnSizing]) ===
+			JSON.stringify([t.columnOrder, t.columnPinning, t.columnVisibility, t.columnSizing]);
+		if (!same) {
+			this.#tstate = { ...cur, ...t };
+			this.#table.setOptions((o) => ({ ...o, state: this.#tstate }));
+		}
+		if (this.#headerColId !== undefined && this.headerCol !== null) {
+			const i = this.#headers().findIndex((h) => h.column.id === this.#headerColId);
+			if (i >= 0) this.headerCol = i;
+		}
+		this.#headerColId = undefined;
+	}
+	/** Measure pinned columns that are waiting for a width, then lay out again. */
+	#measurePinned() {
+		const waiting = this.#layout?.columns.filter((c) => c.pending && this.#measured[c.id] === undefined) ?? [];
+		let changed = false;
+		const byId = new Map(this.#computeColumns().map((c) => [c.id, c]));
+		for (const c of waiting) {
+			const cell = [...this.renderRoot.querySelectorAll<HTMLElement>(".head [data-column]")].find((h) => h.dataset.column === c.id);
+			if (!cell) continue;
+			// A flexible track squeezed to nothing (the fixed columns already fill the row) has no
+			// width worth keeping: use its minWidth, or a fallback.
+			const w = cell.getBoundingClientRect().width;
+			this.#measured[c.id] = w > 0 ? w : (byId.get(c.id)?.minWidth ?? PINNED_FALLBACK);
+			changed = true;
+		}
+		if (changed) this.requestUpdate();
+	}
+	#onScroll = (e: Event) => {
+		const head = this.renderRoot.querySelector<HTMLElement>(".headwrap");
+		if (head) head.scrollLeft = (e.currentTarget as HTMLElement).scrollLeft;
+	};
+
 	/** Column list after every plugin's `columns()` transform, in array order. */
 	#computeColumns(): GridColumn[] {
 		return this.#active.reduce((cols, p) => p.columns?.(cols, this.#ctx) ?? cols, this.columns);
@@ -811,6 +942,7 @@ export class DjDataGrid extends DojoElement {
 		// also picks up any initialState a plugin contributed via tableOptions().
 		this.#tstate = { ...this.#table.initialState, sorting: this.sorting, rowSelection: this.rowSelection };
 		this.#table.setOptions((o) => ({ ...o, state: this.#tstate }));
+		this.#syncColumns();
 
 		for (const p of this.#active) {
 			const dispose = p.setup?.(this.#ctx);
@@ -831,6 +963,7 @@ export class DjDataGrid extends DojoElement {
 			this.#buildTable();
 			this.#virtualizer?.measure();
 		}
+		this.#syncColumns();
 	}
 
 	#onBeforePrint = () => { this.printing = true; };
@@ -891,6 +1024,30 @@ export class DjDataGrid extends DojoElement {
 		}
 		this.#emitRangeChange();
 		this.#requestRows();
+		this.#measurePinned();
+		if (c.has("headerCol") && this.headerCol !== null) this.#revealHeader(this.headerCol);
+	}
+	/** Scroll the body sideways so header `i` is not off screen or under a pinned column. */
+	#revealHeader(i: number) {
+		const sc = this.scrollEl;
+		const cell = this.renderRoot.querySelector<HTMLElement>(`#h-${i}`);
+		if (!sc || !cell || cell.classList.contains("pin") || sc.scrollWidth <= sc.clientWidth) return;
+		// The header strip follows the body on `scroll`, which Firefox and WebKit fire a frame
+		// later: sync it now so a quick run of key presses measures where the header really is.
+		const head = this.renderRoot.querySelector<HTMLElement>(".headwrap");
+		if (head) head.scrollLeft = sc.scrollLeft;
+		const rtl = getComputedStyle(this).direction === "rtl";
+		let coverLeft = 0, coverRight = 0;
+		for (const p of this.renderRoot.querySelectorAll<HTMLElement>(".head .pin")) {
+			const w = p.getBoundingClientRect().width;
+			if (p.classList.contains("pin--start") !== rtl) coverLeft += w; else coverRight += w;
+		}
+		const box = sc.getBoundingClientRect();
+		const r = cell.getBoundingClientRect();
+		const left = box.left + coverLeft, right = box.left + sc.clientWidth - coverRight;
+		if (r.left < left) sc.scrollBy({ left: r.left - left });
+		else if (r.right > right) sc.scrollBy({ left: Math.min(r.right - right, r.left - left) });
+		if (head) head.scrollLeft = sc.scrollLeft;
 	}
 
 	/**
@@ -927,6 +1084,8 @@ export class DjDataGrid extends DojoElement {
 	private onKeyDown(e: KeyboardEvent) {
 		// Keys typed into a filter input (or any text control in the grid) belong to that control.
 		if (isTextEntryTarget(e)) return;
+		// Keys in a header control's own UI (an open column menu) belong to that control.
+		if (e.composedPath().some((n) => (n as Element).classList?.contains("hextras"))) return;
 		if (this.headerCol !== null) { this.#onHeaderKey(e); return; }
 		const n = this.#rowTotal();
 		switch (e.key) {
@@ -936,6 +1095,17 @@ export class DjDataGrid extends DojoElement {
 				if (this.activeIndex <= 0 && this.#headers().length) this.headerCol = 0;
 				else this.move(-1);
 				break;
+			// Rows are the unit of the keyboard model; Left and Right scroll the columns sideways
+			// when they are wider than the grid (pinned columns stay put), so every column is
+			// reachable without a pointer. Physical keys, physical scroll, in either direction.
+			case "ArrowLeft":
+			case "ArrowRight": {
+				const sc = this.scrollEl;
+				if (!sc || sc.scrollWidth <= sc.clientWidth) break;
+				e.preventDefault();
+				sc.scrollBy({ left: (e.key === "ArrowLeft" ? -1 : 1) * Math.max(40, Math.round(sc.clientWidth / 4)) });
+				break;
+			}
 			case "PageDown": e.preventDefault(); this.move(this.#viewportRows()); break;
 			case "PageUp": e.preventDefault(); this.move(-this.#viewportRows()); break;
 			case "Home": e.preventDefault(); if (n) this.#setActive(0); this.#virtualizer?.scrollToIndex(0); break;
@@ -956,6 +1126,8 @@ export class DjDataGrid extends DojoElement {
 		const headers = this.#headers();
 		const last = headers.length - 1;
 		const col = Math.min(this.headerCol ?? 0, last);
+		const header = headers[col];
+		if (header) for (const p of this.#active) if (p.headerKey?.(e, header, this.#ctx) === true) return;
 		const rtl = getComputedStyle(this).direction === "rtl";
 		const go = (i: number) => { e.preventDefault(); this.headerCol = Math.max(0, Math.min(last, i)); };
 		switch (e.key) {
@@ -1123,7 +1295,21 @@ export class DjDataGrid extends DojoElement {
 		// row with wide content (e.g. a native <select> filter) grow its tracks independently
 		// and drift out of alignment with the header. A 0 minimum makes every row resolve the
 		// same track widths; cells ellipsize.
-		const template = this.#computeColumns().map((c) => c.width ?? "minmax(0, 1fr)").join(" ");
+		// The layout (column-layout.ts) gives each column its track and, when pinned, its sticky
+		// offset. Tracks follow the headers TanStack actually has, so the template can never
+		// disagree with the cells for even one frame.
+		const laid = new Map((this.#layout?.columns ?? []).map((c) => [c.id, c]));
+		const template = headers.map((h) => laid.get(h.column.id)?.track ?? "minmax(0, 1fr)").join(" ");
+		const minWidth = this.#layout?.minWidth ?? "";
+		const rowWidth = minWidth ? `;min-width:${minWidth}` : "";
+		// Pinned cells: sticky at their offset, with a class for the background and edge shadow.
+		const pinOf = (id: string) => {
+			const c = laid.get(id);
+			if (!c?.pinned || !c.offset) return { cls: "", style: "" };
+			const side = c.pinned === "start" ? "inset-inline-start" : "inset-inline-end";
+			return { cls: `pin pin--${c.pinned}${c.edge ? " pin--edge" : ""}`, style: `${side}:${c.offset}` };
+		};
+		const pins = headers.map((h) => pinOf(h.column.id));
 		const total = this.#virtualizer?.getTotalSize() ?? 0;
 		const items = virtualItems;
 		// Chrome regions (quick filter, pagination, totals) are full-width, outside the grid rows.
@@ -1141,7 +1327,8 @@ export class DjDataGrid extends DojoElement {
 			<div class="wrap" style=${printing ? "display:none" : nothing}>
 				${chromeTops.map((c) => html`<div part="chrome-top" class="chrome">${c}</div>`)}
 				<div part="grid" class="grid" role="grid" tabindex="0" aria-rowcount=${n + headerRows} aria-colcount=${headers.length} aria-multiselectable=${this.selectionMode === "multiple" ? "true" : nothing} aria-activedescendant=${activeId} @keydown=${this.onKeyDown}>
-					<div part="head" class="head row" role="row" aria-rowindex="1" style=${`grid-template-columns:${template}`}>
+					<div class="headwrap" role="presentation">
+					<div part="head" class="head row" role="row" aria-rowindex="1" style=${`grid-template-columns:${template}${rowWidth}`}>
 						${headers.map((h, i) => {
 							const sortable = h.column.getCanSort();
 							const dir = h.column.getIsSorted();
@@ -1152,21 +1339,25 @@ export class DjDataGrid extends DojoElement {
 							// cannot sort gets no button, so a plugin control (select-all) is never nested in one. The
 							// click handler stays on the cell, so a click anywhere in it (or on the button) sorts.
 							const glyph = html`<span class="sortind" aria-hidden="true">${dir === "asc" ? "▲" : dir === "desc" ? "▼" : ""}</span>`;
-							return html`<div id=${`h-${i}`} class="hcell ${sortable ? "sortable" : ""} ${i === headerCol ? "hcell--active" : ""}" role="columnheader"
+							const extras = this.#active.map((p) => p.headerControls?.(h, this.#ctx)).filter((x) => x !== undefined);
+							return html`<div id=${`h-${i}`} class="hcell ${sortable ? "sortable" : ""} ${i === headerCol ? "hcell--active" : ""} ${pins[i].cls}" role="columnheader"
+								data-column=${h.column.id} style=${pins[i].style || nothing}
 								aria-colindex=${i + 1}
 								aria-sort=${dir === "asc" ? "ascending" : dir === "desc" ? "descending" : nothing}
-								@click=${sortable ? () => h.column.toggleSorting() : nothing}>
+								@click=${sortable ? (e: MouseEvent) => { if (!e.composedPath().some((n) => (n as Element).classList?.contains("hextras"))) h.column.toggleSorting(); } : nothing}>
 								${sortable
 									? html`<button part="sort-button" class="sortbtn" type="button" tabindex="-1"><span class="label">${label}</span>${glyph}</button>`
 									: html`<span class="label">${label}</span>`}
+								${extras.length ? html`<span class="hextras">${extras}</span>` : nothing}
 							</div>`;
 						})}
 					</div>
-					${subRows.map((cells, i) => html`<div part="subhead" class="subhead row" role="row" aria-rowindex=${i + 2} style=${`grid-template-columns:${template}`}>
-						${cells.map((cell, i) => html`<div class="subcell" role="gridcell" aria-colindex=${i + 1}>${cell ?? nothing}</div>`)}
+					${subRows.map((cells, i) => html`<div part="subhead" class="subhead row" role="row" aria-rowindex=${i + 2} style=${`grid-template-columns:${template}${rowWidth}`}>
+						${cells.map((cell, i) => html`<div class="subcell ${pins[i]?.cls ?? ""}" style=${pins[i]?.style || nothing} role="gridcell" aria-colindex=${i + 1}>${cell ?? nothing}</div>`)}
 					</div>`)}
-					<div class="scroll" role="presentation" style=${`height:${this.height}`}>
-						<div role="rowgroup" style=${`height:${total}px;position:relative`}>
+					</div>
+					<div class="scroll" role="presentation" style=${`height:${this.height}`} @scroll=${this.#onScroll}>
+						<div role="rowgroup" style=${`height:${total}px;position:relative${rowWidth}`}>
 							${items.map((vi) => {
 								const row = remote ? this.#rowAt(vi.index) : rows[vi.index];
 								if (!row && remote) {
@@ -1178,7 +1369,7 @@ export class DjDataGrid extends DojoElement {
 										role="row" aria-rowindex=${vi.index + headerRows + 1} aria-busy="true"
 										style=${`transform:translateY(${vi.start}px);height:${vi.size}px;grid-template-columns:${template}`}
 										@click=${() => this.#setActive(vi.index)}>
-										${headers.map((_, i) => html`<div part="cell" class="cell" role="gridcell" aria-colindex=${i + 1}><span class="ph"></span></div>`)}
+										${headers.map((h, i) => html`<div part="cell" class="cell ${pins[i].cls}" style=${pins[i].style || nothing} data-column=${h.column.id} role="gridcell" aria-colindex=${i + 1}><span class="ph"></span></div>`)}
 									</div>`;
 								}
 								if (!row) return nothing;
@@ -1198,7 +1389,7 @@ export class DjDataGrid extends DojoElement {
 									${ref((el) => el && applyRowAttrs(el as Element, this.#rowAttributes(row, vi.index, selected)))}
 									@click=${(e: MouseEvent) => this.#onRowClick(e, vi.index)}
 									@dblclick=${(e: MouseEvent) => this.#onRowDblClick(e, vi.index)}>
-									${row.getVisibleCells().map((cell, i) => html`<div part="cell" class="cell" role="gridcell" aria-colindex=${i + 1}>${this.#cellContent(cell)}</div>`)}
+									${row.getVisibleCells().map((cell, i) => html`<div part="cell" class="cell ${pins[i]?.cls ?? ""}" style=${pins[i]?.style || nothing} data-column=${cell.column.id} role="gridcell" aria-colindex=${i + 1}>${this.#cellContent(cell)}</div>`)}
 								</div>`;
 								if (!hasDetail) return rowTpl;
 								const detail = this.#detailContent(row);
@@ -1236,5 +1427,6 @@ declare global {
 		"dj-active-change": CustomEvent<{ index: number; row: Row | undefined }>;
 		"dj-range-change": CustomEvent<{ start: number; end: number; count: number; rendered: number[] }>;
 		"dj-rows-request": CustomEvent<{ start: number; end: number; epoch: number; reason: "range" | "selection" }>;
+		"dj-column-state-change": CustomEvent<GridColumnState>;
 	}
 }

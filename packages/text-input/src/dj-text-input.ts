@@ -32,7 +32,7 @@ const VALIDATION_PROPS = ["value", "type", "required", "pattern", "min", "max", 
 
 export class DjTextInput extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles: CSSResultGroup = [styles, reducedMotion];
-	static override version = "0.1.5";
+	static override version = "0.1.6";
 	static override focusable = true;
 	static formAssociated = true;
 

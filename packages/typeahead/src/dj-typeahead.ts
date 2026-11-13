@@ -45,7 +45,7 @@ const EN: Record<string, string> = { selectAnOption: "Please select an option.",
  */
 export class DjTypeahead extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = styles;
-	static override version = "0.2.0";
+	static override version = "0.2.1";
 	static override focusable = true;
 	static formAssociated = true;
 

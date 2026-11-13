@@ -621,6 +621,7 @@ declare module "react" {
         "step"?: DjTextInput["step"];
         "minlength"?: DjTextInput["minlength"];
         "maxlength"?: DjTextInput["maxlength"];
+        "combobox"?: DjTextInput["combobox"];
       };
       "dj-theme": DjProps<DjTheme> & {
         "theme"?: DjTheme["theme"];

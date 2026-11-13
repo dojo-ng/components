@@ -51,6 +51,7 @@ export class DjTypeahead extends FormControl(DojoElement) implements Partial<Doj
 
 	#internals: ElementInternals;
 	#i18n = new LocaleController(this);
+	@query("dj-list") private listEl?: HTMLElement;
 	@query("dj-text-input") private field!: HTMLElement & { value: string; focus(): void };
 
 	@property({ type: Array }) options: ListOption[] = [];
@@ -111,6 +112,8 @@ export class DjTypeahead extends FormControl(DojoElement) implements Partial<Doj
 		if (this.required && !this.value) this.#internals.setValidity({ valueMissing: true }, messages.resolve("dj", this.#i18n.locale, "selectAnOption") ?? "Please select an option.", this.field);
 		else this.#internals.setValidity({});
 	}
+	/** Render again once the list exists, so the input can point at it. */
+	protected override firstUpdated() { this.requestUpdate(); }
 	protected override updated(changed: Map<PropertyKey, unknown>) {
 		if (changed.has("value") || changed.has("required")) this.sync();
 	}
@@ -170,7 +173,7 @@ export class DjTypeahead extends FormControl(DojoElement) implements Partial<Doj
 				placeholder=${this.placeholder ?? nothing}
 				helper-text=${this.helperText ?? nothing}
 				?disabled=${this.isDisabled} ?required=${this.required}
-				role="combobox" aria-expanded=${this.open ? "true" : "false"} aria-controls="suggestions"
+				.combobox=${{ controls: this.listEl ?? null, expanded: shown }}
 				@input=${this.onInput} @keydown=${this.onFieldKey} @focus=${() => { if (this.#reopenGuard) { this.#reopenGuard = false; return; } if (this.options.length || this.remote) this.#openPopup(); }}
 			></dj-text-input>
 			<dj-popup .anchor=${this.field} .open=${shown} position=${this.position} .scrollLock=${false} @dj-close=${() => { this.open = false; }}>

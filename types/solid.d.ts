@@ -617,6 +617,7 @@ declare module "solid-js" {
         "step"?: DjTextInput["step"];
         "minlength"?: DjTextInput["minlength"];
         "maxlength"?: DjTextInput["maxlength"];
+        "combobox"?: DjTextInput["combobox"];
       };
       "dj-theme": JSX.HTMLAttributes<DjTheme> & {
         "theme"?: DjTheme["theme"];

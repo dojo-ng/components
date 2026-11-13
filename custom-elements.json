@@ -11111,6 +11111,14 @@
               "attribute": "maxlength"
             },
             {
+              "kind": "field",
+              "name": "combobox",
+              "type": {
+                "text": "TextInputCombobox"
+              },
+              "description": "Make the inner input a combobox controlling a popup list. Property only."
+            },
+            {
               "kind": "method",
               "name": "checkValidity",
               "return": {

@@ -47,6 +47,7 @@ Set `label`, `required`, and read the value from the `input` event.
 | `step` | step | `string` | — |
 | `minlength` | minlength | `number` | — |
 | `maxlength` | maxlength | `number` | — |
+| `combobox` | — | `TextInputCombobox` | — |
 
 ## Slots
 

@@ -81,7 +81,12 @@ describe("long lists in select and typeahead", () => {
 		ta.focus();
 		await settle(ta, ta.shadowRoot.querySelector("dj-list"));
 		assert(ta.shadowRoot.querySelector("dj-popup").open, "typeahead popup is open");
-		assertEqual(ta.shadowRoot.querySelector("dj-text-input").getAttribute("aria-controls"), ta.shadowRoot.querySelector("dj-list").id, "aria-controls names the list");
+		const field = ta.shadowRoot.querySelector("dj-text-input");
+		const inner = field.shadowRoot.querySelector("input");
+		assertEqual(inner.getAttribute("role"), "combobox", "the focused input is the combobox");
+		assertEqual(inner.getAttribute("aria-expanded"), "true", "and is expanded");
+		assert(!field.hasAttribute("role"), "the host carries no role");
+		if ("ariaControlsElements" in inner) assertEqual(inner.ariaControlsElements?.[0], ta.shadowRoot.querySelector("dj-list"), "ariaControlsElements points at the list");
 		await assertNoViolations(ta);
 		cleanup();
 		const chips = await mount(make("dj-chip-typeahead", { options: many(), label: "Tags", value: ["v1"] }));

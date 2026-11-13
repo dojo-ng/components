@@ -6,12 +6,22 @@ import "@dojo-ng/label";
 import "@dojo-ng/helper-text";
 import styles from "./dj-text-input.styles.js";
 
+/** Makes the inner input a combobox: `controls` is the popup list it controls (anywhere the input
+ *  can see it: the document, or the shadow root of a component that contains this text input),
+ *  and `expanded` says whether that list is showing. */
+export interface TextInputCombobox { controls: Element | null; expanded: boolean; }
+
 export type TextInputType = "text" | "email" | "number" | "password" | "search" | "tel" | "url" | "date";
 
 /**
  * `<dj-text-input>` — a form-associated text field that composes `<dj-label>` and
  * `<dj-helper-text>`. It participates in native forms via ElementInternals: it sets its
  * form value and mirrors the inner input's constraint validity to the host.
+ *
+ * A component that builds a combobox on a text input (as `dj-typeahead` does) sets `combobox`, so
+ * the role and `aria-expanded` sit on the input that has focus. The input points at the popup
+ * list through `ariaControlsElements`, which can reach into the host component's shadow root
+ * where an `aria-controls` id cannot.
  *
  * Slots: `leading`, `trailing`. Parts: `label`, `control`, `input`, `helper-text`.
  * Events: native `input` (composed, crosses the shadow boundary) and a re-dispatched
@@ -48,6 +58,8 @@ export class DjTextInput extends FormControl(DojoElement) implements Partial<Doj
 	@property() step?: string;
 	@property({ attribute: "minlength", type: Number }) minlength?: number;
 	@property({ attribute: "maxlength", type: Number }) maxlength?: number;
+	/** Make the inner input a combobox controlling a popup list. Property only. */
+	@property({ attribute: false }) combobox?: TextInputCombobox;
 	/** Tri-state validity used for styling/help text; managed by the component. */
 	@state() private valid?: boolean;
 
@@ -113,6 +125,11 @@ export class DjTextInput extends FormControl(DojoElement) implements Partial<Doj
 	 * so adding `required` or a `pattern` to a field updates `validity` and the form at once. */
 	protected override updated(changed: Map<PropertyKey, unknown>) {
 		if (VALIDATION_PROPS.some((p) => changed.has(p))) this.syncValidity();
+		if (changed.has("combobox")) {
+			const input = this.input as (HTMLInputElement & { ariaControlsElements?: Element[] | null }) | undefined;
+			const controls = this.combobox?.controls;
+			if (input && "ariaControlsElements" in input) input.ariaControlsElements = controls ? [controls] : null;
+		}
 	}
 
 	private onInput(event: Event) {
@@ -170,6 +187,9 @@ export class DjTextInput extends FormControl(DojoElement) implements Partial<Doj
 					aria-label=${this.label ?? nothing}
 					aria-invalid=${this.valid === false ? "true" : nothing}
 					aria-describedby=${helper ? "helper" : nothing}
+					role=${this.combobox ? "combobox" : nothing}
+					aria-autocomplete=${this.combobox ? "list" : nothing}
+					aria-expanded=${this.combobox ? (this.combobox.expanded ? "true" : "false") : nothing}
 					?disabled=${this.isDisabled}
 					?readonly=${this.readonly}
 					?required=${this.required}

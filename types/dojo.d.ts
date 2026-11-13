@@ -623,6 +623,7 @@ declare module "@dojo-ng/framework" {
         "step"?: DjTextInput["step"];
         "minlength"?: DjTextInput["minlength"];
         "maxlength"?: DjTextInput["maxlength"];
+        "combobox"?: DjTextInput["combobox"];
       };
       "dj-theme": DjVNodeBase & {
         "theme"?: DjTheme["theme"];

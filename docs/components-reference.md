@@ -157,6 +157,7 @@ Supporting text shown under a form control. Provide text via the `text` attribut
 | `step` | step | `string` | — |
 | `minlength` | minlength | `number` | — |
 | `maxlength` | maxlength | `number` | — |
+| `combobox` | — | `TextInputCombobox` | — |
 
 **Slots:** `leading`, `trailing`
 

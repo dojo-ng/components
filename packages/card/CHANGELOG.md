@@ -1,5 +1,11 @@
 # @dojo-ng/card
 
+## 0.2.1
+
+### Patch Changes
+
+- `dj-card` no longer draws the empty actions strip (border and padding) when nothing is slotted into `actions`.
+
 ## 0.2.0
 
 ### Minor Changes

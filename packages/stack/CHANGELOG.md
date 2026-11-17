@@ -1,5 +1,11 @@
 # @dojo-ng/stack
 
+## 0.2.0
+
+### Minor Changes
+
+- `dj-stack` gains a `wrap` attribute (`flex-wrap: wrap`) for rows of chips and buttons.
+
 ## 0.1.1
 
 ### Patch Changes

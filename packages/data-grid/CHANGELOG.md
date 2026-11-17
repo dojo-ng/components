@@ -1,5 +1,11 @@
 # @dojo-ng/data-grid
 
+## 0.6.1
+
+### Patch Changes
+
+- Document that `height` is the rows' viewport only (header and border are added) and that the grid keeps that height with few rows.
+
 ## 0.6.0
 
 ### Minor Changes

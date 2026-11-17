@@ -1,5 +1,11 @@
 # @dojo-ng/header
 
+## 0.1.3
+
+### Patch Changes
+
+- A `dj-nav` slotted into `leading` or `trailing` no longer collapses to zero width; it takes a share of the free space.
+
 ## 0.1.2
 
 ### Patch Changes

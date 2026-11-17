@@ -4,7 +4,7 @@ import DojoElement from "@dojo-ng/dojo-element";
 import { getHistory, whenHistory, type NavigateDetail } from "@dojo-ng/history/handle";
 import styles from "./dj-card.styles.js";
 /**
- * `<dj-card>` — content container. Slots: `header`, default (content), `actions`. Optional
+ * `<dj-card>` — content container. Slots: `header`, default (content), `actions` (drawn only when something is slotted into it). Optional
  * `title`/`subtitle`/`media-src`. `clickable` makes the body a button. Parts: `root`, `media`, `body`, `actions`.
  *
  * #### Navigation
@@ -38,12 +38,16 @@ export class DjCard extends DojoElement {
 	/** Mark the link `aria-current="page"` while the navigation location is `path`. Needs `@dojo-ng/history` installed. */
 	@property({ type: Boolean }) track = false;
 
+	/** Whether anything is slotted into `actions`; the strip (border and padding) is only drawn then. */
+	@state() private hasActions = false;
 	/** The path of the current navigation location, while tracking. */
 	@state() private current?: string;
 	#unsubscribe?: () => void;
 
 	override connectedCallback() {
 		super.connectedCallback();
+		// Known before the first render, so the strip never flashes in and out.
+		this.hasActions = this.querySelector(":scope > [slot=actions]") !== null;
 		this.#follow();
 	}
 
@@ -87,6 +91,10 @@ export class DjCard extends DojoElement {
 		this.emit("dj-navigate", { detail });
 	}
 
+	#onActionsChange(event: Event) {
+		this.hasActions = (event.target as HTMLSlotElement).assignedElements().length > 0;
+	}
+
 	#renderBody() {
 		const content = html`
 				<slot name="header"></slot>
@@ -103,7 +111,7 @@ export class DjCard extends DojoElement {
 	override render() {
 		return html`<div part="root" class="root">
 			${this.#renderBody()}
-			<slot name="actions" part="actions" class="actions"></slot>
+			<slot name="actions" part="actions" class="actions" ?hidden=${!this.hasActions} @slotchange=${this.#onActionsChange}></slot>
 		</div>`;
 	}
 }

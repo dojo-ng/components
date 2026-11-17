@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-Direction/align/spacing/padding/stretch.
+Direction/align/spacing/padding/stretch/wrap.
 
 ## Install
 
@@ -36,6 +36,7 @@ Evenly spaces its children.
 | `spacing` | spacing | `"small"\|"medium"\|"large"` | `"medium"` |
 | `padding` | padding | `"small"\|"medium"\|"large"` | — |
 | `stretch` | stretch | `boolean` | `false` |
+| `wrap` | wrap | `boolean` | `false` |
 
 ## Slots
 

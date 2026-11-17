@@ -4,7 +4,7 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-`sticky` pins it. Slots: `leading`, default (title), `trailing`.
+`sticky` pins it. Slots: `leading`, default (title), `trailing`. A `dj-nav` in `leading` or `trailing` is given a share of the free space (it has no width of its own); set a `width` on it to override.
 
 ## Install
 

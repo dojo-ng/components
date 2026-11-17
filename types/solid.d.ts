@@ -564,6 +564,7 @@ declare module "solid-js" {
         "spacing"?: DjStack["spacing"];
         "padding"?: DjStack["padding"];
         "stretch"?: DjStack["stretch"];
+        "wrap"?: DjStack["wrap"];
       };
       "dj-switch": JSX.HTMLAttributes<DjSwitch> & {
         "checked"?: DjSwitch["checked"];

@@ -1,5 +1,5 @@
 import { html, css } from "lit"; import { property } from "lit/decorators.js"; import DojoElement from "@dojo-ng/dojo-element";
-/** `<dj-header>` — app header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`.
+/** `<dj-header>` — app header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`. A `dj-nav` in `leading` or `trailing` is given a share of the free space (it has no width of its own); set a `width` on it to override.
  *
  * @cssprop [--dj-header-z-index=700] - Stacking order of the header. */
 export class DjHeader extends DojoElement {
@@ -9,6 +9,8 @@ export class DjHeader extends DojoElement {
 		.bar{display:flex;align-items:center;gap:var(--dj-spacing-small,.75rem);padding:var(--dj-spacing-small,.75rem) var(--dj-spacing-medium,1rem);
 			background:var(--dj-color-neutral-50,#f9fafb);border-bottom:1px solid var(--dj-color-border,#d1d5db);color:var(--dj-color-text,#1f2937);}
 		.title{flex:1 1 auto;font-weight:var(--dj-font-weight-semibold,600);}
+		/* dj-nav is a size container, so it has no intrinsic width and would collapse to 0 as a flex item here. */
+		::slotted(dj-nav){flex:1 1 0;min-inline-size:0;}
 	`;
 	@property({type:Boolean,reflect:true}) sticky=false;
 	override render(){ return html`<div class="bar" role="banner"><slot name="leading"></slot><span class="title"><slot></slot></span><slot name="trailing"></slot></div>`; }

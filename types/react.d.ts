@@ -568,6 +568,7 @@ declare module "react" {
         "spacing"?: DjStack["spacing"];
         "padding"?: DjStack["padding"];
         "stretch"?: DjStack["stretch"];
+        "wrap"?: DjStack["wrap"];
       };
       "dj-switch": DjProps<DjSwitch> & {
         "checked"?: DjSwitch["checked"];

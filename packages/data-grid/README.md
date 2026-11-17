@@ -28,6 +28,12 @@ TanStack-backed; provide `columns` and `data`, set a `height`.
 </script>
 ```
 
+## Size
+
+- `height` is the height of the rows' viewport only. The header strip (one row, plus one per plugin that adds a sub-header) and the 1px border are added on top, so the element is taller than `height`: `height="200px"` gives about 238px.
+- The grid always fills that height. With fewer rows than fit, the space under the last row stays blank inside the border. Size `height` to the data (for example `rowHeight` times the row count) if you do not want that.
+- The chrome regions (`chrome-top`, `chrome-bottom`) are drawn only by plugins that supply them, and sit outside the bordered grid, so with no such plugin nothing is drawn above or below it.
+
 ## Plugins
 
 - Filtering, pagination, inline editing, tree rows, grouping, CSV export, and master-detail are plugins. Pass an array of plugin objects to the `plugins` property, from JavaScript only.

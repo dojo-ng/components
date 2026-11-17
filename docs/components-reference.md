@@ -1043,7 +1043,7 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 
 ### `<dj-card>` · `@dojo-ng/card`
 
-Content container. Slots: `header`, default (content), `actions`. Optional `title`/`subtitle`/`media-src`. `clickable` makes the body a button. Parts: `root`, `media`, `body`, `actions`.
+Content container. Slots: `header`, default (content), `actions` (drawn only when something is slotted into it). Optional `title`/`subtitle`/`media-src`. `clickable` makes the body a button. Parts: `root`, `media`, `body`, `actions`.
 
 #### Navigation
 
@@ -1065,7 +1065,7 @@ Content container. Slots: `header`, default (content), `actions`. Optional `titl
 | `path` | path | `string` | — |
 | `track` | track | `boolean` | `false` |
 
-**Slots:** `header`, default (content), `actions`
+**Slots:** `header`, default (content), `actions` (drawn only when something is slotted into it)
 
 **Parts:** `root`, `media`, `body`, `actions`
 
@@ -1087,7 +1087,7 @@ A `<dj-card>` with a header row (avatar + title/subtitle). Slots: `avatar`, defa
 
 ### `<dj-stack>` · `@dojo-ng/stack`
 
-Flex layout. direction/align/spacing/padding/stretch.
+Flex layout. direction/align/spacing/padding/stretch/wrap.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1096,6 +1096,7 @@ Flex layout. direction/align/spacing/padding/stretch.
 | `spacing` | spacing | `"small"\|"medium"\|"large"` | `"medium"` |
 | `padding` | padding | `"small"\|"medium"\|"large"` | — |
 | `stretch` | stretch | `boolean` | `false` |
+| `wrap` | wrap | `boolean` | `false` |
 
 **Slots:** default
 
@@ -1281,7 +1282,7 @@ Needs `@dojo-ng/history` installed for `track`; without it nothing throws.
 
 ### `<dj-header>` · `@dojo-ng/header`
 
-App header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`.
+App header bar. `sticky` pins it. Slots: `leading`, default (title), `trailing`. A `dj-nav` in `leading` or `trailing` is given a share of the free space (it has no width of its own); set a `width` on it to override.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
@@ -1703,6 +1704,12 @@ A data grid from `columns` + `rows`. Click a sortable header to sort (emits `dj-
 A virtualized, sortable, selectable data grid built on TanStack Table and TanStack Virtual.
 
 Give it `columns`, `data`, and a `height`. The core covers columns, in-memory data, sorting, virtual rows, row selection, keyboard row navigation, and calculated columns (`GridColumn.compute`). Everything else is a plugin. The grid has ARIA role `grid`.
+
+#### Size
+
+- `height` is the height of the rows' viewport only. The header strip (one row, plus one per plugin that adds a sub-header) and the 1px border are added on top, so the element is taller than `height`: `height="200px"` gives about 238px.
+- The grid always fills that height. With fewer rows than fit, the space under the last row stays blank inside the border. Size `height` to the data (for example `rowHeight` times the row count) if you do not want that.
+- The chrome regions (`chrome-top`, `chrome-bottom`) are drawn only by plugins that supply them, and sit outside the bordered grid, so with no such plugin nothing is drawn above or below it.
 
 #### Plugins
 

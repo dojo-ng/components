@@ -570,6 +570,7 @@ declare module "@dojo-ng/framework" {
         "spacing"?: DjStack["spacing"];
         "padding"?: DjStack["padding"];
         "stretch"?: DjStack["stretch"];
+        "wrap"?: DjStack["wrap"];
       };
       "dj-switch": DjVNodeBase & {
         "checked"?: DjSwitch["checked"];

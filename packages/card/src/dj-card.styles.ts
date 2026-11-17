@@ -12,6 +12,7 @@ export default css`
 	.body { padding: var(--dj-spacing-medium, 1rem); }
 	.title-wrap + ::slotted(*) { margin-top: var(--dj-spacing-x-small, 0.5rem); }
 	.actions { display: flex; gap: var(--dj-spacing-x-small, 0.5rem); padding: var(--dj-spacing-x-small, 0.5rem) var(--dj-spacing-medium, 1rem); border-top: 1px solid var(--dj-color-border, #d1d5db); }
+	.actions[hidden] { display: none; }
 	.link { display: block; color: inherit; text-decoration: none; cursor: pointer; }
 	.link:focus-visible { outline: var(--dj-focus-ring, 2px solid currentColor); outline-offset: -2px; }
 	/* The card for the current page. An outline, because forced colors keeps outlines and drops shadows. */

@@ -79,6 +79,7 @@ import type { DjTheme } from "@dojo-ng/theme";
 import type { DjThreeColumnLayout } from "@dojo-ng/three-column-layout";
 import type { DjTimePicker } from "@dojo-ng/time-picker";
 import type { DjTitlePane } from "@dojo-ng/title-pane";
+import type { DjToaster } from "@dojo-ng/toast";
 import type { DjToolbar } from "@dojo-ng/toolbar";
 import type { DjTooltip } from "@dojo-ng/tooltip";
 import type { DjTransition } from "@dojo-ng/transition";
@@ -152,7 +153,7 @@ declare module "@vue/runtime-core" {
     "dj-skeleton": DefineComponent<{ effect?: DjSkeleton["effect"] }, {}, {}, {}, {}, {}, {}>;
     "dj-slide-pane": DefineComponent<{ open?: DjSlidePane["open"]; align?: DjSlidePane["align"]; width?: DjSlidePane["width"]; underlay?: DjSlidePane["underlay"]; closeText?: DjSlidePane["closeText"] }, {}, {}, {}, {}, {}, { "dj-close": (e: CustomEvent) => void }>;
     "dj-slider": DefineComponent<{ min?: DjSlider["min"]; max?: DjSlider["max"]; step?: DjSlider["step"]; value?: DjSlider["value"]; name?: DjSlider["name"]; label?: DjSlider["label"]; showOutput?: DjSlider["showOutput"]; disabled?: DjSlider["disabled"]; readonly?: DjSlider["readonly"]; required?: DjSlider["required"]; labelHidden?: DjSlider["labelHidden"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
-    "dj-snackbar": DefineComponent<{ open?: DjSnackbar["open"]; type?: DjSnackbar["type"]; leading?: DjSnackbar["leading"]; stacked?: DjSnackbar["stacked"] }, {}, {}, {}, {}, {}, {}>;
+    "dj-snackbar": DefineComponent<{ open?: DjSnackbar["open"]; type?: DjSnackbar["type"]; quiet?: DjSnackbar["quiet"]; leading?: DjSnackbar["leading"]; stacked?: DjSnackbar["stacked"] }, {}, {}, {}, {}, {}, {}>;
     "dj-sparkline": DefineComponent<{ data?: DjSparkline["data"]; type?: DjSparkline["type"]; label?: DjSparkline["label"]; marker?: DjSparkline["marker"]; min?: DjSparkline["min"]; max?: DjSparkline["max"]; maxPoints?: DjSparkline["maxPoints"] }, {}, {}, {}, {}, {}, {}>;
     "dj-speed-dial": DefineComponent<{ open?: DjSpeedDial["open"]; direction?: DjSpeedDial["direction"] }, {}, {}, {}, {}, {}, { "dj-toggle": (e: CustomEvent) => void }>;
     "dj-split-panel": DefineComponent<{ orientation?: DjSplitPanel["orientation"]; position?: DjSplitPanel["position"]; disabled?: DjSplitPanel["disabled"]; noScrollRestore?: DjSplitPanel["noScrollRestore"] }, {}, {}, {}, {}, {}, { "dj-reposition": (e: CustomEvent) => void }>;
@@ -166,6 +167,7 @@ declare module "@vue/runtime-core" {
     "dj-three-column-layout": DefineComponent<{  }, {}, {}, {}, {}, {}, {}>;
     "dj-time-picker": DefineComponent<{ value?: DjTimePicker["value"]; name?: DjTimePicker["name"]; label?: DjTimePicker["label"]; min?: DjTimePicker["min"]; max?: DjTimePicker["max"]; step?: DjTimePicker["step"]; format?: DjTimePicker["format"]; disabled?: DjTimePicker["disabled"]; required?: DjTimePicker["required"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
     "dj-title-pane": DefineComponent<{ name?: DjTitlePane["name"]; open?: DjTitlePane["open"]; closeable?: DjTitlePane["closeable"]; headingLevel?: DjTitlePane["headingLevel"] }, {}, {}, {}, {}, {}, { "dj-toggle": (e: CustomEvent) => void }>;
+    "dj-toaster": DefineComponent<{ placement?: DjToaster["placement"]; maxVisible?: DjToaster["maxVisible"]; shortcut?: DjToaster["shortcut"]; label?: DjToaster["label"] }, {}, {}, {}, {}, {}, { "dj-toast-close": (e: CustomEvent) => void }>;
     "dj-toolbar": DefineComponent<{ label?: DjToolbar["label"]; sticky?: DjToolbar["sticky"]; overflow?: DjToolbar["overflow"]; overflowPosition?: DjToolbar["overflowPosition"] }, {}, {}, {}, {}, {}, { "dj-action": (e: CustomEvent) => void }>;
     "dj-tooltip": DefineComponent<{ open?: DjTooltip["open"]; orientation?: DjTooltip["orientation"] }, {}, {}, {}, {}, {}, {}>;
     "dj-transition": DefineComponent<{ show?: DjTransition["show"]; appear?: DjTransition["appear"]; state?: DjTransition["state"] }, {}, {}, {}, {}, {}, { "dj-after-enter": (e: CustomEvent) => void, "dj-after-leave": (e: CustomEvent) => void }>;

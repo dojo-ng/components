@@ -977,20 +977,65 @@ The tip renders in the browser top layer where the Popover API exists, so an `ov
 
 ### `<dj-snackbar>` · `@dojo-ng/snackbar`
 
-A toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`.
+A toast. `open` shows it; `type` success/warning/error tints; slots: default (message), `actions`.
+
+For a queue of toasts raised from code, use `<dj-toaster>` and `toast()` from `@dojo-ng/toast`, which render each toast as a `dj-snackbar`.
 
 Announcements: the snackbar keeps two empty live regions in the accessibility tree at all times, hidden or not, and copies the message text into one when it opens. `type="error"` uses the assertive region (`role="alert"`); every other type uses the polite one (`role="status"`). Changing the message while open announces the new text. The visible message is hidden from assistive tech so it is not read twice; the `actions` slot stays reachable.
+
+`quiet` turns the snackbar's own announcing off: no live regions are rendered and the message stays readable by assistive tech. A container that announces for several snackbars sets it (`dj-toaster` does), because several snackbars writing into their own regions are announced out of order.
 
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `open` | open | `boolean` | `false` |
-| `type` | type | `"success"\|"error"` | — |
+| `type` | type | `"success"\|"warning"\|"error"` | — |
+| `quiet` | quiet | `boolean` | `false` |
 | `leading` | leading | `boolean` | `false` |
 | `stacked` | stacked | `boolean` | `false` |
 
 **Slots:** default, `actions`
 
 **CSS properties:** `--dj-snackbar-z-index` (default `960`; Stacking order of the snackbar.)
+
+
+### `<dj-toaster>` · `@dojo-ng/toast`
+
+The region that shows toasts raised with `toast()`.
+
+Most apps never write this element: the first `toast()` call adds one to `document.body`. Write it yourself to choose `placement`, `max-visible`, or `shortcut`. Use one per page.
+
+#### Queue and timing
+
+- Toasts are shown in arrival order, at most `max-visible` at a time; the rest wait and come in as shown ones close. The newest shown toast sits nearest the screen edge.
+- A toast closes after 5 seconds; `error` and `loading` stay until closed. A toast with an action stays at least 8 seconds. Timers pause while the pointer is over the toaster, while focus is in it, and while the page is hidden.
+
+#### Announcements
+
+- The toaster keeps one polite and one assertive live region for every toast on the page. `error` toasts are announced assertively, all others politely, in the order they appear. Each toast renders as a `quiet` `dj-snackbar`, so the snackbars do not announce themselves.
+
+#### Keyboard
+
+- `shortcut` (default Alt+T) moves focus to the newest toast's first button, so a keyboard user can reach an Undo. The shortcut is part of the region's label.
+- Escape closes the focused toast and returns focus to where it was before.
+
+#### Not built
+
+- Swipe to dismiss, rich content, and browser (Notification API) notifications.
+
+Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `placement` | placement ↻ | `ToasterPlacement` | `"bottom-center"` |
+| `maxVisible` | max-visible | `number` | `3` |
+| `shortcut` | shortcut | `string` | `"Alt+T"` |
+| `label` | label | `string` | — |
+
+**Events:** `dj-toast-close` (a toast started closing; `detail` is `{ id, reason }`, reason being `timeout`, `action`, `close`, `escape`, or `api`)
+
+**Methods:** `show(message: string, options: ToastOptions): ToastHandle` (Add a toast, or update the one whose `id` matches.), `updateToast(id: string, options: ToastUpdate)` (Change a toast in place. Its timer starts over. Does nothing if the toast is gone.), `dismiss(id: string, reason: ToastCloseReason)` (Close one toast, or every toast when `id` is omitted.)
+
+**CSS properties:** `--dj-toaster-z-index` (default `970`; Stacking order of the toaster.), `--dj-toaster-offset` (default `1rem`; Distance from the viewport edges.)
 
 
 ## Layout

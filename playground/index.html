@@ -85,6 +85,7 @@
 					"@dojo-ng/progress": "../packages/progress/dist/index.js",
 					"@dojo-ng/breadcrumb-group": "../packages/breadcrumb-group/dist/index.js",
 					"@dojo-ng/snackbar": "../packages/snackbar/dist/index.js",
+					"@dojo-ng/toast": "../packages/toast/dist/index.js",
 					"@dojo-ng/global-event": "../packages/global-event/dist/index.js",
 					"@dojo-ng/accordion": "../packages/accordion/dist/index.js",
 					"@dojo-ng/checkbox-group": "../packages/checkbox-group/dist/index.js",
@@ -162,7 +163,7 @@
 			tuned for a first-time visitor and it stays <code>noindex</code>. A separate, live, no-install,
 			multi-framework playground is planned (see the site plan) but not built yet; this page is not a
 			preview of it.</p>
-			<p class="header-stats"><!-- GENERATED:HEADER-STATS BEGIN -->42 demo sections across 8 groups, covering 69 of 115 shipped packages (see the coverage list at the foot of the page). Built from Dojo NG v0.1.0.<!-- GENERATED:HEADER-STATS END --></p>
+			<p class="header-stats"><!-- GENERATED:HEADER-STATS BEGIN -->43 demo sections across 8 groups, covering 70 of 116 shipped packages (see the coverage list at the foot of the page). Built from Dojo NG v0.1.0.<!-- GENERATED:HEADER-STATS END --></p>
 		</header>
 
 		<div class="toolbar">
@@ -207,6 +208,7 @@
 					<li><a href="#popup">Popup</a></li>
 					<li><a href="#trigger-context-popup">Trigger popup &amp; context popup</a></li>
 					<li><a href="#context-menu-confirm-speed-dial-snackbar">Context menu, confirm popup, speed dial, snackbar</a></li>
+					<li><a href="#toasts">Toasts from code</a></li>
 					<li><a href="#overlays">Overlays: dialog, slide pane, tooltip</a></li>
 					<li><a href="#dropdown">Dropdown (menu button)</a></li>
 				</ul>
@@ -432,6 +434,24 @@
 			</dj-speed-dial>
 		</div>
 		<dj-snackbar id="toast" type="success">Saved successfully.</dj-snackbar>
+		</section>
+<section id="toasts" data-dj-packages="toast">
+		<h3>Toasts from code</h3>
+		<p class="section-purpose">One <code>toast()</code> call per message: a queue of at most three, timers that pause on hover and focus, Undo, and a promise toast. Alt+T moves focus to the newest toast; Escape closes it.</p>
+		<div class="row">
+			<dj-button id="toast-info" kind="outlined">Info</dj-button>
+			<dj-button id="toast-success" kind="outlined">Success</dj-button>
+			<dj-button id="toast-warning" kind="outlined">Warning</dj-button>
+			<dj-button id="toast-error" kind="outlined">Error</dj-button>
+			<dj-button id="toast-undo" kind="contained">Delete with Undo</dj-button>
+			<dj-button id="toast-promise" kind="contained">Promise</dj-button>
+			<label>Placement
+				<select id="toast-placement">
+					<option>bottom-center</option><option>bottom-start</option><option>bottom-end</option>
+					<option>top-center</option><option>top-start</option><option>top-end</option>
+				</select>
+			</label>
+		</div>
 		</section>
 <section id="overlays" data-dj-packages="dialog slide-pane tooltip">
 		<h3>Overlays: dialog, slide pane, tooltip</h3>
@@ -921,7 +941,7 @@
 
 				<!-- GENERATED:COVERAGE BEGIN -->
 				<details class="coverage">
-					<summary>69 of 115 shipped packages have a demo on this page (46 do not)</summary>
+					<summary>70 of 116 shipped packages have a demo on this page (46 do not)</summary>
 					<ul>
 					<li>audio</li>
 					<li>board</li>
@@ -1019,7 +1039,7 @@
 			import "@dojo-ng/typeahead";
 			import "@dojo-ng/chip-typeahead";
 			import "@dojo-ng/text"; import "@dojo-ng/stack"; import "@dojo-ng/split-panel"; import "@dojo-ng/badge"; import "@dojo-ng/skeleton"; import "@dojo-ng/search-box"; import "@dojo-ng/alert"; import "@dojo-ng/copy-button"; import "@dojo-ng/dropdown"; import "@dojo-ng/two-column-layout"; import "@dojo-ng/three-column-layout";
-			import "@dojo-ng/header"; import "@dojo-ng/progress"; import "@dojo-ng/breadcrumb-group"; import "@dojo-ng/snackbar";
+			import "@dojo-ng/header"; import "@dojo-ng/progress"; import "@dojo-ng/breadcrumb-group"; import "@dojo-ng/snackbar"; import "@dojo-ng/toast";
 			import "@dojo-ng/global-event"; import "@dojo-ng/accordion"; import "@dojo-ng/checkbox-group"; import "@dojo-ng/rate";
 			import "@dojo-ng/form"; import "@dojo-ng/date-input"; import "@dojo-ng/time-picker"; import "@dojo-ng/popup-confirmation";
 			import "@dojo-ng/context-menu"; import "@dojo-ng/pagination"; import "@dojo-ng/speed-dial"; import "@dojo-ng/tree"; import "@dojo-ng/grid"; import "@dojo-ng/toolbar"; import "@dojo-ng/chart"; import "@dojo-ng/carousel"; import "@dojo-ng/nav";
@@ -1522,6 +1542,21 @@
 				{ value: "urgent", label: "urgent" }, { value: "later", label: "later" }, { value: "waiting", label: "waiting" },
 			];
 
+			// Toasts (toast-manager-spec.md)
+			{
+				const { toast, getToaster } = await import("@dojo-ng/toast");
+				const on = (id, fn) => document.getElementById(id).addEventListener("click", fn);
+				on("toast-info", () => toast("Three new messages arrived."));
+				on("toast-success", () => toast("Settings saved.", { type: "success" }));
+				on("toast-warning", () => toast("You are offline. Changes will sync later.", { type: "warning" }));
+				on("toast-error", () => toast("Could not reach the server.", { type: "error" }));
+				on("toast-undo", () => toast("Message deleted.", { action: { label: "Undo", onClick: () => toast("Message restored.", { type: "success" }) } }));
+				on("toast-promise", () => {
+					const work = new Promise((resolve, reject) => setTimeout(() => (Math.random() < 0.7 ? resolve(12) : reject(new Error("timed out"))), 1500));
+					toast.promise(work, { loading: "Sending 12 messages", success: (n) => `Sent ${n} messages.`, error: (e) => `Send failed: ${e.message}` });
+				});
+				document.getElementById("toast-placement").addEventListener("change", (e) => (getToaster().placement = e.target.value));
+			}
 			// Long lists and server options (virtual-list-select-spec.md)
 			const tenK = Array.from({ length: 10000 }, (_, i) => ({ value: `v${i}`, label: `Option ${i}` }));
 			document.getElementById("select-10k").options = tenK;

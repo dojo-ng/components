@@ -1,11 +1,18 @@
 import { html, css } from "lit"; import { property } from "lit/decorators.js"; import DojoElement from "@dojo-ng/dojo-element";
-/** `<dj-snackbar>` — a toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`.
+/** `<dj-snackbar>` — a toast. `open` shows it; `type` success/warning/error tints; slots: default (message), `actions`.
+ *
+ * For a queue of toasts raised from code, use `<dj-toaster>` and `toast()` from `@dojo-ng/toast`, which
+ * render each toast as a `dj-snackbar`.
  *
  * Announcements: the snackbar keeps two empty live regions in the accessibility tree at all times,
  * hidden or not, and copies the message text into one when it opens. `type="error"` uses the
  * assertive region (`role="alert"`); every other type uses the polite one (`role="status"`).
  * Changing the message while open announces the new text. The visible message is hidden from
  * assistive tech so it is not read twice; the `actions` slot stays reachable.
+ *
+ * `quiet` turns the snackbar's own announcing off: no live regions are rendered and the message stays
+ * readable by assistive tech. A container that announces for several snackbars sets it (`dj-toaster`
+ * does), because several snackbars writing into their own regions are announced out of order.
  *
  * @cssprop [--dj-snackbar-z-index=960] - Stacking order of the snackbar. */
 export class DjSnackbar extends DojoElement {
@@ -22,6 +29,8 @@ export class DjSnackbar extends DojoElement {
 		   theme's dark neutral-0 does not land on the green. */
 		:host([type="success"]) .bar{background:var(--dj-color-success-700,#15803d);color:#fff;}
 		:host([type="error"]) .bar{background:var(--dj-color-danger-600,#dc2626);}
+		/* Dark text on warning-500 is 7.8:1; fixed for the same reason as success. */
+		:host([type="warning"]) .bar{background:var(--dj-color-warning-500,#eab308);color:#1f2937;}
 		.msg{flex:1 1 auto;} .actions{display:flex;gap:var(--dj-spacing-x-small,.5rem);}
 		.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;}
 		/* Forced colors: the dark/status fills and shadow collapse; border the bar so it stays
@@ -29,7 +38,9 @@ export class DjSnackbar extends DojoElement {
 		@media (forced-colors: active){ .bar{border:1px solid CanvasText;} }
 	`;
 	@property({type:Boolean,reflect:true}) open=false;
-	@property({reflect:true}) type?:"success"|"error";
+	@property({reflect:true}) type?:"success"|"warning"|"error";
+	/** Do not announce: render no live regions and leave the message readable. Set by a container that announces for the snackbar. */
+	@property({type:Boolean,reflect:true}) quiet=false;
 	@property({type:Boolean,reflect:true}) leading=false;
 	@property({type:Boolean,reflect:true}) stacked=false;
 
@@ -62,9 +73,13 @@ export class DjSnackbar extends DojoElement {
 	};
 
 	protected override updated(changed:Map<PropertyKey,unknown>){
-		if(changed.has("open")||changed.has("type")) this.#announce();
+		if(changed.has("open")||changed.has("type")||changed.has("quiet")) this.#announce();
 	}
 
-	override render(){ return html`<div class="sr sr-status" role="status" aria-live="polite" aria-atomic="true"></div><div class="sr sr-alert" role="alert" aria-live="assertive" aria-atomic="true"></div><div class="bar"><span class="msg" aria-hidden="true"><slot @slotchange=${this.#announce}></slot></span><span class="actions"><slot name="actions"></slot></span></div>`; }
+	override render(){
+		const bar=html`<div class="bar"><span class="msg" aria-hidden=${this.quiet?"false":"true"}><slot @slotchange=${this.#announce}></slot></span><span class="actions"><slot name="actions"></slot></span></div>`;
+		if(this.quiet) return html`<div class="wrap">${bar}</div>`;
+		return html`<div class="sr sr-status" role="status" aria-live="polite" aria-atomic="true"></div><div class="sr sr-alert" role="alert" aria-live="assertive" aria-atomic="true"></div>${bar}`;
+	}
 }
 export default DjSnackbar;

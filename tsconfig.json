@@ -345,6 +345,9 @@
     },
     {
       "path": "packages/data-grid-columns"
+    },
+    {
+      "path": "packages/toast"
     }
   ]
 }

@@ -102,6 +102,34 @@ const videoJsUmdPlugin = {
 	},
 };
 
+// `axTree()` in a browser test (tests/browser/toast.test.js) returns Chromium's own accessibility
+// tree, read over CDP with Accessibility.getFullAXTree: what a screen reader is handed, not a DOM
+// approximation. WTR's a11ySnapshot is not registered here, and the `page.accessibility` API it used
+// is gone from current Playwright. Firefox and WebKit have no CDP, so the command returns false
+// there and the test skips its check on those engines.
+const axTreePlugin = {
+	name: "ax-tree",
+	async executeCommand({ command, session }) {
+		if (command !== "ax-tree") return undefined;
+		const browser = session.browser;
+		if (browser.type !== "playwright" || !/chromium/i.test(browser.name)) return false; // not null: WTR reads null/undefined as "no plugin handled this command"
+		const page = browser.getPage(session.id);
+		const cdp = await page.context().newCDPSession(page);
+		try {
+			const { nodes } = await cdp.send("Accessibility.getFullAXTree");
+			return nodes.map((n) => ({
+				id: n.nodeId,
+				ignored: n.ignored,
+				role: n.role?.value,
+				name: n.name?.value,
+				children: n.childIds ?? [],
+			}));
+		} finally {
+			await cdp.detach();
+		}
+	},
+};
+
 export default {
 	files: [
 		"tests/browser/**/*.test.js",
@@ -113,7 +141,7 @@ export default {
 	// `emulate-media` server command a browser test calls via `emulateMedia({...})` — a no-op for
 	// any test that doesn't call it. videoJsUmdPlugin stays gated on the flag: the default suite
 	// resolves `video.js` exactly as it always has.
-	plugins: [emulateMediaPlugin(), ...(realVideo ? [videoJsUmdPlugin] : [])],
+	plugins: [emulateMediaPlugin(), axTreePlugin, ...(realVideo ? [videoJsUmdPlugin] : [])],
 	browsers: browsers.map((product) => playwrightLauncher({ product })),
 	...(onCI ? { concurrentBrowsers: 1, browserStartTimeout: 120000 } : {}),
 	testFramework: {

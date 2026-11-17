@@ -25,6 +25,25 @@ PKGS = _roots()
 
 # Migration pointers for Dojo widgets superseded by a differently-named component.
 NOTES = {
+    "toast": """
+Show toasts from anywhere in an app with one call: `toast("Saved", { type: "success" })`. It finds the
+page's `<dj-toaster>`, or adds one to `document.body` the first time, so it needs no setup.
+
+#### Options
+- `type`: `info` (default), `success`, `warning`, `error`, or `loading`.
+- `duration`: milliseconds. Default 5000; `error` and `loading` stay until closed. `Infinity` keeps any toast open.
+- `action`: `{ label, onClick(handle) }`, such as Undo. The toast closes after `onClick`.
+- `dismissible`: show a close button and allow Escape. Default true.
+- `id`: pass an existing id to update that toast in place instead of adding one.
+
+#### The function API
+- `toast(message, options)` returns `{ id, dismiss(), update(options) }`; `update` also takes `message`.
+- `toast.promise(promise, { loading, success, error })` shows a loading toast and turns it into a success or error toast when the promise settles. `success` and `error` can be functions of the value or reason.
+- `toast.dismiss(id)` closes one toast; with no id it closes all of them.
+
+#### Snackbar or toast?
+Use `dj-snackbar` for one message you place and open yourself, such as a fixed "offline" bar. Use `toast()` when messages come from many places in the app, can overlap, or need Undo. Each toast renders as a `quiet` `dj-snackbar`, so the two look the same.
+""",
     "typeahead": "Coming from Dojo's **ComboBox**? Typeahead is its successor: an editable field that filters a list. For multi-select, see [`@dojo-ng/chip-typeahead`](../chip-typeahead/README.md).",
     "data-grid-columns": """
 Let users resize, reorder, pin, and hide `<dj-data-grid>` columns, and pick columns from a chooser.
@@ -271,8 +290,16 @@ EXAMPLES = {
    '<dj-tooltip>\n  <dj-button>Hover me</dj-button>\n  <span slot="content">Saves your work</span>\n</dj-tooltip>'),
  ],
  "snackbar": [
-  ("Transient message", "Toggle `open`; `type` tints success/error.",
+  ("Transient message", "Toggle `open`; `type` tints success, warning, or error.",
    '<dj-snackbar open type="success">Saved</dj-snackbar>'),
+ ],
+ "toast": [
+  ("Toast from code", "One call from anywhere; the first call adds the toaster to the page.",
+   '<dj-button id="save">Save</dj-button>\n<dj-button id="delete">Delete</dj-button>\n<script type="module">\n  import { toast } from "@dojo-ng/toast"; import "@dojo-ng/button";\n  document.getElementById("save").addEventListener("click", () => toast("Saved", { type: "success" }));\n  document.getElementById("delete").addEventListener("click", () =>\n    toast("Item deleted", { action: { label: "Undo", onClick: () => toast("Restored") } }));\n</script>'),
+  ("Promise toast", "Loading until the promise settles, then success or error in the same toast.",
+   '<dj-button id="send">Send</dj-button>\n<script type="module">\n  import { toast } from "@dojo-ng/toast"; import "@dojo-ng/button";\n  const wait = (ms) => new Promise((r) => setTimeout(r, ms));\n  document.getElementById("send").addEventListener("click", () =>\n    toast.promise(wait(1500), { loading: "Sending", success: "Sent", error: "Send failed" }));\n</script>'),
+  ("Placement", "Write the toaster yourself to choose where toasts appear and how many show at once.",
+   '<dj-toaster placement="top-end" max-visible="2"></dj-toaster>'),
  ],
  "popup-confirmation": [
   ("Confirm before acting", "A trigger opens a small confirm popup; listen for `dj-confirm`.",

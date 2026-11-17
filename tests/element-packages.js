@@ -123,6 +123,9 @@ export const SUPPORT_PACKAGES = [
 	"data-grid-select",
 	"data-grid-drag",
 	"data-grid-columns",
+	// Registers <dj-toaster>, not <dj-toast>, so it cannot sit in ELEMENT_PACKAGES;
+	// tests/toast.test.js checks the tag.
+	"toast",
 ];
 
 /** Where a listed package's built entry lives, keyed by name — `packages/<name>` for every

@@ -9736,7 +9736,7 @@
           "name": "DjSnackbar",
           "customElement": true,
           "tagName": "dj-snackbar",
-          "description": "a toast. `open` shows it; `type` success/error tints; slots: default (message), `actions`.\n\nAnnouncements: the snackbar keeps two empty live regions in the accessibility tree at all times, hidden or not, and copies the message text into one when it opens. `type=\"error\"` uses the assertive region (`role=\"alert\"`); every other type uses the polite one (`role=\"status\"`). Changing the message while open announces the new text. The visible message is hidden from assistive tech so it is not read twice; the `actions` slot stays reachable.",
+          "description": "a toast. `open` shows it; `type` success/warning/error tints; slots: default (message), `actions`.\n\nFor a queue of toasts raised from code, use `<dj-toaster>` and `toast()` from `@dojo-ng/toast`, which render each toast as a `dj-snackbar`.\n\nAnnouncements: the snackbar keeps two empty live regions in the accessibility tree at all times, hidden or not, and copies the message text into one when it opens. `type=\"error\"` uses the assertive region (`role=\"alert\"`); every other type uses the polite one (`role=\"status\"`). Changing the message while open announces the new text. The visible message is hidden from assistive tech so it is not read twice; the `actions` slot stays reachable.\n\n`quiet` turns the snackbar's own announcing off: no live regions are rendered and the message stays readable by assistive tech. A container that announces for several snackbars sets it (`dj-toaster` does), because several snackbars writing into their own regions are announced out of order.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -9754,9 +9754,19 @@
               "kind": "field",
               "name": "type",
               "type": {
-                "text": "\"success\"|\"error\""
+                "text": "\"success\"|\"warning\"|\"error\""
               },
               "attribute": "type"
+            },
+            {
+              "kind": "field",
+              "name": "quiet",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Do not announce: render no live regions and leave the message readable. Set by a container that announces for the snackbar.",
+              "attribute": "quiet"
             },
             {
               "kind": "field",
@@ -9788,9 +9798,17 @@
             {
               "name": "type",
               "type": {
-                "text": "\"success\"|\"error\""
+                "text": "\"success\"|\"warning\"|\"error\""
               },
               "fieldName": "type"
+            },
+            {
+              "name": "quiet",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "quiet",
+              "description": "Do not announce: render no live regions and leave the message readable. Set by a container that announces for the snackbar."
             },
             {
               "name": "leading",
@@ -11750,6 +11768,191 @@
           "declaration": {
             "name": "DjTitlePane",
             "module": "packages/title-pane/src/dj-title-pane.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "packages/toast/src/dj-toaster.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjToaster",
+          "customElement": true,
+          "tagName": "dj-toaster",
+          "description": "the region that shows toasts raised with `toast()`.\n\nMost apps never write this element: the first `toast()` call adds one to `document.body`. Write it yourself to choose `placement`, `max-visible`, or `shortcut`. Use one per page.\n\n#### Queue and timing\n\n- Toasts are shown in arrival order, at most `max-visible` at a time; the rest wait and come in as shown ones close. The newest shown toast sits nearest the screen edge.\n- A toast closes after 5 seconds; `error` and `loading` stay until closed. A toast with an action stays at least 8 seconds. Timers pause while the pointer is over the toaster, while focus is in it, and while the page is hidden.\n\n#### Announcements\n\n- The toaster keeps one polite and one assertive live region for every toast on the page. `error` toasts are announced assertively, all others politely, in the order they appear. Each toast renders as a `quiet` `dj-snackbar`, so the snackbars do not announce themselves.\n\n#### Keyboard\n\n- `shortcut` (default Alt+T) moves focus to the newest toast's first button, so a keyboard user can reach an Undo. The shortcut is part of the region's label.\n- Escape closes the focused toast and returns focus to where it was before.\n\n#### Not built\n\n- Swipe to dismiss, rich content, and browser (Notification API) notifications.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "placement",
+              "type": {
+                "text": "ToasterPlacement"
+              },
+              "default": "\"bottom-center\"",
+              "description": "Where toasts appear. Logical, so `start` and `end` follow the page direction.",
+              "attribute": "placement",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "maxVisible",
+              "type": {
+                "text": "number"
+              },
+              "default": "3",
+              "description": "How many toasts are shown at once; the rest wait.",
+              "attribute": "max-visible"
+            },
+            {
+              "kind": "field",
+              "name": "shortcut",
+              "type": {
+                "text": "string"
+              },
+              "default": "\"Alt+T\"",
+              "description": "Key combination that moves focus into the toaster, such as `Alt+T`. Empty turns it off.",
+              "attribute": "shortcut"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name of the region. Defaults to the localized \"Notifications\".",
+              "attribute": "label"
+            },
+            {
+              "kind": "method",
+              "name": "show",
+              "description": "Add a toast, or update the one whose `id` matches.",
+              "parameters": [
+                {
+                  "name": "message",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "options",
+                  "type": {
+                    "text": "ToastOptions"
+                  }
+                }
+              ],
+              "return": {
+                "type": {
+                  "text": "ToastHandle"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "updateToast",
+              "description": "Change a toast in place. Its timer starts over. Does nothing if the toast is gone.",
+              "parameters": [
+                {
+                  "name": "id",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "options",
+                  "type": {
+                    "text": "ToastUpdate"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "dismiss",
+              "description": "Close one toast, or every toast when `id` is omitted.",
+              "parameters": [
+                {
+                  "name": "id",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "reason",
+                  "type": {
+                    "text": "ToastCloseReason"
+                  }
+                }
+              ]
+            }
+          ],
+          "attributes": [
+            {
+              "name": "placement",
+              "type": {
+                "text": "ToasterPlacement"
+              },
+              "fieldName": "placement",
+              "description": "Where toasts appear. Logical, so `start` and `end` follow the page direction."
+            },
+            {
+              "name": "max-visible",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "maxVisible",
+              "description": "How many toasts are shown at once; the rest wait."
+            },
+            {
+              "name": "shortcut",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "shortcut",
+              "description": "Key combination that moves focus into the toaster, such as `Alt+T`. Empty turns it off."
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label",
+              "description": "Accessible name of the region. Defaults to the localized \"Notifications\"."
+            }
+          ],
+          "cssProperties": [
+            {
+              "name": "--dj-toaster-z-index",
+              "default": "970",
+              "description": "Stacking order of the toaster."
+            },
+            {
+              "name": "--dj-toaster-offset",
+              "default": "1rem",
+              "description": "Distance from the viewport edges."
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-toast-close",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "a toast started closing; `detail` is `{ id, reason }`, reason being `timeout`, `action`, `close`, `escape`, or `api`"
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-toaster",
+          "declaration": {
+            "name": "DjToaster",
+            "module": "packages/toast/src/dj-toaster.ts"
           }
         }
       ]

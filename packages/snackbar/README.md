@@ -4,9 +4,13 @@
 
 Part of [Dojo NG](../../README.md), a framework-agnostic web component library built on Lit. BSD-3-Clause.
 
-`open` shows it; `type` success/error tints; slots: default (message), `actions`.
+`open` shows it; `type` success/warning/error tints; slots: default (message), `actions`.
+
+For a queue of toasts raised from code, use `<dj-toaster>` and `toast()` from `@dojo-ng/toast`, which render each toast as a `dj-snackbar`.
 
 Announcements: the snackbar keeps two empty live regions in the accessibility tree at all times, hidden or not, and copies the message text into one when it opens. `type="error"` uses the assertive region (`role="alert"`); every other type uses the polite one (`role="status"`). Changing the message while open announces the new text. The visible message is hidden from assistive tech so it is not read twice; the `actions` slot stays reachable.
+
+`quiet` turns the snackbar's own announcing off: no live regions are rendered and the message stays readable by assistive tech. A container that announces for several snackbars sets it (`dj-toaster` does), because several snackbars writing into their own regions are announced out of order.
 
 ## Install
 
@@ -18,7 +22,7 @@ npm install @dojo-ng/snackbar
 
 Import the package to register the custom element, then use the tag.
 
-Toggle `open`; `type` tints success/error.
+Toggle `open`; `type` tints success, warning, or error.
 
 ```html
 <dj-snackbar open type="success">Saved</dj-snackbar>
@@ -31,7 +35,8 @@ Toggle `open`; `type` tints success/error.
 | Property | Attribute | Type | Default |
 |---|---|---|---|
 | `open` | open | `boolean` | `false` |
-| `type` | type | `"success"\|"error"` | — |
+| `type` | type | `"success"\|"warning"\|"error"` | — |
+| `quiet` | quiet | `boolean` | `false` |
 | `leading` | leading | `boolean` | `false` |
 | `stacked` | stacked | `boolean` | `false` |
 

@@ -79,6 +79,7 @@ import type { DjTheme } from "@dojo-ng/theme";
 import type { DjThreeColumnLayout } from "@dojo-ng/three-column-layout";
 import type { DjTimePicker } from "@dojo-ng/time-picker";
 import type { DjTitlePane } from "@dojo-ng/title-pane";
+import type { DjToaster } from "@dojo-ng/toast";
 import type { DjToolbar } from "@dojo-ng/toolbar";
 import type { DjTooltip } from "@dojo-ng/tooltip";
 import type { DjTransition } from "@dojo-ng/transition";
@@ -538,6 +539,7 @@ declare module "react" {
       "dj-snackbar": DjProps<DjSnackbar> & {
         "open"?: DjSnackbar["open"];
         "type"?: DjSnackbar["type"];
+        "quiet"?: DjSnackbar["quiet"];
         "leading"?: DjSnackbar["leading"];
         "stacked"?: DjSnackbar["stacked"];
       };
@@ -643,6 +645,12 @@ declare module "react" {
         "open"?: DjTitlePane["open"];
         "closeable"?: DjTitlePane["closeable"];
         "heading-level"?: DjTitlePane["headingLevel"];
+      };
+      "dj-toaster": DjProps<DjToaster> & {
+        "placement"?: DjToaster["placement"];
+        "max-visible"?: DjToaster["maxVisible"];
+        "shortcut"?: DjToaster["shortcut"];
+        "label"?: DjToaster["label"];
       };
       "dj-toolbar": DjProps<DjToolbar> & {
         "label"?: DjToolbar["label"];

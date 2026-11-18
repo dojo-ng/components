@@ -42,7 +42,7 @@ One call from anywhere; the first call adds the toaster to the page.
 
 ## Keyboard
 
-- `shortcut` (default Alt+T) moves focus to the newest toast's first button, so a keyboard user can reach an Undo. The shortcut is part of the region's label.
+- `shortcut` (default Alt+T) moves focus to the newest toast's first button, so a keyboard user can reach an Undo. The shortcut is part of the region's label. It is registered with `@dojo-ng/commands` as `dj-toaster.focus`, so it shows in the command palette's shortcut help, and does nothing while no toast is showing.
 - Escape closes the focused toast and returns focus to where it was before.
 
 ## Not built

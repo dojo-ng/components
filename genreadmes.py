@@ -2162,6 +2162,57 @@ EXAMPLES["nav"] += [
    '<dj-nav label="Site" track>\n  <a href="/orders">Orders</a>\n  <a href="/settings">Settings</a>\n</dj-nav>\n<script type="module">\n  import { createPubSub } from "@dojo-ng/pubsub";\n  import { installHistory } from "@dojo-ng/history";\n  import "@dojo-ng/nav";\n  installHistory(createPubSub());\n</script>'),
 ]
 
+NOTES.update({
+ "commands": """
+A registry of app actions with keyboard shortcuts. It has no elements, so an app can use shortcuts
+without the palette, and `@dojo-ng/command-palette` reads the same registry.
+
+#### Commands
+- A command is `{ id, label, group?, keywords?, shortcut?, when?, allowInText?, run }`.
+- `when` says whether the command applies now. The palette hides a command where it returns `false`, and its shortcut does nothing.
+- `commands.register(command)` returns a function that removes it. Registering an id again replaces the first.
+- `commands.active(focusedElement)` lists what applies now. `commands.execute(id)` runs one by id.
+- `commands.onRun(listener)` and `commands.onChange(listener)` report runs and registrations.
+
+#### Shortcuts
+- Write `"Mod+K"` or `"Alt+Mod+Digit1"`. `Mod` is Cmd on a Mac and Ctrl elsewhere. Letters, digits, `Enter`, `Escape`, `Space`, `Tab`, the arrows, `F1` to `F12` and punctuation such as `.` and `/` are known. A typo throws when you register.
+- Keys match on `event.code`, never `event.key`, because Option changes the character a key types on a Mac.
+- A sequence is written with spaces: `"G I"`. The next key must come within 1 second.
+- `Mod+W`, `Mod+T`, `Mod+N` and `Mod+Q` belong to the browser. A command that asks for one is registered without a key, with a console warning.
+- Two commands on the same shortcut in the same scope log one warning naming both ids. The first one registered wins.
+- A shortcut does not fire while the user types in a text field, unless the command sets `allowInText`.
+- `formatShortcut("Mod+K")` returns `⌘K` on a Mac and `Ctrl+K` elsewhere, for showing next to a menu item.
+
+#### Scopes
+- `commands.scope(element).register(command)` ties a command to an element. Its shortcut fires only while focus is inside that element, including inside shadow roots. The innermost scope wins, then global commands.
+- `scope.dispose()` removes everything that scope registered.
+- The registry listens on the document from the first `commands.register`. `new CommandRegistry({ platform })` makes a separate registry; call `registry.attach(target)` to listen.
+""",
+})
+EXAMPLES.update({
+ "commands": [
+  ("Register commands with shortcuts", "Commands go in one registry; the shortcut runs the same function the palette runs.",
+   'import { commands } from "@dojo-ng/commands";\n\ncommands.register({\n  id: "save",\n  label: "Save document",\n  group: "File",\n  shortcut: "Mod+S",\n  run: () => saveDocument(),\n});\n\ncommands.register({\n  id: "go-inbox",\n  label: "Go to inbox",\n  group: "Go to",\n  shortcut: "G I",\n  when: () => signedIn(),\n  run: () => navigate("/inbox"),\n});'),
+  ("Keys that apply inside one panel", "A scoped command fires only while focus is inside its element, so a grid and an editor can both use Delete.",
+   'import { commands } from "@dojo-ng/commands";\n\nconst grid = document.querySelector("dj-data-grid");\nconst scope = commands.scope(grid);\nscope.register({ id: "delete-rows", label: "Delete selected rows", group: "Grid", shortcut: "Delete", run: removeRows });\n\n// When the grid is removed:\nscope.dispose();'),
+  ("Show a shortcut", "Format a shortcut for the reader\'s platform.",
+   'import { formatShortcut } from "@dojo-ng/commands";\n\nformatShortcut("Mod+K");        // "⌘K" on a Mac, "Ctrl+K" elsewhere\nformatShortcut("Alt+Mod+1");    // "⌥⌘1" on a Mac, "Ctrl+Alt+1" elsewhere'),
+ ],
+})
+
+EXAMPLES.update({
+ "command-palette": [
+  ("Add a palette", "Put one on the page and register commands. Press Ctrl+K (Cmd+K on a Mac) to open it.",
+   '<dj-command-palette></dj-command-palette>\n<script type="module">\n  import "@dojo-ng/command-palette";\n  import { commands } from "@dojo-ng/commands";\n\n  commands.register({ id: "new-note", label: "New note", group: "File", shortcut: "Mod+Shift+N", run: () => console.log("new note") });\n  commands.register({ id: "dark", label: "Switch theme", group: "View", keywords: "dark light", run: () => console.log("theme") });\n</script>'),
+  ("Open it from a button", "`show()` opens the palette from code and `showHelp()` opens the list of shortcuts.",
+   '<dj-button id="open">Commands</dj-button>\n<dj-button id="keys">Keyboard shortcuts</dj-button>\n<dj-command-palette id="palette"></dj-command-palette>\n<script type="module">\n  import "@dojo-ng/command-palette"; import "@dojo-ng/button";\n  document.getElementById("open").addEventListener("click", () => palette.show());\n  document.getElementById("keys").addEventListener("click", () => palette.showHelp());\n</script>'),
+  ("Choose the opening key", "`shortcut` takes the same form as a command's shortcut.",
+   '<dj-command-palette shortcut="Mod+P"></dj-command-palette>'),
+  ("React to a run", "`dj-command-run` fires after a command runs from the palette, for example to keep a recent list in storage.",
+   'palette.addEventListener("dj-command-run", (e) => localStorage.setItem("last-command", e.detail.id));'),
+ ],
+})
+
 # Merges enterprise/tests/readme_content.py's own NOTES/EXAMPLES dicts when the overlay is
 # checked out, so an overlay package gets the same migration-note / worked-example treatment as
 # a FOSS one with no edit to this public file — same "merge behind an existence check" shape as

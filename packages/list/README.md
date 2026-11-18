@@ -52,6 +52,8 @@ The list is one tab stop (the active-descendant pattern).
 
 ## Options
 
+- An option can carry `hint`, short text at the end of its row such as a keyboard shortcut.
+- `{ heading: true, label }` is a group heading: it shows the label, cannot be chosen or highlighted, and is not counted in `aria-setsize`.
 - `menu` switches the roles to `menu` and `menuitem`.
 - `loading` shows a spinner.
 

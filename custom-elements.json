@@ -3611,6 +3611,162 @@
     },
     {
       "kind": "javascript-module",
+      "path": "packages/command-palette/src/dj-command-palette.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "DjCommandPalette",
+          "customElement": true,
+          "tagName": "dj-command-palette",
+          "description": "search and run the actions in a `@dojo-ng/commands` registry.\n\nPut one on the page. It opens with `shortcut` (Mod+K by default; Cmd+K on a Mac, Ctrl+K elsewhere), or with `show()`. Type to narrow the list, use the arrow keys and Enter to run a command, and Escape to close; focus goes back to where it was.\n\n#### What it lists\n\n- The commands that apply now: those whose `when` is not false, and those registered on a scope that holds the focus the palette opened from, plus global ones.\n- With nothing typed, recently run commands come first, then the rest under their `group` headings. Recent commands are kept in memory only.\n- Every word typed must appear in a command's group, label, or keywords, in any order. A label that starts with the first word ranks first.\n- Each command's shortcut is shown at the end of its row.\n\n#### Shortcut help\n\n- Press `?` with nothing typed, or call `showHelp()`, to list every active shortcut by group. The list follows the focus the palette opened from, so a grid's keys show while the grid has focus.\n\n#### Accessibility\n\n- The text input is a combobox that keeps focus. The highlighted command is read from a live region (\"Save document, 2 of 7\"), because the list's rows are in another shadow root.",
+          "superclass": {
+            "name": "DojoElement"
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the palette is showing.",
+              "attribute": "open",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "shortcut",
+              "type": {
+                "text": "string"
+              },
+              "default": "\"Mod+K\"",
+              "description": "The key that opens it, in the form `@dojo-ng/commands` reads. `Mod` is Cmd on a Mac and Ctrl elsewhere.",
+              "attribute": "shortcut"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name of the dialog and the input.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "placeholder",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "placeholder"
+            },
+            {
+              "kind": "field",
+              "name": "registry",
+              "type": {
+                "text": "CommandRegistry"
+              },
+              "default": "commands",
+              "description": "The registry to read. Defaults to the app-wide `commands`."
+            },
+            {
+              "kind": "method",
+              "name": "show",
+              "description": "Open the palette, listing the commands that apply where focus is now."
+            },
+            {
+              "kind": "method",
+              "name": "hide"
+            },
+            {
+              "kind": "method",
+              "name": "toggle"
+            },
+            {
+              "kind": "method",
+              "name": "showHelp",
+              "description": "Open the palette on its list of active shortcuts."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "open",
+              "description": "Whether the palette is showing."
+            },
+            {
+              "name": "shortcut",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "shortcut",
+              "description": "The key that opens it, in the form `@dojo-ng/commands` reads. `Mod` is Cmd on a Mac and Ctrl elsewhere."
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label",
+              "description": "Accessible name of the dialog and the input."
+            },
+            {
+              "name": "placeholder",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "placeholder"
+            }
+          ],
+          "cssParts": [
+            {
+              "name": "dialog",
+              "description": ""
+            },
+            {
+              "name": "input",
+              "description": ""
+            },
+            {
+              "name": "list",
+              "description": ""
+            }
+          ],
+          "events": [
+            {
+              "name": "dj-close",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            },
+            {
+              "name": "dj-command-run",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": ""
+            }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "dj-command-palette",
+          "declaration": {
+            "name": "DjCommandPalette",
+            "module": "packages/command-palette/src/dj-command-palette.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
       "path": "packages/constrained-input/src/dj-constrained-input.ts",
       "declarations": [
         {
@@ -5958,7 +6114,7 @@
           "name": "DjList",
           "customElement": true,
           "tagName": "dj-list",
-          "description": "a single-select list, or a menu, built from `options`.\n\nComing from Dojo's Listbox? Use this component: it has the listbox role and keyboard model that Listbox had. The list is form-associated and submits `value`.\n\n#### Keyboard\n\nThe list is one tab stop (the active-descendant pattern).\n\n- The arrow keys, Home, End, PageUp, and PageDown move the active item.\n- Typing a letter (or the start of a label) moves to the next option whose label starts with it.\n- Enter or Space selects it.\n- On focus with nothing active, the selected option becomes active.\n\n#### Long lists\n\n- Above `virtual-threshold` rows (default 200, dividers included) the list is virtual: only the rows in view plus a few either side are in the DOM. Keyboard and type-ahead still cover every option, and the active option is always rendered.\n- Every row has one height, `--dj-list-item-height`, or the first option's height measured once. Labels stay on one line and are cut with an ellipsis.\n- The list scrolls inside `--dj-list-max-height` (20rem by default while virtual).\n- Rendered options carry `aria-posinset` and `aria-setsize`, so a screen reader reports \"item 812 of 5,000\".\n- `dj-scroll-end` fires when the user scrolls (or moves) within a few rows of the end, once per option count. Use it to load the next page.\n\n#### Multiple selection\n\n- With `multiple`, choosing an option toggles it, `value` is a string array, and the listbox is `aria-multiselectable`. The form value has one entry per value under `name`.\n- In markup, give the starting values as a JSON array: `value='[\"a\",\"b\"]'`.\n\n#### Options\n\n- `menu` switches the roles to `menu` and `menuitem`.\n- `loading` shows a spinner.\n\n#### Reordering\n\n- With `reorderable`, items can be dragged with a pointer or touch, or moved with the keyboard: Space to grab, the arrow keys to move, Space to drop, and Escape to cancel.\n- Reordering is controlled: the list emits `dj-reorder`, and you reorder `options`.\n- Reordering is off while the list is virtual; the list warns once in the console.",
+          "description": "a single-select list, or a menu, built from `options`.\n\nComing from Dojo's Listbox? Use this component: it has the listbox role and keyboard model that Listbox had. The list is form-associated and submits `value`.\n\n#### Keyboard\n\nThe list is one tab stop (the active-descendant pattern).\n\n- The arrow keys, Home, End, PageUp, and PageDown move the active item.\n- Typing a letter (or the start of a label) moves to the next option whose label starts with it.\n- Enter or Space selects it.\n- On focus with nothing active, the selected option becomes active.\n\n#### Long lists\n\n- Above `virtual-threshold` rows (default 200, dividers included) the list is virtual: only the rows in view plus a few either side are in the DOM. Keyboard and type-ahead still cover every option, and the active option is always rendered.\n- Every row has one height, `--dj-list-item-height`, or the first option's height measured once. Labels stay on one line and are cut with an ellipsis.\n- The list scrolls inside `--dj-list-max-height` (20rem by default while virtual).\n- Rendered options carry `aria-posinset` and `aria-setsize`, so a screen reader reports \"item 812 of 5,000\".\n- `dj-scroll-end` fires when the user scrolls (or moves) within a few rows of the end, once per option count. Use it to load the next page.\n\n#### Multiple selection\n\n- With `multiple`, choosing an option toggles it, `value` is a string array, and the listbox is `aria-multiselectable`. The form value has one entry per value under `name`.\n- In markup, give the starting values as a JSON array: `value='[\"a\",\"b\"]'`.\n\n#### Options\n\n- An option can carry `hint`, short text at the end of its row such as a keyboard shortcut.\n- `{ heading: true, label }` is a group heading: it shows the label, cannot be chosen or highlighted, and is not counted in `aria-setsize`.\n- `menu` switches the roles to `menu` and `menuitem`.\n- `loading` shows a spinner.\n\n#### Reordering\n\n- With `reorderable`, items can be dragged with a pointer or touch, or moved with the keyboard: Space to grab, the arrow keys to move, Space to drop, and Escape to cancel.\n- Reordering is controlled: the list emits `dj-reorder`, and you reorder `options`.\n- Reordering is off while the list is virtual; the list warns once in the console.",
           "superclass": {
             "name": "DojoElement"
           },
@@ -11799,7 +11955,7 @@
           "name": "DjToaster",
           "customElement": true,
           "tagName": "dj-toaster",
-          "description": "the region that shows toasts raised with `toast()`.\n\nMost apps never write this element: the first `toast()` call adds one to `document.body`. Write it yourself to choose `placement`, `max-visible`, or `shortcut`. Use one per page.\n\n#### Queue and timing\n\n- Toasts are shown in arrival order, at most `max-visible` at a time; the rest wait and come in as shown ones close. The newest shown toast sits nearest the screen edge.\n- A toast closes after 5 seconds; `error` and `loading` stay until closed. A toast with an action stays at least 8 seconds. Timers pause while the pointer is over the toaster, while focus is in it, and while the page is hidden.\n\n#### Announcements\n\n- The toaster keeps one polite and one assertive live region for every toast on the page. `error` toasts are announced assertively, all others politely, in the order they appear. Each toast renders as a `quiet` `dj-snackbar`, so the snackbars do not announce themselves.\n\n#### Keyboard\n\n- `shortcut` (default Alt+T) moves focus to the newest toast's first button, so a keyboard user can reach an Undo. The shortcut is part of the region's label.\n- Escape closes the focused toast and returns focus to where it was before.\n\n#### Not built\n\n- Swipe to dismiss, rich content, and browser (Notification API) notifications.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
+          "description": "the region that shows toasts raised with `toast()`.\n\nMost apps never write this element: the first `toast()` call adds one to `document.body`. Write it yourself to choose `placement`, `max-visible`, or `shortcut`. Use one per page.\n\n#### Queue and timing\n\n- Toasts are shown in arrival order, at most `max-visible` at a time; the rest wait and come in as shown ones close. The newest shown toast sits nearest the screen edge.\n- A toast closes after 5 seconds; `error` and `loading` stay until closed. A toast with an action stays at least 8 seconds. Timers pause while the pointer is over the toaster, while focus is in it, and while the page is hidden.\n\n#### Announcements\n\n- The toaster keeps one polite and one assertive live region for every toast on the page. `error` toasts are announced assertively, all others politely, in the order they appear. Each toast renders as a `quiet` `dj-snackbar`, so the snackbars do not announce themselves.\n\n#### Keyboard\n\n- `shortcut` (default Alt+T) moves focus to the newest toast's first button, so a keyboard user can reach an Undo. The shortcut is part of the region's label. It is registered with `@dojo-ng/commands` as `dj-toaster.focus`, so it shows in the command palette's shortcut help, and does nothing while no toast is showing.\n- Escape closes the focused toast and returns focus to where it was before.\n\n#### Not built\n\n- Swipe to dismiss, rich content, and browser (Notification API) notifications.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
           "superclass": {
             "name": "DojoElement"
           },

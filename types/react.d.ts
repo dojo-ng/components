@@ -24,6 +24,7 @@ import type { DjCheckboxGroup } from "@dojo-ng/checkbox-group";
 import type { DjChip } from "@dojo-ng/chip";
 import type { DjChipTypeahead } from "@dojo-ng/chip-typeahead";
 import type { DjColorPicker } from "@dojo-ng/color-picker";
+import type { DjCommandPalette } from "@dojo-ng/command-palette";
 import type { DjConstrainedInput } from "@dojo-ng/constrained-input";
 import type { DjContextMenu } from "@dojo-ng/context-menu";
 import type { DjContextPopup } from "@dojo-ng/context-popup";
@@ -258,6 +259,13 @@ declare module "react" {
         "name"?: DjColorPicker["name"];
         "disabled"?: DjColorPicker["disabled"];
         "get"?: DjColorPicker["get"];
+      };
+      "dj-command-palette": DjProps<DjCommandPalette> & {
+        "open"?: DjCommandPalette["open"];
+        "shortcut"?: DjCommandPalette["shortcut"];
+        "label"?: DjCommandPalette["label"];
+        "placeholder"?: DjCommandPalette["placeholder"];
+        "registry"?: DjCommandPalette["registry"];
       };
       "dj-constrained-input": DjProps<DjConstrainedInput> & {
         "validator"?: DjConstrainedInput["validator"];

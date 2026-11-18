@@ -161,7 +161,7 @@ export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFo
 	}
 
 	#labelFor(v: string): string {
-		const o = this.options.find((o) => !o.divider && o.value === v) ?? this.selectedOptions.find((o) => o.value === v);
+		const o = this.options.find((o) => !o.divider && !o.heading && o.value === v) ?? this.selectedOptions.find((o) => o.value === v);
 		return o ? (o.label ?? o.value) : v;
 	}
 	private get selectedLabel() { const v = this.values[0]; return v === undefined ? "" : this.#labelFor(v); }
@@ -242,7 +242,7 @@ export class DjSelect extends FormControl(DojoElement) implements Partial<DojoFo
 	}
 
 	/** Values the select-all row can select: every enabled option. */
-	#choosable(): string[] { return this.options.filter((o) => !o.divider && !o.disabled).map((o) => o.value); }
+	#choosable(): string[] { return this.options.filter((o) => !o.divider && !o.heading && !o.disabled).map((o) => o.value); }
 
 	#remove(v: string) {
 		if (this.isDisabled) return;

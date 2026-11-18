@@ -348,6 +348,12 @@
     },
     {
       "path": "packages/toast"
+    },
+    {
+      "path": "packages/commands"
+    },
+    {
+      "path": "packages/command-palette"
     }
   ]
 }

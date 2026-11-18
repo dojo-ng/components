@@ -1015,7 +1015,7 @@ Most apps never write this element: the first `toast()` call adds one to `docume
 
 #### Keyboard
 
-- `shortcut` (default Alt+T) moves focus to the newest toast's first button, so a keyboard user can reach an Undo. The shortcut is part of the region's label.
+- `shortcut` (default Alt+T) moves focus to the newest toast's first button, so a keyboard user can reach an Undo. The shortcut is part of the region's label. It is registered with `@dojo-ng/commands` as `dj-toaster.focus`, so it shows in the command palette's shortcut help, and does nothing while no toast is showing.
 - Escape closes the focused toast and returns focus to where it was before.
 
 #### Not built
@@ -1036,6 +1036,42 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 **Methods:** `show(message: string, options: ToastOptions): ToastHandle` (Add a toast, or update the one whose `id` matches.), `updateToast(id: string, options: ToastUpdate)` (Change a toast in place. Its timer starts over. Does nothing if the toast is gone.), `dismiss(id: string, reason: ToastCloseReason)` (Close one toast, or every toast when `id` is omitted.)
 
 **CSS properties:** `--dj-toaster-z-index` (default `970`; Stacking order of the toaster.), `--dj-toaster-offset` (default `1rem`; Distance from the viewport edges.)
+
+
+### `<dj-command-palette>` · `@dojo-ng/command-palette`
+
+Search and run the actions in a `@dojo-ng/commands` registry.
+
+Put one on the page. It opens with `shortcut` (Mod+K by default; Cmd+K on a Mac, Ctrl+K elsewhere), or with `show()`. Type to narrow the list, use the arrow keys and Enter to run a command, and Escape to close; focus goes back to where it was.
+
+#### What it lists
+
+- The commands that apply now: those whose `when` is not false, and those registered on a scope that holds the focus the palette opened from, plus global ones.
+- With nothing typed, recently run commands come first, then the rest under their `group` headings. Recent commands are kept in memory only.
+- Every word typed must appear in a command's group, label, or keywords, in any order. A label that starts with the first word ranks first.
+- Each command's shortcut is shown at the end of its row.
+
+#### Shortcut help
+
+- Press `?` with nothing typed, or call `showHelp()`, to list every active shortcut by group. The list follows the focus the palette opened from, so a grid's keys show while the grid has focus.
+
+#### Accessibility
+
+- The text input is a combobox that keeps focus. The highlighted command is read from a live region ("Save document, 2 of 7"), because the list's rows are in another shadow root.
+
+| Property | Attribute | Type | Default |
+|---|---|---|---|
+| `open` | open ↻ | `boolean` | `false` |
+| `shortcut` | shortcut | `string` | `"Mod+K"` |
+| `label` | label | `string` | — |
+| `placeholder` | placeholder | `string` | — |
+| `registry` | — | `CommandRegistry` | `commands` |
+
+**Parts:** `dialog`, `input`, `list`
+
+**Events:** `dj-close`, `dj-command-run`
+
+**Methods:** `show()` (Open the palette, listing the commands that apply where focus is now.), `hide()`, `toggle()`, `showHelp()` (Open the palette on its list of active shortcuts.)
 
 
 ## Layout
@@ -1658,6 +1694,8 @@ The list is one tab stop (the active-descendant pattern).
 
 #### Options
 
+- An option can carry `hint`, short text at the end of its row such as a keyboard shortcut.
+- `{ heading: true, label }` is a group heading: it shows the label, cannot be chosen or highlighted, and is not counted in `aria-setsize`.
 - `menu` switches the roles to `menu` and `menuitem`.
 - `loading` shows a spinner.
 

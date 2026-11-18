@@ -8,7 +8,19 @@ import "@dojo-ng/icon";
 import "@dojo-ng/loading-indicator";
 import styles from "./dj-list.styles.js";
 
-export interface ListOption { value: string; label: string; disabled?: boolean; divider?: boolean; }
+export interface ListOption {
+	value: string;
+	label: string;
+	disabled?: boolean;
+	divider?: boolean;
+	/** A group heading: a row that shows `label`, cannot be chosen, and is not counted in `aria-setsize`. */
+	heading?: boolean;
+	/** Short text at the end of the row, such as a keyboard shortcut. Read as part of the option. */
+	hint?: string;
+}
+
+/** Rows that are not options: dividers and headings. */
+const isSeparator = (o: ListOption): boolean => !!(o.divider || o.heading);
 
 export interface ReorderDetail { key: string; fromIndex: number; toIndex: number; }
 
@@ -103,6 +115,9 @@ const EN_REORDER: Record<string, string> = {
  * - In markup, give the starting values as a JSON array: `value='["a","b"]'`.
  *
  * #### Options
+ * - An option can carry `hint`, short text at the end of its row such as a keyboard shortcut.
+ * - `{ heading: true, label }` is a group heading: it shows the label, cannot be chosen or
+ *   highlighted, and is not counted in `aria-setsize`.
  * - `menu` switches the roles to `menu` and `menuitem`.
  * - `loading` shows a spinner.
  *
@@ -232,7 +247,7 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 	}
 
 	private get opts(): ListOption[] { return Array.isArray(this.options) ? this.options : []; }
-	#isSelectable(i: number): boolean { const o = this.opts[i]; return !!o && !o.disabled && !o.divider; }
+	#isSelectable(i: number): boolean { const o = this.opts[i]; return !!o && !o.disabled && !isSeparator(o); }
 	#firstSelectable(): number { const n = this.opts.length; for (let i = 0; i < n; i++) if (this.#isSelectable(i)) return i; return -1; }
 	#lastSelectable(): number { for (let i = this.opts.length - 1; i >= 0; i--) if (this.#isSelectable(i)) return i; return -1; }
 	/** Nearest selectable row at or past `from` in direction `step`, without wrapping; -1 if none. */
@@ -240,13 +255,13 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 		for (let i = from; i >= 0 && i < this.opts.length; i += step) if (this.#isSelectable(i)) return i;
 		return -1;
 	}
-	#selectedIndex(): number { return this.#selected.size ? this.opts.findIndex((o) => !o.divider && this.#selected.has(o.value)) : -1; }
+	#selectedIndex(): number { return this.#selected.size ? this.opts.findIndex((o) => !isSeparator(o) && this.#selected.has(o.value)) : -1; }
 
 	#indexPositions() {
 		const n = this.opts.length;
 		const pos = new Int32Array(n);
 		let count = 0;
-		for (let i = 0; i < n; i++) if (!this.opts[i].divider) pos[i] = ++count;
+		for (let i = 0; i < n; i++) if (!isSeparator(this.opts[i])) pos[i] = ++count;
 		this.#posInSet = pos;
 		this.#setSize = count;
 		this.#endFiredFor = -1;
@@ -369,7 +384,7 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 
 	private select(index: number) {
 		const opt = this.options[index];
-		if (!opt || opt.disabled || opt.divider) return;
+		if (!opt || opt.disabled || isSeparator(opt)) return;
 		if (this.multiple) {
 			const vals = listValues(this.value);
 			this.value = vals.includes(opt.value) ? vals.filter((v) => v !== opt.value) : [...vals, opt.value];
@@ -430,13 +445,16 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 	/** Move the highlighted (active) option by one selectable step, wrapping; skips disabled items and dividers. */
 	moveActive(delta: 1 | -1): void { this.move(delta === 1); }
 
+	/** The highlighted option, or undefined when none is. */
+	get activeOption(): ListOption | undefined { return this.activeIndex >= 0 ? this.opts[this.activeIndex] : undefined; }
+
 	/** Highlight the first selectable option (skipping disabled items and dividers); clears the highlight if none. */
 	activateFirst(): void { this.activeIndex = this.#firstSelectable(); }
 
 	/** Select the active option, firing the normal `change`. Returns false and fires nothing if none is active. */
 	chooseActive(): boolean {
 		const opt = this.activeIndex >= 0 ? this.options[this.activeIndex] : undefined;
-		if (!opt || opt.disabled || opt.divider) return false;
+		if (!opt || opt.disabled || isSeparator(opt)) return false;
 		this.select(this.activeIndex);
 		return true;
 	}
@@ -518,7 +536,7 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 				// directly rather than relying on cross-shadow focus detection.
 				current: () => {
 					if (this.activeIndex < 0) return null;
-					const index = this.opts.slice(0, this.activeIndex).filter((o) => !o.divider).length;
+					const index = this.opts.slice(0, this.activeIndex).filter((o) => !isSeparator(o)).length;
 					return { zoneIndex: 0, index };
 				},
 				onGrabChange: (s) => { this.grabbedKey = s.grabbed ? s.key : null; this.grabIndex = s.grabbed ? s.index : null; },
@@ -530,6 +548,11 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 			this.#zoneCfg = undefined;
 			this.#grab = undefined;
 		}
+	}
+
+	#renderHeading(o: ListOption, top?: number): TemplateResult {
+		const style = top === undefined ? nothing : `transform:translateY(${top}px);height:${this.#rowHeight}px`;
+		return html`<li role="presentation" class="heading" style=${style}>${o.label}</li>`;
 	}
 
 	#renderOption(o: ListOption, i: number, top?: number): TemplateResult {
@@ -552,6 +575,7 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 		>
 			<dj-icon class="check" size="small"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4 10-10" fill="none" stroke="currentColor" stroke-width="2"/></svg></dj-icon>
 			<span class="label">${o.label ?? o.value}</span>
+			${o.hint ? html`<span class="hint">${o.hint}</span>` : nothing}
 		</li>`;
 	}
 
@@ -564,6 +588,7 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 		let pos = 0; // position among non-grabbed reorderable items
 		this.opts.forEach((o, i) => {
 			if (o.divider) { rows.push(html`<li role="separator" class="divider"></li>`); return; }
+			if (o.heading) { rows.push(this.#renderHeading(o)); return; }
 			const isGrabbed = grabbing && o.value === this.grabbedKey;
 			if (grabbing && !isGrabbed && pos === this.grabIndex) rows.push(indicator());
 			rows.push(this.#renderOption(o, i));
@@ -581,6 +606,7 @@ export class DjList extends FormControl(DojoElement) implements Partial<DojoForm
 			const o = this.opts[i];
 			const top = pad + i * this.#rowHeight;
 			if (o.divider) return html`<li role="separator" class="divider" style=${`transform:translateY(${top}px);height:${this.#rowHeight}px`}></li>`;
+			if (o.heading) return this.#renderHeading(o, top);
 			return this.#renderOption(o, i, top);
 		});
 	}

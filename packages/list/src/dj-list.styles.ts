@@ -12,6 +12,10 @@ export default css`
 	.item--active { background: var(--dj-color-neutral-100, #f3f4f6); }
 	.item--selected { color: var(--dj-color-primary-600, #2563eb); font-weight: var(--dj-font-weight-semibold, 600); }
 	.item--disabled { opacity: 0.5; cursor: not-allowed; }
+	.hint { margin-inline-start: auto; padding-inline-start: var(--dj-spacing-small, 0.75rem); flex: 0 0 auto; opacity: 0.7; font-size: 0.875em; }
+	.heading { padding: var(--dj-spacing-x-small, 0.5rem) var(--dj-spacing-small, 0.75rem) var(--dj-spacing-2x-small, 0.25rem);
+		font-size: 0.75em; font-weight: var(--dj-font-weight-semibold, 600); text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.7; }
+	.list--virtual .heading { display: flex; align-items: flex-end; box-sizing: border-box; }
 	.check { width: 1rem; height: 1rem; flex: 0 0 auto; visibility: hidden; }
 	.item--selected .check { visibility: visible; }
 	/* Multiple: every option shows a box, checked when selected. */

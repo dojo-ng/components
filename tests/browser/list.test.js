@@ -49,4 +49,32 @@ describe("dj-list", () => {
 		await el.updateComplete;
 		await assertNoViolations(el);
 	});
+
+	it("shows group headings and hints, skips headings with the keyboard, and counts only options", async () => {
+		const el = await mount(make("dj-list", {
+			label: "Commands",
+			options: [
+				{ value: "h1", label: "File", heading: true },
+				{ value: "save", label: "Save", hint: "Ctrl+S" },
+				{ value: "open", label: "Open" },
+				{ value: "h2", label: "View", heading: true },
+				{ value: "zoom", label: "Zoom", hint: "Ctrl+=" },
+			],
+		}));
+		const root = el.shadowRoot;
+		assertEqual([...root.querySelectorAll(".heading")].map((h) => h.textContent.trim()).join("|"), "File|View");
+		assertEqual([...root.querySelectorAll(".hint")].map((h) => h.textContent.trim()).join("|"), "Ctrl+S|Ctrl+=");
+		assertEqual(root.querySelectorAll('li[role="option"]').length, 3, "headings are not options");
+		el.activateFirst();
+		el.moveActive(1);
+		el.moveActive(1);
+		await el.updateComplete;
+		assertEqual(el.activeOption?.value, "zoom", "the arrow steps over the heading");
+		el.moveActive(1);
+		assertEqual(el.activeOption?.value, "save", "and wraps past the first heading");
+		await el.updateComplete;
+		el.shadowRoot.querySelector(".heading").click();
+		assertEqual(el.value, "", "a heading cannot be chosen");
+		await assertNoViolations(el);
+	});
 });

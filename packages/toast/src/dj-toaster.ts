@@ -9,9 +9,9 @@ import { upsert, shownIds, effectiveDuration } from "./queue.js";
 import type { ToastEntry, ToastOptions, ToastUpdate, ToastHandle } from "./queue.js";
 import { Countdown, realClock } from "./countdown.js";
 import type { Clock } from "./countdown.js";
-import { matchesShortcut } from "./shortcut.js";
+import { commands } from "@dojo-ng/commands";
 
-registerDefaults("dj", { close: "Close", notifications: "Notifications" });
+registerDefaults("dj", { close: "Close", notifications: "Notifications", focusNotifications: "Move focus to notifications" });
 
 export type ToasterPlacement = "top-start" | "top-center" | "top-end" | "bottom-start" | "bottom-center" | "bottom-end";
 export type ToastCloseReason = "timeout" | "action" | "close" | "escape" | "api";
@@ -39,7 +39,9 @@ const ANNOUNCE_KEEP = 7000;
  *
  * #### Keyboard
  * - `shortcut` (default Alt+T) moves focus to the newest toast's first button, so a keyboard user
- *   can reach an Undo. The shortcut is part of the region's label.
+ *   can reach an Undo. The shortcut is part of the region's label. It is registered with
+ *   `@dojo-ng/commands` as `dj-toaster.focus`, so it shows in the command palette's shortcut help,
+ *   and does nothing while no toast is showing.
  * - Escape closes the focused toast and returns focus to where it was before.
  *
  * #### Not built
@@ -144,13 +146,15 @@ export class DjToaster extends DojoElement {
 	#focus = false;
 	#hidden = false;
 	#returnFocus: HTMLElement | null = null;
+	#shortcutOff?: () => void;
+	#shortcutBound?: string;
 
 	/** The current toasts, shown and waiting, in arrival order. Read-only snapshot. */
 	get toasts(): readonly ToastEntry[] { return this.#entries.slice(); }
 
 	override connectedCallback() {
 		super.connectedCallback();
-		document.addEventListener("keydown", this.#onDocumentKey);
+		this.#bindShortcut();
 		document.addEventListener("visibilitychange", this.#onVisibility);
 		this.#hidden = document.visibilityState === "hidden";
 		this.addEventListener("focusin", this.#onFocusIn);
@@ -159,7 +163,9 @@ export class DjToaster extends DojoElement {
 
 	override disconnectedCallback() {
 		super.disconnectedCallback();
-		document.removeEventListener("keydown", this.#onDocumentKey);
+		this.#shortcutOff?.();
+		this.#shortcutOff = undefined;
+		this.#shortcutBound = undefined;
 		document.removeEventListener("visibilitychange", this.#onVisibility);
 		this.removeEventListener("focusin", this.#onFocusIn);
 		this.removeEventListener("focusout", this.#onFocusOut);
@@ -295,17 +301,42 @@ export class DjToaster extends DojoElement {
 		else (active as HTMLElement).blur();
 	}
 
-	#onDocumentKey = (event: KeyboardEvent) => {
-		if (!this.shortcut || !matchesShortcut(event, this.shortcut)) return;
+	protected override willUpdate(changed: Map<PropertyKey, unknown>) {
+		super.willUpdate(changed);
+		if (this.isConnected && changed.has("shortcut")) this.#bindShortcut();
+	}
+
+	/** The first button of the newest toast that is showing, or undefined. */
+	#newestButton(): HTMLElement | undefined {
 		const shown = shownIds(this.#entries, this.maxVisible);
 		const newest = this.#entries.filter((e) => shown.has(e.id) && !e.leaving).pop();
-		const button = newest && this.#toastElement(newest.id)?.querySelector("button");
-		if (!button) return;
-		event.preventDefault();
-		const active = deepActiveElement() as HTMLElement | null;
-		if (active && !this.#contains(active)) this.#returnFocus = active;
-		button.focus();
-	};
+		return (newest && this.#toastElement(newest.id)?.querySelector("button")) || undefined;
+	}
+
+	/** Register `shortcut` with the app's command registry. It does nothing while no toast is showing. */
+	#bindShortcut() {
+		if (this.#shortcutBound === this.shortcut) return;
+		this.#shortcutOff?.();
+		this.#shortcutOff = undefined;
+		this.#shortcutBound = this.shortcut;
+		if (!this.shortcut) return;
+		try {
+			this.#shortcutOff = commands.register({
+				id: "dj-toaster.focus",
+				label: messages.resolve("dj", this.#i18n.locale, "focusNotifications") ?? "Move focus to notifications",
+				shortcut: this.shortcut,
+				allowInText: true,
+				when: () => this.#newestButton() !== undefined,
+				run: () => {
+					const active = deepActiveElement() as HTMLElement | null;
+					if (active && !this.#contains(active)) this.#returnFocus = active;
+					this.#newestButton()?.focus();
+				},
+			});
+		} catch (error) {
+			console.warn(`dj-toaster: ignoring shortcut "${this.shortcut}": ${(error as Error).message}`);
+		}
+	}
 
 	#onVisibility = () => this.#setPause("hidden", document.visibilityState === "hidden");
 

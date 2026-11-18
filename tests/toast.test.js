@@ -7,7 +7,7 @@
 import { settled } from "./setup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { toast, getToaster, DjToaster, matchesShortcut } from "../packages/toast/dist/index.js";
+import { toast, getToaster, DjToaster } from "../packages/toast/dist/index.js";
 import { effectiveDuration, upsert, shownIds } from "../packages/toast/dist/queue.js";
 import { Countdown } from "../packages/toast/dist/countdown.js";
 
@@ -108,16 +108,6 @@ test("Countdown pauses and resumes with the time left", () => {
 	assert.equal(done, 0);
 	clock.advance(1);
 	assert.equal(done, 1);
-});
-
-test("matchesShortcut matches by physical key and exact modifiers", () => {
-	const ev = (init) => ({ altKey: false, ctrlKey: false, shiftKey: false, metaKey: false, key: "", code: "", ...init });
-	assert.equal(matchesShortcut(ev({ altKey: true, code: "KeyT", key: "†" }), "Alt+T"), true);
-	assert.equal(matchesShortcut(ev({ altKey: true, shiftKey: true, code: "KeyT" }), "Alt+T"), false);
-	assert.equal(matchesShortcut(ev({ code: "KeyT", key: "t" }), "Alt+T"), false);
-	assert.equal(matchesShortcut(ev({ ctrlKey: true, shiftKey: true, code: "Digit1" }), "Ctrl+Shift+1"), true);
-	assert.equal(matchesShortcut(ev({ key: "F6" }), "F6"), true);
-	assert.equal(matchesShortcut(ev({ altKey: true, code: "KeyT" }), ""), false);
 });
 
 // The element.
@@ -319,4 +309,24 @@ test("toast.promise: rejection turns it into an error that stays", async () => {
 	assert.equal(el.toasts[0].message, "Failed: nope");
 	el.clock.advance(60000);
 	assert.equal(el.toasts[0].leaving, false);
+});
+
+test("the toaster's shortcut is a registered command that follows the shortcut property", async () => {
+	const { commands } = await import("../packages/commands/dist/index.js");
+	const toaster = new DjToaster();
+	document.body.append(toaster);
+	await toaster.updateComplete;
+	assert.ok(commands.get("dj-toaster.focus"), "registered on connect");
+	assert.equal(commands.get("dj-toaster.focus").shortcut, "Alt+T");
+	assert.equal(commands.active().length, 0, "not active while no toast shows");
+	toaster.shortcut = "Alt+Y";
+	await toaster.updateComplete;
+	assert.equal(commands.get("dj-toaster.focus").shortcut, "Alt+Y");
+	toaster.shortcut = "";
+	await toaster.updateComplete;
+	assert.equal(commands.get("dj-toaster.focus"), undefined, "an empty shortcut removes it");
+	toaster.shortcut = "Alt+T";
+	await toaster.updateComplete;
+	toaster.remove();
+	assert.equal(commands.get("dj-toaster.focus"), undefined, "removed on disconnect");
 });

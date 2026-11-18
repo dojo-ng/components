@@ -24,6 +24,7 @@ import type { DjCheckboxGroup } from "@dojo-ng/checkbox-group";
 import type { DjChip } from "@dojo-ng/chip";
 import type { DjChipTypeahead } from "@dojo-ng/chip-typeahead";
 import type { DjColorPicker } from "@dojo-ng/color-picker";
+import type { DjCommandPalette } from "@dojo-ng/command-palette";
 import type { DjConstrainedInput } from "@dojo-ng/constrained-input";
 import type { DjContextMenu } from "@dojo-ng/context-menu";
 import type { DjContextPopup } from "@dojo-ng/context-popup";
@@ -112,6 +113,7 @@ declare module "@vue/runtime-core" {
     "dj-chip": DefineComponent<{ disabled?: DjChip["disabled"]; checked?: DjChip["checked"]; clickable?: DjChip["clickable"]; closeable?: DjChip["closeable"]; closeLabel?: DjChip["closeLabel"] }, {}, {}, {}, {}, {}, { "dj-close": (e: CustomEvent) => void }>;
     "dj-chip-typeahead": DefineComponent<{ options?: DjChipTypeahead["options"]; value?: DjChipTypeahead["value"]; name?: DjChipTypeahead["name"]; label?: DjChipTypeahead["label"]; placeholder?: DjChipTypeahead["placeholder"]; disabled?: DjChipTypeahead["disabled"]; duplicates?: DjChipTypeahead["duplicates"]; allowNew?: DjChipTypeahead["allowNew"]; position?: DjChipTypeahead["position"] }, {}, {}, {}, {}, {}, { "change": (e: CustomEvent) => void }>;
     "dj-color-picker": DefineComponent<{ format?: DjColorPicker["format"]; alpha?: DjColorPicker["alpha"]; swatches?: DjColorPicker["swatches"]; label?: DjColorPicker["label"]; name?: DjColorPicker["name"]; disabled?: DjColorPicker["disabled"]; get?: DjColorPicker["get"] }, {}, {}, {}, {}, {}, { "dj-change": (e: CustomEvent) => void }>;
+    "dj-command-palette": DefineComponent<{ open?: DjCommandPalette["open"]; shortcut?: DjCommandPalette["shortcut"]; label?: DjCommandPalette["label"]; placeholder?: DjCommandPalette["placeholder"]; registry?: DjCommandPalette["registry"] }, {}, {}, {}, {}, {}, { "dj-close": (e: CustomEvent) => void, "dj-command-run": (e: CustomEvent) => void }>;
     "dj-constrained-input": DefineComponent<{ validator?: DjConstrainedInput["validator"] }, {}, {}, {}, {}, {}, {}>;
     "dj-context-menu": DefineComponent<{ options?: DjContextMenu["options"] }, {}, {}, {}, {}, {}, { "dj-select": (e: CustomEvent) => void }>;
     "dj-context-popup": DefineComponent<{ open?: DjContextPopup["open"] }, {}, {}, {}, {}, {}, { "dj-open": (e: CustomEvent) => void, "dj-close": (e: CustomEvent) => void }>;

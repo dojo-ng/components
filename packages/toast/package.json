@@ -1,6 +1,6 @@
 {
   "name": "@dojo-ng/toast",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "BSD-3-Clause",
   "description": "Dojo NG toast manager: a toast() call, a queue, and the dj-toaster region",
   "type": "module",

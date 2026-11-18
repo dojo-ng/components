@@ -132,7 +132,7 @@ const EN_REORDER: Record<string, string> = {
  */
 export class DjList extends FormControl(DojoElement) implements Partial<DojoFormControl> {
 	static override styles = styles;
-	static override version = "0.2.0";
+	static override version = "0.2.1";
 	static override focusable = true;
 	static formAssociated = true;
 

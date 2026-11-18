@@ -54,7 +54,7 @@ const ANNOUNCE_KEEP = 7000;
  * @cssprop [--dj-toaster-offset=1rem] - Distance from the viewport edges.
  */
 export class DjToaster extends DojoElement {
-	static override version = "0.1.1";
+	static override version = "0.2.0";
 	static override styles = [
 		reducedMotion,
 		css`

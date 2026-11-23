@@ -688,6 +688,11 @@ declare module "react" {
         "canDrop"?: DjTree["canDrop"];
         "spring-delay"?: DjTree["springDelay"];
         "track"?: DjTree["track"];
+        "checkable"?: DjTree["checkable"];
+        "checked"?: DjTree["checked"];
+        "draggable-rows"?: DjTree["draggableRows"];
+        "drag-type"?: DjTree["dragType"];
+        "virtual-threshold"?: DjTree["virtualThreshold"];
         "base-path"?: DjTree["basePath"];
       };
       "dj-trigger-popup": DjProps<DjTriggerPopup> & {

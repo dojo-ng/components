@@ -606,6 +606,15 @@
 			<span id="tree-expanded" style="color: var(--dj-color-text-muted)">expanded: archive</span>
 		</div>
 		</section>
+<section id="tree-scale" data-dj-packages="tree">
+		<h3>Tree at scale (50,000 lazy nodes)</h3>
+		<p class="section-purpose">Fifty groups that load their 1,000 children when opened, with checkboxes and draggable rows, in a tree that only renders the rows in view.</p>
+		<p style="color: var(--dj-color-text-muted); margin: 0 0 0.5rem">
+			Open a group to load it (about 0.3 s; "Group 7" fails the first time, then Retry works). Space checks a row, Enter selects it, and a checked row drags every checked row. Drag onto the top or bottom edge of a row to move before or after it, or onto the middle of a group to move inside it. Open a few groups and press End to reach the last row.
+		</p>
+		<dj-tree id="tree-scale-demo" checkable draggable-rows style="max-inline-size: 28rem"></dj-tree>
+		<div style="color: var(--dj-color-text-muted); margin-block-start: 0.5rem" id="tree-scale-status">no events yet</div>
+		</section>
 <section id="toolbar" data-dj-packages="toolbar">
 		<h3>Toolbar</h3>
 		<p class="section-purpose">A toolbar with overflowed actions, reporting which overflow action was chosen.</p>
@@ -1542,6 +1551,41 @@
 			const treeExpanded = document.getElementById("tree-expanded");
 			folders.addEventListener("dj-select", (e) => { treeSelect.textContent = `selected: ${e.detail.id}`; });
 			folders.addEventListener("dj-expand-change", (e) => { treeExpanded.textContent = `expanded: ${e.detail.expandedIds.join(", ") || "(none)"}`; });
+			// Tree at scale: 50 lazy groups of 1,000, checkboxes, and draggable rows.
+			const big = document.getElementById("tree-scale-demo");
+			const bigStatus = document.getElementById("tree-scale-status");
+			big.nodes = Array.from({ length: 50 }, (_, g) => ({ id: `g${g}`, label: `Group ${g}`, hasChildren: true }));
+			let failedOnce = false;
+			big.addEventListener("dj-load-children", (e) => {
+				const g = e.detail.id;
+				bigStatus.textContent = `loading ${g}`;
+				setTimeout(() => {
+					if (g === "g7" && !failedOnce) { failedOnce = true; big.setChildren(g, null, { error: "Server unavailable" }); return; }
+					big.setChildren(g, Array.from({ length: 1000 }, (_, i) => ({ id: `${g}-${i}`, label: `Item ${g.slice(1)}.${i}` })));
+					bigStatus.textContent = `loaded ${g}`;
+				}, 300);
+			});
+			big.addEventListener("dj-check-change", (e) => {
+				bigStatus.textContent = `${e.detail.checked.length} checked, ${e.detail.partial.length} partial, ${e.detail.pendingParents.length} unloaded`;
+			});
+			big.addEventListener("dj-move", (e) => {
+				const { ids, target, position } = e.detail;
+				const take = new Set(ids), moved = [];
+				const strip = (list) => list.filter((n) => { if (take.has(n.id)) { moved.push(n); return false; } if (n.children) n.children = strip(n.children); return true; });
+				const nodes = strip(big.nodes);
+				const put = (list) => {
+					const i = list.findIndex((n) => n.id === target);
+					if (i >= 0) {
+						if (position === "inside") list[i].children = [...moved, ...(list[i].children ?? [])];
+						else list.splice(position === "before" ? i : i + 1, 0, ...moved);
+						return true;
+					}
+					return list.some((n) => n.children && put(n.children));
+				};
+				put(nodes);
+				big.nodes = nodes;
+				bigStatus.textContent = `moved ${ids.length} ${position} ${target}`;
+			});
 			const grid = document.getElementById("grid");
 			grid.columns = [{ id: "name", title: "Name", sortable: true }, { id: "role", title: "Role", sortable: true }, { id: "age", title: "Age", sortable: true }];
 			grid.rows = [{ name: "Ada", role: "Engineer", age: 36 }, { name: "Bo", role: "Designer", age: 29 }, { name: "Cy", role: "PM", age: 42 }];

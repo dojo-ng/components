@@ -82,11 +82,32 @@ Set `track` and the tree and `@dojo-ng/history` follow each other, with no route
 - Ctrl-click, Cmd-click, or middle-click on a row opens its path in a new tab. Rows stay `treeitem`s and not links, because a focusable link inside a treeitem would break the tree's roving focus. Two nodes with the same path: the first in tree order wins.
 - `track` needs `@dojo-ng/history` installed. Without it nothing is tracked and nothing throws.
 
-## Not built
+## Long trees
 
-- Dragging tree rows, virtualization, checkboxes, and lazy loading.
+- Above `virtual-threshold` visible rows (default 200) the tree is virtual: only the rows in view (plus the focused one) are in the DOM, and the tree scrolls inside `--dj-tree-max-height` (20rem by default while virtual). Every row carries `aria-level`, `aria-setsize`, and `aria-posinset`, so assistive technology still knows its place among all of them.
+- Rows have one height, measured from the first row. Keyboard, `track`, and Back all work on rows that are not rendered: the tree scrolls the active row into view first.
 
-Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).
+## Lazy children
+
+- A node with `hasChildren: true` and no `children` shows a chevron. Opening it, by any route (the chevron, the keyboard, spring-open, an `expanded` the app sets, or `track`), emits `dj-load-children` with `{ id }` once, and the node shows a "Loading" row under it.
+- The app answers with `setChildren(id, nodes)`. The tree stores `nodes` as that node's `children` and renders them. An empty array makes the node a leaf. Answers can arrive in any order and any time; one for a node that no longer exists is ignored (the method returns false).
+- On failure the app calls `setChildren(id, null, { error })`. The row under the node becomes a retry row; Enter, Space, or a click on it emits `dj-load-children` again.
+- With `track`, a location below an unloaded node opens that node and so asks for its children; when they arrive the tree matches again and goes one level deeper, so a deep link emits one load per level, in order, until the node is found.
+
+## Checkboxes
+
+- Set `checkable` to show a checkbox on every node. Checking is separate from selecting: Space toggles the check, Enter still selects, and clicking the box does not select the row.
+- `checked` is the array of checked ids (controlled). Toggling updates it and emits `dj-check-change` with `{ id, checked, partial, pendingParents }`.
+- Checking a parent checks every loaded node below it; unchecking clears them and the parent's own checked ancestors. A parent with loaded children shows what they show: all checked, some (`aria-checked="mixed"`), or none. An id in `checked` also checks everything loaded below it.
+- `partial` lists the parents showing the mixed state. `pendingParents` lists checked lazy nodes whose children are not loaded; the tree cannot know what is below them, so the app resolves those on the server. Children that load later under a checked parent arrive checked.
+
+## Dragging rows
+
+- Set `draggable-rows` to make every row a drag source (native HTML5 drag and drop, so a row can land on this tree, another tree, a grid, or any page element that reads the drag). The drag carries a JSON array of node ids under `drag-type` (default `application/x-dojo-tree-rows`) and the labels as `text/plain`. The preview chip shows the label, or the count for several.
+- A row that is not checked drags alone. With `checkable`, a checked row drags every checked row, top-most only (a checked parent carries what is below it); that is the multi-row drag.
+- Within one tree the pointer picks where a drop lands: the top edge of a row is "before", the bottom edge "after", the middle "inside". The bottom edge of an open parent is "inside", since "after" would draw above its first child. A line marks before and after (parts `row--drop-before`, `row--drop-after`); "inside" uses `row--drop-target` as a drop does. A row can go "inside" a row that has children, or any row `canDrop` accepts. A drop on a dragged row or anything below it is refused.
+- The tree emits `dj-move` with `{ ids, target, position }` and changes nothing; the app edits `nodes`. A drag from another tree or a grid is a plain drop: `canDrop` and `dj-drop` as above.
+- Dragging has no keyboard form, as with drops. Offer a "Move…" command (WCAG 2.5.7).
 
 ## Properties
 
@@ -101,6 +122,11 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 | `canDrop` | — | `(id: string, types: readonly string[]) => boolean` | — |
 | `springDelay` | spring-delay | `number` | `800` |
 | `track` | track | `boolean` | `false` |
+| `checkable` | checkable ↻ | `boolean` | `false` |
+| `checked` | checked | `string[]` | `[]` |
+| `draggableRows` | draggable-rows ↻ | `boolean` | `false` |
+| `dragType` | drag-type | `string` | `"application/x-dojo-tree-rows"` |
+| `virtualThreshold` | virtual-threshold | `number` | `200` |
 | `basePath` | base-path | `string` | `""` |
 
 ## Slots
@@ -110,6 +136,9 @@ Need one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or
 ## CSS parts
 
 - `row`: A node's clickable line.
+- `checkbox`: The box, with `checkable`.
+- `loading`
+- `row--drop-before`
 - `row--drop-target`: Added to the row a drag would drop
 on.
 - `chevron`
@@ -118,15 +147,54 @@ on.
 
 ## Events
 
+- `dj-load-children`: Detail `{ id }`.
+- `dj-check-change`: Detail `{ id, checked, partial, pendingParents }`, only with `checkable`.
 - `dj-expand-change`: Detail `{ id, expanded, expandedIds }`.
+- `dj-move`: Detail `{ ids, target, position }`, a drag within this tree.
 - `dj-drop`: Detail `{ id, dataTransfer }`.
 - `dj-select`: Detail `{ id }`.
 - `dj-navigate`: Detail `{ path, label, trail }`, only with `track`.
 
+## Methods
+
+- `setChildren(id: string, children: TreeNode[] | null, options: { error?: unknown }): boolean`: Answer a `dj-load-children`: store `children` on the node `id` and render them. For a failed load pass `null` and `{ error }`; the node then shows a retry row. Returns false when no node has that id (the tree was replaced while the load ran), and then does nothing.
+
 ## CSS custom properties
 
 - `--dj-tree-indent`: Indentation added per nesting level. Default `1.1rem`.
+- `--dj-tree-max-height`: Height the tree scrolls at while virtual. Default `20rem`.
 - `--dj-tree-count-color`: Color of the trailing count badge. Default `var(--dj-color-text-muted)`.
+
+## Examples
+
+### Large lazy tree with checkboxes and dragging
+
+A tree windows its rows above 200, so 50,000 nodes stay cheap. Groups load when opened (`dj-load-children`, answered with `setChildren`), `checkable` adds tri-state checkboxes, and `draggable-rows` lets rows be moved: the tree reports a drop in the same tree as `dj-move` and the app edits `nodes`.
+
+```html
+<dj-tree id="big" checkable draggable-rows></dj-tree>
+<script type="module">
+  import "@dojo-ng/tree";
+  const t = document.getElementById("big");
+  t.nodes = Array.from({ length: 50 }, (_, g) => ({ id: `g${g}`, label: `Group ${g}`, hasChildren: true }));
+  t.addEventListener("dj-load-children", async (e) => {
+    try {
+      const rows = await fetchChildren(e.detail.id);   // your server call
+      t.setChildren(e.detail.id, rows);
+    } catch (error) {
+      t.setChildren(e.detail.id, null, { error });      // shows a retry row
+    }
+  });
+  t.addEventListener("dj-check-change", (e) => {
+    // e.detail.pendingParents: checked groups whose children are not loaded; resolve them on the server
+    console.log(e.detail.checked, e.detail.partial, e.detail.pendingParents);
+  });
+  t.addEventListener("dj-move", (e) => {
+    const { ids, target, position } = e.detail;       // "before" | "after" | "inside"
+    t.nodes = applyMove(t.nodes, ids, target, position); // your update of the data
+  });
+</script>
+```
 
 ## Theming
 

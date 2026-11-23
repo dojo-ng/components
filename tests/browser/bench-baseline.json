@@ -6,5 +6,6 @@
   "financialChart500": 60,
   "financialChart2000": 195,
   "listOpen10k": 10,
-  "typeaheadFilter10k": 25
+  "typeaheadFilter10k": 25,
+  "treeExpand5k": 30
 }

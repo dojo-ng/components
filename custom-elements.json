@@ -12544,7 +12544,7 @@
           "name": "DjTree",
           "customElement": true,
           "tagName": "dj-tree",
-          "description": "a hierarchical tree built from `nodes`.\n\nThe tree knows nothing about what it shows: a file tree, a mail folder list, and a MIME structure are all just nodes. Each node can carry an `icon` (a name registered with `registerIcon` or `registerIcons` from `@dojo-ng/icon`) and a `count`, shown as a trailing badge such as an unread count.\n\n#### Selection and expansion\n\n- Both are controlled. `value` is the selected node id, and the tree emits `dj-select`.\n- `expanded` is the array of open node ids, and the tree emits `dj-expand-change`.\n- Clicking a row selects it; clicking the chevron expands or collapses it.\n- Set `expand-on-row-click` to make a click on a parent row also expand or collapse it. Use it when some rows exist only to hold others, so a click on them does something visible.\n\n#### Keyboard\n\nThe tree follows the APG tree pattern. Only one row is a tab stop: the selected row if it is visible, otherwise the first visible row. The arrow keys move focus without selecting.\n\n- Down and Up move through the visible rows.\n- Right expands a closed parent, moves into an open one, and does nothing on a leaf.\n- Left collapses an open parent, or moves to the parent row.\n- Home and End jump to the first and last visible row.\n- Enter or Space selects the focused row.\n\n#### Right-to-left\n\n- Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron points in the reading direction.\n\n#### Dropping onto rows\n\n- Set `canDrop` to make the tree a target for native HTML5 drag and drop. It is called during a drag with a row id and the drag's `dataTransfer.types` (the only part of a payload the browser shows before the drop), and returns whether that row accepts it. Unset, the tree ignores drags.\n- The row under the pointer that accepts the drag is marked: the `row--drop-target` part and a built-in outline. A refused row is not marked and the cursor shows the drop is not allowed.\n- Resting on a collapsed parent for `spring-delay` ms (default 800; 0 turns it off) during a drag expands it, through the same path as a chevron click, so `dj-expand-change` fires. It stays open after the drop.\n- A drop emits `dj-drop` with `{ id, dataTransfer }`. The tree does not select the row; the consumer reads its payload from `dataTransfer` and applies the change.\n- Dragging has no keyboard form. A consumer that offers drop must offer another way to do the same thing (WCAG 2.5.7), such as a Move command with a picker.\n\n#### Tracking navigation\n\nSet `track` and the tree and `@dojo-ng/history` follow each other, with no route table to write.\n\n- Each node has a path: its own `path` if it sets one, otherwise `base-path` plus the ids from the root down to the node, joined with `/` (each id URI-encoded). A tree with `base-path=\"/explore\"` gives the node `hr` > `comp` > `pay` the path `/explore/hr/comp/pay`.\n- Selecting a row (click, Enter, or Space) emits `dj-navigate` with `{ path, label, trail }` alongside `dj-select`. `trail` is the nodes from the root to this one, each as `{ path, label }`, and ends up in the history entry, so it survives Back, Forward, and a reload in the same tab.\n- When the location changes, the tree selects the node whose path matches it (an exact match, else the node with the longest path that is a prefix of the location) and expands that node's ancestors, emitting `dj-expand-change` for each. This is what makes Back reselect the right row. It does not emit `dj-navigate`, because that would loop. It does not emit `dj-select` either.\n- If the location has no `trail` (a deep link, or a pasted URL), the tree adds the matched node's trail to the history entry, so a `dj-back-button` in `up` mode can name the parent.\n- Ctrl-click, Cmd-click, or middle-click on a row opens its path in a new tab. Rows stay `treeitem`s and not links, because a focusable link inside a treeitem would break the tree's roving focus. Two nodes with the same path: the first in tree order wins.\n- `track` needs `@dojo-ng/history` installed. Without it nothing is tracked and nothing throws.\n\n#### Not built\n\n- Dragging tree rows, virtualization, checkboxes, and lazy loading.\n\nNeed one of these? Make a request on [Discord](https://discord.gg/nReZF9QrjS) or add an issue (work item) on [Heptapod](https://foss.heptapod.net/dojo-ng/components/-/issues).",
+          "description": "a hierarchical tree built from `nodes`.\n\nThe tree knows nothing about what it shows: a file tree, a mail folder list, and a MIME structure are all just nodes. Each node can carry an `icon` (a name registered with `registerIcon` or `registerIcons` from `@dojo-ng/icon`) and a `count`, shown as a trailing badge such as an unread count.\n\n#### Selection and expansion\n\n- Both are controlled. `value` is the selected node id, and the tree emits `dj-select`.\n- `expanded` is the array of open node ids, and the tree emits `dj-expand-change`.\n- Clicking a row selects it; clicking the chevron expands or collapses it.\n- Set `expand-on-row-click` to make a click on a parent row also expand or collapse it. Use it when some rows exist only to hold others, so a click on them does something visible.\n\n#### Keyboard\n\nThe tree follows the APG tree pattern. Only one row is a tab stop: the selected row if it is visible, otherwise the first visible row. The arrow keys move focus without selecting.\n\n- Down and Up move through the visible rows.\n- Right expands a closed parent, moves into an open one, and does nothing on a leaf.\n- Left collapses an open parent, or moves to the parent row.\n- Home and End jump to the first and last visible row.\n- Enter or Space selects the focused row.\n\n#### Right-to-left\n\n- Indentation uses `margin-inline-start`, so it flips in a right-to-left page, and the chevron points in the reading direction.\n\n#### Dropping onto rows\n\n- Set `canDrop` to make the tree a target for native HTML5 drag and drop. It is called during a drag with a row id and the drag's `dataTransfer.types` (the only part of a payload the browser shows before the drop), and returns whether that row accepts it. Unset, the tree ignores drags.\n- The row under the pointer that accepts the drag is marked: the `row--drop-target` part and a built-in outline. A refused row is not marked and the cursor shows the drop is not allowed.\n- Resting on a collapsed parent for `spring-delay` ms (default 800; 0 turns it off) during a drag expands it, through the same path as a chevron click, so `dj-expand-change` fires. It stays open after the drop.\n- A drop emits `dj-drop` with `{ id, dataTransfer }`. The tree does not select the row; the consumer reads its payload from `dataTransfer` and applies the change.\n- Dragging has no keyboard form. A consumer that offers drop must offer another way to do the same thing (WCAG 2.5.7), such as a Move command with a picker.\n\n#### Tracking navigation\n\nSet `track` and the tree and `@dojo-ng/history` follow each other, with no route table to write.\n\n- Each node has a path: its own `path` if it sets one, otherwise `base-path` plus the ids from the root down to the node, joined with `/` (each id URI-encoded). A tree with `base-path=\"/explore\"` gives the node `hr` > `comp` > `pay` the path `/explore/hr/comp/pay`.\n- Selecting a row (click, Enter, or Space) emits `dj-navigate` with `{ path, label, trail }` alongside `dj-select`. `trail` is the nodes from the root to this one, each as `{ path, label }`, and ends up in the history entry, so it survives Back, Forward, and a reload in the same tab.\n- When the location changes, the tree selects the node whose path matches it (an exact match, else the node with the longest path that is a prefix of the location) and expands that node's ancestors, emitting `dj-expand-change` for each. This is what makes Back reselect the right row. It does not emit `dj-navigate`, because that would loop. It does not emit `dj-select` either.\n- If the location has no `trail` (a deep link, or a pasted URL), the tree adds the matched node's trail to the history entry, so a `dj-back-button` in `up` mode can name the parent.\n- Ctrl-click, Cmd-click, or middle-click on a row opens its path in a new tab. Rows stay `treeitem`s and not links, because a focusable link inside a treeitem would break the tree's roving focus. Two nodes with the same path: the first in tree order wins.\n- `track` needs `@dojo-ng/history` installed. Without it nothing is tracked and nothing throws.\n\n#### Long trees\n\n- Above `virtual-threshold` visible rows (default 200) the tree is virtual: only the rows in view (plus the focused one) are in the DOM, and the tree scrolls inside `--dj-tree-max-height` (20rem by default while virtual). Every row carries `aria-level`, `aria-setsize`, and `aria-posinset`, so assistive technology still knows its place among all of them.\n- Rows have one height, measured from the first row. Keyboard, `track`, and Back all work on rows that are not rendered: the tree scrolls the active row into view first.\n\n#### Lazy children\n\n- A node with `hasChildren: true` and no `children` shows a chevron. Opening it, by any route (the chevron, the keyboard, spring-open, an `expanded` the app sets, or `track`), emits `dj-load-children` with `{ id }` once, and the node shows a \"Loading\" row under it.\n- The app answers with `setChildren(id, nodes)`. The tree stores `nodes` as that node's `children` and renders them. An empty array makes the node a leaf. Answers can arrive in any order and any time; one for a node that no longer exists is ignored (the method returns false).\n- On failure the app calls `setChildren(id, null, { error })`. The row under the node becomes a retry row; Enter, Space, or a click on it emits `dj-load-children` again.\n- With `track`, a location below an unloaded node opens that node and so asks for its children; when they arrive the tree matches again and goes one level deeper, so a deep link emits one load per level, in order, until the node is found.\n\n#### Checkboxes\n\n- Set `checkable` to show a checkbox on every node. Checking is separate from selecting: Space toggles the check, Enter still selects, and clicking the box does not select the row.\n- `checked` is the array of checked ids (controlled). Toggling updates it and emits `dj-check-change` with `{ id, checked, partial, pendingParents }`.\n- Checking a parent checks every loaded node below it; unchecking clears them and the parent's own checked ancestors. A parent with loaded children shows what they show: all checked, some (`aria-checked=\"mixed\"`), or none. An id in `checked` also checks everything loaded below it.\n- `partial` lists the parents showing the mixed state. `pendingParents` lists checked lazy nodes whose children are not loaded; the tree cannot know what is below them, so the app resolves those on the server. Children that load later under a checked parent arrive checked.\n\n#### Dragging rows\n\n- Set `draggable-rows` to make every row a drag source (native HTML5 drag and drop, so a row can land on this tree, another tree, a grid, or any page element that reads the drag). The drag carries a JSON array of node ids under `drag-type` (default `application/x-dojo-tree-rows`) and the labels as `text/plain`. The preview chip shows the label, or the count for several.\n- A row that is not checked drags alone. With `checkable`, a checked row drags every checked row, top-most only (a checked parent carries what is below it); that is the multi-row drag.\n- Within one tree the pointer picks where a drop lands: the top edge of a row is \"before\", the bottom edge \"after\", the middle \"inside\". The bottom edge of an open parent is \"inside\", since \"after\" would draw above its first child. A line marks before and after (parts `row--drop-before`, `row--drop-after`); \"inside\" uses `row--drop-target` as a drop does. A row can go \"inside\" a row that has children, or any row `canDrop` accepts. A drop on a dragged row or anything below it is refused.\n- The tree emits `dj-move` with `{ ids, target, position }` and changes nothing; the app edits `nodes`. A drag from another tree or a grid is a plain drop: `canDrop` and `dj-drop` as above.\n- Dragging has no keyboard form, as with drops. Offer a \"Move\u2026\" command (WCAG 2.5.7).",
           "superclass": {
             "name": "DojoElement"
           },
@@ -12620,6 +12620,58 @@
             },
             {
               "kind": "field",
+              "name": "checkable",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Show a checkbox on every node. Checking is separate from selecting.",
+              "attribute": "checkable",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "checked",
+              "type": {
+                "text": "string[]"
+              },
+              "default": "[]",
+              "description": "The checked node ids (controlled). Toggling updates this and emits `dj-check-change`.",
+              "attribute": "checked"
+            },
+            {
+              "kind": "field",
+              "name": "draggableRows",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Make every row a drag source. See \"Dragging rows\".",
+              "attribute": "draggable-rows",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "dragType",
+              "type": {
+                "text": "string"
+              },
+              "default": "\"application/x-dojo-tree-rows\"",
+              "description": "The MIME type the dragged ids are written under, so a drop target can recognise them.",
+              "attribute": "drag-type"
+            },
+            {
+              "kind": "field",
+              "name": "virtualThreshold",
+              "type": {
+                "text": "number"
+              },
+              "default": "200",
+              "description": "Visible rows above which the tree renders only the rows in view.",
+              "attribute": "virtual-threshold"
+            },
+            {
+              "kind": "field",
               "name": "basePath",
               "type": {
                 "text": "string"
@@ -12627,6 +12679,36 @@
               "default": "\"\"",
               "description": "With `track`, the path every derived node path starts with, such as `/explore`.",
               "attribute": "base-path"
+            },
+            {
+              "kind": "method",
+              "name": "setChildren",
+              "description": "Answer a `dj-load-children`: store `children` on the node `id` and render them. For a failed load pass `null` and `{ error }`; the node then shows a retry row. Returns false when no node has that id (the tree was replaced while the load ran), and then does nothing.",
+              "parameters": [
+                {
+                  "name": "id",
+                  "type": {
+                    "text": "string"
+                  }
+                },
+                {
+                  "name": "children",
+                  "type": {
+                    "text": "TreeNode[] | null"
+                  }
+                },
+                {
+                  "name": "options",
+                  "type": {
+                    "text": "{ error?: unknown }"
+                  }
+                }
+              ],
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              }
             }
           ],
           "attributes": [
@@ -12679,6 +12761,46 @@
               "description": "Follow and drive the navigation history: selecting a row emits `dj-navigate`, and the location selects and expands the matching row. Needs `@dojo-ng/history` installed."
             },
             {
+              "name": "checkable",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "checkable",
+              "description": "Show a checkbox on every node. Checking is separate from selecting."
+            },
+            {
+              "name": "checked",
+              "type": {
+                "text": "string[]"
+              },
+              "fieldName": "checked",
+              "description": "The checked node ids (controlled). Toggling updates this and emits `dj-check-change`."
+            },
+            {
+              "name": "draggable-rows",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "draggableRows",
+              "description": "Make every row a drag source. See \"Dragging rows\"."
+            },
+            {
+              "name": "drag-type",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "dragType",
+              "description": "The MIME type the dragged ids are written under, so a drop target can recognise them."
+            },
+            {
+              "name": "virtual-threshold",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "virtualThreshold",
+              "description": "Visible rows above which the tree renders only the rows in view."
+            },
+            {
               "name": "base-path",
               "type": {
                 "text": "string"
@@ -12697,6 +12819,18 @@
             {
               "name": "row",
               "description": "a node's clickable line"
+            },
+            {
+              "name": "checkbox",
+              "description": "the box, with `checkable`"
+            },
+            {
+              "name": "loading",
+              "description": ""
+            },
+            {
+              "name": "row--drop-before",
+              "description": ""
             },
             {
               "name": "row--drop-target",
@@ -12722,6 +12856,11 @@
               "description": "Indentation added per nesting level."
             },
             {
+              "name": "--dj-tree-max-height",
+              "default": "20rem",
+              "description": "Height the tree scrolls at while virtual."
+            },
+            {
               "name": "--dj-tree-count-color",
               "default": "var(--dj-color-text-muted)",
               "description": "Color of the trailing count badge."
@@ -12729,11 +12868,32 @@
           ],
           "events": [
             {
+              "name": "dj-load-children",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ id }`"
+            },
+            {
+              "name": "dj-check-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ id, checked, partial, pendingParents }`, only with `checkable`"
+            },
+            {
               "name": "dj-expand-change",
               "type": {
                 "text": "CustomEvent"
               },
               "description": "detail `{ id, expanded, expandedIds }`"
+            },
+            {
+              "name": "dj-move",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "detail `{ ids, target, position }`, a drag within this tree"
             },
             {
               "name": "dj-drop",

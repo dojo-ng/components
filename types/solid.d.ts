@@ -684,6 +684,11 @@ declare module "solid-js" {
         "canDrop"?: DjTree["canDrop"];
         "spring-delay"?: DjTree["springDelay"];
         "track"?: DjTree["track"];
+        "checkable"?: DjTree["checkable"];
+        "checked"?: DjTree["checked"];
+        "draggable-rows"?: DjTree["draggableRows"];
+        "drag-type"?: DjTree["dragType"];
+        "virtual-threshold"?: DjTree["virtualThreshold"];
         "base-path"?: DjTree["basePath"];
       };
       "dj-trigger-popup": JSX.HTMLAttributes<DjTriggerPopup> & {
@@ -773,7 +778,10 @@ declare module "solid-js" {
       "dj-action": CustomEvent;
       "dj-after-enter": CustomEvent;
       "dj-after-leave": CustomEvent;
+      "dj-load-children": CustomEvent;
+      "dj-check-change": CustomEvent;
       "dj-expand-change": CustomEvent;
+      "dj-move": CustomEvent;
       "dj-drop": CustomEvent;
       "dj-step": CustomEvent;
     }
@@ -823,7 +831,10 @@ declare module "solid-js" {
       "dj-action": CustomEvent;
       "dj-after-enter": CustomEvent;
       "dj-after-leave": CustomEvent;
+      "dj-load-children": CustomEvent;
+      "dj-check-change": CustomEvent;
       "dj-expand-change": CustomEvent;
+      "dj-move": CustomEvent;
       "dj-drop": CustomEvent;
       "dj-step": CustomEvent;
     }

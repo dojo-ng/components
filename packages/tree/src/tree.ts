@@ -1,9 +1,14 @@
 import { html, css, nothing, type TemplateResult } from "lit";
 import { property, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
+import { Virtualizer, elementScroll, observeElementOffset, observeElementRect } from "@tanstack/virtual-core";
 import DojoElement, { reducedMotion } from "@dojo-ng/dojo-element";
-import { LocaleController } from "@dojo-ng/i18n";
+import { LocaleController, messages, registerDefaults } from "@dojo-ng/i18n";
 import { getHistory, whenHistory, type NavigateDetail, type NavLocation, type TrailEntry } from "@dojo-ng/history/handle";
 import "@dojo-ng/icon";
+import { flattenTree, isLazy, type VisRow } from "./flatten.js";
+import { dropZone, dragIds, isUnder, type DropPosition } from "./move.js";
+import { computeChecks, pendingParents, toggleCheck, type Checks } from "./check.js";
 
 export interface TreeNode {
 	id: string;
@@ -13,6 +18,12 @@ export interface TreeNode {
 	icon?: string;
 	/** A trailing count badge (e.g. an unread count). */
 	count?: number;
+	/**
+	 * Marks a node whose children are fetched when it is first opened. A node with `hasChildren: true`
+	 * and no `children` shows a chevron; opening it emits `dj-load-children`, and the app answers with
+	 * `setChildren(id, nodes)`.
+	 */
+	hasChildren?: boolean;
 	/**
 	 * The app path this node stands for when the tree has `track`. Without it, the path is derived:
 	 * the tree's `base-path`, then the ids from the root down to this node, joined with `/`.
@@ -27,12 +38,45 @@ interface PathInfo {
 	parentId: string | null;
 }
 
-interface VisRow {
-	id: string;
-	node: TreeNode;
-	level: number;
-	hasChildren: boolean;
-	open: boolean;
+const EN: Record<string, string> = {
+	treeLoading: "Loading…",
+	treeLoadFailed: "Couldn't load. Retry",
+	treeDragMany: "{count} items",
+};
+registerDefaults("dj", EN);
+
+/** A chip naming what moves, used as the drag image. The browser snapshots it during
+ *  `dragstart`, so it can be removed on the next tick. */
+function setDragImage(dt: DataTransfer, text: string) {
+	if (typeof dt.setDragImage !== "function" || typeof document === "undefined") return;
+	const chip = document.createElement("div");
+	chip.textContent = text;
+	chip.setAttribute("aria-hidden", "true");
+	chip.style.cssText = [
+		"position:fixed", "top:-1000px", "left:-1000px", "max-width:20rem",
+		"overflow:hidden", "text-overflow:ellipsis", "white-space:nowrap",
+		"padding:0.25rem 0.6rem", "border-radius:999px",
+		"font:500 0.8125rem/1.4 var(--dj-font-sans, system-ui, sans-serif)",
+		"background:var(--dj-color-primary-600, #2563eb)", "color:var(--dj-color-text-on-primary, #fff)",
+	].join(";");
+	document.body.appendChild(chip);
+	dt.setDragImage(chip, 12, 12);
+	setTimeout(() => chip.remove(), 0);
+}
+
+/** Row height used until the first row is measured. */
+const ESTIMATED_ROW_HEIGHT = 28;
+/** Rows rendered beyond each edge of the viewport while virtual. */
+const OVERSCAN = 8;
+/** Rows rendered before a virtual tree has been laid out (no viewport size yet). */
+const UNSIZED_ROWS = 20;
+
+/** TanStack Virtual reads `process.env.NODE_ENV` when a virtualizer is built. A bundler defines it;
+ *  a page loading the packages straight from a CDN does not, so give it the production value. */
+function ensureProcessEnv() {
+	const g = globalThis as { process?: { env?: Record<string, string | undefined> } };
+	if (!g.process) g.process = { env: { NODE_ENV: "production" } };
+	else if (!g.process.env) g.process.env = { NODE_ENV: "production" };
 }
 
 /**
@@ -96,16 +140,66 @@ interface VisRow {
  *   roving focus. Two nodes with the same path: the first in tree order wins.
  * - `track` needs `@dojo-ng/history` installed. Without it nothing is tracked and nothing throws.
  *
- * #### Not built
- * - Dragging tree rows, virtualization, checkboxes, and lazy loading.
+ * #### Long trees
+ * - Above `virtual-threshold` visible rows (default 200) the tree is virtual: only the rows in view
+ *   (plus the focused one) are in the DOM, and the tree scrolls inside `--dj-tree-max-height`
+ *   (20rem by default while virtual). Every row carries `aria-level`, `aria-setsize`, and
+ *   `aria-posinset`, so assistive technology still knows its place among all of them.
+ * - Rows have one height, measured from the first row. Keyboard, `track`, and Back all work on rows
+ *   that are not rendered: the tree scrolls the active row into view first.
+ *
+ * #### Lazy children
+ * - A node with `hasChildren: true` and no `children` shows a chevron. Opening it, by any route (the
+ *   chevron, the keyboard, spring-open, an `expanded` the app sets, or `track`), emits
+ *   `dj-load-children` with `{ id }` once, and the node shows a "Loading" row under it.
+ * - The app answers with `setChildren(id, nodes)`. The tree stores `nodes` as that node's `children`
+ *   and renders them. An empty array makes the node a leaf. Answers can arrive in any order and any
+ *   time; one for a node that no longer exists is ignored (the method returns false).
+ * - On failure the app calls `setChildren(id, null, { error })`. The row under the node becomes a
+ *   retry row; Enter, Space, or a click on it emits `dj-load-children` again.
+ * - With `track`, a location below an unloaded node opens that node and so asks for its children;
+ *   when they arrive the tree matches again and goes one level deeper, so a deep link emits one
+ *   load per level, in order, until the node is found.
+ *
+ * #### Checkboxes
+ * - Set `checkable` to show a checkbox on every node. Checking is separate from selecting: Space
+ *   toggles the check, Enter still selects, and clicking the box does not select the row.
+ * - `checked` is the array of checked ids (controlled). Toggling updates it and emits
+ *   `dj-check-change` with `{ id, checked, partial, pendingParents }`.
+ * - Checking a parent checks every loaded node below it; unchecking clears them and the parent's
+ *   own checked ancestors. A parent with loaded children shows what they show: all checked, some
+ *   (`aria-checked="mixed"`), or none. An id in `checked` also checks everything loaded below it.
+ * - `partial` lists the parents showing the mixed state. `pendingParents` lists checked lazy nodes
+ *   whose children are not loaded; the tree cannot know what is below them, so the app resolves
+ *   those on the server. Children that load later under a checked parent arrive checked.
+ *
+ * #### Dragging rows
+ * - Set `draggable-rows` to make every row a drag source (native HTML5 drag and drop, so a row can
+ *   land on this tree, another tree, a grid, or any page element that reads the drag). The drag
+ *   carries a JSON array of node ids under `drag-type` (default `application/x-dojo-tree-rows`) and
+ *   the labels as `text/plain`. The preview chip shows the label, or the count for several.
+ * - A row that is not checked drags alone. With `checkable`, a checked row drags every checked row,
+ *   top-most only (a checked parent carries what is below it); that is the multi-row drag.
+ * - Within one tree the pointer picks where a drop lands: the top edge of a row is "before", the
+ *   bottom edge "after", the middle "inside". The bottom edge of an open parent is "inside", since
+ *   "after" would draw above its first child. A line marks before and after (parts
+ *   `row--drop-before`, `row--drop-after`); "inside" uses `row--drop-target` as a drop does. A row can
+ *   go "inside" a row that has children, or any row `canDrop` accepts. A drop on a dragged row or
+ *   anything below it is refused.
+ * - The tree emits `dj-move` with `{ ids, target, position }` and changes nothing; the app edits
+ *   `nodes`. A drag from another tree or a grid is a plain drop: `canDrop` and `dj-drop` as above.
+ * - Dragging has no keyboard form, as with drops. Offer a "Move…" command (WCAG 2.5.7).
  *
  * Slots: none (content comes from `nodes`).
- * Parts: `row` (a node's clickable line), `row--drop-target` (added to the row a drag would drop
+ * Parts: `row` (a node's clickable line), `checkbox` (the box, with `checkable`), `loading` and `retry` (the line under an open lazy node, in addition to `row`), `row--drop-before` and `row--drop-after` (the row a drag within this tree would land above or below), `row--drop-target` (added to the row a drag would drop
  * on), `chevron`, `label`, `count`.
  * Events: `dj-select` (detail `{ id }`); `dj-expand-change` (detail `{ id, expanded, expandedIds }`);
- * `dj-drop` (detail `{ id, dataTransfer }`); `dj-navigate` (detail `{ path, label, trail }`, only with `track`).
+ * `dj-check-change` (detail `{ id, checked, partial, pendingParents }`, only with `checkable`);
+ * `dj-load-children` (detail `{ id }`);
+ * `dj-move` (detail `{ ids, target, position }`, a drag within this tree); `dj-drop` (detail `{ id, dataTransfer }`); `dj-navigate` (detail `{ path, label, trail }`, only with `track`).
  *
  * @cssprop [--dj-tree-indent=1.1rem] - Indentation added per nesting level.
+ * @cssprop [--dj-tree-max-height=20rem] - Height the tree scrolls at while virtual.
  * @cssprop [--dj-tree-count-color=var(--dj-color-text-muted)] - Color of the trailing count badge.
  */
 export class DjTree extends DojoElement {
@@ -115,7 +209,9 @@ export class DjTree extends DojoElement {
 		css`
 			:host { display: block; }
 			ul { list-style: none; margin: 0; padding: 0; }
-			ul ul { margin-inline-start: var(--dj-tree-indent, 1.1rem); }
+			.tree--virtual { max-height: var(--dj-tree-max-height, 20rem); overflow: auto; position: relative; }
+			.tree--virtual::after { content: ""; display: block; height: var(--dj-tree-total, 0); }
+			.tree--virtual > .treeitem { position: absolute; top: 0; inset-inline: 0; height: var(--dj-tree-row-height, auto); box-sizing: border-box; }
 			.treeitem { display: block; }
 			.treeitem:focus { outline: none; }
 			.row {
@@ -126,7 +222,9 @@ export class DjTree extends DojoElement {
 				border-radius: var(--dj-input-border-radius-small, 0.1875rem);
 				cursor: pointer;
 				color: var(--dj-color-text, #1f2937);
+				margin-inline-start: calc(var(--dj-tree-indent, 1.1rem) * var(--level, 0));
 			}
+			.tree--virtual .row { height: 100%; box-sizing: border-box; }
 			.row:hover { background: var(--dj-color-neutral-100, #f3f4f6); }
 			.row--selected {
 				background: var(--dj-color-primary-100, #dbeafe);
@@ -146,6 +244,28 @@ export class DjTree extends DojoElement {
 			.chev--open { transform: rotate(90deg); }
 			/* Closed chevron points along the reading direction; mirror it in RTL. */
 			.chev--rtl { transform: rotate(180deg); }
+			.row--status { cursor: default; font-style: italic; color: var(--dj-tree-count-color, var(--dj-color-text-muted, #6b7280)); }
+			.row--status[part~="retry"] { cursor: pointer; font-style: normal; color: var(--dj-color-primary-700, #1d4ed8); text-decoration: underline; }
+			.box {
+				flex: 0 0 auto;
+				box-sizing: border-box;
+				width: 1rem;
+				height: 1rem;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				border: 1px solid var(--dj-color-neutral-500, #6b7280);
+				border-radius: 0.2rem;
+				background: var(--dj-color-background, #fff);
+				color: var(--dj-color-background, #fff);
+			}
+			.box svg { width: 0.8rem; height: 0.8rem; }
+			.box--on, .box--mixed {
+				background: var(--dj-color-primary-600, #2563eb);
+				border-color: var(--dj-color-primary-600, #2563eb);
+			}
+			.row--before { box-shadow: inset 0 2px 0 var(--dj-color-primary-600, #2563eb); }
+			.row--after { box-shadow: inset 0 -2px 0 var(--dj-color-primary-600, #2563eb); }
 			.spacer { width: 1rem; flex: 0 0 auto; display: inline-block; }
 			.nicon { flex: 0 0 auto; }
 			.label { flex: 1 1 auto; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -166,6 +286,9 @@ export class DjTree extends DojoElement {
 			/* Forced colors: the selected row's tint collapses, so use the system selected pair. */
 			@media (forced-colors: active) {
 				.row--selected { background: Highlight; color: HighlightText; }
+				.box { border-color: CanvasText; }
+				.box--on, .box--mixed { background: Highlight; color: HighlightText; border-color: Highlight; }
+				.row--before, .row--after { box-shadow: none; outline: 2px solid Highlight; outline-offset: -2px; }
 				.row--drop { background: Highlight; color: HighlightText; outline: 2px solid CanvasText; outline-offset: -2px; }
 			}
 		`,
@@ -203,6 +326,21 @@ export class DjTree extends DojoElement {
 	 */
 	@property({ type: Boolean }) track = false;
 
+	/** Show a checkbox on every node. Checking is separate from selecting. */
+	@property({ type: Boolean, reflect: true }) checkable = false;
+
+	/** The checked node ids (controlled). Toggling updates this and emits `dj-check-change`. */
+	@property({ type: Array }) checked: string[] = [];
+
+	/** Make every row a drag source. See "Dragging rows". */
+	@property({ attribute: "draggable-rows", type: Boolean, reflect: true }) draggableRows = false;
+
+	/** The MIME type the dragged ids are written under, so a drop target can recognise them. */
+	@property({ attribute: "drag-type" }) dragType = "application/x-dojo-tree-rows";
+
+	/** Visible rows above which the tree renders only the rows in view. */
+	@property({ type: Number, attribute: "virtual-threshold" }) virtualThreshold = 200;
+
 	/** With `track`, the path every derived node path starts with, such as `/explore`. */
 	@property({ attribute: "base-path" }) basePath = "";
 
@@ -210,12 +348,20 @@ export class DjTree extends DojoElement {
 	@state() private activeId = "";
 	/** The row a drag would drop on, or "". */
 	@state() private dropId = "";
+	/** Where on `dropId` the drop would land. */
+	@state() private dropPos: DropPosition = "inside";
+	/** The drag that started in a tree, for the one it started in (the payload is unreadable until the drop). */
+	static #drag?: { tree: DjTree; ids: string[] };
 	#springId = "";
 	#springTimer: ReturnType<typeof setTimeout> | undefined;
 	/** A drag that ends anywhere (dropped elsewhere, or Escape) must clear the mark. */
 	#onDocDragEnd = () => this.#endDrag();
+	#onDocDragFinish = () => { if (DjTree.#drag?.tree === this) DjTree.#drag = undefined; };
 
 	#i18n = new LocaleController(this);
+	#msg(key: string): string {
+		return messages.resolve("dj", this.#i18n.locale, key) ?? EN[key] ?? key;
+	}
 	/** Tracked nodes by id, and node id by path. Rebuilt when `nodes`, `base-path`, or `track` change. */
 	#info = new Map<string, PathInfo>();
 	#byPath = new Map<string, string>();
@@ -224,6 +370,22 @@ export class DjTree extends DojoElement {
 	#visible: VisRow[] = [];
 	#parentOf = new Map<string, string>();
 	#openSet = new Set<string>();
+	#indexOf = new Map<string, number>();
+	#loading = new Set<string>();
+	#failed = new Map<string, string>();
+	#keepIndex = false;
+	#toEmit: string[] = [];
+	#checks: Checks = { checked: new Set(), partial: new Set() };
+	#stale = false;
+	#byId?: Map<string, TreeNode>;
+	#virtualizer?: Virtualizer<HTMLElement, Element>;
+	#virtualCleanup?: () => void;
+	#rowHeight = ESTIMATED_ROW_HEIGHT;
+	#rowMeasured = false;
+	#lastRevealed = "";
+
+	/** True while the tree renders only the rows in view (more visible rows than `virtual-threshold`). */
+	get virtual(): boolean { return this.#visible.length > this.virtualThreshold; }
 
 	protected override willUpdate(changed: Map<PropertyKey, unknown>) {
 		let synced = false;
@@ -235,9 +397,153 @@ export class DjTree extends DojoElement {
 			}
 			synced = this.#syncLocation();
 		}
-		if (synced || changed.has("nodes") || changed.has("expanded") || changed.has("value")) {
+		if (this.checkable && (changed.has("nodes") || changed.has("checked") || changed.has("checkable"))) {
+			this.#checks = computeChecks(this.nodes, this.checked);
+		}
+		if (changed.has("nodes") && !this.#keepIndex) this.#byId = undefined;
+		this.#keepIndex = false;
+		if (synced || this.#stale || changed.has("nodes") || changed.has("expanded") || changed.has("value")) {
+			this.#stale = false;
 			this.#recompute();
 		}
+		if (this.virtual) {
+			ensureProcessEnv();
+			this.#virtualizer ??= this.#makeVirtualizer();
+			this.#virtualizer.setOptions({ ...this.#virtualizer.options, count: this.#visible.length });
+		} else {
+			this.#dropVirtualizer();
+		}
+	}
+
+	protected override updated() {
+		this.#requestLoads();
+		const v = this.#virtualizer;
+		if (!v) { this.#lastRevealed = ""; return; }
+		if (!this.#virtualCleanup) this.#virtualCleanup = v._didMount();
+		v._willUpdate();
+		this.#measureRow();
+		if (this.activeId !== this.#lastRevealed) {
+			this.#lastRevealed = this.activeId;
+			this.#reveal(this.#indexOf.get(this.activeId) ?? -1);
+		}
+	}
+
+	// ------------------------------------------------------------------ lazy children
+
+	/** Ask the app for the children of every open lazy node not yet asked about. */
+	#requestLoads() {
+		const ids = this.#toEmit;
+		if (!ids.length) return;
+		this.#toEmit = [];
+		for (const id of ids) this.emit("dj-load-children", { detail: { id } });
+	}
+
+	#nodeById(id: string): TreeNode | undefined {
+		if (!this.#byId) {
+			const map = new Map<string, TreeNode>();
+			const walk = (list: readonly TreeNode[]) => { for (const n of list) { map.set(n.id, n); if (n.children) walk(n.children); } };
+			walk(this.nodes);
+			this.#byId = map;
+		}
+		return this.#byId.get(id);
+	}
+
+	/**
+	 * Answer a `dj-load-children`: store `children` on the node `id` and render them. For a failed
+	 * load pass `null` and `{ error }`; the node then shows a retry row. Returns false when no node
+	 * has that id (the tree was replaced while the load ran), and then does nothing.
+	 */
+	setChildren(id: string, children: TreeNode[] | null, options: { error?: unknown } = {}): boolean {
+		const node = this.#nodeById(id);
+		if (!node) return false;
+		this.#loading.delete(id);
+		if (children === null) {
+			const error = options.error;
+			this.#failed.set(id, error instanceof Error ? error.message : typeof error === "string" ? error : "");
+			this.#stale = true;
+			this.requestUpdate();
+			return true;
+		}
+		this.#failed.delete(id);
+		node.children = children;
+		const walk = (list: readonly TreeNode[]) => { for (const n of list) { this.#byId!.set(n.id, n); if (n.children) walk(n.children); } };
+		walk(children);
+		this.#keepIndex = true;
+		this.nodes = [...this.nodes];
+		return true;
+	}
+
+	#toggleCheck(id: string) {
+		const checked = toggleCheck(this.nodes, this.checked, id);
+		this.checked = checked;
+		const { checked: set, partial } = computeChecks(this.nodes, checked);
+		this.emit("dj-check-change", { detail: { id, checked, partial: [...partial], pendingParents: pendingParents(this.nodes, set) } });
+	}
+
+	#retry(id: string) {
+		if (!this.#failed.delete(id)) return;
+		this.#stale = true;
+		this.requestUpdate();
+	}
+
+	// ------------------------------------------------------------------ virtual window
+
+	get #list(): HTMLElement | null { return this.renderRoot.querySelector<HTMLElement>("ul.tree"); }
+
+	#makeVirtualizer(): Virtualizer<HTMLElement, Element> {
+		return new Virtualizer<HTMLElement, Element>({
+			count: this.#visible.length,
+			getScrollElement: () => this.#list,
+			estimateSize: () => this.#rowHeight,
+			overscan: OVERSCAN,
+			scrollToFn: elementScroll,
+			observeElementRect: (inst, cb) => observeElementRect(inst, () => {
+				const el = inst.scrollElement;
+				if (el) cb({ width: el.clientWidth, height: el.clientHeight });
+			}),
+			observeElementOffset,
+			onChange: () => this.requestUpdate(),
+		});
+	}
+
+	#dropVirtualizer() {
+		this.#virtualCleanup?.();
+		this.#virtualCleanup = undefined;
+		this.#virtualizer = undefined;
+		this.#rowMeasured = false;
+	}
+
+	/** Measure the first rendered row once and use its height for every row. */
+	#measureRow() {
+		if (this.#rowMeasured) return;
+		const h = this.#list?.querySelector<HTMLElement>("li.treeitem")?.getBoundingClientRect().height ?? 0;
+		if (h <= 0) return;
+		this.#rowMeasured = true;
+		if (Math.abs(h - this.#rowHeight) > 0.5) {
+			this.#rowHeight = h;
+			this.#virtualizer?.measure();
+			this.requestUpdate();
+			this.#lastRevealed = ""; // anything revealed with the estimate is now off
+		}
+	}
+
+	/** The row indexes to render while virtual: the virtualizer's window plus the active row. */
+	#windowRows(): number[] {
+		const n = this.#visible.length;
+		let rows = this.#virtualizer?.getVirtualIndexes() ?? [];
+		if (!rows.length) rows = Array.from({ length: Math.min(n, UNSIZED_ROWS) }, (_, i) => i);
+		const a = this.#indexOf.get(this.activeId) ?? -1;
+		if (a >= 0 && !rows.includes(a)) rows = [...rows, a].sort((x, y) => x - y);
+		return rows;
+	}
+
+	/** Scroll the tree (not the page) just enough to show row `i`. */
+	#reveal(i: number) {
+		const el = this.#list;
+		if (!el || i < 0 || el.clientHeight === 0) return;
+		const top = i * this.#rowHeight;
+		if (top < el.scrollTop) el.scrollTop = top;
+		else if (top + this.#rowHeight > el.scrollTop + el.clientHeight) el.scrollTop = top + this.#rowHeight - el.clientHeight;
 	}
 
 	/** Build the path-to-node index once per change to the nodes, not on every lookup. */
@@ -309,6 +615,15 @@ export class DjTree extends DojoElement {
 			this.emit("dj-expand-change", { detail: { id: ancestor, expanded: true, expandedIds } });
 			changed = true;
 		}
+		// A location below a node whose children are not loaded: open it, which asks for them.
+		const info = this.#info.get(id);
+		const row = this.#nodeById(id);
+		if (info && row && isLazy(row) && !this.expanded.includes(id) && this.#normalize(location.path.split(/[?#]/)[0]) !== info.path) {
+			const expandedIds = [...this.expanded, id];
+			this.expanded = expandedIds;
+			this.emit("dj-expand-change", { detail: { id, expanded: true, expandedIds } });
+			changed = true;
+		}
 		if (!location.trail) {
 			const trail = this.#trailOf(id);
 			// After the current publish has finished, and only if this is still the current location.
@@ -353,23 +668,15 @@ export class DjTree extends DojoElement {
 	/** Rebuild the flat visible-row list, the parent map, and validate the roving active row. */
 	#recompute() {
 		this.#openSet = new Set(this.expanded);
-		const vis: VisRow[] = [];
-		const parent = new Map<string, string>();
-		const walk = (list: TreeNode[], level: number, parentId: string | null) => {
-			for (const n of list) {
-				const hasChildren = !!n.children?.length;
-				const open = hasChildren && this.#openSet.has(n.id);
-				vis.push({ id: n.id, node: n, level, hasChildren, open });
-				if (parentId != null) parent.set(n.id, parentId);
-				if (open) walk(n.children!, level + 1, n.id);
-			}
-		};
-		walk(this.nodes, 1, null);
+		const { rows: vis, parentOf, indexOf: index, needLoad } = flattenTree(this.nodes, this.#openSet, { loading: this.#loading, failed: this.#failed });
 		this.#visible = vis;
-		this.#parentOf = parent;
-		const ids = new Set(vis.map((v) => v.id));
-		if (!this.activeId || !ids.has(this.activeId)) {
-			this.activeId = this.value && ids.has(this.value) ? this.value : (vis[0]?.id ?? "");
+		// Mark each as asked now, so this render shows it busy and no later pass asks again;
+		// the events go out after the render.
+		for (const id of needLoad) { this.#loading.add(id); this.#toEmit.push(id); }
+		this.#parentOf = parentOf;
+		this.#indexOf = index;
+		if (!this.activeId || !index.has(this.activeId)) {
+			this.activeId = this.value && index.has(this.value) ? this.value : (vis[0]?.id ?? "");
 		}
 	}
 
@@ -377,6 +684,7 @@ export class DjTree extends DojoElement {
 		super.connectedCallback();
 		document.addEventListener("dragend", this.#onDocDragEnd, true);
 		document.addEventListener("drop", this.#onDocDragEnd, true);
+		document.addEventListener("dragend", this.#onDocDragFinish);
 		this.#follow();
 	}
 
@@ -385,15 +693,18 @@ export class DjTree extends DojoElement {
 		this.#stop();
 		document.removeEventListener("dragend", this.#onDocDragEnd, true);
 		document.removeEventListener("drop", this.#onDocDragEnd, true);
+		document.removeEventListener("dragend", this.#onDocDragFinish);
+		this.#onDocDragFinish();
 		this.#endDrag();
+		this.#dropVirtualizer();
 	}
 
-	/** The row id a drag event is over, from its composed path (rows live in the shadow root). */
-	#rowOf(e: Event): string | null {
+	/** The treeitem a drag event is over, from its composed path (rows live in the shadow root). */
+	#rowEl(e: Event): HTMLElement | null {
 		for (const n of e.composedPath()) {
 			if (n === this) break;
 			const el = n as HTMLElement;
-			if (el.classList?.contains("treeitem")) return el.dataset.id ?? null;
+			if (el.classList?.contains("treeitem")) return el;
 		}
 		return null;
 	}
@@ -404,27 +715,67 @@ export class DjTree extends DojoElement {
 		return this.canDrop(id, types);
 	}
 
+	/** True while a drag that started in this tree is under way. */
+	get #ownDrag(): boolean { return DjTree.#drag?.tree === this; }
+
+	/** Where a drag from this tree would land at the pointer, or null when it may not. */
+	#landing(e: DragEvent, el: HTMLElement | null): { id: string; position: DropPosition } | null {
+		const drag = DjTree.#drag;
+		const id = el?.dataset.id;
+		if (!drag || !el || id === undefined) return null;
+		const row = this.#visible[this.#indexOf.get(id) ?? -1];
+		if (!row || row.kind !== "node") return null;
+		if (isUnder(id, new Set(drag.ids), this.#parentOf)) return null;
+		const box = (el.querySelector(".row") ?? el).getBoundingClientRect();
+		const fraction = box.height > 0 ? (e.clientY - box.top) / box.height : 0.5;
+		const types = e.dataTransfer ? Array.from(e.dataTransfer.types) : [];
+		const canInside = this.canDrop ? this.canDrop(id, types) : row.hasChildren;
+		const position = dropZone(fraction, canInside, row.open);
+		return position ? { id, position } : null;
+	}
+
 	/** dragenter and dragover: mark the accepting row, refuse the rest, and arm spring-loading. */
 	#onDragOver(e: DragEvent) {
-		if (!this.canDrop) return;
-		const id = this.#rowOf(e);
+		const own = this.#ownDrag;
+		if (!own && !this.canDrop) return;
+		const el = this.#rowEl(e);
+		const id = el?.dataset.id ?? null;
+		if (own) {
+			const land = this.#landing(e, el);
+			if (land) e.preventDefault();
+			if (e.dataTransfer) e.dataTransfer.dropEffect = land ? "move" : "none";
+			if (this.dropId !== (land?.id ?? "")) this.dropId = land?.id ?? "";
+			if (land && this.dropPos !== land.position) this.dropPos = land.position;
+			this.#spring(id ?? "");
+			return;
+		}
 		const ok = this.#accepts(id, e);
 		if (ok) e.preventDefault();  // what makes a native drop legal here
 		if (e.dataTransfer) e.dataTransfer.dropEffect = ok ? "move" : "none";
 		if (this.dropId !== (ok ? id : "")) this.dropId = ok ? id : "";
+		if (ok && this.dropPos !== "inside") this.dropPos = "inside";
 		this.#spring(id ?? "");
 	}
 
 	#onDragLeave(e: DragEvent) {
-		if (!this.canDrop) return;
+		if (!this.canDrop && !this.#ownDrag) return;
 		const to = e.relatedTarget as Node | null;
 		if (to && (this.renderRoot.contains(to) || this.contains(to))) return;
 		this.#endDrag();
 	}
 
 	#onDrop(e: DragEvent) {
+		if (this.#ownDrag) {
+			const land = this.#landing(e, this.#rowEl(e));
+			const ids = DjTree.#drag!.ids;
+			this.#endDrag();
+			if (!land) return;
+			e.preventDefault();
+			this.emit("dj-move", { detail: { ids, target: land.id, position: land.position } });
+			return;
+		}
 		if (!this.canDrop) return;
-		const id = this.#rowOf(e);
+		const id = this.#rowEl(e)?.dataset.id ?? null;
 		const ok = this.#accepts(id, e);
 		this.#endDrag();
 		if (!ok) return;
@@ -432,12 +783,28 @@ export class DjTree extends DojoElement {
 		this.emit("dj-drop", { detail: { id, dataTransfer: e.dataTransfer } });
 	}
 
+	#onDragStart(e: DragEvent, id: string) {
+		const dt = e.dataTransfer;
+		if (!this.draggableRows || !dt) return;
+		const ids = dragIds(this.nodes, this.checkable ? this.#checks.checked : new Set(), id);
+		const labels = ids.map((x) => this.#nodeById(x)?.label ?? x);
+		const text = ids.length === 1 ? labels[0] : this.#msg("treeDragMany").replace("{count}", String(ids.length));
+		dt.setData(this.dragType, JSON.stringify(ids));
+		dt.setData("text/plain", labels.join("\n"));
+		dt.effectAllowed = "move";
+		setDragImage(dt, text);
+		DjTree.#drag = { tree: this, ids };
+		// The dragged row must stay rendered while a virtual tree scrolls under the drag, or the
+		// browser never sends dragend.
+		this.activeId = id;
+	}
+
 	#spring(id: string) {
 		if (id === this.#springId) return;
 		clearTimeout(this.#springTimer);
 		this.#springTimer = undefined;
 		this.#springId = id;
-		const row = this.#visible.find((v) => v.id === id);
+		const row = this.#visible[this.#indexOf.get(id) ?? -1];
 		if (!this.springDelay || !row || !row.hasChildren || row.open) return;
 		this.#springTimer = setTimeout(() => {
 			this.#springTimer = undefined;
@@ -474,6 +841,7 @@ export class DjTree extends DojoElement {
 	#activate(id: string) {
 		this.activeId = id;
 		this.updateComplete.then(() => {
+			if (this.virtual) this.#reveal(this.#indexOf.get(id) ?? -1);
 			const rows = [...this.renderRoot.querySelectorAll<HTMLElement>("li.treeitem")];
 			rows.find((r) => r.dataset.id === id)?.focus();
 		});
@@ -481,9 +849,14 @@ export class DjTree extends DojoElement {
 
 	#onKeydown(e: KeyboardEvent, id: string) {
 		const vis = this.#visible;
-		const idx = vis.findIndex((v) => v.id === id);
+		const idx = this.#indexOf.get(id) ?? -1;
 		if (idx < 0) return;
 		const cur = vis[idx];
+		if (cur.kind !== "node") {
+			// A loading or retry line: it only answers Enter and Space (retry) and the movement keys.
+			if ((e.key === "Enter" || e.key === " ") && cur.kind === "error") { e.preventDefault(); this.#retry(cur.node.id); return; }
+			if (e.key === "Enter" || e.key === " ") { e.preventDefault(); return; }
+		}
 		switch (e.key) {
 			case "ArrowDown":
 				if (idx < vis.length - 1) { e.preventDefault(); this.#activate(vis[idx + 1].id); }
@@ -511,28 +884,81 @@ export class DjTree extends DojoElement {
 					if (p) { e.preventDefault(); this.#activate(p); }
 				}
 				break;
-			case "Enter":
 			case " ":
+				e.preventDefault();
+				if (this.checkable) this.#toggleCheck(id);
+				else this.#select(id);
+				break;
+			case "Enter":
 				e.preventDefault();
 				this.#select(id);
 				break;
 		}
 	}
 
-	#renderNode(node: TreeNode, level: number): TemplateResult {
-		const hasChildren = !!node.children?.length;
-		const open = hasChildren && this.#openSet.has(node.id);
+	/** The line under an open lazy node: "Loading", or a retry button after a failed load. */
+	#renderStatus(r: VisRow, top?: number): TemplateResult {
+		const failed = r.kind === "error";
+		const text = this.#msg(failed ? "treeLoadFailed" : "treeLoading");
+		return html`<li
+			role="treeitem"
+			class="treeitem"
+			data-id=${r.id}
+			aria-level=${r.level}
+			aria-setsize="1"
+			aria-posinset="1"
+			aria-disabled=${failed ? nothing : "true"}
+			tabindex=${r.id === this.activeId ? "0" : "-1"}
+			style=${top === undefined ? nothing : `transform:translateY(${top}px)`}
+			@keydown=${(e: KeyboardEvent) => this.#onKeydown(e, r.id)}
+			@click=${(e: MouseEvent) => { e.stopPropagation(); this.activeId = r.id; if (failed) this.#retry(r.node.id); }}
+		>
+			<div class="row row--status" part=${failed ? "row retry" : "row loading"} title=${(failed && this.#failed.get(r.node.id)) || nothing} style=${`--level:${r.level - 1}`}>
+				<span class="spacer"></span>
+				<span class="label">${text}</span>
+			</div>
+		</li>`;
+	}
+
+	/** The check box. Presentational: the treeitem holds focus and carries `aria-checked`. */
+	#renderBox(id: string): TemplateResult {
+		const on = this.#checks.checked.has(id);
+		const mixed = this.#checks.partial.has(id);
+		return html`<span
+			class="box ${on ? "box--on" : mixed ? "box--mixed" : ""}"
+			part="checkbox"
+			aria-hidden="true"
+			@click=${(e: Event) => { e.stopPropagation(); this.activeId = id; this.#toggleCheck(id); }}
+		>${on
+			? html`<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" /></svg>`
+			: mixed ? html`<svg viewBox="0 0 24 24"><path d="M6 12h12" fill="none" stroke="currentColor" stroke-width="3" /></svg>` : nothing}</span>`;
+	}
+
+	#renderRow(r: VisRow, top?: number): TemplateResult {
+		if (r.kind !== "node") return this.#renderStatus(r, top);
+		const node = r.node;
+		const { hasChildren, open } = r;
 		const selected = node.id === this.value;
 		const rtl = this.#i18n.dir === "rtl";
 		const chevClass = `chev ${open ? "chev--open" : rtl ? "chev--rtl" : ""}`;
+		const here = node.id === this.dropId;
+		const dropClass = !here ? "" : this.dropPos === "inside" ? "row--drop" : `row--${this.dropPos}`;
+		const dropPart = !here ? "row" : this.dropPos === "inside" ? "row row--drop-target" : `row row--drop-${this.dropPos}`;
 		return html`<li
 			role="treeitem"
 			class="treeitem"
 			data-id=${node.id}
-			aria-level=${level}
+			draggable=${this.draggableRows ? "true" : nothing}
+			@dragstart=${(e: DragEvent) => this.#onDragStart(e, node.id)}
+			aria-level=${r.level}
+			aria-setsize=${r.setSize}
+			aria-posinset=${r.posInSet}
 			aria-expanded=${hasChildren ? (open ? "true" : "false") : nothing}
 			aria-selected=${selected ? "true" : nothing}
+			aria-busy=${this.#loading.has(node.id) ? "true" : nothing}
+			aria-checked=${this.checkable ? (this.#checks.checked.has(node.id) ? "true" : this.#checks.partial.has(node.id) ? "mixed" : "false") : nothing}
 			tabindex=${node.id === this.activeId ? "0" : "-1"}
+			style=${top === undefined ? nothing : `transform:translateY(${top}px)`}
 			@keydown=${(e: KeyboardEvent) => this.#onKeydown(e, node.id)}
 			@click=${(e: MouseEvent) => {
 				e.stopPropagation();
@@ -549,8 +975,9 @@ export class DjTree extends DojoElement {
 			}}
 		>
 			<div
-				class="row ${selected ? "row--selected" : ""} ${node.id === this.dropId ? "row--drop" : ""}"
-				part=${node.id === this.dropId ? "row row--drop-target" : "row"}
+				class="row ${selected ? "row--selected" : ""} ${dropClass}"
+				part=${dropPart}
+				style=${`--level:${r.level - 1}`}
 			>
 				${hasChildren
 					? html`<span
@@ -559,24 +986,32 @@ export class DjTree extends DojoElement {
 							@click=${(e: Event) => { e.stopPropagation(); this.#toggle(node.id); }}
 						><dj-icon size="small"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" /></svg></dj-icon></span>`
 					: html`<span class="spacer"></span>`}
+				${this.checkable ? this.#renderBox(node.id) : nothing}
 				${node.icon ? html`<dj-icon class="nicon" type=${node.icon} size="small"></dj-icon>` : nothing}
 				<span class="label" part="label">${node.label}</span>
 				${node.count != null ? html`<span class="count" part="count">${node.count}</span>` : nothing}
 			</div>
-			${hasChildren && open
-				? html`<ul role="group">${node.children!.map((c) => this.#renderNode(c, level + 1))}</ul>`
-				: nothing}
 		</li>`;
 	}
 
+	/** The rows to render: all of them, or while virtual the window, each placed at its offset. */
+	#renderRows(): unknown {
+		if (!this.virtual) return repeat(this.#visible, (r) => r.id, (r) => this.#renderRow(r));
+		const rows = this.#windowRows().map((i) => this.#visible[i]);
+		return repeat(rows, (r) => r.id, (r) => this.#renderRow(r, this.#indexOf.get(r.id)! * this.#rowHeight));
+	}
+
 	override render() {
+		const virtual = this.virtual;
 		return html`<ul
 			role="tree"
+			class="tree ${virtual ? "tree--virtual" : ""}"
+			style=${virtual ? `--dj-tree-total:${this.#visible.length * this.#rowHeight}px;--dj-tree-row-height:${this.#rowHeight}px` : nothing}
 			@dragenter=${this.#onDragOver}
 			@dragover=${this.#onDragOver}
 			@dragleave=${this.#onDragLeave}
 			@drop=${this.#onDrop}
-		>${this.nodes.map((n) => this.#renderNode(n, 1))}</ul>`;
+		>${this.#renderRows()}</ul>`;
 	}
 }
 export default DjTree;
@@ -585,6 +1020,9 @@ declare global {
 	interface GlobalEventHandlersEventMap {
 		"dj-select": CustomEvent<{ id: string }>;
 		"dj-expand-change": CustomEvent<{ id: string; expanded: boolean; expandedIds: string[] }>;
+		"dj-load-children": CustomEvent<{ id: string }>;
+		"dj-move": CustomEvent<{ ids: string[]; target: string; position: "before" | "after" | "inside" }>;
+		"dj-check-change": CustomEvent<{ id: string; checked: string[]; partial: string[]; pendingParents: string[] }>;
 		"dj-drop": CustomEvent<{ id: string; dataTransfer: DataTransfer | null }>;
 		"dj-navigate": CustomEvent<NavigateDetail>;
 	}

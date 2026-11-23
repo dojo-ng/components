@@ -16,6 +16,7 @@ import "../../packages/data-grid/dist/index.js";
 import "../../packages/chart/dist/index.js";
 import "../../packages/list/dist/index.js";
 import "../../packages/typeahead/dist/index.js";
+import "../../packages/tree/dist/index.js";
 import { candlestickPlugin, volumePlugin, indicatorPlugin } from "../../packages/chart-financial/dist/index.js";
 
 // @tanstack/table-core reads process.env.NODE_ENV (a bundler defines it in an app).
@@ -169,6 +170,21 @@ describe("component benchmarks (relative 2× gate)", () => {
 		const left = ta.shadowRoot.querySelector("dj-list").options.length;
 		document.body.removeChild(ta);
 		if (left !== 111) throw new Error(`typeahead filter left ${left} options, expected 111`);
+
+		// --- tree: expand one node with 5,000 children in a tree that is virtual once open (TS1) ---
+		const tree = document.createElement("dj-tree");
+		tree.nodes = [{ id: "root", label: "Root", children: Array.from({ length: 5000 }, (_, i) => ({ id: `c${i}`, label: `Child ${i}` })) }, { id: "other", label: "Other" }];
+		document.body.append(tree);
+		await tree.updateComplete;
+		await settle();
+		t0 = performance.now();
+		tree.shadowRoot.querySelector('[part="chevron"]').click();
+		await tree.updateComplete;
+		await settle();
+		results.treeExpand5k = performance.now() - t0;
+		const treeRows = tree.shadowRoot.querySelectorAll("li.treeitem").length;
+		document.body.removeChild(tree);
+		if (!(treeRows > 0 && treeRows < 60)) throw new Error(`tree did not virtualize (rendered ${treeRows} rows)`);
 
 		// --- seed on first run, else compare against the baseline ---
 		const baseline = await executeServerCommand("read-bench-baseline");
